@@ -1,0 +1,21 @@
+{
+  "name": "phoenix-vcs",
+  "version": "0.1.0",
+  "description": "Regenerative version control system — causal compiler for intent",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "phoenix": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "phoenix": "node dist/cli.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
