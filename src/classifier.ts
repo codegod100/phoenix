@@ -106,6 +106,10 @@ export function classifyChange(
   const sectionDelta = before.section_path.join('/') !== after.section_path.join('/');
   const canonImpact = countCanonImpact(before, after, canonicalNodesBefore, canonicalNodesAfter);
 
+  // Anchor-based matching: detect "same concept, different wording"
+  // If anchors match across before/after, the change is likely cosmetic (A/B, not C/D)
+  const anchorMatch = computeAnchorOverlap(before, after, canonicalNodesBefore, canonicalNodesAfter);
+
   const signals: ClassificationSignals = {
     norm_diff: normDiff,
     semhash_delta: semhashDelta,
@@ -162,8 +166,18 @@ export function classifyChange(
     };
   }
 
-  // High uncertainty
+  // High uncertainty — but check anchor overlap first
   if (normDiff > 0.7 || termDelta > 0.7) {
+    // If anchors match, the concepts are the same despite heavy rewording → B not D
+    if (anchorMatch > 0.5) {
+      return {
+        change_class: ChangeClass.B,
+        confidence: 0.65,
+        signals,
+        clause_id_before: diff.clause_id_before,
+        clause_id_after: diff.clause_id_after,
+      };
+    }
     return {
       change_class: ChangeClass.D,
       confidence: 0.4,
@@ -250,6 +264,33 @@ function termJaccardDistance(textA: string, textB: string): number {
   const union = new Set([...termsA, ...termsB]).size;
 
   return 1 - (intersection / union);
+}
+
+/**
+ * Compute anchor overlap: what fraction of canon nodes from the 'before' clause
+ * have matching anchors in the 'after' graph. High overlap → same concepts, just reworded.
+ */
+function computeAnchorOverlap(
+  before: Clause,
+  after: Clause,
+  canonBefore: CanonicalNode[],
+  canonAfter: CanonicalNode[],
+): number {
+  const nodesBefore = canonBefore.filter(n => n.source_clause_ids.includes(before.clause_id));
+  if (nodesBefore.length === 0) return 0;
+
+  // Collect all anchors from after nodes linked to the after clause
+  const nodesAfter = canonAfter.filter(n => n.source_clause_ids.includes(after.clause_id));
+  const afterAnchors = new Set(nodesAfter.map(n => n.canon_anchor).filter(Boolean));
+
+  if (afterAnchors.size === 0) return 0;
+
+  let matched = 0;
+  for (const node of nodesBefore) {
+    if (node.canon_anchor && afterAnchors.has(node.canon_anchor)) matched++;
+  }
+
+  return matched / nodesBefore.length;
 }
 
 /**

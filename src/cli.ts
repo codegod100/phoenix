@@ -21,7 +21,7 @@ import { parseSpec } from './spec-parser.js';
 import { diffClauses } from './diff.js';
 
 // Phase B
-import { extractCanonicalNodes } from './canonicalizer.js';
+import { extractCanonicalNodes, extractCandidates } from './canonicalizer.js';
 import { extractCanonicalNodesLLM } from './canonicalizer-llm.js';
 import { computeWarmHashes } from './warm-hasher.js';
 import { classifyChanges } from './classifier.js';
@@ -447,6 +447,57 @@ function printTrustDashboard(
   console.log(`  ${dim('Canonical Nodes:')} ${canonNodes.length}`);
   console.log(`  ${dim('Implementation Units:')} ${ius.length}`);
   console.log(`  ${dim('Spec Clauses:')} ${allClauses.length}`);
+
+  // Canon type breakdown
+  const typeBreakdown: Record<string, number> = {};
+  for (const n of canonNodes) typeBreakdown[n.type] = (typeBreakdown[n.type] ?? 0) + 1;
+  const typeParts = Object.entries(typeBreakdown).map(([t, c]) => `${c} ${t}`);
+  if (typeParts.length > 0) {
+    console.log(`  ${dim('Canon Types:')} ${dim(typeParts.join(', '))}`);
+  }
+
+  // Resolution metrics
+  let totalEdges = 0;
+  let relatesToEdges = 0;
+  let orphanCount = 0;
+  let maxDegree = 0;
+  let withParent = 0;
+  const nonContextNodes = canonNodes.filter(n => n.type !== 'CONTEXT');
+  for (const n of canonNodes) {
+    const deg = n.linked_canon_ids.length;
+    if (deg === 0) orphanCount++;
+    if (deg > maxDegree) maxDegree = deg;
+    if (n.parent_canon_id) withParent++;
+    for (const [, edgeType] of Object.entries(n.link_types ?? {})) {
+      totalEdges++;
+      if (edgeType === 'relates_to') relatesToEdges++;
+    }
+  }
+  if (canonNodes.length > 0) {
+    const resDRate = totalEdges > 0 ? ((relatesToEdges / totalEdges) * 100).toFixed(0) : '0';
+    const orphanPct = ((orphanCount / canonNodes.length) * 100).toFixed(0);
+    const hierPct = nonContextNodes.length > 0 ? ((withParent / nonContextNodes.length) * 100).toFixed(0) : '0';
+    console.log(`  ${dim('Resolution:')} ${totalEdges} edges ${dim(`(${resDRate}% relates_to)`)}${dim(',')} max degree ${maxDegree}${dim(',')} ${hierPct}% hierarchy`);
+  }
+
+  // Extraction coverage (recompute from current specs)
+  if (allClauses.length > 0) {
+    const { coverage } = extractCandidates(allClauses);
+    const avgCov = coverage.reduce((s, c) => s + c.coverage_pct, 0) / coverage.length;
+    const lowCov = coverage.filter(c => c.coverage_pct < 80);
+    const covLabel = avgCov >= 95 ? green(`${avgCov.toFixed(0)}%`) : avgCov >= 80 ? yellow(`${avgCov.toFixed(0)}%`) : red(`${avgCov.toFixed(0)}%`);
+    console.log(`  ${dim('Coverage:')} ${covLabel} extraction${lowCov.length > 0 ? dim(` (${lowCov.length} clause${lowCov.length !== 1 ? 's' : ''} below 80%)`) : ''}`);
+    for (const cov of lowCov) {
+      diagnostics.push({
+        severity: 'info',
+        category: 'canon',
+        subject: cov.clause_id.slice(0, 12),
+        message: `Extraction coverage ${cov.coverage_pct.toFixed(0)}% (${cov.extracted_sentences + cov.context_sentences}/${cov.total_sentences} sentences)`,
+        recommended_actions: cov.uncovered.map(u => `[${u.reason}] ${u.text.slice(0, 60)}`),
+      });
+    }
+  }
+
   console.log();
 
   // D-rate

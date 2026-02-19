@@ -51,6 +51,11 @@ export interface CanonNodeInfo {
   statement: string;
   tags: string[];
   linkCount: number;
+  confidence?: number;
+  anchor?: string;
+  parentId?: string;
+  linkTypes?: Record<string, string>;
+  extractionMethod?: string;
 }
 
 export interface IUInfo {
@@ -78,7 +83,8 @@ export interface GenFileInfo {
 export interface Edge {
   from: string;
   to: string;
-  type: 'spec→clause' | 'clause→canon' | 'canon→iu' | 'iu→file' | 'canon→canon';
+  type: 'spec→clause' | 'clause→canon' | 'canon→iu' | 'iu→file' | 'canon→canon' | 'canon→parent';
+  edgeType?: string; // typed edge for canon→canon
 }
 
 export interface PipelineStats {
@@ -140,7 +146,11 @@ export function collectInspectData(
       edges.push({ from: `clause:${clauseId}`, to: `canon:${n.canon_id}`, type: 'clause→canon' });
     }
     for (const linkedId of n.linked_canon_ids) {
-      edges.push({ from: `canon:${n.canon_id}`, to: `canon:${linkedId}`, type: 'canon→canon' });
+      const edgeType = n.link_types?.[linkedId];
+      edges.push({ from: `canon:${n.canon_id}`, to: `canon:${linkedId}`, type: 'canon→canon', edgeType });
+    }
+    if (n.parent_canon_id) {
+      edges.push({ from: `canon:${n.parent_canon_id}`, to: `canon:${n.canon_id}`, type: 'canon→parent' });
     }
     return {
       id: n.canon_id,
@@ -148,6 +158,11 @@ export function collectInspectData(
       statement: n.statement,
       tags: n.tags,
       linkCount: n.linked_canon_ids.length,
+      confidence: n.confidence,
+      anchor: n.canon_anchor?.slice(0, 12),
+      parentId: n.parent_canon_id,
+      linkTypes: n.link_types,
+      extractionMethod: n.extraction_method,
     };
   });
 
@@ -263,7 +278,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .card .t{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .s{font-size:9px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle}
-.b-req{background:#1e3a5f;color:var(--blue)}.b-con{background:#3b1e1e;color:var(--red)}.b-inv{background:#2d1e3f;color:var(--purple)}.b-def{background:#1e2d1e;color:var(--green)}
+.b-req{background:#1e3a5f;color:var(--blue)}.b-con{background:#3b1e1e;color:var(--red)}.b-inv{background:#2d1e3f;color:var(--purple)}.b-def{background:#1e2d1e;color:var(--green)}.b-ctx{background:#2d2d1e;color:var(--yellow)}
 .b-low{background:#1e2d1e;color:var(--green)}.b-medium{background:#2d2a1e;color:var(--yellow)}.b-high{background:#2d1e1e;color:var(--orange)}.b-critical{background:#3b1e1e;color:var(--red)}
 .b-clean{background:#1e2d1e;color:var(--green)}.b-drifted{background:#3b1e1e;color:var(--red)}.b-missing{background:#2d1e1e;color:var(--orange)}.b-unknown{background:var(--surface2);color:var(--dim)}
 .tag{display:inline-block;font-size:8px;padding:1px 4px;border-radius:2px;background:var(--surface2);color:var(--dim);margin:1px}
@@ -355,14 +370,14 @@ function getConnected(id){
 function nodeTitle(id){const it=items[id];if(!it)return id;const d=it.d;
   if(it.col==='spec')return E(d.path.split('/').pop());
   if(it.col==='clause')return E(d.sectionPath);
-  if(it.col==='canon')return'<span class="badge b-'+d.type.slice(0,3).toLowerCase()+'">'+d.type+'</span> '+E(d.statement.slice(0,55));
+  if(it.col==='canon'){const tc=d.type==='CONTEXT'?'ctx':d.type==='CONSTRAINT'?'con':d.type==='REQUIREMENT'?'req':d.type==='INVARIANT'?'inv':'def';return'<span class="badge b-'+tc+'">'+d.type+'</span> '+E(d.statement.slice(0,55));}
   if(it.col==='iu')return E(d.name)+' <span class="badge b-'+d.riskTier+'">'+d.riskTier+'</span>';
   if(it.col==='file')return E(d.path.split('/').pop())+' <span class="badge b-'+d.driftStatus.toLowerCase()+'">'+d.driftStatus+'</span>';
   return id;}
 function nodeSub(id){const it=items[id];if(!it)return'';const d=it.d;
   if(it.col==='spec')return d.clauseCount+' clauses';
   if(it.col==='clause')return d.lineRange+' · '+d.semhash+'…';
-  if(it.col==='canon')return d.tags.slice(0,4).map(t=>'<span class="tag">'+E(t)+'</span>').join('')+(d.linkCount?' · '+d.linkCount+' links':'');
+  if(it.col==='canon'){let s=d.tags.slice(0,4).map(t=>'<span class="tag">'+E(t)+'</span>').join('');if(d.confidence!=null)s+=' <span class="tag">conf:'+d.confidence.toFixed(2)+'</span>';if(d.linkCount)s+=' · '+d.linkCount+' links';if(d.extractionMethod)s+=' · '+d.extractionMethod;return s;}
   if(it.col==='iu')return d.canonCount+' nodes · '+d.outputFiles.length+' file(s)';
   if(it.col==='file')return E(d.iuName)+' · '+(d.size/1024).toFixed(1)+'KB';
   return'';}

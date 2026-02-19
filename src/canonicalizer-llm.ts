@@ -23,6 +23,11 @@ Rules: one clear sentence, present tense, active voice, no pronouns, no ambiguit
 Output ONLY a JSON object: {"statement": "..."}
 No markdown, no explanation.`;
 
+export interface LLMCanonOptions {
+  /** Enable self-consistency with k samples (default: 1 = no self-consistency) */
+  selfConsistencyK?: number;
+}
+
 /**
  * Extract canonical nodes using rule-based extraction + LLM normalization.
  * Falls back to pure rule-based on any LLM failure.
@@ -30,6 +35,7 @@ No markdown, no explanation.`;
 export async function extractCanonicalNodesLLM(
   clauses: Clause[],
   llm: LLMProvider | null,
+  options?: LLMCanonOptions,
 ): Promise<CanonicalNode[]> {
   // Phase 1: rule-based extraction (always deterministic)
   const { candidates } = extractCandidates(clauses);
@@ -39,11 +45,10 @@ export async function extractCanonicalNodesLLM(
   }
 
   try {
-    // Normalize statements via LLM
-    const normalized = await normalizeCandidates(candidates, llm);
+    const k = options?.selfConsistencyK ?? 1;
+    const normalized = await normalizeCandidates(candidates, llm, k);
     return resolveGraph(normalized, clauses);
   } catch {
-    // Fall back to rule-based candidates
     return resolveGraph(candidates, clauses);
   }
 }
@@ -51,8 +56,8 @@ export async function extractCanonicalNodesLLM(
 async function normalizeCandidates(
   candidates: CandidateNode[],
   llm: LLMProvider,
+  k: number = 1,
 ): Promise<CandidateNode[]> {
-  // Only normalize non-CONTEXT nodes (CONTEXT is informational, not worth LLM cost)
   const results: CandidateNode[] = [];
 
   for (const c of candidates) {
@@ -63,24 +68,41 @@ async function normalizeCandidates(
 
     try {
       const prompt = `Rewrite this ${c.type} statement in canonical form:\n"${c.statement}"`;
-      const response = await llm.generate(prompt, {
-        system: NORMALIZER_SYSTEM,
-        temperature: 0,
-        maxTokens: 150,
-      });
 
-      const normalized = parseNormalizerResponse(response);
-      if (normalized && normalized.length > 5) {
-        // Recompute ID with normalized statement
-        const newId = sha256([c.type, normalized, c.source_clause_ids[0]].join('\x00'));
-        results.push({
-          ...c,
-          candidate_id: newId,
-          statement: normalized,
-          extraction_method: 'llm',
+      if (k <= 1) {
+        // Single-shot normalization
+        const response = await llm.generate(prompt, {
+          system: NORMALIZER_SYSTEM,
+          temperature: 0,
+          maxTokens: 150,
         });
+        const normalized = parseNormalizerResponse(response);
+        if (normalized && normalized.length > 5) {
+          const newId = sha256([c.type, normalized, c.source_clause_ids[0]].join('\x00'));
+          results.push({ ...c, candidate_id: newId, statement: normalized, extraction_method: 'llm' });
+        } else {
+          results.push(c);
+        }
       } else {
-        results.push(c);
+        // Self-consistency: generate k samples, select lexical medoid
+        const samples: string[] = [];
+        for (let i = 0; i < k; i++) {
+          const response = await llm.generate(prompt, {
+            system: NORMALIZER_SYSTEM,
+            temperature: i === 0 ? 0 : 0.3, // first sample at temp=0, rest at 0.3
+            maxTokens: 150,
+          });
+          const parsed = parseNormalizerResponse(response);
+          if (parsed && parsed.length > 5) samples.push(parsed);
+        }
+
+        if (samples.length === 0) {
+          results.push(c);
+        } else {
+          const medoid = selectMedoid(samples);
+          const newId = sha256([c.type, medoid, c.source_clause_ids[0]].join('\x00'));
+          results.push({ ...c, candidate_id: newId, statement: medoid, extraction_method: 'llm' });
+        }
       }
     } catch {
       results.push(c);
@@ -88,6 +110,41 @@ async function normalizeCandidates(
   }
 
   return results;
+}
+
+/**
+ * Select the lexical medoid: the sample most similar to all others.
+ * Similarity measured by token Jaccard. Ties broken alphabetically (deterministic).
+ */
+export function selectMedoid(samples: string[]): string {
+  if (samples.length === 1) return samples[0];
+
+  const tokenSets = samples.map(s => new Set(s.toLowerCase().split(/\s+/)));
+
+  let bestIdx = 0;
+  let bestScore = -1;
+
+  for (let i = 0; i < samples.length; i++) {
+    let totalSim = 0;
+    for (let j = 0; j < samples.length; j++) {
+      if (i === j) continue;
+      totalSim += jaccardTokens(tokenSets[i], tokenSets[j]);
+    }
+    // Ties broken alphabetically for determinism
+    if (totalSim > bestScore || (totalSim === bestScore && samples[i] < samples[bestIdx])) {
+      bestScore = totalSim;
+      bestIdx = i;
+    }
+  }
+
+  return samples[bestIdx];
+}
+
+function jaccardTokens(a: Set<string>, b: Set<string>): number {
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  const union = a.size + b.size - inter;
+  return union > 0 ? inter / union : 0;
 }
 
 function parseNormalizerResponse(raw: string): string | null {

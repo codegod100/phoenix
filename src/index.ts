@@ -30,7 +30,8 @@ export { diffClauses } from './diff.js';
 // Phase B
 export { extractCanonicalNodes, extractCandidates, extractTerms } from './canonicalizer.js';
 export type { ExtractionResult } from './canonicalizer.js';
-export { extractCanonicalNodesLLM, extractWithLLMFull } from './canonicalizer-llm.js';
+export { extractCanonicalNodesLLM, extractWithLLMFull, selectMedoid } from './canonicalizer-llm.js';
+export type { LLMCanonOptions } from './canonicalizer-llm.js';
 export { resolveGraph } from './resolution.js';
 export { segmentSentences } from './sentence-segmenter.js';
 export type { Sentence } from './sentence-segmenter.js';
