@@ -178,7 +178,7 @@ function generateApiServer(svc: ServiceDescriptor): string {
   // Metrics tracking
   lines.push(`// ─── Metrics ─────────────────────────────────────────────────────────────────`);
   lines.push('');
-  lines.push(`const metrics = {`);
+  lines.push(`const _svcMetrics = {`);
   lines.push(`  requests_total: 0,`);
   lines.push(`  requests_by_path: {} as Record<string, number>,`);
   lines.push(`  errors_total: 0,`);
@@ -189,7 +189,7 @@ function generateApiServer(svc: ServiceDescriptor): string {
   // Module registry
   lines.push(`// ─── Module Registry ─────────────────────────────────────────────────────────`);
   lines.push('');
-  lines.push(`const modules = {`);
+  lines.push(`const _svcModules = {`);
   for (const mod of svc.modules) {
     const modName = mod.replace(/\.ts$/, '');
     const importName = toCamelCase(modName);
@@ -209,21 +209,21 @@ function generateApiServer(svc: ServiceDescriptor): string {
   lines.push(`    res.end(JSON.stringify({`);
   lines.push(`      status: 'ok',`);
   lines.push(`      service: '${svc.name}',`);
-  lines.push(`      uptime: Math.floor((Date.now() - metrics.uptime_start) / 1000),`);
-  lines.push(`      modules: Object.keys(modules),`);
+  lines.push(`      uptime: Math.floor((Date.now() - _svcMetrics.uptime_start) / 1000),`);
+  lines.push(`      modules: Object.keys(_svcModules),`);
   lines.push(`    }));`);
   lines.push(`  },`);
   lines.push('');
   lines.push(`  '/metrics': (_req, res) => {`);
   lines.push(`    res.writeHead(200, { 'Content-Type': 'application/json' });`);
   lines.push(`    res.end(JSON.stringify({`);
-  lines.push(`      ...metrics,`);
-  lines.push(`      uptime_seconds: Math.floor((Date.now() - metrics.uptime_start) / 1000),`);
+  lines.push(`      ..._svcMetrics,`);
+  lines.push(`      uptime_seconds: Math.floor((Date.now() - _svcMetrics.uptime_start) / 1000),`);
   lines.push(`    }, null, 2));`);
   lines.push(`  },`);
   lines.push('');
   lines.push(`  '/modules': (_req, res) => {`);
-  lines.push(`    const info = Object.entries(modules).map(([name, mod]) => {`);
+  lines.push(`    const info = Object.entries(_svcModules).map(([name, mod]) => {`);
   lines.push(`      const phoenix = (mod as Record<string, unknown>)._phoenix as Record<string, unknown> | undefined;`);
   lines.push(`      return {`);
   lines.push(`        name,`);
@@ -244,15 +244,15 @@ function generateApiServer(svc: ServiceDescriptor): string {
   lines.push(`  const url = req.url ?? '/';`);
   lines.push(`  const path = url.split('?')[0];`);
   lines.push('');
-  lines.push(`  metrics.requests_total++;`);
-  lines.push(`  metrics.requests_by_path[path] = (metrics.requests_by_path[path] ?? 0) + 1;`);
+  lines.push(`  _svcMetrics.requests_total++;`);
+  lines.push(`  _svcMetrics.requests_by_path[path] = (_svcMetrics.requests_by_path[path] ?? 0) + 1;`);
   lines.push('');
   lines.push(`  const handler = routes[path];`);
   lines.push(`  if (handler) {`);
   lines.push(`    try {`);
   lines.push(`      handler(req, res);`);
   lines.push(`    } catch (err) {`);
-  lines.push(`      metrics.errors_total++;`);
+  lines.push(`      _svcMetrics.errors_total++;`);
   lines.push(`      res.writeHead(500, { 'Content-Type': 'application/json' });`);
   lines.push(`      res.end(JSON.stringify({ error: String(err) }));`);
   lines.push(`    }`);
@@ -337,7 +337,7 @@ function generateWebClientServer(svc: ServiceDescriptor): string {
   // Metrics
   lines.push(`// ─── Metrics ─────────────────────────────────────────────────────────────────`);
   lines.push('');
-  lines.push(`const metrics = {`);
+  lines.push(`const _svcMetrics = {`);
   lines.push(`  requests_total: 0,`);
   lines.push(`  requests_by_path: {} as Record<string, number>,`);
   lines.push(`  errors_total: 0,`);
@@ -348,7 +348,7 @@ function generateWebClientServer(svc: ServiceDescriptor): string {
   // Module registry
   lines.push(`// ─── Module Registry ─────────────────────────────────────────────────────────`);
   lines.push('');
-  lines.push(`const modules = {`);
+  lines.push(`const _svcModules = {`);
   for (const { modName, importName } of imports) {
     lines.push(`  '${modName}': ${importName},`);
   }
@@ -455,21 +455,21 @@ function generateWebClientServer(svc: ServiceDescriptor): string {
   lines.push(`    res.end(JSON.stringify({`);
   lines.push(`      status: 'ok',`);
   lines.push(`      service: '${svc.name}',`);
-  lines.push(`      uptime: Math.floor((Date.now() - metrics.uptime_start) / 1000),`);
-  lines.push(`      modules: Object.keys(modules),`);
+  lines.push(`      uptime: Math.floor((Date.now() - _svcMetrics.uptime_start) / 1000),`);
+  lines.push(`      modules: Object.keys(_svcModules),`);
   lines.push(`    }));`);
   lines.push(`  },`);
   lines.push('');
   lines.push(`  '/metrics': (_req, res) => {`);
   lines.push(`    res.writeHead(200, { 'Content-Type': 'application/json' });`);
   lines.push(`    res.end(JSON.stringify({`);
-  lines.push(`      ...metrics,`);
-  lines.push(`      uptime_seconds: Math.floor((Date.now() - metrics.uptime_start) / 1000),`);
+  lines.push(`      ..._svcMetrics,`);
+  lines.push(`      uptime_seconds: Math.floor((Date.now() - _svcMetrics.uptime_start) / 1000),`);
   lines.push(`    }, null, 2));`);
   lines.push(`  },`);
   lines.push('');
   lines.push(`  '/modules': (_req, res) => {`);
-  lines.push(`    const info = Object.entries(modules).map(([name, mod]) => {`);
+  lines.push(`    const info = Object.entries(_svcModules).map(([name, mod]) => {`);
   lines.push(`      const phoenix = (mod as Record<string, unknown>)._phoenix as Record<string, unknown> | undefined;`);
   lines.push(`      return {`);
   lines.push(`        name,`);
@@ -490,15 +490,15 @@ function generateWebClientServer(svc: ServiceDescriptor): string {
   lines.push(`  const url = req.url ?? '/';`);
   lines.push(`  const path = url.split('?')[0];`);
   lines.push('');
-  lines.push(`  metrics.requests_total++;`);
-  lines.push(`  metrics.requests_by_path[path] = (metrics.requests_by_path[path] ?? 0) + 1;`);
+  lines.push(`  _svcMetrics.requests_total++;`);
+  lines.push(`  _svcMetrics.requests_by_path[path] = (_svcMetrics.requests_by_path[path] ?? 0) + 1;`);
   lines.push('');
   lines.push(`  const handler = routes[path];`);
   lines.push(`  if (handler) {`);
   lines.push(`    try {`);
   lines.push(`      handler(req, res);`);
   lines.push(`    } catch (err) {`);
-  lines.push(`      metrics.errors_total++;`);
+  lines.push(`      _svcMetrics.errors_total++;`);
   lines.push(`      res.writeHead(500, { 'Content-Type': 'application/json' });`);
   lines.push(`      res.end(JSON.stringify({ error: String(err) }));`);
   lines.push(`    }`);
