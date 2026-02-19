@@ -234,351 +234,297 @@ export function renderInspectHTML(data: InspectData): string {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Phoenix · ${esc(data.projectName)}</title>
 <style>
-:root {
-  --bg: #0f1117; --surface: #1a1d27; --surface2: #232730;
-  --border: #2e3345; --text: #e1e4ed; --dim: #7a8194;
-  --blue: #5b9cf4; --green: #4ade80; --yellow: #fbbf24;
-  --orange: #fb923c; --red: #f87171; --purple: #a78bfa;
-  --cyan: #22d3ee;
-  --font: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:var(--font); background:var(--bg); color:var(--text); font-size:13px; line-height:1.6; }
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#232730;--border:#2e3345;--text:#e1e4ed;--dim:#7a8194;--blue:#5b9cf4;--green:#4ade80;--yellow:#fbbf24;--orange:#fb923c;--red:#f87171;--purple:#a78bfa;--cyan:#22d3ee;--font:'SF Mono','Fira Code','JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;line-height:1.6;overflow:hidden;height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;z-index:100}
+.header h1{font-size:18px;font-weight:700;color:var(--blue)}
+.header .state{font-size:11px;padding:3px 8px;border-radius:4px;background:var(--surface2);color:var(--yellow);border:1px solid var(--border)}
+.header .stats{margin-left:auto;display:flex;gap:16px;font-size:11px;color:var(--dim)}
+.header .stats b{color:var(--text);font-weight:600}
+.mode-btns{display:flex;gap:4px}
+.mode-btn{background:var(--surface2);border:1px solid var(--border);color:var(--dim);padding:4px 12px;border-radius:4px;cursor:pointer;font:inherit;font-size:11px}
+.mode-btn:hover{border-color:var(--blue);color:var(--text)}
+.mode-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 
-/* Header */
-.header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 24px; display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:100; }
-.header h1 { font-size:18px; font-weight:700; color:var(--blue); }
-.header .state { font-size:11px; padding:3px 8px; border-radius:4px; background:var(--surface2); color:var(--yellow); border:1px solid var(--border); }
-.header .stats { margin-left:auto; display:flex; gap:16px; font-size:11px; color:var(--dim); }
-.header .stats span { color:var(--text); font-weight:600; }
+/* ── Pipeline columns ── */
+.pipeline-wrap{display:flex;height:calc(100vh - 52px);position:relative}
+.pipeline{display:flex;flex:1;overflow:hidden}
+.column{flex:1;min-width:0;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.column:last-child{border-right:none}
+.col-header{padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dim);display:flex;justify-content:space-between}
+.col-header .ct{color:var(--blue)}
+.col-body{flex:1;overflow-y:auto;padding:6px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:4px;cursor:pointer;transition:all .15s;position:relative}
+.card:hover{border-color:var(--blue);background:var(--surface2)}
+.card.hl{border-color:var(--cyan);background:#142535;box-shadow:0 0 8px rgba(34,211,238,.2)}
+.card.sel{border-color:var(--cyan);background:#1a3040;box-shadow:0 0 16px rgba(34,211,238,.35);ring:2px solid var(--cyan)}
+.card.hide{display:none}
+.card .t{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .s{font-size:9px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle}
+.b-req{background:#1e3a5f;color:var(--blue)}.b-con{background:#3b1e1e;color:var(--red)}.b-inv{background:#2d1e3f;color:var(--purple)}.b-def{background:#1e2d1e;color:var(--green)}
+.b-low{background:#1e2d1e;color:var(--green)}.b-medium{background:#2d2a1e;color:var(--yellow)}.b-high{background:#2d1e1e;color:var(--orange)}.b-critical{background:#3b1e1e;color:var(--red)}
+.b-clean{background:#1e2d1e;color:var(--green)}.b-drifted{background:#3b1e1e;color:var(--red)}.b-missing{background:#2d1e1e;color:var(--orange)}.b-unknown{background:var(--surface2);color:var(--dim)}
+.tag{display:inline-block;font-size:8px;padding:1px 4px;border-radius:2px;background:var(--surface2);color:var(--dim);margin:1px}
 
-/* Pipeline */
-.pipeline { display:flex; min-height:calc(100vh - 56px); }
-.column { flex:1; min-width:0; border-right:1px solid var(--border); display:flex; flex-direction:column; }
-.column:last-child { border-right:none; }
-.col-header { padding:10px 14px; background:var(--surface); border-bottom:1px solid var(--border); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--dim); display:flex; justify-content:space-between; position:sticky; top:56px; z-index:50; }
-.col-header .count { color:var(--blue); }
-.col-body { flex:1; overflow-y:auto; padding:8px; }
+/* ── SVG overlay for connection lines ── */
+svg.lines{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+svg.lines path{fill:none;stroke:var(--cyan);stroke-width:1.5;opacity:.6}
+svg.lines path.strong{stroke-width:2.5;opacity:1;filter:drop-shadow(0 0 4px rgba(34,211,238,.5))}
 
-/* Cards */
-.card { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:6px; cursor:pointer; transition:border-color .15s, background .15s; position:relative; }
-.card:hover { border-color:var(--blue); background:var(--surface2); }
-.card.highlighted { border-color:var(--cyan); background:#1a2a3a; box-shadow:0 0 12px rgba(34,211,238,.15); }
-.card.dimmed { opacity:.25; }
-.card-title { font-size:12px; font-weight:600; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.card-sub { font-size:10px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.card-body { font-size:11px; color:var(--dim); margin-top:4px; display:none; }
-.card.expanded .card-body { display:block; }
-
-/* Tags / badges */
-.badge { display:inline-block; font-size:9px; font-weight:600; padding:1px 6px; border-radius:3px; text-transform:uppercase; letter-spacing:.5px; }
-.badge-req { background:#1e3a5f; color:var(--blue); }
-.badge-con { background:#3b1e1e; color:var(--red); }
-.badge-inv { background:#2d1e3f; color:var(--purple); }
-.badge-def { background:#1e2d1e; color:var(--green); }
-.badge-low { background:#1e2d1e; color:var(--green); }
-.badge-medium { background:#2d2a1e; color:var(--yellow); }
-.badge-high { background:#2d1e1e; color:var(--orange); }
-.badge-critical { background:#3b1e1e; color:var(--red); }
-.badge-clean { background:#1e2d1e; color:var(--green); }
-.badge-drifted { background:#3b1e1e; color:var(--red); }
-.badge-missing { background:#2d1e1e; color:var(--orange); }
-.tag { display:inline-block; font-size:9px; padding:1px 5px; border-radius:2px; background:var(--surface2); color:var(--dim); margin:1px; }
-
-/* Detail panel */
-.detail-panel { position:fixed; right:0; top:56px; width:380px; height:calc(100vh - 56px); background:var(--surface); border-left:2px solid var(--blue); z-index:200; overflow-y:auto; padding:20px; transform:translateX(100%); transition:transform .2s ease; }
-.detail-panel.open { transform:translateX(0); }
-.detail-panel h2 { font-size:14px; margin-bottom:12px; color:var(--blue); }
-.detail-panel .close { position:absolute; top:12px; right:14px; background:none; border:none; color:var(--dim); cursor:pointer; font-size:16px; }
-.detail-panel .close:hover { color:var(--text); }
-.detail-section { margin-bottom:14px; }
-.detail-section h3 { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--dim); margin-bottom:4px; }
-.detail-section p, .detail-section li { font-size:12px; color:var(--text); line-height:1.5; }
-.detail-section ul { padding-left:16px; }
-.detail-section .mono { font-family:var(--font); font-size:11px; color:var(--cyan); word-break:break-all; }
-.provenance-chain { margin-top:8px; }
-.provenance-step { display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; padding:6px 8px; background:var(--surface2); border-radius:4px; font-size:11px; }
-.provenance-step .arrow { color:var(--blue); font-weight:bold; flex-shrink:0; }
-.provenance-step .label { color:var(--dim); font-size:10px; }
-.provenance-step .value { color:var(--text); }
-
-/* Connection lines (CSS, no canvas) */
-.flow-indicator { position:absolute; right:-4px; top:50%; width:8px; height:8px; border-radius:50%; background:var(--border); transform:translateY(-50%); }
-.card.highlighted .flow-indicator { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
-
-/* Search */
-.search { padding:8px; border-bottom:1px solid var(--border); position:sticky; top:56px; z-index:50; background:var(--surface); }
-.search input { width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:4px; font-size:12px; font-family:var(--font); }
-.search input:focus { outline:none; border-color:var(--blue); }
+/* ── Graph overlay ── */
+.graph-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;flex-direction:column}
+.graph-overlay.open{display:flex}
+.graph-bar{padding:12px 24px;display:flex;align-items:center;gap:16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.graph-bar h2{font-size:15px;color:var(--cyan)}
+.graph-bar .close{background:none;border:1px solid var(--border);color:var(--dim);padding:4px 12px;border-radius:4px;cursor:pointer;font:inherit;font-size:11px;margin-left:auto}
+.graph-bar .close:hover{border-color:var(--red);color:var(--red)}
+.graph-body{flex:1;overflow:auto;display:flex;justify-content:center;padding:40px}
+.graph-canvas{position:relative}
+.gn{position:absolute;background:var(--surface);border:2px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;max-width:220px;cursor:default;z-index:2;transition:border-color .15s}
+.gn:hover{border-color:var(--blue)}
+.gn.gn-sel{border-color:var(--cyan);box-shadow:0 0 16px rgba(34,211,238,.4)}
+.gn .gn-label{font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:.5px;margin-bottom:3px}
+.gn .gn-text{font-weight:600;color:var(--text);word-break:break-word}
+svg.graph-edges{position:absolute;top:0;left:0;pointer-events:none;z-index:1}
+svg.graph-edges path{fill:none;stroke:var(--cyan);stroke-width:2;opacity:.5}
+svg.graph-edges path.primary{stroke-width:3;opacity:.9;filter:drop-shadow(0 0 4px rgba(34,211,238,.4))}
+.graph-hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);text-align:center}
 </style>
 </head>
 <body>
-
 <div class="header">
   <h1>🔥 Phoenix</h1>
   <div class="state">${esc(data.systemState)}</div>
+  <div class="mode-btns">
+    <button class="mode-btn active" onclick="setMode('all')" id="btn-all">All</button>
+    <button class="mode-btn" onclick="setMode('focus')" id="btn-focus">Focus</button>
+    <button class="mode-btn" onclick="openGraph()" id="btn-graph">⬡ Graph</button>
+  </div>
   <div class="stats">
-    <div><span>${data.stats.specFiles}</span> specs</div>
-    <div><span>${data.stats.clauses}</span> clauses</div>
-    <div><span>${data.stats.canonNodes}</span> canon</div>
-    <div><span>${data.stats.ius}</span> IUs</div>
-    <div><span>${data.stats.generatedFiles}</span> files</div>
-    <div><span>${data.stats.edgeCount}</span> edges</div>
-    <div>${data.stats.driftDirty > 0 ? `<span style="color:var(--red)">${data.stats.driftDirty} drift</span>` : '<span style="color:var(--green)">clean</span>'}</div>
+    <div><b>${data.stats.specFiles}</b> specs</div>
+    <div><b>${data.stats.clauses}</b> clauses</div>
+    <div><b>${data.stats.canonNodes}</b> canon</div>
+    <div><b>${data.stats.ius}</b> IUs</div>
+    <div><b>${data.stats.generatedFiles}</b> files</div>
+    <div>${data.stats.driftDirty>0?`<b style="color:var(--red)">${data.stats.driftDirty} drift</b>`:'<b style="color:var(--green)">clean</b>'}</div>
   </div>
 </div>
-
-<div class="pipeline" id="pipeline">
-  <!-- Columns rendered by JS -->
+<div class="pipeline-wrap">
+  <svg class="lines" id="svg-lines"></svg>
+  <div class="pipeline" id="pipeline"></div>
 </div>
-
-<div class="detail-panel" id="detail">
-  <button class="close" onclick="closeDetail()">✕</button>
-  <div id="detail-content"></div>
+<div class="graph-overlay" id="graph-overlay">
+  <div class="graph-bar">
+    <h2 id="graph-title">Provenance Graph</h2>
+    <button class="close" onclick="closeGraph()">✕ Close</button>
+  </div>
+  <div class="graph-body"><div class="graph-canvas" id="graph-canvas"></div></div>
 </div>
 
 <script>
-const DATA = ${json};
+const D=${json};
+const COL_ORDER=['spec','clause','canon','iu','file'];
+const COL_ICON={spec:'📄',clause:'📋',canon:'📐',iu:'📦',file:'⚡'};
 
-// Build lookup indices
-const edgeIndex = { forward: {}, backward: {} };
-DATA.edges.forEach(e => {
-  (edgeIndex.forward[e.from] = edgeIndex.forward[e.from] || []).push(e.to);
-  (edgeIndex.backward[e.to] = edgeIndex.backward[e.to] || []).push(e.from);
+// indices
+const fwd={},bwd={};
+D.edges.forEach(e=>{(fwd[e.from]=fwd[e.from]||[]).push(e.to);(bwd[e.to]=bwd[e.to]||[]).push(e.from)});
+const items={};
+D.specFiles.forEach(s=>items['spec:'+s.path]={col:'spec',d:s});
+D.clauses.forEach(c=>items['clause:'+c.id]={col:'clause',d:c});
+D.canonNodes.forEach(n=>items['canon:'+n.id]={col:'canon',d:n});
+D.ius.forEach(u=>items['iu:'+u.id]={col:'iu',d:u});
+D.generatedFiles.forEach(f=>items['file:'+f.path]={col:'file',d:f});
+
+function E(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ── Traversal (skip canon↔canon to keep pipeline linear) ──
+function getConnected(id){
+  const set=new Set([id]);
+  const q=[id];
+  while(q.length){const n=q.shift();
+    for(const t of(fwd[n]||[])){if(!set.has(t)&&!(n.startsWith('canon:')&&t.startsWith('canon:'))){set.add(t);q.push(t)}}
+    for(const t of(bwd[n]||[])){if(!set.has(t)&&!(n.startsWith('canon:')&&t.startsWith('canon:'))){set.add(t);q.push(t)}}
+  }
+  return set;
+}
+
+// ── Card HTML ──
+function nodeTitle(id){const it=items[id];if(!it)return id;const d=it.d;
+  if(it.col==='spec')return E(d.path.split('/').pop());
+  if(it.col==='clause')return E(d.sectionPath);
+  if(it.col==='canon')return'<span class="badge b-'+d.type.slice(0,3).toLowerCase()+'">'+d.type+'</span> '+E(d.statement.slice(0,55));
+  if(it.col==='iu')return E(d.name)+' <span class="badge b-'+d.riskTier+'">'+d.riskTier+'</span>';
+  if(it.col==='file')return E(d.path.split('/').pop())+' <span class="badge b-'+d.driftStatus.toLowerCase()+'">'+d.driftStatus+'</span>';
+  return id;}
+function nodeSub(id){const it=items[id];if(!it)return'';const d=it.d;
+  if(it.col==='spec')return d.clauseCount+' clauses';
+  if(it.col==='clause')return d.lineRange+' · '+d.semhash+'…';
+  if(it.col==='canon')return d.tags.slice(0,4).map(t=>'<span class="tag">'+E(t)+'</span>').join('')+(d.linkCount?' · '+d.linkCount+' links':'');
+  if(it.col==='iu')return d.canonCount+' nodes · '+d.outputFiles.length+' file(s)';
+  if(it.col==='file')return E(d.iuName)+' · '+(d.size/1024).toFixed(1)+'KB';
+  return'';}
+function crd(id){return'<div class="card" data-id="'+E(id)+'"><div class="t">'+nodeTitle(id)+'</div><div class="s">'+nodeSub(id)+'</div></div>';}
+
+// ── Render pipeline ──
+function render(){
+  const cols=[
+    {title:'Spec Files',col:'spec',ids:D.specFiles.map(s=>'spec:'+s.path)},
+    {title:'Clauses',col:'clause',ids:D.clauses.map(c=>'clause:'+c.id)},
+    {title:'Canonical Nodes',col:'canon',ids:D.canonNodes.map(n=>'canon:'+n.id)},
+    {title:'Implementation Units',col:'iu',ids:D.ius.map(u=>'iu:'+u.id)},
+    {title:'Generated Files',col:'file',ids:D.generatedFiles.map(f=>'file:'+f.path)},
+  ];
+  document.getElementById('pipeline').innerHTML=cols.map(c=>
+    '<div class="column" data-col="'+c.col+'"><div class="col-header"><span>'+c.title+'</span><span class="ct">'+c.ids.length+'</span></div><div class="col-body">'+c.ids.map(crd).join('')+'</div></div>'
+  ).join('');
+  document.querySelectorAll('.card').forEach(el=>{el.addEventListener('click',()=>selectCard(el.dataset.id))});
+}
+
+// ── Mode + selection ──
+let mode='all',selId=null,connected=new Set();
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-all').classList.toggle('active',m==='all');
+  document.getElementById('btn-focus').classList.toggle('active',m==='focus');
+  applyView();
+}
+
+function selectCard(id){
+  selId=id;connected=getConnected(id);
+  if(mode==='all')setMode('focus');
+  else applyView();
+}
+
+function applyView(){
+  const cards=document.querySelectorAll('.card');
+  if(!selId||mode==='all'){
+    cards.forEach(el=>{el.classList.remove('hl','sel','hide')});
+    clearLines();return;
+  }
+  cards.forEach(el=>{
+    const cid=el.dataset.id;
+    el.classList.toggle('hl',connected.has(cid)&&cid!==selId);
+    el.classList.toggle('sel',cid===selId);
+    el.classList.toggle('hide',!connected.has(cid));
+  });
+  requestAnimationFrame(drawLines);
+}
+
+function deselect(){selId=null;connected.clear();setMode('all');}
+
+// ── SVG connection lines ──
+function clearLines(){document.getElementById('svg-lines').innerHTML='';}
+function drawLines(){
+  const svg=document.getElementById('svg-lines');svg.innerHTML='';
+  if(!selId)return;
+  const wrap=document.querySelector('.pipeline-wrap');
+  const wr=wrap.getBoundingClientRect();
+  // collect visible card rects
+  const rects={};
+  document.querySelectorAll('.card:not(.hide)').forEach(el=>{
+    const r=el.getBoundingClientRect();
+    rects[el.dataset.id]={x:r.left-wr.left,y:r.top-wr.top,w:r.width,h:r.height,cx:r.left-wr.left+r.width/2,cy:r.top-wr.top+r.height/2};
+  });
+  // draw edges between connected nodes that are both visible
+  const drawn=new Set();
+  for(const nid of connected){
+    for(const t of(fwd[nid]||[])){
+      if(!connected.has(t))continue;
+      if(nid.startsWith('canon:')&&t.startsWith('canon:'))continue;
+      const key=nid+'→'+t;if(drawn.has(key))continue;drawn.add(key);
+      const a=rects[nid],b=rects[t];if(!a||!b)continue;
+      const x1=a.x+a.w,y1=a.cy,x2=b.x,y2=b.cy;
+      const dx=(x2-x1)*0.45;
+      const strong=(nid===selId||t===selId)?'strong':'';
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','M'+x1+','+y1+' C'+(x1+dx)+','+y1+' '+(x2-dx)+','+y2+' '+x2+','+y2);
+      path.setAttribute('class',strong);
+      svg.appendChild(path);
+    }
+  }
+}
+
+// ── Graph overlay ──
+function openGraph(){
+  if(!selId)return;
+  const overlay=document.getElementById('graph-overlay');
+  overlay.classList.add('open');
+  document.getElementById('graph-title').textContent=COL_ICON[items[selId]?.col||'spec']+' Provenance Graph — '+describeShort(selId);
+  renderGraph();
+}
+function closeGraph(){document.getElementById('graph-overlay').classList.remove('open');}
+
+function renderGraph(){
+  const canvas=document.getElementById('graph-canvas');
+  if(!selId){canvas.innerHTML='';return;}
+  // Organize connected nodes by column
+  const cols={};
+  for(const nid of connected){const it=items[nid];if(!it)continue;(cols[it.col]=cols[it.col]||[]).push(nid);}
+  // Layout: columns left→right, nodes top→bottom within column
+  const colX={};let cx=0;
+  const nodePos={};
+  const COL_W=240,COL_GAP=100,ROW_H=70,PAD=40;
+  for(const col of COL_ORDER){
+    if(!cols[col])continue;
+    colX[col]=cx;
+    cols[col].forEach((nid,i)=>{nodePos[nid]={x:cx,y:i*ROW_H}});
+    cx+=COL_W+COL_GAP;
+  }
+  const totalW=cx-COL_GAP+PAD*2;
+  const maxRows=Math.max(...COL_ORDER.map(c=>(cols[c]||[]).length));
+  const totalH=maxRows*ROW_H+PAD*2;
+  canvas.style.width=totalW+'px';canvas.style.height=totalH+'px';
+  let html='<svg class="graph-edges" width="'+totalW+'" height="'+totalH+'"></svg>';
+  // Nodes
+  for(const nid of connected){
+    const pos=nodePos[nid];if(!pos)continue;
+    const it=items[nid];
+    const isSel=nid===selId?'gn-sel':'';
+    html+='<div class="gn '+isSel+'" style="left:'+(pos.x+PAD)+'px;top:'+(pos.y+PAD)+'px;width:'+COL_W+'px">'
+      +'<div class="gn-label">'+COL_ICON[it.col]+' '+it.col+'</div>'
+      +'<div class="gn-text">'+nodeTitle(nid)+'</div></div>';
+  }
+  canvas.innerHTML=html;
+  // Draw edges
+  const svgEl=canvas.querySelector('svg.graph-edges');
+  const drawn2=new Set();
+  for(const nid of connected){
+    for(const t of(fwd[nid]||[])){
+      if(!connected.has(t))continue;
+      if(nid.startsWith('canon:')&&t.startsWith('canon:'))continue;
+      const key=nid+'→'+t;if(drawn2.has(key))continue;drawn2.add(key);
+      const a=nodePos[nid],b=nodePos[t];if(!a||!b)continue;
+      const x1=a.x+PAD+COL_W,y1=a.y+PAD+30,x2=b.x+PAD,y2=b.y+PAD+30;
+      const dx=(x2-x1)*0.4;
+      const cls=(nid===selId||t===selId)?'primary':'';
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d','M'+x1+','+y1+' C'+(x1+dx)+','+y1+' '+(x2-dx)+','+y2+' '+x2+','+y2);
+      p.setAttribute('class',cls);
+      svgEl.appendChild(p);
+    }
+  }
+}
+
+function describeShort(id){const it=items[id];if(!it)return id;const d=it.d;
+  if(it.col==='spec')return d.path;if(it.col==='clause')return d.sectionPath;
+  if(it.col==='canon')return d.statement.slice(0,50)+'…';
+  if(it.col==='iu')return d.name;if(it.col==='file')return d.path.split('/').pop();return id;}
+
+// ── Keys ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(document.getElementById('graph-overlay').classList.contains('open'))closeGraph();else deselect();}
+  if(e.key==='g'&&selId&&!document.getElementById('graph-overlay').classList.contains('open'))openGraph();
 });
-
-const allItems = {};
-DATA.specFiles.forEach(s => allItems['spec:'+s.path] = { col:'spec', data:s });
-DATA.clauses.forEach(c => allItems['clause:'+c.id] = { col:'clause', data:c });
-DATA.canonNodes.forEach(n => allItems['canon:'+n.id] = { col:'canon', data:n });
-DATA.ius.forEach(u => allItems['iu:'+u.id] = { col:'iu', data:u });
-DATA.generatedFiles.forEach(f => allItems['file:'+f.path] = { col:'file', data:f });
-
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// Render columns
-function renderPipeline() {
-  const p = document.getElementById('pipeline');
-  p.innerHTML = [
-    renderColumn('Spec Files', 'spec', DATA.specFiles.map(s =>
-      card('spec:'+s.path, s.path.split('/').pop(), s.clauseCount+' clauses', '')
-    )),
-    renderColumn('Clauses', 'clause', DATA.clauses.map(c =>
-      card('clause:'+c.id, c.sectionPath, c.lineRange+' · '+c.semhash+'…', c.preview)
-    )),
-    renderColumn('Canonical Nodes', 'canon', DATA.canonNodes.map(n =>
-      card('canon:'+n.id,
-        '<span class="badge badge-'+n.type.toLowerCase().slice(0,3)+'">'+n.type+'</span> '+esc(n.statement.slice(0,60)),
-        n.tags.slice(0,5).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+(n.linkCount?' · '+n.linkCount+' links':''),
-        esc(n.statement))
-    )),
-    renderColumn('Implementation Units', 'iu', DATA.ius.map(u =>
-      card('iu:'+u.id,
-        esc(u.name)+' <span class="badge badge-'+u.riskTier+'">'+u.riskTier+'</span>',
-        u.canonCount+' nodes · '+u.outputFiles.length+' file(s)',
-        esc(u.description.slice(0,200)))
-    )),
-    renderColumn('Generated Files', 'file', DATA.generatedFiles.map(f =>
-      card('file:'+f.path,
-        esc(f.path.split('/').pop())+' <span class="badge badge-'+f.driftStatus.toLowerCase()+'">'+f.driftStatus+'</span>',
-        esc(f.iuName)+' · '+f.contentHash+'… · '+(f.size/1024).toFixed(1)+'KB',
-        esc(f.path))
-    )),
-  ].join('');
-}
-
-function renderColumn(title, type, cards) {
-  return '<div class="column"><div class="col-header"><span>'+title+'</span><span class="count">'+cards.length+'</span></div>'
-    +'<div class="search"><input type="text" placeholder="Filter '+title.toLowerCase()+'…" oninput="filterColumn(this,\\''+type+'\\')"></div>'
-    +'<div class="col-body" data-col="'+type+'">'+cards.join('')+'</div></div>';
-}
-
-function card(id, title, sub, body) {
-  return '<div class="card" data-id="'+esc(id)+'" onclick="selectCard(\\''+esc(id).replace(/'/g,"\\\\'")+'\\')">'
-    +'<div class="card-title">'+title+'</div>'
-    +'<div class="card-sub">'+sub+'</div>'
-    +(body ? '<div class="card-body">'+body+'</div>' : '')
-    +'<div class="flow-indicator"></div>'
-    +'</div>';
-}
-
-// Selection + highlighting
-let selectedId = null;
-
-function selectCard(id) {
-  selectedId = id;
-  // Collect all connected nodes (forward + backward, 2 hops)
-  const connected = new Set([id]);
-  const queue = [id];
-  for (let depth = 0; depth < 6; depth++) {
-    const next = [];
-    for (const n of queue) {
-      for (const t of (edgeIndex.forward[n]||[])) { if (!connected.has(t)) { connected.add(t); next.push(t); } }
-      for (const t of (edgeIndex.backward[n]||[])) { if (!connected.has(t)) { connected.add(t); next.push(t); } }
-    }
-    queue.length = 0;
-    queue.push(...next);
-  }
-
-  document.querySelectorAll('.card').forEach(el => {
-    const cid = el.dataset.id;
-    el.classList.toggle('highlighted', connected.has(cid));
-    el.classList.toggle('dimmed', !connected.has(cid));
-  });
-
-  showDetail(id);
-}
-
-function clearSelection() {
-  selectedId = null;
-  document.querySelectorAll('.card').forEach(el => {
-    el.classList.remove('highlighted','dimmed');
-  });
-}
-
-// Filtering
-function filterColumn(input, colType) {
-  const q = input.value.toLowerCase();
-  const col = document.querySelector('[data-col="'+colType+'"]');
-  col.querySelectorAll('.card').forEach(el => {
-    const text = el.textContent.toLowerCase();
-    el.style.display = text.includes(q) ? '' : 'none';
-  });
-}
-
-// Detail panel
-function showDetail(id) {
-  const panel = document.getElementById('detail');
-  const content = document.getElementById('detail-content');
-  const item = allItems[id];
-  if (!item) return;
-
-  let html = '';
-  const d = item.data;
-
-  if (item.col === 'spec') {
-    html = '<h2>📄 '+esc(d.path)+'</h2>'
-      +'<div class="detail-section"><h3>Clauses</h3><p>'+d.clauseCount+' clauses extracted</p></div>';
-  }
-  else if (item.col === 'clause') {
-    html = '<h2>📋 Clause</h2>'
-      +'<div class="detail-section"><h3>Section</h3><p>'+esc(d.sectionPath)+'</p></div>'
-      +'<div class="detail-section"><h3>Source</h3><p>'+esc(d.docId)+' '+d.lineRange+'</p></div>'
-      +'<div class="detail-section"><h3>Content</h3><p>'+esc(d.preview)+'</p></div>'
-      +'<div class="detail-section"><h3>Semhash</h3><p class="mono">'+esc(d.semhash)+'…</p></div>';
-  }
-  else if (item.col === 'canon') {
-    html = '<h2>'+canonBadge(d.type)+' Canonical Node</h2>'
-      +'<div class="detail-section"><h3>Statement</h3><p>'+esc(d.statement)+'</p></div>'
-      +'<div class="detail-section"><h3>Tags</h3><p>'+d.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join(' ')+'</p></div>'
-      +'<div class="detail-section"><h3>Links</h3><p>'+d.linkCount+' cross-references</p></div>'
-      +'<div class="detail-section"><h3>ID</h3><p class="mono">'+esc(d.id)+'</p></div>';
-  }
-  else if (item.col === 'iu') {
-    html = '<h2>📦 '+esc(d.name)+'</h2>'
-      +'<div class="detail-section"><h3>Risk Tier</h3><p><span class="badge badge-'+d.riskTier+'">'+d.riskTier+'</span></p></div>'
-      +'<div class="detail-section"><h3>Description</h3><p>'+esc(d.description)+'</p></div>'
-      +(d.invariants.length ? '<div class="detail-section"><h3>Invariants</h3><ul>'+d.invariants.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul></div>' : '')
-      +'<div class="detail-section"><h3>Evidence Required</h3><p>'+d.evidenceRequired.join(', ')+'</p></div>'
-      +'<div class="detail-section"><h3>Output</h3><p class="mono">'+d.outputFiles.map(esc).join('<br>')+'</p></div>'
-      +'<div class="detail-section"><h3>Canon Nodes</h3><p>'+d.canonCount+' source nodes</p></div>'
-      +(d.regenMeta ? '<div class="detail-section"><h3>Generation</h3><p>Model: '+esc(d.regenMeta.model_id)+'<br>Generated: '+esc(d.regenMeta.generated_at)+'</p></div>' : '')
-      +'<div class="detail-section"><h3>ID</h3><p class="mono">'+esc(d.id)+'</p></div>';
-  }
-  else if (item.col === 'file') {
-    html = '<h2>📄 '+esc(d.path.split('/').pop())+'</h2>'
-      +'<div class="detail-section"><h3>Path</h3><p class="mono">'+esc(d.path)+'</p></div>'
-      +'<div class="detail-section"><h3>Status</h3><p><span class="badge badge-'+d.driftStatus.toLowerCase()+'">'+d.driftStatus+'</span></p></div>'
-      +'<div class="detail-section"><h3>Source IU</h3><p>'+esc(d.iuName)+'</p></div>'
-      +'<div class="detail-section"><h3>Content Hash</h3><p class="mono">'+esc(d.contentHash)+'…</p></div>'
-      +'<div class="detail-section"><h3>Size</h3><p>'+(d.size/1024).toFixed(1)+' KB</p></div>';
-  }
-
-  // Provenance chain
-  html += renderProvenance(id);
-
-  content.innerHTML = html;
-  panel.classList.add('open');
-}
-
-function renderProvenance(id) {
-  // Trace backward to spec
-  const chain = [];
-  const visited = new Set();
-  function traceBack(nodeId) {
-    if (visited.has(nodeId)) return;
-    visited.add(nodeId);
-    const parents = edgeIndex.backward[nodeId] || [];
-    for (const p of parents) {
-      const pItem = allItems[p];
-      if (pItem) chain.push({ id: p, col: pItem.col, label: describeNode(p) });
-      traceBack(p);
-    }
-  }
-  // Trace forward to files
-  function traceForward(nodeId) {
-    if (visited.has(nodeId)) return;
-    visited.add(nodeId);
-    const children = edgeIndex.forward[nodeId] || [];
-    for (const c of children) {
-      if (c.startsWith('canon:') && id.startsWith('canon:')) continue; // skip canon→canon
-      const cItem = allItems[c];
-      if (cItem) chain.push({ id: c, col: cItem.col, label: describeNode(c) });
-      traceForward(c);
-    }
-  }
-
-  const backChain = [];
-  const fwdChain = [];
-  const bVisited = new Set([id]);
-  function tb(nid) { for (const p of (edgeIndex.backward[nid]||[])) { if (!bVisited.has(p)) { bVisited.add(p); const it = allItems[p]; if(it) backChain.push({id:p,col:it.col,label:describeNode(p)}); tb(p); } } }
-  const fVisited = new Set([id]);
-  function tf(nid) { for (const c of (edgeIndex.forward[nid]||[])) { if (!fVisited.has(c) && !(c.startsWith('canon:')&&id.startsWith('canon:'))) { fVisited.add(c); const it = allItems[c]; if(it) fwdChain.push({id:c,col:it.col,label:describeNode(c)}); tf(c); } } }
-  tb(id); tf(id);
-
-  if (backChain.length === 0 && fwdChain.length === 0) return '';
-
-  let html = '<div class="detail-section"><h3>Provenance Chain</h3><div class="provenance-chain">';
-  const colIcon = { spec:'📄', clause:'📋', canon:'📐', iu:'📦', file:'⚡' };
-  for (const step of backChain.reverse()) {
-    html += '<div class="provenance-step"><span class="arrow">↑</span><div><div class="label">'+(colIcon[step.col]||'')+' '+step.col+'</div><div class="value">'+esc(step.label)+'</div></div></div>';
-  }
-  html += '<div class="provenance-step" style="border-left:2px solid var(--cyan);"><span class="arrow">●</span><div><div class="label" style="color:var(--cyan)">selected</div><div class="value">'+esc(describeNode(id))+'</div></div></div>';
-  for (const step of fwdChain) {
-    html += '<div class="provenance-step"><span class="arrow">↓</span><div><div class="label">'+(colIcon[step.col]||'')+' '+step.col+'</div><div class="value">'+esc(step.label)+'</div></div></div>';
-  }
-  html += '</div></div>';
-  return html;
-}
-
-function describeNode(id) {
-  const item = allItems[id];
-  if (!item) return id;
-  const d = item.data;
-  if (item.col === 'spec') return d.path;
-  if (item.col === 'clause') return d.sectionPath + ' ' + d.lineRange;
-  if (item.col === 'canon') return d.statement.slice(0,80);
-  if (item.col === 'iu') return d.name + ' (' + d.riskTier + ')';
-  if (item.col === 'file') return d.path;
-  return id;
-}
-
-function canonBadge(type) {
-  const cls = {REQUIREMENT:'req',CONSTRAINT:'con',INVARIANT:'inv',DEFINITION:'def'}[type]||'req';
-  return '<span class="badge badge-'+cls+'">'+type+'</span>';
-}
-
-function closeDetail() {
-  document.getElementById('detail').classList.remove('open');
-  clearSelection();
-}
-
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
-document.addEventListener('click', e => {
-  if (!e.target.closest('.card') && !e.target.closest('.detail-panel')) closeDetail();
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.card')&&!e.target.closest('.graph-overlay')&&!e.target.closest('.header'))deselect();
 });
+window.addEventListener('resize',()=>{if(selId&&mode==='focus')requestAnimationFrame(drawLines)});
 
-renderPipeline();
+render();
 </script>
 </body>
 </html>`;
