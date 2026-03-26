@@ -15,13 +15,7 @@ import type { LLMProvider } from './llm/provider.js';
 import { sha256 } from './semhash.js';
 import { extractCandidates } from './canonicalizer.js';
 import { resolveGraph } from './resolution.js';
-
-// ─── LLM-as-Normalizer ──────────────────────────────────────────────────────
-
-const NORMALIZER_SYSTEM = `You are a requirements engineer. Rewrite the given statement in canonical form.
-Rules: one clear sentence, present tense, active voice, no pronouns, no ambiguity.
-Output ONLY a JSON object: {"statement": "..."}
-No markdown, no explanation.`;
+import { CONFIG } from './experiment-config.js';
 
 export interface LLMCanonOptions {
   /** Enable self-consistency with k samples (default: 1 = no self-consistency) */
@@ -72,9 +66,9 @@ async function normalizeCandidates(
       if (k <= 1) {
         // Single-shot normalization
         const response = await llm.generate(prompt, {
-          system: NORMALIZER_SYSTEM,
-          temperature: 0,
-          maxTokens: 150,
+          system: CONFIG.LLM_NORMALIZER_SYSTEM,
+          temperature: CONFIG.LLM_NORMALIZER_TEMPERATURE,
+          maxTokens: CONFIG.LLM_NORMALIZER_MAX_TOKENS,
         });
         const normalized = parseNormalizerResponse(response);
         if (normalized && normalized.length > 5) {
@@ -88,9 +82,9 @@ async function normalizeCandidates(
         const samples: string[] = [];
         for (let i = 0; i < k; i++) {
           const response = await llm.generate(prompt, {
-            system: NORMALIZER_SYSTEM,
-            temperature: i === 0 ? 0 : 0.3, // first sample at temp=0, rest at 0.3
-            maxTokens: 150,
+            system: CONFIG.LLM_NORMALIZER_SYSTEM,
+            temperature: i === 0 ? CONFIG.LLM_NORMALIZER_TEMPERATURE : CONFIG.LLM_CONSISTENCY_TEMPERATURE,
+            maxTokens: CONFIG.LLM_NORMALIZER_MAX_TOKENS,
           });
           const parsed = parseNormalizerResponse(response);
           if (parsed && parsed.length > 5) samples.push(parsed);
@@ -179,23 +173,7 @@ function parseNormalizerResponse(raw: string): string | null {
 
 // ─── LLM-as-Extractor (behind --llm-extract flag) ───────────────────────────
 
-const EXTRACT_SYSTEM = `You are a requirements engineer extracting structured canonical nodes from specification text.
-
-For each meaningful statement, extract a JSON object with:
-- type: one of REQUIREMENT, CONSTRAINT, INVARIANT, DEFINITION, CONTEXT
-- statement: the normalized canonical statement (clear, unambiguous, one idea)
-- tags: array of key domain terms (lowercase, no stop words)
-- source_section: the section heading this was extracted from
-
-Rules:
-- REQUIREMENT: something the system must do (capabilities, features)
-- CONSTRAINT: something the system must NOT do, or limits/bounds
-- INVARIANT: something that must ALWAYS or NEVER hold
-- DEFINITION: defines a term or concept
-- CONTEXT: framing text that gives meaning but isn't actionable alone
-
-Output a JSON array. No markdown fences, no explanation.
-Every node MUST include source_section.`;
+// Extractor system prompt loaded from CONFIG
 
 interface LLMExtractedNode {
   type: string;
@@ -230,7 +208,7 @@ async function extractBatchLLM(
   clauses: Clause[],
   llm: LLMProvider,
 ): Promise<CandidateNode[]> {
-  const BATCH_SIZE = 20;
+  const BATCH_SIZE = CONFIG.LLM_EXTRACTOR_BATCH_SIZE;
   const allCandidates: CandidateNode[] = [];
 
   for (let i = 0; i < clauses.length; i += BATCH_SIZE) {
@@ -238,9 +216,9 @@ async function extractBatchLLM(
     const prompt = buildExtractPrompt(batch);
 
     const response = await llm.generate(prompt, {
-      system: EXTRACT_SYSTEM,
-      temperature: 0.1,
-      maxTokens: 4096,
+      system: CONFIG.LLM_EXTRACTOR_SYSTEM,
+      temperature: CONFIG.LLM_EXTRACTOR_TEMPERATURE,
+      maxTokens: CONFIG.LLM_EXTRACTOR_MAX_TOKENS,
     });
 
     const parsed = parseLLMExtractResponse(response);
@@ -262,7 +240,7 @@ async function extractBatchLLM(
         candidate_id: candidateId,
         type,
         statement: item.statement,
-        confidence: 0.7, // LLM extraction gets moderate confidence
+        confidence: CONFIG.LLM_EXTRACTOR_CONFIDENCE,
         source_clause_ids: [sourceClause.clause_id],
         tags: item.tags || [],
         sentence_index: idx,

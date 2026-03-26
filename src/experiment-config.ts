@@ -44,6 +44,39 @@ export const CONFIG = {
   // ─── warm-hasher.ts ───────────────────────────────────────────────────────
   WARM_MIN_CONFIDENCE: 0.3,
 
+  // ─── canonicalizer-llm.ts ─────────────────────────────────────────────────
+  LLM_MODE: 'normalizer' as 'normalizer' | 'extractor',
+  LLM_MODEL: 'claude-sonnet-4-20250514',
+  LLM_NORMALIZER_TEMPERATURE: 0,
+  LLM_NORMALIZER_MAX_TOKENS: 150,
+  LLM_NORMALIZER_SYSTEM: `You are a requirements engineer. Rewrite the given statement in canonical form.
+Rules: one clear sentence, present tense, active voice, no pronouns, no ambiguity.
+Output ONLY a JSON object: {"statement": "..."}
+No markdown, no explanation.`,
+  LLM_SELF_CONSISTENCY_K: 1,
+  LLM_CONSISTENCY_TEMPERATURE: 0.3,
+  LLM_EXTRACTOR_TEMPERATURE: 0.1,
+  LLM_EXTRACTOR_MAX_TOKENS: 4096,
+  LLM_EXTRACTOR_BATCH_SIZE: 20,
+  LLM_EXTRACTOR_CONFIDENCE: 0.7,
+  LLM_EXTRACTOR_SYSTEM: `You are a requirements engineer extracting structured canonical nodes from specification text.
+
+For each meaningful statement, extract a JSON object with:
+- type: one of REQUIREMENT, CONSTRAINT, INVARIANT, DEFINITION, CONTEXT
+- statement: the normalized canonical statement (clear, unambiguous, one idea)
+- tags: array of key domain terms (lowercase, no stop words)
+- source_section: the section heading this was extracted from
+
+Rules:
+- REQUIREMENT: something the system must do (capabilities, features)
+- CONSTRAINT: something the system must NOT do, or limits/bounds
+- INVARIANT: something that must ALWAYS or NEVER hold
+- DEFINITION: defines a term or concept
+- CONTEXT: framing text that gives meaning but isn't actionable alone
+
+Output a JSON array. No markdown fences, no explanation.
+Every node MUST include source_section.`,
+
   // ─── classifier.ts ────────────────────────────────────────────────────────
   CLASS_A_NORM_DIFF: 0.1,
   CLASS_A_TERM_DELTA: 0.2,

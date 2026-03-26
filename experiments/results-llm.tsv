@@ -1,0 +1,2 @@
+timestamp	score	recall	type_acc	coverage	d_rate	hier	orphan	mode	model	k
+2026-03-26T23:55:33.960Z	0.8599	70.8	82.8	99.7	5.5	99.4	6.6	normalizer	claude-sonnet-4-20250514	1
