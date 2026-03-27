@@ -1,0 +1,15 @@
+export * as ingestion from './ingestion/index.js';
+export * as canonicalization from './canonicalization/index.js';
+export * as implementation from './implementation/index.js';
+export * as integrity from './integrity/index.js';
+export * as operations from './operations/index.js';
+export * as platform from './platform/index.js';
+
+export const services = [
+  { name: 'Ingestion', dir: 'ingestion', port: 3001, modules: 2 },
+  { name: 'Canonicalization', dir: 'canonicalization', port: 3002, modules: 2 },
+  { name: 'Implementation', dir: 'implementation', port: 3003, modules: 2 },
+  { name: 'Integrity', dir: 'integrity', port: 3004, modules: 3 },
+  { name: 'Operations', dir: 'operations', port: 3005, modules: 3 },
+  { name: 'Platform', dir: 'platform', port: 3006, modules: 2 },
+] as const;
