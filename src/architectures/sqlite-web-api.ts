@@ -121,8 +121,15 @@ import { z } from 'zod';
 
 ### Data model
 - Use integer primary keys with AUTOINCREMENT.
-- Include a \`completed\` boolean column (as INTEGER 0/1) for task/todo resources when the spec mentions it.
+- ALWAYS use snake_case for column names: category_id, created_at, updated_at — NEVER categoryid or createdat.
+- ALWAYS use snake_case for JSON response keys: category_name, created_at — NEVER categoryname or createdat.
 - Include \`created_at TEXT NOT NULL DEFAULT (datetime('now'))\` for timestamps.
+- Foreign key columns must match the referenced table: \`category_id INTEGER REFERENCES categories(id)\`
+
+### Stats / aggregate endpoints
+- If the spec describes a stats or aggregate endpoint, implement it as a route on the same router.
+- Use SQL aggregate functions (COUNT, SUM, AVG) with GROUP BY.
+- Return the JSON structure EXACTLY as the spec describes, using snake_case keys.
 `;
 
 const CODE_EXAMPLES = `

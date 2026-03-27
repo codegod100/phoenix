@@ -25,7 +25,7 @@ A REST API for managing todo lists and items, with categories and basic stats.
 
 ## Stats
 
-- GET /stats must return a JSON object with: total (total todo count), completed (completed count), incomplete (incomplete count), by_category (array of {category_name, count} ordered by count descending)
+- GET /todos/stats must return a JSON object with: total (total todo count), completed (completed count), incomplete (incomplete count), by_category (array of {category_name, count} ordered by count descending)
 
 ## Error Handling
 

@@ -236,14 +236,14 @@ await test('GET /todos?category_id=N filters by category', async () => {
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
 await test('GET /stats returns counts', async () => {
-  const res = await fetch(`${BASE}/stats`);
+  const res = await fetch(`${BASE}/todos/stats`);
   if (res.status !== 200) return false;
   const body = await res.json() as Record<string, unknown>;
   return typeof body.total === 'number' && typeof body.completed === 'number' && typeof body.incomplete === 'number';
 });
 
 await test('GET /stats includes by_category', async () => {
-  const res = await fetch(`${BASE}/stats`);
+  const res = await fetch(`${BASE}/todos/stats`);
   if (res.status !== 200) return false;
   const body = await res.json() as Record<string, unknown>;
   const byCat = body.by_category as Array<Record<string, unknown>> | undefined;
