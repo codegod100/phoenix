@@ -8,7 +8,8 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { join, resolve, relative, basename } from 'node:path';
+import { execSync } from 'node:child_process';
+import { join, resolve, relative, basename, dirname } from 'node:path';
 
 // Stores
 import { SpecStore } from './store/spec-store.js';
@@ -386,6 +387,30 @@ async function cmdBootstrap(): Promise<void> {
         if (arch) console.log(`  ${dim('Architecture:')} ${cyan(arch.name)} — ${arch.description}`);
       }
     } catch { /* ignore */ }
+  }
+
+  // Write shared architecture files BEFORE code generation
+  // so the typecheck-retry loop can resolve imports like ../../db.js
+  if (arch) {
+    for (const [filePath, content] of Object.entries(arch.sharedFiles)) {
+      const fullPath = join(projectRoot, filePath);
+      mkdirSync(dirname(fullPath), { recursive: true });
+      writeFileSync(fullPath, content, 'utf8');
+    }
+    // Write package.json with arch deps so tsc can resolve types during generation
+    const earlyPkg = {
+      name: basename(projectRoot),
+      version: '0.1.0',
+      type: 'module',
+      dependencies: arch.packages,
+      devDependencies: arch.devPackages,
+    };
+    const pkgPath = join(projectRoot, 'package.json');
+    writeFileSync(pkgPath, JSON.stringify(earlyPkg, null, 2) + '\n', 'utf8');
+    // Install so type declarations are available for typecheck-retry
+    try {
+      execSync('npm install --silent 2>/dev/null', { cwd: projectRoot, stdio: 'pipe', timeout: 60000 });
+    } catch { /* best effort */ }
   }
 
   const regenCtx: RegenContext = {

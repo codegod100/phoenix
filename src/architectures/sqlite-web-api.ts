@@ -213,14 +213,121 @@ export const _phoenix = {
 } as const;
 \`\`\`
 
-### Key patterns to follow:
-1. registerMigration() at module scope — idempotent CREATE TABLE IF NOT EXISTS
-2. Zod schemas for create/update request validation
-3. .safeParse() + early return with 400 on failure
-4. Parameterized SQL queries (? placeholders)
-5. Return the created/updated resource after mutation
-6. 404 checks before update/delete
-7. Export default router + export _phoenix metadata
+### Example 2: Resource with foreign keys, JOINs, filtering, and cascade protection
+
+\`\`\`typescript
+import { Hono } from 'hono';
+import { db, registerMigration } from '../../db.js';
+import { z } from 'zod';
+
+// Register migrations for BOTH tables this module touches
+registerMigration('projects', \`
+  CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+\`);
+
+registerMigration('tasks', \`
+  CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0,
+    project_id INTEGER REFERENCES projects(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+\`);
+
+const CreateTaskSchema = z.object({
+  title: z.string().min(1).max(200),
+  project_id: z.number().int().optional(),
+});
+
+const UpdateTaskSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  done: z.number().int().min(0).max(1).optional(),
+  project_id: z.number().int().nullable().optional(),
+});
+
+const router = new Hono();
+
+// List with LEFT JOIN and optional query filters
+router.get('/', (c) => {
+  let sql = 'SELECT tasks.*, projects.name as project_name FROM tasks LEFT JOIN projects ON tasks.project_id = projects.id';
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  const done = c.req.query('done');
+  if (done !== undefined) { conditions.push('tasks.done = ?'); params.push(Number(done)); }
+
+  const projectId = c.req.query('project_id');
+  if (projectId !== undefined) { conditions.push('tasks.project_id = ?'); params.push(Number(projectId)); }
+
+  if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
+  sql += ' ORDER BY tasks.created_at DESC';
+
+  return c.json(db.prepare(sql).all(...params));
+});
+
+// Get single with JOIN
+router.get('/:id', (c) => {
+  const row = db.prepare('SELECT tasks.*, projects.name as project_name FROM tasks LEFT JOIN projects ON tasks.project_id = projects.id WHERE tasks.id = ?').get(c.req.param('id'));
+  if (!row) return c.json({ error: 'Not found' }, 404);
+  return c.json(row);
+});
+
+// Create with FK validation
+router.post('/', async (c) => {
+  let body; try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  const result = CreateTaskSchema.safeParse(body);
+  if (!result.success) return c.json({ error: result.error.issues[0].message }, 400);
+  const { title, project_id } = result.data;
+  if (project_id !== undefined) {
+    const proj = db.prepare('SELECT id FROM projects WHERE id = ?').get(project_id);
+    if (!proj) return c.json({ error: 'Project not found' }, 400);
+  }
+  const info = db.prepare('INSERT INTO tasks (title, project_id) VALUES (?, ?)').run(title, project_id ?? null);
+  const task = db.prepare('SELECT tasks.*, projects.name as project_name FROM tasks LEFT JOIN projects ON tasks.project_id = projects.id WHERE tasks.id = ?').get(info.lastInsertRowid);
+  return c.json(task, 201);
+});
+
+// Update
+router.patch('/:id', async (c) => {
+  const id = c.req.param('id');
+  if (!db.prepare('SELECT id FROM todos WHERE id = ?').get(id)) return c.json({ error: 'Not found' }, 404);
+  let body; try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  const result = UpdateTaskSchema.safeParse(body);
+  if (!result.success) return c.json({ error: result.error.issues[0].message }, 400);
+  const u = result.data;
+  if (u.title !== undefined) db.prepare('UPDATE tasks SET title = ? WHERE id = ?').run(u.title, id);
+  if (u.done !== undefined) db.prepare('UPDATE tasks SET done = ? WHERE id = ?').run(u.done, id);
+  if (u.project_id !== undefined) db.prepare('UPDATE tasks SET project_id = ? WHERE id = ?').run(u.project_id, id);
+  return c.json(db.prepare('SELECT tasks.*, projects.name as project_name FROM tasks LEFT JOIN projects ON tasks.project_id = projects.id WHERE tasks.id = ?').get(id));
+});
+
+// Delete
+router.delete('/:id', (c) => {
+  const id = c.req.param('id');
+  if (!db.prepare('SELECT id FROM tasks WHERE id = ?').get(id)) return c.json({ error: 'Not found' }, 404);
+  db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
+  return c.body(null, 204);
+});
+
+export default router;
+export const _phoenix = { iu_id: 'example2', name: 'Tasks', risk_tier: 'medium', canon_ids: [] } as const;
+\`\`\`
+
+### Key patterns:
+1. \`import { db, registerMigration } from '../../db.js'\` — ALWAYS use this exact import
+2. registerMigration() for ALL tables the module touches, including referenced tables
+3. LEFT JOIN to include related resource names (e.g., category_name, project_name)
+4. Query parameter filtering with dynamic WHERE clause building
+5. Foreign key validation: check referenced row exists before INSERT
+6. Cascade protection: check for dependent rows before DELETE of parent resource
+7. Zod schemas for create/update validation
+8. Return the created/updated resource with JOINed data after mutation
+9. Export default router + export _phoenix metadata
 `;
 
 // ─── Architecture definition ────────────────────────────────────────────────
