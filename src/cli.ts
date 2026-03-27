@@ -990,11 +990,22 @@ async function cmdRegen(args: string[]): Promise<void> {
   }
   console.log();
 
+  // Load architecture
+  const configPath = join(phoenixDir, 'config.json');
+  let regenArch: Architecture | null = null;
+  if (existsSync(configPath)) {
+    try {
+      const cfg = JSON.parse(readFileSync(configPath, 'utf8'));
+      if (cfg.architecture) regenArch = getArchitecture(cfg.architecture);
+    } catch { /* ignore */ }
+  }
+
   const regenCtx: RegenContext = {
     llm: llm ?? undefined,
     canonNodes,
     allIUs: ius,
     projectRoot,
+    architecture: regenArch,
     onProgress: (iu, status, msg) => {
       if (status === 'start') process.stdout.write(`  ⏳ ${iu.name}…`);
       else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);

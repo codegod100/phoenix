@@ -89,6 +89,17 @@ const SYSTEM_PROMPT_EXTENSION = `
 
 You are generating a route handler module for a Hono REST API backed by SQLite.
 
+### Translating user requirements to implementation
+- The spec describes what USERS do, not API endpoints. YOU must derive the REST endpoints, database schema, and SQL queries from the user behaviors.
+- "Users can create X" → POST endpoint with validation + INSERT query
+- "Users can view X" → GET endpoint with SELECT query (consider JOINs for related data)
+- "Users can edit X" → PATCH endpoint with UPDATE query
+- "Users can delete X" → DELETE endpoint with safety checks
+- "Users can filter by Y" → query parameters on GET endpoints (?status=active&priority=urgent)
+- "Show X sorted by Y" → ORDER BY clause in SQL
+- "X must be visually highlighted" → this is a UI concern handled by the web interface module, not the API
+- "Expose a programmatic interface" → this is what you're building: the REST API IS the programmatic interface
+
 ### CRITICAL import rules — follow EXACTLY, no exceptions
 
 Your file MUST start with these EXACT three import lines:
@@ -340,9 +351,11 @@ export const _phoenix = { iu_id: 'example2', name: 'Tasks', risk_tier: 'medium',
 4. Query parameter filtering with dynamic WHERE clause building
 5. Foreign key validation: check referenced row exists before INSERT
 6. Cascade protection: check for dependent rows before DELETE of parent resource
-7. Zod schemas for create/update validation
+7. Zod schemas for create/update validation — use z.enum() for fixed sets like priority levels
 8. Return the created/updated resource with JOINed data after mutation
 9. Export default router + export _phoenix metadata
+10. For sorting by priority/urgency, use a CASE expression: ORDER BY CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 WHEN 'low' THEN 3 END
+11. For "overdue" logic: WHERE due_date < date('now') AND completed = 0
 `;
 
 // ─── Architecture definition ────────────────────────────────────────────────

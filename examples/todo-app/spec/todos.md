@@ -1,47 +1,65 @@
-# Todo API
+# Todoist-style Task Manager
 
-A REST API for managing todo lists and items, with categories and basic stats.
+A personal task manager for organizing work and life. Users manage tasks across projects with priorities, due dates, and completion tracking. The app should be usable from a web browser and integratable from other applications so tasks can surface in Slack, calendar apps, and other tools.
 
-## Categories
+## Tasks
 
-- A category has: id (integer, auto-increment), name (text, required, unique), color (text, default '#888888')
-- GET /categories must return all categories as a JSON array
-- POST /categories must create a category and return it with 201
-- DELETE /categories/:id must delete a category and return 204; if the category has todos, return 400 with an error
-- Category name must not be empty and must be at most 50 characters
+- A task has a title, an optional description, a priority (urgent, high, normal, low), an optional due date, and a completion status
+- Users can create tasks by providing at least a title
+- Users can view all their tasks, with the most urgent and overdue tasks shown first
+- Users can mark a task as complete or reopen a completed task
+- Users can edit a task's title, description, priority, or due date at any time
+- Users can delete a task permanently
+- Overdue tasks must be visually highlighted so they stand out
+- Completed tasks must be visually distinct from active tasks (e.g., strikethrough, dimmed)
 
-## Todos
+## Projects
 
-- A todo has: id (integer, auto-increment), title (text, required), completed (integer 0 or 1, default 0), category_id (integer, nullable foreign key to categories), created_at (timestamp, default now)
-- GET /todos must return all todos ordered by created_at descending, each todo must include its category name (as category_name) if it has one
-- GET /todos?completed=1 must filter to only completed todos; GET /todos?completed=0 must filter to only incomplete todos
-- GET /todos?category_id=N must filter to only todos in that category
-- GET /todos/:id must return a single todo with category_name included, or 404
-- POST /todos must create a todo with title and optional category_id, return 201
-- PATCH /todos/:id must update title, completed, and/or category_id
-- DELETE /todos/:id must delete a todo and return 204, or 404
-- Title must not be empty and must be at most 200 characters
-- If category_id is provided, it must reference an existing category; return 400 otherwise
+- A project has a name and a color for visual identification
+- Users can create projects to group related tasks
+- Users can assign a task to a project, or leave it in a default "Inbox" with no project
+- Users can view tasks filtered by project
+- Users can delete a project only if it contains no tasks; the system must warn them otherwise
+- The project list must show how many active (incomplete) tasks each project has
 
-## Stats
+## Filtering and Views
 
-- GET /todos/stats must return a JSON object with: total (total todo count), completed (completed count), incomplete (incomplete count), by_category (array of {category_name, count} ordered by count descending)
+- Users can filter tasks by status: all, active (not completed), or completed
+- Users can filter tasks by project
+- Users can filter tasks by priority
+- Filters must be combinable: a user can view "all urgent tasks in the Work project" for example
+- The current filter state must be visible so users know what they're looking at
 
-## Web Interface
+## Quick Stats
 
-- GET / must serve a single-page HTML application with inline CSS and JavaScript
-- The page must display a header with the title "Todos" and a stats summary showing total, completed, and incomplete counts
-- The page must display a form to create new todos with a text input for title and a dropdown to select a category (populated from GET /categories)
-- The page must display all todos as a list, each showing the title, category name as a colored badge, and a checkbox for completed status
-- Clicking the checkbox must toggle the todo's completed status via PATCH /todos/:id
-- Each todo must have a delete button that removes it via DELETE /todos/:id
-- The page must display a category management section where users can add new categories with a name and color picker, and delete empty categories
-- The page must include filter buttons: All, Active (incomplete), Completed
-- The page must refresh the todo list and stats after every create, update, or delete action
-- The design must be clean and modern with a centered layout, max-width 640px, system-ui font, subtle shadows, and a light color scheme
+- Users must see a summary showing: total tasks, completed tasks, overdue tasks, and completion percentage
+- The summary must update immediately when tasks are created, completed, or deleted
 
-## Error Handling
+## Integration
 
-- All error responses must be JSON with an "error" field
-- Invalid JSON bodies must return 400
-- Validation failures must return 400
+- The system must expose a programmatic interface so external tools can create, read, update, and delete tasks and projects
+- The programmatic interface must use standard conventions so it works with common integration platforms (Zapier, Slack bots, calendar sync)
+- Every task and project must have a stable unique identifier that external systems can reference
+
+## Web Experience
+
+- When users open the app in a browser, they see their task list immediately with no login required
+- The main view shows a sidebar with projects (each with its color dot and active task count) and an "Inbox" option for unassigned tasks
+- The main area shows the task list for the currently selected project or inbox, with the stats summary at the top
+- Each task shows its title, priority as a colored badge (urgent=red, high=orange, normal=blue, low=gray), project name if assigned, due date if set, and a checkbox to toggle completion
+- Completed tasks appear with a strikethrough title and dimmed appearance
+- Overdue tasks have a red highlight or badge showing they are past due
+- There is a prominent "Add task" form at the top of the task list with fields for title, description (collapsible), priority dropdown, project dropdown, and due date picker
+- Filter buttons for All / Active / Completed appear above the task list, along with a priority filter dropdown
+- Users can delete a task via a small delete button that appears on hover
+- The design must be clean, modern, and responsive with a maximum content width of 800px, system-ui font, and a light neutral color scheme with colored accents for priorities and projects
+- All interactions (create, complete, edit, delete, filter) must work without page reloads by calling the programmatic interface and updating the display
+
+## Data Integrity
+
+- Task titles must not be empty and must not exceed 500 characters
+- Descriptions must not exceed 5000 characters
+- Priority must always be one of: urgent, high, normal, low
+- Due dates must be valid dates; the system must reject obviously invalid dates
+- Deleting a project must never silently delete its tasks
+- The system must never lose data due to concurrent updates; last-write-wins is acceptable for this version
