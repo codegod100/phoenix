@@ -17,7 +17,8 @@ import type { ImplementationUnit } from './models/iu.js';
 import type { CanonicalNode } from './models/canonical.js';
 import type { IUManifest, RegenMetadata, FileManifestEntry } from './models/manifest.js';
 import type { LLMProvider } from './llm/provider.js';
-import { buildPrompt, SYSTEM_PROMPT } from './llm/prompt.js';
+import { buildPrompt, getSystemPrompt } from './llm/prompt.js';
+import type { Architecture } from './models/architecture.js';
 import { sha256 } from './semhash.js';
 
 const TOOLCHAIN_VERSION = 'phoenix-regen/0.1.0';
@@ -37,6 +38,8 @@ export interface RegenContext {
   allIUs?: ImplementationUnit[];
   /** Project root directory (for typecheck-and-retry). */
   projectRoot?: string;
+  /** Architecture target (e.g., sqlite-web-api). */
+  architecture?: Architecture | null;
   /** Callback for progress reporting. */
   onProgress?: (iu: ImplementationUnit, status: 'start' | 'done' | 'error', message?: string) => void;
 }
@@ -55,7 +58,7 @@ export async function generateIU(iu: ImplementationUnit, ctx?: RegenContext): Pr
     if (ctx?.llm && ctx.canonNodes) {
       ctx.onProgress?.(iu, 'start', `Generating ${iu.name} via ${ctx.llm.name}…`);
       try {
-        content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx.allIUs, ctx.projectRoot);
+        content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx.allIUs, ctx.projectRoot, ctx.architecture);
         ctx.onProgress?.(iu, 'done');
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -128,6 +131,7 @@ async function generateWithLLM(
   canonNodes: CanonicalNode[],
   allIUs?: ImplementationUnit[],
   projectRoot?: string,
+  arch?: Architecture | null,
 ): Promise<string> {
   // Find sibling modules in the same service
   const iuDir = iu.output_files[0]?.split('/').slice(0, -1).join('/');
@@ -135,10 +139,11 @@ async function generateWithLLM(
     ?.filter(other => other.iu_id !== iu.iu_id && other.output_files[0]?.startsWith(iuDir || ''))
     .map(other => other.name) ?? [];
 
-  const prompt = buildPrompt(iu, canonNodes, siblings);
+  const systemPrompt = getSystemPrompt(arch);
+  const prompt = buildPrompt(iu, canonNodes, siblings, arch);
 
   let code = cleanCodeResponse(await llm.generate(prompt, {
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     temperature: 0.2,
     maxTokens: 8192,
   }));
@@ -152,7 +157,7 @@ async function generateWithLLM(
       // Feed errors back to LLM
       const fixPrompt = buildFixPrompt(code, errors);
       code = cleanCodeResponse(await llm.generate(fixPrompt, {
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         temperature: 0.1,
         maxTokens: 8192,
       }));

@@ -56,6 +56,10 @@ import { collectInspectData, renderInspectHTML, serveInspect } from './inspect.j
 // LLM
 import { resolveProvider, describeAvailability } from './llm/resolve.js';
 
+// Architectures
+import { getArchitecture, listArchitectures } from './architectures/index.js';
+import type { Architecture } from './models/architecture.js';
+
 // Audit & Fowler gaps
 import { auditIU, auditAll } from './audit.js';
 import type { AuditResult, ReadinessLevel } from './audit.js';
@@ -231,7 +235,7 @@ function printDiagnosticTable(diagnostics: Diagnostic[]): void {
 
 // ─── Commands ────────────────────────────────────────────────────────────────
 
-function cmdInit(): void {
+function cmdInit(args?: string[]): void {
   const projectRoot = process.cwd();
   const phoenixDir = join(projectRoot, '.phoenix');
 
@@ -246,6 +250,21 @@ function cmdInit(): void {
 
   const machine = new BootstrapStateMachine();
   saveBootstrapState(phoenixDir, machine);
+
+  // Save architecture choice if specified
+  const archArg = args?.find(a => a.startsWith('--arch='))?.split('=')[1];
+  if (archArg) {
+    const arch = getArchitecture(archArg);
+    if (!arch) {
+      console.log(red(`✖ Unknown architecture: ${archArg}`));
+      console.log(`  Available: ${listArchitectures().join(', ')}`);
+      return;
+    }
+    const configPath = join(phoenixDir, 'config.json');
+    const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {};
+    config.architecture = archArg;
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+  }
 
   // Ensure spec/ directory exists
   const specDir = join(projectRoot, 'spec');
@@ -264,6 +283,9 @@ function cmdInit(): void {
   console.log(`  ${dim('Project root:')}  ${projectRoot}`);
   console.log(`  ${dim('Phoenix dir:')}   ${phoenixDir}`);
   console.log(`  ${dim('State:')}         ${BootstrapState.BOOTSTRAP_COLD}`);
+  if (archArg) {
+    console.log(`  ${dim('Architecture:')} ${cyan(archArg)}`);
+  }
   console.log();
   console.log(`  ${dim('Next steps:')}`);
   console.log(`    1. Add spec documents to ${cyan('spec/')}`);
@@ -353,11 +375,25 @@ async function cmdBootstrap(): Promise<void> {
     console.log(`    ${dim(hint)}`);
   }
 
+  // Load architecture from config
+  const configPath = join(phoenixDir, 'config.json');
+  let arch: Architecture | null = null;
+  if (existsSync(configPath)) {
+    try {
+      const config = JSON.parse(readFileSync(configPath, 'utf8'));
+      if (config.architecture) {
+        arch = getArchitecture(config.architecture);
+        if (arch) console.log(`  ${dim('Architecture:')} ${cyan(arch.name)} — ${arch.description}`);
+      }
+    } catch { /* ignore */ }
+  }
+
   const regenCtx: RegenContext = {
     llm: llm ?? undefined,
     canonNodes,
     allIUs: ius,
     projectRoot,
+    architecture: arch,
     onProgress: (iu, status, msg) => {
       if (status === 'start') process.stdout.write(`    ⏳ ${iu.name}…`);
       else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);
@@ -384,7 +420,7 @@ async function cmdBootstrap(): Promise<void> {
   console.log(`  ${dim('Scaffold:')} Service wiring + project config`);
   const services = deriveServices(ius);
   const projectName = basename(projectRoot);
-  const scaffold = generateScaffold(services, projectName);
+  const scaffold = generateScaffold(services, projectName, arch);
   for (const [filePath, content] of scaffold.files) {
     const fullPath = join(projectRoot, filePath);
     mkdirSync(join(fullPath, '..'), { recursive: true });
@@ -1433,7 +1469,7 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'init':
-      cmdInit();
+      cmdInit(commandArgs);
       break;
     case 'bootstrap':
       await cmdBootstrap();

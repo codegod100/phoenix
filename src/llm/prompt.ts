@@ -7,6 +7,7 @@
 
 import type { ImplementationUnit } from '../models/iu.js';
 import type { CanonicalNode } from '../models/canonical.js';
+import type { Architecture } from '../models/architecture.js';
 
 export const SYSTEM_PROMPT = `You are a senior TypeScript engineer generating production-quality module implementations for Phoenix VCS.
 
@@ -31,10 +32,42 @@ Rules:
 /**
  * Build the user prompt for generating an IU implementation.
  */
+/**
+ * Get the system prompt, optionally extended with architecture-specific rules.
+ */
+export function getSystemPrompt(arch?: Architecture | null): string {
+  if (!arch) return SYSTEM_PROMPT;
+
+  const allowedPkgs = Object.keys(arch.packages).map(p => `'${p}'`).join(', ');
+
+  // Build a fresh system prompt for architecture mode — don't try to patch the generic one
+  return `You are a senior TypeScript engineer generating production-quality module implementations.
+
+Rules:
+- Output ONLY the TypeScript module code. No markdown fences, no explanation.
+- The module must be a valid ES module (.ts) that compiles under strict mode.
+- Export all public functions and types.
+- Use descriptive types (not \`any\` or \`unknown\` where a real type is appropriate).
+- Implement the actual logic described in the requirements — not stubs or TODOs.
+- Keep the code clean, readable, and minimal. No over-engineering.
+- Include the _phoenix metadata constant exactly as specified.
+- You MUST import from these packages: ${allowedPkgs}. Use them as shown in the architecture examples below.
+- You may also use Node.js built-in modules (node:crypto, node:path, etc.).
+- Do NOT import any other packages. Do NOT re-implement functionality that the allowed packages provide.
+- Do NOT define your own Hono, Database, or Zod types — import them from the packages.
+- The code must compile under TypeScript strict mode (strict: true, no implicit any).
+- If the requirements describe validation rules, use Zod schemas.
+${arch.systemPromptExtension}`;
+}
+
+/**
+ * Build the user prompt for generating an IU implementation.
+ */
 export function buildPrompt(
   iu: ImplementationUnit,
   canonNodes: CanonicalNode[],
   siblingModules?: string[],
+  arch?: Architecture | null,
 ): string {
   const lines: string[] = [];
 
@@ -112,6 +145,12 @@ export function buildPrompt(
   lines.push(`} as const;`);
   lines.push('```');
   lines.push('');
+
+  // Architecture patterns (few-shot examples)
+  if (arch?.codeExamples) {
+    lines.push(arch.codeExamples);
+    lines.push('');
+  }
 
   lines.push('Output the complete TypeScript module now.');
 
