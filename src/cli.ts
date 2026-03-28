@@ -763,14 +763,49 @@ function cmdIngest(args: string[]): void {
   console.log();
 
   let totalClauses = 0;
+  let totalChanges = 0;
+
   for (const file of files) {
+    const docId = relative(projectRoot, file);
+
+    // Show diff BEFORE ingesting
+    const diffs = specStore.diffDocument(file, projectRoot);
+    const added = diffs.filter(d => d.diff_type === DiffType.ADDED).length;
+    const removed = diffs.filter(d => d.diff_type === DiffType.REMOVED).length;
+    const modified = diffs.filter(d => d.diff_type === DiffType.MODIFIED).length;
+    const hasChanges = added > 0 || removed > 0 || modified > 0;
+
+    // Now ingest (overwrites stored clauses)
     const result = specStore.ingestDocument(file, projectRoot);
     totalClauses += result.clauses.length;
-    console.log(`  ${green('✔')} ${relative(projectRoot, file)} → ${result.clauses.length} clauses`);
+
+    if (hasChanges) {
+      totalChanges += added + removed + modified;
+      console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses`);
+      if (added > 0) console.log(`    ${green(`+${added} added`)}`);
+      if (removed > 0) console.log(`    ${red(`-${removed} removed`)}`);
+      if (modified > 0) console.log(`    ${yellow(`~${modified} modified`)}`);
+
+      // Show which clauses changed
+      for (const d of diffs) {
+        if (d.diff_type === DiffType.UNCHANGED) continue;
+        const pathLabel = d.section_path_after?.join(' > ') || d.section_path_before?.join(' > ') || '';
+        const preview = (d.clause_after?.normalized_text || d.clause_before?.normalized_text || '').slice(0, 80);
+        const icon = d.diff_type === DiffType.ADDED ? green('+') : d.diff_type === DiffType.REMOVED ? red('-') : yellow('~');
+        console.log(`      ${icon} ${pathLabel}`);
+      }
+    } else {
+      console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses ${dim('(no changes)')}`);
+    }
   }
 
   console.log();
   console.log(`  ${dim(`Total: ${totalClauses} clauses ingested`)}`);
+  if (totalChanges > 0) {
+    console.log(`  ${dim(`Changes: ${totalChanges} clauses affected`)}`);
+    console.log();
+    console.log(`  ${dim('Next: run')} ${cyan('phoenix canonicalize')} ${dim('then')} ${cyan('phoenix regen')} ${dim('to update generated code')}`);
+  }
 }
 
 function cmdDiff(args: string[]): void {
