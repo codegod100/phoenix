@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { db, registerMigration } from '../../db.js';
 import { z } from 'zod';
 
-// Register table migrations
+// Register table migration
 registerMigration('projects', `
   CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -12,26 +12,13 @@ registerMigration('projects', `
   )
 `);
 
-registerMigration('tasks', `
-  CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    description TEXT DEFAULT '',
-    priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('urgent', 'high', 'normal', 'low')),
-    due_date TEXT,
-    completed INTEGER NOT NULL DEFAULT 0,
-    project_id INTEGER REFERENCES projects(id),
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`);
-
 const CreateProjectSchema = z.object({
-  name: z.string().min(1).max(200),
+  name: z.string().min(1).max(100),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().default('#3b82f6'),
 });
 
 const UpdateProjectSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
+  name: z.string().min(1).max(100).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
 });
 
@@ -41,11 +28,20 @@ const router = new Hono();
 router.get('/', (c) => {
   const projects = db.prepare(`
     SELECT 
-      p.*,
-      COALESCE(COUNT(CASE WHEN t.completed = 0 THEN 1 END), 0) as active_task_count
+      p.id,
+      p.name,
+      p.color,
+      p.created_at,
+      COALESCE(task_counts.active_count, 0) as active_task_count
     FROM projects p
-    LEFT JOIN tasks t ON p.id = t.project_id
-    GROUP BY p.id, p.name, p.color, p.created_at
+    LEFT JOIN (
+      SELECT 
+        project_id,
+        COUNT(*) as active_count
+      FROM tasks 
+      WHERE completed = 0
+      GROUP BY project_id
+    ) task_counts ON p.id = task_counts.project_id
     ORDER BY p.name
   `).all();
   return c.json(projects);
@@ -55,12 +51,21 @@ router.get('/', (c) => {
 router.get('/:id', (c) => {
   const project = db.prepare(`
     SELECT 
-      p.*,
-      COALESCE(COUNT(CASE WHEN t.completed = 0 THEN 1 END), 0) as active_task_count
+      p.id,
+      p.name,
+      p.color,
+      p.created_at,
+      COALESCE(task_counts.active_count, 0) as active_task_count
     FROM projects p
-    LEFT JOIN tasks t ON p.id = t.project_id
+    LEFT JOIN (
+      SELECT 
+        project_id,
+        COUNT(*) as active_count
+      FROM tasks 
+      WHERE completed = 0
+      GROUP BY project_id
+    ) task_counts ON p.id = task_counts.project_id
     WHERE p.id = ?
-    GROUP BY p.id, p.name, p.color, p.created_at
   `).get(c.req.param('id'));
   if (!project) return c.json({ error: 'Project not found' }, 404);
   return c.json(project);
@@ -86,7 +91,10 @@ router.post('/', async (c) => {
     const info = db.prepare('INSERT INTO projects (name, color) VALUES (?, ?)').run(name, color);
     const project = db.prepare(`
       SELECT 
-        p.*,
+        p.id,
+        p.name,
+        p.color,
+        p.created_at,
         0 as active_task_count
       FROM projects p
       WHERE p.id = ?
@@ -130,12 +138,21 @@ router.patch('/:id', async (c) => {
     
     const updated = db.prepare(`
       SELECT 
-        p.*,
-        COALESCE(COUNT(CASE WHEN t.completed = 0 THEN 1 END), 0) as active_task_count
+        p.id,
+        p.name,
+        p.color,
+        p.created_at,
+        COALESCE(task_counts.active_count, 0) as active_task_count
       FROM projects p
-      LEFT JOIN tasks t ON p.id = t.project_id
+      LEFT JOIN (
+        SELECT 
+          project_id,
+          COUNT(*) as active_count
+        FROM tasks 
+        WHERE completed = 0
+        GROUP BY project_id
+      ) task_counts ON p.id = task_counts.project_id
       WHERE p.id = ?
-      GROUP BY p.id, p.name, p.color, p.created_at
     `).get(id);
     return c.json(updated);
   } catch (error: any) {
@@ -155,10 +172,7 @@ router.delete('/:id', (c) => {
   // Check for tasks in this project
   const taskCount = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE project_id = ?').get(id) as { count: number };
   if (taskCount.count > 0) {
-    return c.json({ 
-      error: 'Cannot delete project that contains tasks',
-      task_count: taskCount.count 
-    }, 400);
+    return c.json({ error: 'Cannot delete project that contains tasks' }, 400);
   }
   
   db.prepare('DELETE FROM projects WHERE id = ?').run(id);
@@ -169,8 +183,8 @@ export default router;
 
 /** @internal Phoenix VCS traceability — do not remove. */
 export const _phoenix = {
-  iu_id: '684e98680b126a8a1535a88875ffb4157cfc3bc1881f7a6b34c2fdae1830e9b1',
+  iu_id: '4144f40fc7c93037f0d2e7445ad0d5911b755792604940786e5ea04a654683b6',
   name: 'Projects',
-  risk_tier: 'low',
-  canon_ids: [3 as const],
+  risk_tier: 'high',
+  canon_ids: [6 as const],
 } as const;

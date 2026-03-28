@@ -9,6 +9,12 @@ app.use('*', cors());
 
 app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
 
+// Error handler — log details and return JSON
+app.onError((err, c) => {
+  console.error('Unhandled error:', err.message, err.stack);
+  return c.json({ error: err.message }, 500);
+});
+
 /**
  * Mount a route module. Call this for each generated module.
  */

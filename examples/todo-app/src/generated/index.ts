@@ -7,5 +7,5 @@
 export * as todos from './todos/index.js';
 
 export const services = [
-  { name: 'Todos', dir: 'todos', port: 3000, modules: 7 },
+  { name: 'Todos', dir: 'todos', port: 3000, modules: 3 },
 ] as const;

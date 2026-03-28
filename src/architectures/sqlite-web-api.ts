@@ -56,6 +56,12 @@ app.use('*', cors());
 
 app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
 
+// Error handler — log details and return JSON
+app.onError((err, c) => {
+  console.error('Unhandled error:', err.message, err.stack);
+  return c.json({ error: err.message }, 500);
+});
+
 /**
  * Mount a route module. Call this for each generated module.
  */
@@ -121,6 +127,7 @@ import { z } from 'zod';
 - Include ALL CRUD routes for the resource in a single module (GET list, GET by id, POST create, PATCH update, DELETE).
 - Use better-sqlite3 synchronous API: db.prepare(sql).run(), .get(), .all()
 - Use parameterized queries ALWAYS — never interpolate user input into SQL.
+- In SQL strings, ALWAYS use single quotes for string literals: date('now'), datetime('now'). NEVER use double quotes — SQLite treats double quotes as column identifiers.
 - Parse request bodies with \`await c.req.json()\` and validate with Zod .safeParse().
 
 ### Response conventions
