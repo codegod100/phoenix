@@ -741,9 +741,11 @@ function printTrustDashboard(
 function cmdIngest(args: string[]): void {
   const { projectRoot, phoenixDir } = requirePhoenixRoot();
   const specStore = new SpecStore(phoenixDir);
+  const verbose = args.includes('-v') || args.includes('--verbose');
+  const filteredArgs = args.filter(a => a !== '-v' && a !== '--verbose');
 
   let files: string[];
-  if (args.length === 0) {
+  if (filteredArgs.length === 0) {
     files = findSpecFiles(projectRoot);
     if (files.length === 0) {
       console.log(yellow('⚠ No spec files found. Provide a path or add files to spec/.'));
@@ -790,9 +792,38 @@ function cmdIngest(args: string[]): void {
       for (const d of diffs) {
         if (d.diff_type === DiffType.UNCHANGED) continue;
         const pathLabel = d.section_path_after?.join(' > ') || d.section_path_before?.join(' > ') || '';
-        const preview = (d.clause_after?.normalized_text || d.clause_before?.normalized_text || '').slice(0, 80);
         const icon = d.diff_type === DiffType.ADDED ? green('+') : d.diff_type === DiffType.REMOVED ? red('-') : yellow('~');
         console.log(`      ${icon} ${pathLabel}`);
+
+        if (verbose && d.diff_type === DiffType.MODIFIED && d.clause_before && d.clause_after) {
+          // Show line-level diff of the raw text
+          const beforeLines = d.clause_before.raw_text.split('\n');
+          const afterLines = d.clause_after.raw_text.split('\n');
+          const beforeSet = new Set(beforeLines.map(l => l.trim()));
+          const afterSet = new Set(afterLines.map(l => l.trim()));
+          for (const line of afterLines) {
+            if (!beforeSet.has(line.trim()) && line.trim()) {
+              console.log(`        ${green('+ ' + line.trim())}`);
+            }
+          }
+          for (const line of beforeLines) {
+            if (!afterSet.has(line.trim()) && line.trim()) {
+              console.log(`        ${red('- ' + line.trim())}`);
+            }
+          }
+        } else if (verbose && d.diff_type === DiffType.ADDED && d.clause_after) {
+          const lines = d.clause_after.raw_text.split('\n').filter(l => l.trim());
+          for (const line of lines.slice(0, 5)) {
+            console.log(`        ${green('+ ' + line.trim())}`);
+          }
+          if (lines.length > 5) console.log(`        ${dim(`... and ${lines.length - 5} more lines`)}`);
+        } else if (verbose && d.diff_type === DiffType.REMOVED && d.clause_before) {
+          const lines = d.clause_before.raw_text.split('\n').filter(l => l.trim());
+          for (const line of lines.slice(0, 5)) {
+            console.log(`        ${red('- ' + line.trim())}`);
+          }
+          if (lines.length > 5) console.log(`        ${dim(`... and ${lines.length - 5} more lines`)}`);
+        }
       }
     } else {
       console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses ${dim('(no changes)')}`);
