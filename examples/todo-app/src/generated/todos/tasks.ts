@@ -165,7 +165,7 @@ router.post('/', async (c) => {
   const { title, description, priority, due_date, project_id } = result.data;
 
   // Validate project exists if provided
-  if (project_id !== undefined) {
+  if (project_id != null) {
     const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(project_id);
     if (!project) {
       return c.json({ error: 'Project not found' }, 400);

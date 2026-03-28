@@ -144,6 +144,7 @@ import { z } from 'zod';
 - Include \`created_at TEXT NOT NULL DEFAULT (datetime('now'))\` for timestamps.
 - Foreign key columns must match the referenced table: \`category_id INTEGER REFERENCES categories(id)\`
 - Nullable foreign key fields in Zod schemas MUST use \`.nullable().optional()\` — both null and undefined mean "no reference". Example: \`project_id: z.number().int().nullable().optional()\`
+- When validating FK references before INSERT, check \`if (project_id != null)\` (loose equality) to skip validation for BOTH null and undefined. Never use \`!== undefined\` alone.
 
 ### Stats / aggregate endpoints
 - If the spec describes a stats or aggregate endpoint, implement it as a route on the same router.
