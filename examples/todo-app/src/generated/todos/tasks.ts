@@ -34,7 +34,7 @@ const CreateTaskSchema = z.object({
     const parsed = new Date(date);
     return !isNaN(parsed.getTime()) && parsed.getFullYear() > 1900 && parsed.getFullYear() < 3000;
   }, 'Invalid due date').optional(),
-  project_id: z.number().int().optional(),
+  project_id: z.number().int().nullable().optional(),
 });
 
 const UpdateTaskSchema = z.object({
