@@ -10,6 +10,8 @@
  */
 
 import { createServer } from 'node:http';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Clause } from './models/clause.js';
 import type { CanonicalNode } from './models/canonical.js';
 import type { ImplementationUnit } from './models/iu.js';
@@ -34,6 +36,8 @@ export interface SpecFileInfo {
   id: string;
   path: string;
   clauseCount: number;
+  /** Raw content lines for the spec-text view */
+  lines?: string[];
 }
 
 export interface ClauseInfo {
@@ -111,6 +115,7 @@ export function collectInspectData(
   ius: ImplementationUnit[],
   manifest: GeneratedManifest,
   driftReport: DriftReport | null,
+  projectRoot?: string,
 ): InspectData {
   const edges: Edge[] = [];
 
@@ -121,11 +126,16 @@ export function collectInspectData(
     list.push(c);
     docMap.set(c.source_doc_id, list);
   }
-  const specFiles: SpecFileInfo[] = [...docMap.entries()].map(([docId, docClauses]) => ({
-    id: `spec:${docId}`,
-    path: docId,
-    clauseCount: docClauses.length,
-  }));
+  const specFiles: SpecFileInfo[] = [...docMap.entries()].map(([docId, docClauses]) => {
+    let lines: string[] | undefined;
+    if (projectRoot) {
+      const fullPath = join(projectRoot, docId);
+      if (existsSync(fullPath)) {
+        lines = readFileSync(fullPath, 'utf8').split('\n');
+      }
+    }
+    return { id: `spec:${docId}`, path: docId, clauseCount: docClauses.length, lines };
+  });
 
   // Clauses + spec→clause edges
   const clauseInfos: ClauseInfo[] = clauses.map(c => {
@@ -306,6 +316,31 @@ svg.graph-edges{position:absolute;top:0;left:0;pointer-events:none;z-index:1}
 svg.graph-edges path{fill:none;stroke:var(--cyan);stroke-width:2;opacity:.5}
 svg.graph-edges path.primary{stroke-width:3;opacity:.9;filter:drop-shadow(0 0 4px rgba(34,211,238,.4))}
 .graph-hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--dim);text-align:center}
+
+/* ── Spec Text View ── */
+.spec-view{display:none;height:calc(100vh - 52px);overflow:hidden}
+.spec-view.open{display:flex}
+.spec-left{width:50%;overflow-y:auto;border-right:1px solid var(--border);padding:0}
+.spec-right{width:50%;overflow-y:auto;padding:16px}
+.spec-file-tab{padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:700;font-size:12px;color:var(--blue);position:sticky;top:0;z-index:5}
+.spec-line{padding:2px 16px 2px 50px;position:relative;font-size:13px;line-height:1.7;cursor:default;border-left:3px solid transparent;transition:all .1s}
+.spec-line:hover{background:var(--surface2)}
+.spec-line .ln{position:absolute;left:0;width:42px;text-align:right;color:var(--dim);font-size:11px;user-select:none}
+.spec-line.has-clause{cursor:pointer;border-left-color:var(--blue)}
+.spec-line.has-clause:hover{border-left-color:var(--cyan);background:#142535}
+.spec-line.active{border-left-color:var(--cyan);background:#1a3040;box-shadow:inset 0 0 20px rgba(34,211,238,.08)}
+.spec-line .heading{color:var(--blue);font-weight:700}
+.spec-line .bullet{color:var(--dim)}
+.trace-panel{background:var(--surface);border-radius:8px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+.trace-header{padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.trace-header .label{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+.trace-body{padding:10px 14px}
+.trace-item{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.trace-item:last-child{border-bottom:none}
+.trace-item .ti-type{font-weight:600;margin-right:6px}
+.trace-item .ti-stmt{color:var(--text)}
+.trace-item .ti-tags{margin-top:3px}
+.trace-empty{text-align:center;padding:40px;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -313,6 +348,7 @@ svg.graph-edges path.primary{stroke-width:3;opacity:.9;filter:drop-shadow(0 0 4p
   <h1>🔥 Phoenix</h1>
   <div class="state">${esc(data.systemState)}</div>
   <div class="mode-btns">
+    <button class="mode-btn" onclick="setMode('spec')" id="btn-spec">📄 Spec</button>
     <button class="mode-btn active" onclick="setMode('all')" id="btn-all">All</button>
     <button class="mode-btn" onclick="setMode('focus')" id="btn-focus">Focus</button>
     <button class="mode-btn" onclick="openGraph()" id="btn-graph">⬡ Graph</button>
@@ -329,6 +365,12 @@ svg.graph-edges path.primary{stroke-width:3;opacity:.9;filter:drop-shadow(0 0 4p
 <div class="pipeline-wrap">
   <svg class="lines" id="svg-lines"></svg>
   <div class="pipeline" id="pipeline"></div>
+</div>
+<div class="spec-view" id="spec-view">
+  <div class="spec-left" id="spec-text"></div>
+  <div class="spec-right" id="spec-trace">
+    <div class="trace-empty">Click a highlighted line in the spec to trace its path through the pipeline</div>
+  </div>
 </div>
 <div class="graph-overlay" id="graph-overlay">
   <div class="graph-bar">
@@ -405,7 +447,12 @@ function setMode(m){
   mode=m;
   document.getElementById('btn-all').classList.toggle('active',m==='all');
   document.getElementById('btn-focus').classList.toggle('active',m==='focus');
-  applyView();
+  document.getElementById('btn-spec').classList.toggle('active',m==='spec');
+  // Toggle between pipeline and spec views
+  document.querySelector('.pipeline-wrap').style.display=m==='spec'?'none':'flex';
+  document.getElementById('spec-view').classList.toggle('open',m==='spec');
+  if(m==='spec')renderSpecView();
+  else applyView();
 }
 
 function selectCard(id){
@@ -538,6 +585,127 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.card')&&!e.target.closest('.graph-overlay')&&!e.target.closest('.header'))deselect();
 });
 window.addEventListener('resize',()=>{if(selId&&mode==='focus')requestAnimationFrame(drawLines)});
+
+// ── Spec Text View ──
+function renderSpecView(){
+  const container=document.getElementById('spec-text');
+  let html='';
+  // Build line→clause mapping
+  const lineClauseMap={};
+  D.clauses.forEach(cl=>{
+    const match=cl.lineRange.match(/L(\\d+)–(\\d+)/);
+    if(!match)return;
+    const start=parseInt(match[1]),end=parseInt(match[2]);
+    for(let i=start;i<=end;i++){
+      lineClauseMap[cl.docId+'::'+i]=cl;
+    }
+  });
+
+  D.specFiles.forEach(sf=>{
+    if(!sf.lines)return;
+    html+='<div class="spec-file-tab">'+E(sf.path)+'</div>';
+    sf.lines.forEach((line,i)=>{
+      const lineNum=i+1;
+      const cl=lineClauseMap[sf.path+'::'+lineNum];
+      const hasCl=!!cl;
+      const isHeading=/^#{1,6}\\s/.test(line);
+      const isBullet=/^\\s*[-*•]/.test(line);
+      const content=E(line)||'&nbsp;';
+      const displayContent=isHeading?'<span class="heading">'+content+'</span>'
+        :isBullet?'<span class="bullet">- </span>'+content.replace(/^\\s*[-*•]\\s*/,'')
+        :content;
+      html+='<div class="spec-line'+(hasCl?' has-clause':'')+'" data-line="'+lineNum+'" data-doc="'+E(sf.path)+'"'
+        +(cl?' data-clause="'+cl.id+'"':'')
+        +'><span class="ln">'+lineNum+'</span>'+displayContent+'</div>';
+    });
+  });
+  container.innerHTML=html;
+
+  // Click handler for spec lines
+  container.querySelectorAll('.spec-line.has-clause').forEach(el=>{
+    el.addEventListener('click',()=>{
+      container.querySelectorAll('.spec-line.active').forEach(a=>a.classList.remove('active'));
+      // Highlight all lines in this clause's range
+      const clauseId=el.dataset.clause;
+      const clause=D.clauses.find(c=>c.id===clauseId);
+      if(!clause)return;
+      const match=clause.lineRange.match(/L(\\d+)–(\\d+)/);
+      if(!match)return;
+      const start=parseInt(match[1]),end=parseInt(match[2]);
+      for(let i=start;i<=end;i++){
+        const ln=container.querySelector('[data-line="'+i+'"][data-doc="'+el.dataset.doc+'"]');
+        if(ln)ln.classList.add('active');
+      }
+      showTrace(clauseId);
+    });
+  });
+}
+
+function showTrace(clauseId){
+  const panel=document.getElementById('spec-trace');
+  const clause=D.clauses.find(c=>c.id===clauseId);
+  if(!clause){panel.innerHTML='<div class="trace-empty">No clause data</div>';return;}
+
+  // Find canon nodes from this clause
+  const canonIds=new Set();
+  D.edges.filter(e=>e.from==='clause:'+clauseId&&e.type==='clause→canon').forEach(e=>canonIds.add(e.to.replace('canon:','')));
+  const canonNodes=D.canonNodes.filter(n=>canonIds.has(n.id));
+
+  // Find IUs from these canon nodes
+  const iuIds=new Set();
+  D.edges.filter(e=>e.type==='canon→iu'&&canonIds.has(e.from.replace('canon:',''))).forEach(e=>iuIds.add(e.to.replace('iu:','')));
+  const ius=D.ius.filter(u=>iuIds.has(u.id));
+
+  // Find generated files from these IUs
+  const fileIds=new Set();
+  D.edges.filter(e=>e.type==='iu→file'&&iuIds.has(e.from.replace('iu:',''))).forEach(e=>fileIds.add(e.to.replace('file:','')));
+  const files=D.generatedFiles.filter(f=>fileIds.has(f.path));
+
+  let html='';
+
+  // Clause info
+  html+='<div class="trace-panel"><div class="trace-header"><span>📋 Clause</span><span class="label">'+clause.lineRange+'</span></div>';
+  html+='<div class="trace-body"><div class="trace-item"><span class="ti-type" style="color:var(--blue)">'+E(clause.sectionPath)+'</span></div>';
+  html+='<div class="trace-item" style="color:var(--dim);font-size:11px">'+E(clause.preview)+'</div></div></div>';
+
+  // Canon nodes
+  if(canonNodes.length>0){
+    html+='<div class="trace-panel"><div class="trace-header"><span>📐 Canonical Nodes</span><span class="label">'+canonNodes.length+' nodes</span></div><div class="trace-body">';
+    const typeColors={REQUIREMENT:'var(--blue)',CONSTRAINT:'var(--red)',INVARIANT:'var(--purple)',DEFINITION:'var(--green)',CONTEXT:'var(--yellow)'};
+    canonNodes.forEach(n=>{
+      html+='<div class="trace-item"><span class="ti-type" style="color:'+(typeColors[n.type]||'var(--dim)')+'">'+n.type+'</span>';
+      html+='<span class="ti-stmt">'+E(n.statement.slice(0,100))+'</span>';
+      if(n.tags.length>0)html+='<div class="ti-tags">'+n.tags.slice(0,5).map(t=>'<span class="tag">'+E(t)+'</span>').join('')+'</div>';
+      html+='</div>';
+    });
+    html+='</div></div>';
+  }
+
+  // IUs
+  if(ius.length>0){
+    html+='<div class="trace-panel"><div class="trace-header"><span>📦 Implementation Units</span><span class="label">'+ius.length+' IUs</span></div><div class="trace-body">';
+    ius.forEach(u=>{
+      const riskColor={low:'var(--green)',medium:'var(--yellow)',high:'var(--orange)',critical:'var(--red)'}[u.riskTier]||'var(--dim)';
+      html+='<div class="trace-item"><span class="ti-type">'+E(u.name)+'</span> <span class="badge" style="background:color-mix(in srgb,'+riskColor+' 20%,transparent);color:'+riskColor+'">'+u.riskTier+'</span>';
+      html+='<div style="color:var(--dim);font-size:11px;margin-top:2px">'+u.canonCount+' canon nodes → '+u.outputFiles.length+' file(s)</div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  // Files
+  if(files.length>0){
+    html+='<div class="trace-panel"><div class="trace-header"><span>⚡ Generated Files</span><span class="label">'+files.length+' files</span></div><div class="trace-body">';
+    files.forEach(f=>{
+      const driftColor=f.driftStatus==='CLEAN'?'var(--green)':f.driftStatus==='DRIFTED'?'var(--red)':'var(--dim)';
+      html+='<div class="trace-item"><span class="ti-type">'+E(f.path.split('/').pop())+'</span>';
+      html+=' <span class="badge" style="background:color-mix(in srgb,'+driftColor+' 20%,transparent);color:'+driftColor+'">'+f.driftStatus+'</span>';
+      html+='<div style="color:var(--dim);font-size:11px;margin-top:2px">'+(f.size/1024).toFixed(1)+'KB · '+f.contentHash+'</div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  panel.innerHTML=html||'<div class="trace-empty">No traceability data for this clause</div>';
+}
 
 render();
 </script>

@@ -1337,6 +1337,7 @@ async function cmdInspect(args: string[]): Promise<void> {
     ius,
     manifest,
     driftReport,
+    projectRoot,
   );
 
   const html = renderInspectHTML(data);
