@@ -58,8 +58,8 @@ import { collectInspectData, renderInspectHTML, serveInspect } from './inspect.j
 import { resolveProvider, describeAvailability } from './llm/resolve.js';
 
 // Architectures
-import { getArchitecture, listArchitectures } from './architectures/index.js';
-import type { Architecture } from './models/architecture.js';
+import { resolveTarget, listArchitectures } from './architectures/index.js';
+import type { ResolvedTarget } from './models/architecture.js';
 
 // Audit & Fowler gaps
 import { auditIU, auditAll } from './audit.js';
@@ -255,7 +255,7 @@ function cmdInit(args?: string[]): void {
   // Save architecture choice if specified
   const archArg = args?.find(a => a.startsWith('--arch='))?.split('=')[1];
   if (archArg) {
-    const arch = getArchitecture(archArg);
+    const arch = resolveTarget(archArg);
     if (!arch) {
       console.log(red(`✖ Unknown architecture: ${archArg}`));
       console.log(`  Available: ${listArchitectures().join(', ')}`);
@@ -378,13 +378,13 @@ async function cmdBootstrap(): Promise<void> {
 
   // Load architecture from config
   const configPath = join(phoenixDir, 'config.json');
-  let arch: Architecture | null = null;
+  let arch: ResolvedTarget | null = null;
   if (existsSync(configPath)) {
     try {
       const config = JSON.parse(readFileSync(configPath, 'utf8'));
       if (config.architecture) {
-        arch = getArchitecture(config.architecture);
-        if (arch) console.log(`  ${dim('Architecture:')} ${cyan(arch.name)} — ${arch.description}`);
+        arch = resolveTarget(config.architecture);
+        if (arch) console.log(`  ${dim('Architecture:')} ${cyan(arch.architecture.name)} / ${cyan(arch.runtime.name)}`);
       }
     } catch { /* ignore */ }
   }
@@ -392,7 +392,7 @@ async function cmdBootstrap(): Promise<void> {
   // Write shared architecture files BEFORE code generation
   // so the typecheck-retry loop can resolve imports like ../../db.js
   if (arch) {
-    for (const [filePath, content] of Object.entries(arch.sharedFiles)) {
+    for (const [filePath, content] of Object.entries(arch.runtime.sharedFiles)) {
       const fullPath = join(projectRoot, filePath);
       mkdirSync(dirname(fullPath), { recursive: true });
       writeFileSync(fullPath, content, 'utf8');
@@ -402,8 +402,8 @@ async function cmdBootstrap(): Promise<void> {
       name: basename(projectRoot),
       version: '0.1.0',
       type: 'module',
-      dependencies: arch.packages,
-      devDependencies: arch.devPackages,
+      dependencies: arch.runtime.packages,
+      devDependencies: arch.runtime.devPackages,
     };
     const pkgPath = join(projectRoot, 'package.json');
     writeFileSync(pkgPath, JSON.stringify(earlyPkg, null, 2) + '\n', 'utf8');
@@ -418,7 +418,7 @@ async function cmdBootstrap(): Promise<void> {
     canonNodes,
     allIUs: ius,
     projectRoot,
-    architecture: arch,
+    target: arch,
     onProgress: (iu, status, msg) => {
       if (status === 'start') process.stdout.write(`    ⏳ ${iu.name}…`);
       else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);
@@ -1058,11 +1058,11 @@ async function cmdRegen(args: string[]): Promise<void> {
 
   // Load architecture
   const configPath = join(phoenixDir, 'config.json');
-  let regenArch: Architecture | null = null;
+  let regenArch: ResolvedTarget | null = null;
   if (existsSync(configPath)) {
     try {
       const cfg = JSON.parse(readFileSync(configPath, 'utf8'));
-      if (cfg.architecture) regenArch = getArchitecture(cfg.architecture);
+      if (cfg.architecture) regenArch = resolveTarget(cfg.architecture);
     } catch { /* ignore */ }
   }
 
@@ -1071,7 +1071,7 @@ async function cmdRegen(args: string[]): Promise<void> {
     canonNodes,
     allIUs: ius,
     projectRoot,
-    architecture: regenArch,
+    target: regenArch,
     onProgress: (iu, status, msg) => {
       if (status === 'start') process.stdout.write(`  ⏳ ${iu.name}…`);
       else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);

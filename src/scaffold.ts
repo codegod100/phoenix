@@ -10,7 +10,7 @@
  */
 
 import type { ImplementationUnit } from './models/iu.js';
-import type { Architecture } from './models/architecture.js';
+import type { ResolvedTarget } from './models/architecture.js';
 import { sha256 } from './semhash.js';
 
 export interface ServiceDescriptor {
@@ -71,13 +71,15 @@ export function deriveServices(ius: ImplementationUnit[]): ServiceDescriptor[] {
 export function generateScaffold(
   services: ServiceDescriptor[],
   projectName: string = 'phoenix-project',
-  arch?: Architecture | null,
+  target?: ResolvedTarget | null,
 ): ScaffoldResult {
   const files = new Map<string, string>();
 
   // Architecture shared files (db.ts, app.ts, etc.)
-  if (arch) {
-    for (const [path, content] of Object.entries(arch.sharedFiles)) {
+  if (target) {
+    const arch = target.architecture;
+    const rt = target.runtime;
+    for (const [path, content] of Object.entries(rt.sharedFiles)) {
       files.set(path, content);
     }
 
@@ -129,7 +131,7 @@ export function generateScaffold(
       generateServiceIndex(svc),
     );
 
-    if (!arch) {
+    if (!target) {
       // Only generate per-service servers when no architecture is set
       files.set(
         `src/generated/${svc.dir}/server.ts`,
@@ -140,7 +142,7 @@ export function generateScaffold(
     // Service tests
     files.set(
       `src/generated/${svc.dir}/__tests__/${svc.dir}.test.ts`,
-      arch ? generateArchTests(svc) : generateServiceTests(svc),
+      target ? generateArchTests(svc) : generateServiceTests(svc),
     );
   }
 
@@ -148,7 +150,7 @@ export function generateScaffold(
   files.set('src/generated/index.ts', generateRootIndex(services));
 
   // Project config
-  files.set('package.json', generatePackageJson(services, projectName, arch));
+  files.set('package.json', generatePackageJson(services, projectName, target));
   files.set('tsconfig.json', generateTsConfig());
   files.set('vitest.config.ts', generateVitestConfig());
 
@@ -776,7 +778,7 @@ function generateRootIndex(services: ServiceDescriptor[]): string {
 function generatePackageJson(
   services: ServiceDescriptor[],
   projectName: string,
-  arch?: Architecture | null,
+  target?: ResolvedTarget | null,
 ): string {
   let scripts: Record<string, string> = {
     build: 'tsc',
@@ -785,9 +787,11 @@ function generatePackageJson(
     'test:watch': 'vitest',
   };
 
-  if (arch) {
+  if (target) {
+    const arch = target.architecture;
+    const rt = target.runtime;
     // Architecture provides its own scripts
-    const archScripts = (arch.packageJsonExtras?.scripts ?? {}) as Record<string, string>;
+    const archScripts = (rt.packageExtras?.scripts ?? {}) as Record<string, string>;
     scripts = { ...scripts, ...archScripts };
   } else {
     // Add start script per service (build first, then run)
@@ -807,9 +811,11 @@ function generatePackageJson(
     scripts,
   };
 
-  if (arch) {
-    pkg.dependencies = arch.packages;
-    pkg.devDependencies = arch.devPackages;
+  if (target) {
+    const arch = target.architecture;
+    const rt = target.runtime;
+    pkg.dependencies = rt.packages;
+    pkg.devDependencies = rt.devPackages;
   } else {
     pkg.devDependencies = {
       typescript: '^5.4.0',

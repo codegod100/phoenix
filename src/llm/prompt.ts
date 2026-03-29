@@ -7,7 +7,7 @@
 
 import type { ImplementationUnit } from '../models/iu.js';
 import type { CanonicalNode } from '../models/canonical.js';
-import type { Architecture } from '../models/architecture.js';
+import type { ResolvedTarget } from '../models/architecture.js';
 
 export const SYSTEM_PROMPT = `You are a senior TypeScript engineer generating production-quality module implementations for Phoenix VCS.
 
@@ -35,29 +35,24 @@ Rules:
 /**
  * Get the system prompt, optionally extended with architecture-specific rules.
  */
-export function getSystemPrompt(arch?: Architecture | null): string {
-  if (!arch) return SYSTEM_PROMPT;
+export function getSystemPrompt(target?: ResolvedTarget | null): string {
+  if (!target) return SYSTEM_PROMPT;
+  const arch = target.architecture;
+  const rt = target.runtime;
 
-  const allowedPkgs = Object.keys(arch.packages).map(p => `'${p}'`).join(', ');
+  const allowedPkgs = Object.keys(rt.packages).map(p => `'${p}'`).join(', ');
 
-  // Build a fresh system prompt for architecture mode — don't try to patch the generic one
-  return `You are a senior TypeScript engineer generating production-quality module implementations.
+  // Build system prompt from architecture + runtime
+  return `You are a senior ${rt.language} engineer generating production-quality module implementations.
 
 Rules:
-- Output ONLY the TypeScript module code. No markdown fences, no explanation.
-- The module must be a valid ES module (.ts) that compiles under strict mode.
-- Export all public functions and types.
-- Use descriptive types (not \`any\` or \`unknown\` where a real type is appropriate).
 - Implement the actual logic described in the requirements — not stubs or TODOs.
 - Keep the code clean, readable, and minimal. No over-engineering.
-- Include the _phoenix metadata constant exactly as specified.
-- You MUST import from these packages: ${allowedPkgs}. Use them as shown in the architecture examples below.
-- You may also use Node.js built-in modules (node:crypto, node:path, etc.).
+- You MUST import from these packages: ${allowedPkgs}. Use them as shown in the examples below.
 - Do NOT import any other packages. Do NOT re-implement functionality that the allowed packages provide.
-- Do NOT define your own Hono, Database, or Zod types — import them from the packages.
-- The code must compile under TypeScript strict mode (strict: true, no implicit any).
-- If the requirements describe validation rules, use Zod schemas.
-${arch.systemPromptExtension}`;
+
+${arch.systemPrompt}
+${rt.promptExtension}`;
 }
 
 /**
@@ -67,7 +62,7 @@ export function buildPrompt(
   iu: ImplementationUnit,
   canonNodes: CanonicalNode[],
   siblingModules?: string[],
-  arch?: Architecture | null,
+  target?: ResolvedTarget | null,
 ): string {
   const lines: string[] = [];
 
@@ -75,7 +70,7 @@ export function buildPrompt(
   lines.push('');
 
   // For architecture mode, inject the mandatory imports at the top of the prompt
-  if (arch) {
+  if (target) {
     lines.push('## MANDATORY: Your module MUST start with these exact imports');
     lines.push('```');
     lines.push(`import { Hono } from 'hono';`);
@@ -126,7 +121,7 @@ export function buildPrompt(
   }
 
   // Related context: DEFINITION and CONTEXT nodes from the same spec not in this IU
-  if (arch) {
+  if (target) {
     const otherNodes = canonNodes.filter(n =>
       !iu.source_canon_ids.includes(n.canon_id) &&
       (n.type === 'DEFINITION' || n.type === 'CONTEXT')
@@ -152,7 +147,7 @@ export function buildPrompt(
 
   // Context: sibling modules with mount paths for architecture mode
   if (siblingModules && siblingModules.length > 0) {
-    if (arch) {
+    if (target) {
       lines.push(`## Other API modules (do NOT import them — call their HTTP endpoints from JavaScript):`);
       for (const m of siblingModules) {
         const lowerName = m.toLowerCase();
@@ -185,8 +180,8 @@ export function buildPrompt(
   lines.push('');
 
   // Architecture patterns (few-shot examples)
-  if (arch?.codeExamples) {
-    lines.push(arch.codeExamples);
+  if (target?.runtime.codeExamples) {
+    lines.push(target.runtime.codeExamples);
     lines.push('');
   }
 

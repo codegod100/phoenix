@@ -18,7 +18,7 @@ import type { CanonicalNode } from './models/canonical.js';
 import type { IUManifest, RegenMetadata, FileManifestEntry } from './models/manifest.js';
 import type { LLMProvider } from './llm/provider.js';
 import { buildPrompt, getSystemPrompt } from './llm/prompt.js';
-import type { Architecture } from './models/architecture.js';
+import type { ResolvedTarget } from './models/architecture.js';
 import { sha256 } from './semhash.js';
 
 const TOOLCHAIN_VERSION = 'phoenix-regen/0.1.0';
@@ -39,7 +39,7 @@ export interface RegenContext {
   /** Project root directory (for typecheck-and-retry). */
   projectRoot?: string;
   /** Architecture target (e.g., sqlite-web-api). */
-  architecture?: Architecture | null;
+  target?: ResolvedTarget | null;
   /** Callback for progress reporting. */
   onProgress?: (iu: ImplementationUnit, status: 'start' | 'done' | 'error', message?: string) => void;
 }
@@ -58,16 +58,16 @@ export async function generateIU(iu: ImplementationUnit, ctx?: RegenContext): Pr
     if (ctx?.llm && ctx.canonNodes) {
       ctx.onProgress?.(iu, 'start', `Generating ${iu.name} via ${ctx.llm.name}…`);
       try {
-        content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx.allIUs, ctx.projectRoot, ctx.architecture);
+        content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx.allIUs, ctx.projectRoot, ctx.target);
         ctx.onProgress?.(iu, 'done');
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         ctx.onProgress?.(iu, 'error', msg);
         // Fall back to stub on LLM failure
-        content = ctx.architecture ? generateArchStub(iu) : generateModule(iu);
+        content = ctx.target ? generateArchStub(iu) : generateModule(iu);
       }
     } else {
-      content = ctx?.architecture ? generateArchStub(iu) : generateModule(iu);
+      content = ctx?.target ? generateArchStub(iu) : generateModule(iu);
     }
 
     files.set(outputPath, content);
@@ -131,7 +131,7 @@ async function generateWithLLM(
   canonNodes: CanonicalNode[],
   allIUs?: ImplementationUnit[],
   projectRoot?: string,
-  arch?: Architecture | null,
+  target?: ResolvedTarget | null,
 ): Promise<string> {
   // Find sibling modules in the same service
   const iuDir = iu.output_files[0]?.split('/').slice(0, -1).join('/');
@@ -139,8 +139,8 @@ async function generateWithLLM(
     ?.filter(other => other.iu_id !== iu.iu_id && other.output_files[0]?.startsWith(iuDir || ''))
     .map(other => other.name) ?? [];
 
-  const systemPrompt = getSystemPrompt(arch);
-  const prompt = buildPrompt(iu, canonNodes, siblings, arch);
+  const systemPrompt = getSystemPrompt(target);
+  const prompt = buildPrompt(iu, canonNodes, siblings, target);
 
   let code = cleanCodeResponse(await llm.generate(prompt, {
     system: systemPrompt,

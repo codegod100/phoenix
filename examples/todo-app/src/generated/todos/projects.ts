@@ -39,7 +39,7 @@ router.get('/', (c) => {
       WHERE completed = 0
       GROUP BY project_id
     ) t ON p.id = t.project_id
-    ORDER BY p.name
+    ORDER BY p.created_at DESC
   `).all();
   return c.json(projects);
 });
@@ -61,7 +61,6 @@ router.get('/:id', (c) => {
     ) t ON p.id = t.project_id
     WHERE p.id = ?
   `).get(c.req.param('id'), c.req.param('id'));
-  
   if (!project) return c.json({ error: 'Project not found' }, 404);
   return c.json(project);
 });
@@ -74,14 +73,12 @@ router.post('/', async (c) => {
   } catch {
     return c.json({ error: 'Invalid JSON' }, 400);
   }
-
+  
   const result = CreateProjectSchema.safeParse(body);
-  if (!result.success) {
-    return c.json({ error: result.error.issues[0].message }, 400);
-  }
-
+  if (!result.success) return c.json({ error: result.error.issues[0].message }, 400);
+  
   const { name, color } = result.data;
-
+  
   try {
     const info = db.prepare('INSERT INTO projects (name, color) VALUES (?, ?)').run(name, color);
     const project = db.prepare(`
@@ -92,8 +89,8 @@ router.post('/', async (c) => {
       WHERE p.id = ?
     `).get(info.lastInsertRowid);
     return c.json(project, 201);
-  } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+  } catch (error: any) {
+    if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return c.json({ error: 'Project name already exists' }, 400);
     }
     throw error;
@@ -105,21 +102,19 @@ router.patch('/:id', async (c) => {
   const id = c.req.param('id');
   const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
   if (!existing) return c.json({ error: 'Project not found' }, 404);
-
+  
   let body;
   try {
     body = await c.req.json();
   } catch {
     return c.json({ error: 'Invalid JSON' }, 400);
   }
-
+  
   const result = UpdateProjectSchema.safeParse(body);
-  if (!result.success) {
-    return c.json({ error: result.error.issues[0].message }, 400);
-  }
-
+  if (!result.success) return c.json({ error: result.error.issues[0].message }, 400);
+  
   const updates = result.data;
-
+  
   try {
     if (updates.name !== undefined) {
       db.prepare('UPDATE projects SET name = ? WHERE id = ?').run(updates.name, id);
@@ -127,7 +122,7 @@ router.patch('/:id', async (c) => {
     if (updates.color !== undefined) {
       db.prepare('UPDATE projects SET color = ? WHERE id = ?').run(updates.color, id);
     }
-
+    
     const updated = db.prepare(`
       SELECT 
         p.*,
@@ -143,10 +138,9 @@ router.patch('/:id', async (c) => {
       ) t ON p.id = t.project_id
       WHERE p.id = ?
     `).get(id, id);
-
     return c.json(updated);
-  } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+  } catch (error: any) {
+    if (error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return c.json({ error: 'Project name already exists' }, 400);
     }
     throw error;
@@ -158,13 +152,13 @@ router.delete('/:id', (c) => {
   const id = c.req.param('id');
   const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
   if (!existing) return c.json({ error: 'Project not found' }, 404);
-
+  
   // Check for tasks in this project
   const taskCount = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE project_id = ?').get(id) as { count: number };
   if (taskCount.count > 0) {
     return c.json({ error: 'Cannot delete project that contains tasks' }, 400);
   }
-
+  
   db.prepare('DELETE FROM projects WHERE id = ?').run(id);
   return c.body(null, 204);
 });
