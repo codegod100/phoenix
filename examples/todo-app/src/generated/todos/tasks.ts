@@ -11,7 +11,7 @@ registerMigration('tasks', `
     priority TEXT NOT NULL DEFAULT 'normal',
     due_date TEXT,
     completed INTEGER NOT NULL DEFAULT 0,
-    project_id INTEGER,
+    project_id INTEGER REFERENCES projects(id),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);
@@ -20,11 +20,11 @@ const CreateTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must not exceed 500 characters'),
   description: z.string().max(5000, 'Description must not exceed 5000 characters').optional().default(''),
   priority: z.enum(['urgent', 'high', 'normal', 'low']).default('normal'),
-  due_date: z.string().refine((date) => {
+  due_date: z.string().nullable().optional().refine((date) => {
     if (!date) return true;
     const parsed = new Date(date);
     return !isNaN(parsed.getTime());
-  }, 'Invalid date format').optional(),
+  }, 'Due date must be a valid date'),
   project_id: z.number().int().nullable().optional(),
 });
 
@@ -32,48 +32,26 @@ const UpdateTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must not exceed 500 characters').optional(),
   description: z.string().max(5000, 'Description must not exceed 5000 characters').optional(),
   priority: z.enum(['urgent', 'high', 'normal', 'low']).optional(),
-  due_date: z.string().refine((date) => {
-    if (!date) return true;
+  due_date: z.string().nullable().optional().refine((date) => {
+    if (date === null || date === undefined) return true;
     const parsed = new Date(date);
     return !isNaN(parsed.getTime());
-  }, 'Invalid date format').nullable().optional(),
+  }, 'Due date must be a valid date'),
   completed: z.number().int().min(0).max(1).optional(),
   project_id: z.number().int().nullable().optional(),
 });
 
 const router = new Hono();
 
-// Stats endpoint
-router.get('/stats', (c) => {
-  const stats = db.prepare(`
-    SELECT 
-      COUNT(*) as total_tasks,
-      SUM(completed) as completed_tasks,
-      COUNT(CASE WHEN due_date < date('now') AND completed = 0 THEN 1 END) as overdue_tasks
-    FROM tasks
-  `).get() as { total_tasks: number; completed_tasks: number; overdue_tasks: number };
-
-  const completion_percentage = stats.total_tasks > 0 
-    ? Math.round((stats.completed_tasks / stats.total_tasks) * 100)
-    : 0;
-
-  return c.json({
-    total_tasks: stats.total_tasks,
-    completed_tasks: stats.completed_tasks,
-    overdue_tasks: stats.overdue_tasks,
-    completion_percentage
-  });
-});
-
-// List all tasks with filtering and sorting
+// List tasks with filtering and sorting
 router.get('/', (c) => {
   let sql = `
-    SELECT tasks.*, projects.name as project_name, projects.color as project_color
+    SELECT tasks.*, projects.name as project_name 
     FROM tasks 
     LEFT JOIN projects ON tasks.project_id = projects.id
   `;
   const conditions: string[] = [];
-  const params: unknown[] = [];
+  const params: (string | number)[] = [];
 
   const status = c.req.query('status');
   if (status === 'active') {
@@ -98,11 +76,10 @@ router.get('/', (c) => {
     sql += ' WHERE ' + conditions.join(' AND ');
   }
 
-  // Sort by urgency and overdue status first, then by due date
   sql += ` ORDER BY 
+    tasks.completed ASC,
     CASE tasks.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 WHEN 'low' THEN 3 END,
-    CASE WHEN tasks.due_date < date('now') AND tasks.completed = 0 THEN 0 ELSE 1 END,
-    tasks.due_date ASC,
+    CASE WHEN tasks.due_date IS NOT NULL AND tasks.due_date < date('now') AND tasks.completed = 0 THEN 0 ELSE 1 END,
     tasks.created_at DESC
   `;
 
@@ -113,7 +90,7 @@ router.get('/', (c) => {
 // Get single task
 router.get('/:id', (c) => {
   const task = db.prepare(`
-    SELECT tasks.*, projects.name as project_name, projects.color as project_color
+    SELECT tasks.*, projects.name as project_name 
     FROM tasks 
     LEFT JOIN projects ON tasks.project_id = projects.id 
     WHERE tasks.id = ?
@@ -139,7 +116,7 @@ router.post('/', async (c) => {
 
   const { title, description, priority, due_date, project_id } = result.data;
 
-  // Validate project exists if project_id is provided
+  // Validate project exists if provided
   if (project_id != null) {
     const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(project_id);
     if (!project) {
@@ -153,7 +130,7 @@ router.post('/', async (c) => {
   `).run(title, description, priority, due_date || null, project_id || null);
 
   const task = db.prepare(`
-    SELECT tasks.*, projects.name as project_name, projects.color as project_color
+    SELECT tasks.*, projects.name as project_name 
     FROM tasks 
     LEFT JOIN projects ON tasks.project_id = projects.id 
     WHERE tasks.id = ?
@@ -184,7 +161,7 @@ router.patch('/:id', async (c) => {
 
   const updates = result.data;
 
-  // Validate project exists if project_id is being updated
+  // Validate project exists if provided
   if (updates.project_id != null) {
     const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(updates.project_id);
     if (!project) {
@@ -192,7 +169,6 @@ router.patch('/:id', async (c) => {
     }
   }
 
-  // Apply updates
   if (updates.title !== undefined) {
     db.prepare('UPDATE tasks SET title = ? WHERE id = ?').run(updates.title, id);
   }
@@ -213,7 +189,7 @@ router.patch('/:id', async (c) => {
   }
 
   const updated = db.prepare(`
-    SELECT tasks.*, projects.name as project_name, projects.color as project_color
+    SELECT tasks.*, projects.name as project_name 
     FROM tasks 
     LEFT JOIN projects ON tasks.project_id = projects.id 
     WHERE tasks.id = ?
@@ -234,11 +210,31 @@ router.delete('/:id', (c) => {
   return c.body(null, 204);
 });
 
+// Stats endpoint
+router.get('/stats', (c) => {
+  const stats = db.prepare(`
+    SELECT 
+      COUNT(*) as total_tasks,
+      SUM(completed) as completed_tasks,
+      SUM(CASE WHEN due_date IS NOT NULL AND due_date < date('now') AND completed = 0 THEN 1 ELSE 0 END) as overdue_tasks,
+      ROUND(
+        CASE 
+          WHEN COUNT(*) = 0 THEN 0 
+          ELSE (SUM(completed) * 100.0 / COUNT(*)) 
+        END, 
+        1
+      ) as completion_percentage
+    FROM tasks
+  `).get();
+
+  return c.json(stats);
+});
+
 export default router;
 
 /** @internal Phoenix VCS traceability — do not remove. */
 export const _phoenix = {
-  iu_id: '04b4a61a7d79a57f9b58fc35c3e512fbac19b8f7786e38db2b161bcf12f3a8db',
+  iu_id: '072739a383fa6c6f8d7008711666d102390ba973448eee3c643cf0208ae4509b',
   name: 'Tasks',
   risk_tier: 'high',
   canon_ids: [14 as const],

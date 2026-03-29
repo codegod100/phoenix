@@ -39,7 +39,7 @@ router.get('/', (c) => {
       WHERE completed = 0
       GROUP BY project_id
     ) t ON p.id = t.project_id
-    ORDER BY p.created_at DESC
+    ORDER BY p.name
   `).all();
   return c.json(projects);
 });
@@ -92,8 +92,8 @@ router.post('/', async (c) => {
       WHERE p.id = ?
     `).get(info.lastInsertRowid);
     return c.json(project, 201);
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return c.json({ error: 'Project name already exists' }, 400);
     }
     throw error;
@@ -145,8 +145,8 @@ router.patch('/:id', async (c) => {
     `).get(id, id);
 
     return c.json(updated);
-  } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return c.json({ error: 'Project name already exists' }, 400);
     }
     throw error;
