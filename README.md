@@ -36,8 +36,8 @@ Each transformation is tracked. Change one line in the spec and Phoenix knows ex
 # Install
 git clone https://github.com/chad/phoenix.git
 cd phoenix
-npm install
-npm run build
+bun install
+bun run build
 
 # Create a project with the sqlite-web-api architecture
 mkdir my-app && cd my-app
@@ -55,12 +55,12 @@ cat > spec/app.md << 'EOF'
 EOF
 
 # Generate
-npx phoenix init --arch=sqlite-web-api
-npx phoenix bootstrap
+bunx phoenix init --arch=sqlite-web-api
+bunx phoenix bootstrap
 
 # Run
-npm install
-npm run dev
+bun install
+bun run dev
 # → http://localhost:3000
 ```
 

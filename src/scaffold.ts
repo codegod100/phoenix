@@ -780,26 +780,35 @@ function generatePackageJson(
   projectName: string,
   target?: ResolvedTarget | null,
 ): string {
-  let scripts: Record<string, string> = {
-    build: 'tsc',
-    typecheck: 'tsc --noEmit',
-    test: 'vitest run',
-    'test:watch': 'vitest',
-  };
+  let scripts: Record<string, string> = target
+    ? {
+        // Bun scripts by default when using a runtime target
+        build: `bun build ./src/server.ts --outdir=dist --target=node`,
+        typecheck: 'bunx tsc --noEmit',
+        test: 'bunx vitest run',
+        'test:watch': 'bunx vitest',
+      }
+    : {
+        // Default npm scripts for non-target mode
+        build: 'tsc',
+        typecheck: 'tsc --noEmit',
+        test: 'vitest run',
+        'test:watch': 'vitest',
+      };
 
   if (target) {
     const arch = target.architecture;
     const rt = target.runtime;
-    // Architecture provides its own scripts
+    // Architecture provides its own scripts (override bun defaults)
     const archScripts = (rt.packageExtras?.scripts ?? {}) as Record<string, string>;
     scripts = { ...scripts, ...archScripts };
   } else {
-    // Add start script per service (build first, then run)
+    // Add start script per service (bun run)
     for (const svc of services) {
-      scripts[`start:${svc.dir}`] = `tsc && node dist/generated/${svc.dir}/server.js`;
+      scripts[`start:${svc.dir}`] = `bun src/generated/${svc.dir}/server.ts`;
     }
     if (services.length > 0) {
-      scripts.start = `tsc && node dist/generated/${services[0].dir}/server.js`;
+      scripts.start = `bun src/generated/${services[0].dir}/server.ts`;
     }
   }
 

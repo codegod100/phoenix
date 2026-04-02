@@ -12,7 +12,7 @@ import type { ClauseDiff } from './models/clause.js';
 import type { CanonicalNode } from './models/canonical.js';
 import type { ChangeClassification } from './models/classification.js';
 import { ChangeClass } from './models/classification.js';
-import type { LLMProvider } from './llm/provider.js';
+import type { PiSDKProvider } from './llm/pi-sdk.js';
 import { classifyChange } from './classifier.js';
 
 const CLASSIFY_SYSTEM_PROMPT = `You are a change classification expert for a version control system.
@@ -29,7 +29,7 @@ Only use D when the change is genuinely ambiguous.`;
 
 export interface LLMClassifierOptions {
   /** LLM provider for D-class resolution. */
-  llm: LLMProvider;
+  llm: PiSDKProvider;
   /** Only escalate D-class to LLM. Default: true */
   dClassOnly?: boolean;
 }
@@ -91,7 +91,7 @@ export async function classifyChangesWithLLM(
   return results;
 }
 
-async function resolveWithLLM(diff: ClauseDiff, llm: LLMProvider): Promise<ChangeClass> {
+async function resolveWithLLM(diff: ClauseDiff, llm: PiSDKProvider): Promise<ChangeClass> {
   const prompt = buildClassifyPrompt(diff);
 
   const response = await llm.generate(prompt, {

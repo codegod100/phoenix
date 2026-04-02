@@ -31,7 +31,7 @@ export default router;
 
 // ─── Shared files ───────────────────────────────────────────────────────────
 
-const DB_FILE = `import Database from 'better-sqlite3';
+const DB_FILE = `import { Database } from 'bun:sqlite';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -41,8 +41,8 @@ const dir = dirname(DB_PATH);
 if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
 const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
 const migrations: Array<{ name: string; sql: string }> = [];
 
@@ -85,7 +85,7 @@ export { app };
 // ─── Prompt extension ───────────────────────────────────────────────────────
 
 const PROMPT_EXTENSION = `
-## Runtime: Node.js + TypeScript (Hono + better-sqlite3 + Zod)
+## Runtime: Bun + TypeScript (Hono + bun:sqlite + Zod)
 
 You are filling in sections of a module template. The imports, router, and exports are already provided.
 You MUST output ONLY the content for the marked sections, in this exact format:
@@ -113,7 +113,7 @@ router.delete('/:id', (c) => { ... });
 \`\`\`
 
 ### Rules
-- Use better-sqlite3 synchronous API: db.prepare(sql).run(), .get(), .all()
+- Use bun:sqlite API: db.prepare(sql).run(), .get(), .all() - same as better-sqlite3
 - Use parameterized queries ALWAYS — never interpolate user input into SQL
 - In SQL, use single quotes for string literals: datetime('now'). NEVER double quotes.
 - ALWAYS use snake_case for column names and JSON response keys
@@ -217,13 +217,12 @@ router.delete('/:id', (c) => {
 
 export const nodeTypescript: RuntimeTarget = {
   name: 'node-typescript',
-  description: 'Node.js + TypeScript — Hono, better-sqlite3, Zod',
+  description: 'Bun + TypeScript — Hono, bun:sqlite, Zod',
   language: 'typescript',
 
   packages: {
     'hono': '^4.6.0',
     '@hono/node-server': '^1.13.0',
-    'better-sqlite3': '^11.7.0',
     'zod': '^3.24.0',
   },
 
@@ -231,8 +230,6 @@ export const nodeTypescript: RuntimeTarget = {
     'typescript': '^5.4.0',
     'vitest': '^2.0.0',
     '@types/node': '^22.0.0',
-    '@types/better-sqlite3': '^7.6.0',
-    'tsx': '^4.0.0',
   },
 
   moduleTemplate: MODULE_TEMPLATE,
@@ -246,10 +243,11 @@ export const nodeTypescript: RuntimeTarget = {
 
   packageExtras: {
     scripts: {
-      dev: 'tsx watch src/server.ts',
-      start: 'tsx src/server.ts',
-      build: 'tsc',
-      test: 'vitest run',
+      dev: 'bun --watch src/server.ts',
+      start: 'bun src/server.ts',
+      build: 'bun build ./src/server.ts --outdir=dist --target=node',
+      typecheck: 'bunx tsc --noEmit',
+      test: 'bunx vitest run',
     },
   },
 };

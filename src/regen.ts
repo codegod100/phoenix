@@ -16,7 +16,7 @@ import { join, dirname } from 'node:path';
 import type { ImplementationUnit } from './models/iu.js';
 import type { CanonicalNode } from './models/canonical.js';
 import type { IUManifest, RegenMetadata, FileManifestEntry } from './models/manifest.js';
-import type { LLMProvider } from './llm/provider.js';
+import type { PiSDKProvider } from './llm/pi-sdk.js';
 import { buildPrompt, getSystemPrompt } from './llm/prompt.js';
 import type { ResolvedTarget } from './models/architecture.js';
 import { sha256 } from './semhash.js';
@@ -31,7 +31,7 @@ export interface RegenResult {
 
 export interface RegenContext {
   /** LLM provider for real code generation. Omit for stub mode. */
-  llm?: LLMProvider;
+  llm?: PiSDKProvider;
   /** All canonical nodes (needed for LLM prompt context). */
   canonNodes?: CanonicalNode[];
   /** All IUs (for sibling module context). */
@@ -41,7 +41,11 @@ export interface RegenContext {
   /** Architecture target (e.g., sqlite-web-api). */
   target?: ResolvedTarget | null;
   /** Callback for progress reporting. */
-  onProgress?: (iu: ImplementationUnit, status: 'start' | 'done' | 'error', message?: string) => void;
+  onProgress?: (iu: ImplementationUnit, status: 'start' | 'done' | 'error' | 'streaming', message?: string) => void;
+  /** Enable verbose logging. */
+  verbose?: boolean;
+  /** Log function for verbose output. */
+  log?: (msg: string) => void;
 }
 
 /**
@@ -58,7 +62,16 @@ export async function generateIU(iu: ImplementationUnit, ctx?: RegenContext): Pr
     if (ctx?.llm && ctx.canonNodes) {
       ctx.onProgress?.(iu, 'start', `Generating ${iu.name} via ${ctx.llm.name}…`);
       try {
-        content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx.allIUs, ctx.projectRoot, ctx.target);
+        content = await generateWithLLM(
+          iu, 
+          ctx.llm, 
+          ctx.canonNodes, 
+          ctx.allIUs, 
+          ctx.projectRoot, 
+          ctx.target,
+          ctx.verbose,
+          ctx.log
+        );
         ctx.onProgress?.(iu, 'done');
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -132,55 +145,103 @@ const MAX_RETRIES = 2;
  */
 async function generateWithLLM(
   iu: ImplementationUnit,
-  llm: LLMProvider,
+  llm: PiSDKProvider,
   canonNodes: CanonicalNode[],
   allIUs?: ImplementationUnit[],
   projectRoot?: string,
   target?: ResolvedTarget | null,
+  verbose?: boolean,
+  log?: (msg: string) => void,
 ): Promise<string> {
+  const startTime = Date.now();
+  const logMsg = (msg: string) => {
+    if (verbose && log) log(msg);
+  };
+
   // Find sibling modules in the same service
   const iuDir = iu.output_files[0]?.split('/').slice(0, -1).join('/');
   const siblings = allIUs
     ?.filter(other => other.iu_id !== iu.iu_id && other.output_files[0]?.startsWith(iuDir || ''))
     .map(other => other.name) ?? [];
 
+  logMsg(`  [${iu.name}] Building prompt with ${canonNodes.length} canonical nodes...`);
+  
   const systemPrompt = getSystemPrompt(target);
   const prompt = buildPrompt(iu, canonNodes, siblings, target);
   const template = target?.runtime.moduleTemplate;
 
+  logMsg(`  [${iu.name}] Prompt size: ${prompt.length} chars (~${Math.round(prompt.length / 4)} tokens estimated)`);
+
   let code: string;
+  let genStart = Date.now();
+  let totalChars = 0;
+  let lastLog = Date.now();
+  const CHUNK_LOG_INTERVAL = 1000; // Log every 1 second of chunks
 
   if (template) {
+    logMsg(`  [${iu.name}] Using template mode (Hono + SQLite)`);
     // Template mode: LLM fills in sections, we splice into template
     const raw = await llm.generate(prompt, {
       system: systemPrompt,
-      temperature: 0.1, // lower temp for more deterministic section filling
+      temperature: 0.1,
       maxTokens: 8192,
+    }, (chunk) => {
+      totalChars += chunk.length;
+      const now = Date.now();
+      if (now - lastLog > CHUNK_LOG_INTERVAL) {
+        logMsg(`  [${iu.name}] ░ streaming... ${totalChars} chars received`);
+        lastLog = now;
+      }
     });
 
+    const genTime = Date.now() - genStart;
+    logMsg(`  [${iu.name}] ✓ LLM generation: ${genTime}ms (${raw.length} chars)`);
+
+    const asmStart = Date.now();
     code = assembleFromTemplate(template, raw, iu);
+    logMsg(`  [${iu.name}] Template assembly: ${Date.now() - asmStart}ms`);
   } else {
+    logMsg(`  [${iu.name}] Using freeform mode`);
     // Freeform mode
-    code = cleanCodeResponse(await llm.generate(prompt, {
+    const raw = await llm.generate(prompt, {
       system: systemPrompt,
       temperature: 0.2,
       maxTokens: 8192,
-    }));
+    }, (chunk) => {
+      totalChars += chunk.length;
+      const now = Date.now();
+      if (now - lastLog > CHUNK_LOG_INTERVAL) {
+        logMsg(`  [${iu.name}] ░ streaming... ${totalChars} chars received`);
+        lastLog = now;
+      }
+    });
+
+    const genTime = Date.now() - genStart;
+    logMsg(`  [${iu.name}] ✓ LLM generation: ${genTime}ms (${raw.length} chars)`);
+    
+    code = cleanCodeResponse(raw);
   }
 
   // Typecheck-and-retry loop
   if (projectRoot && iu.output_files[0]) {
+    logMsg(`  [${iu.name}] Running typecheck-and-retry...`);
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const tcStart = Date.now();
       const errors = typecheckFile(projectRoot, iu.output_files[0], code);
+      logMsg(`  [${iu.name}] Typecheck #${attempt + 1}: ${Date.now() - tcStart}ms ${errors ? '❌ errors' : '✓ clean'}`);
+      
       if (!errors) break; // clean!
 
       // Feed errors back to LLM with the current code
+      logMsg(`  [${iu.name}] Sending errors to LLM for fix...`);
       const fixPrompt = buildFixPrompt(code, errors);
+      const fixStart = Date.now();
       const fixResponse = await llm.generate(fixPrompt, {
         system: systemPrompt,
         temperature: 0.1,
         maxTokens: 8192,
       });
+      logMsg(`  [${iu.name}] Fix attempt #${attempt + 1}: ${Date.now() - fixStart}ms`);
 
       if (template) {
         code = assembleFromTemplate(template, fixResponse, iu);
@@ -189,6 +250,9 @@ async function generateWithLLM(
       }
     }
   }
+
+  const totalTime = Date.now() - startTime;
+  logMsg(`  [${iu.name}] ✓ Total generation time: ${totalTime}ms`);
 
   return code;
 }

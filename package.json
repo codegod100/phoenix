@@ -9,13 +9,21 @@
     "phoenix": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "phoenix": "node dist/cli.js"
+    "build": "bun build ./src/index.ts ./src/cli.ts --outdir=dist --target=node",
+    "build:types": "tsc --declaration --emitDeclarationOnly",
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest",
+    "phoenix": "bun dist/cli.js",
+    "dev": "bun run src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mariozechner/pi-coding-agent": "^0.64.0",
+    "@mariozechner/pi-ai": "^0.64.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "@types/bun": "latest"
   }
 }

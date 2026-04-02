@@ -322,7 +322,7 @@ async function cmdBootstrap(): Promise<void> {
   console.log();
 
   // Step 2: Canonicalization
-  const llmEarly = resolveProvider(phoenixDir);
+  const llmEarly = await resolveProvider(phoenixDir);
   if (llmEarly) {
     console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim(`(LLM: ${llmEarly.name}/${llmEarly.model})`)}`);
   } else {
@@ -367,8 +367,8 @@ async function cmdBootstrap(): Promise<void> {
   console.log();
 
   // Step 4: Generate code
-  const llm = resolveProvider(phoenixDir);
-  const { hint } = describeAvailability();
+  const llm = await resolveProvider(phoenixDir);
+  const { hint } = await describeAvailability();
   if (llm) {
     console.log(`  ${dim('Phase C:')} Code generation ${dim(`(${llm.name}/${llm.model})`)}`);
   } else {
@@ -409,7 +409,7 @@ async function cmdBootstrap(): Promise<void> {
     writeFileSync(pkgPath, JSON.stringify(earlyPkg, null, 2) + '\n', 'utf8');
     // Install so type declarations are available for typecheck-retry
     try {
-      execSync('npm install --silent 2>/dev/null', { cwd: projectRoot, stdio: 'pipe', timeout: 60000 });
+      execSync('bun install', { cwd: projectRoot, stdio: 'pipe', timeout: 60000 });
     } catch { /* best effort */ }
   }
 
@@ -1031,9 +1031,10 @@ async function cmdRegen(args: string[]): Promise<void> {
     return;
   }
 
-  // Parse --iu=<id> flag and --stubs flag
+  // Parse flags
   const iuFilter = args.find(a => a.startsWith('--iu='))?.split('=')[1];
   const forceStubs = args.includes('--stubs');
+  const verbose = args.includes('-v') || args.includes('--verbose');
   const targetIUs = iuFilter
     ? ius.filter(iu => iu.iu_id.startsWith(iuFilter) || iu.name === iuFilter)
     : ius;
@@ -1043,7 +1044,7 @@ async function cmdRegen(args: string[]): Promise<void> {
     return;
   }
 
-  const llm = forceStubs ? null : resolveProvider(phoenixDir);
+  const llm = forceStubs ? null : await resolveProvider(phoenixDir);
   const canonStore = new CanonicalStore(phoenixDir);
   const canonNodes = canonStore.getAllNodes();
 
@@ -1051,7 +1052,7 @@ async function cmdRegen(args: string[]): Promise<void> {
   if (llm) {
     console.log(`  ${dim(`Provider: ${llm.name}/${llm.model}`)}`);
   } else {
-    const { hint } = describeAvailability();
+    const { hint } = await describeAvailability();
     console.log(`  ${dim('Mode: stubs')}${forceStubs ? '' : ` ${dim('—')} ${dim(hint)}`}`);
   }
   console.log();
@@ -1072,10 +1073,28 @@ async function cmdRegen(args: string[]): Promise<void> {
     allIUs: ius,
     projectRoot,
     target: regenArch,
+    verbose,
+    log: verbose ? (msg) => console.log(dim(msg)) : undefined,
     onProgress: (iu, status, msg) => {
-      if (status === 'start') process.stdout.write(`  ⏳ ${iu.name}…`);
-      else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);
-      else if (status === 'error') process.stdout.write(` ${red('✖')} ${dim(msg || 'failed, using stub')}\n`);
+      if (status === 'start') {
+        if (verbose) {
+          console.log(`  ⏳ ${iu.name}…`);
+        } else {
+          process.stdout.write(`  ⏳ ${iu.name}…`);
+        }
+      } else if (status === 'done') {
+        if (verbose) {
+          // Verbose logs its own completion
+        } else {
+          process.stdout.write(`\r  ✅ ${iu.name}   \n`);
+        }
+      } else if (status === 'error') {
+        if (verbose) {
+          console.log(`  ❌ ${iu.name}: ${msg}`);
+        } else {
+          process.stdout.write(`\r  ❌ ${iu.name}: ${msg}\n`);
+        }
+      }
     },
   };
 
@@ -1178,7 +1197,7 @@ async function cmdCanonicalize(): Promise<void> {
     return;
   }
 
-  const llm = resolveProvider(phoenixDir);
+  const llm = await resolveProvider(phoenixDir);
   console.log(bold('📐 Canonicalization'));
   if (llm) {
     console.log(`  ${dim(`LLM: ${llm.name}/${llm.model}`)}`);
@@ -1513,8 +1532,94 @@ function readinessToIcon(readiness: ReadinessLevel): string {
   }
 }
 
+function cmdConfig(args: string[]): void {
+  const { phoenixDir } = requirePhoenixRoot();
+  const configPath = join(phoenixDir, 'config.json');
+  const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {};
+
+  // Parse key=value pairs
+  for (const arg of args) {
+    if (arg.includes('=')) {
+      const [key, value] = arg.split('=');
+      if (key === 'llm.provider') {
+        config.llm = { ...config.llm, provider: value };
+      } else if (key === 'llm.model') {
+        config.llm = { ...config.llm, model: value };
+      } else if (key === 'architecture') {
+        config.architecture = value;
+      } else {
+        console.error(red(`✖ Unknown config key: ${key}`));
+        console.error(dim('  Supported: llm.provider, llm.model, architecture'));
+        process.exit(1);
+      }
+    }
+  }
+
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+
+  console.log(bold('⚙️  Phoenix Configuration'));
+  console.log();
+  console.log(`  ${dim('Config file:')} ${configPath}`);
+  console.log();
+  
+  if (config.llm?.provider) {
+    console.log(`  ${dim('LLM Provider:')} ${cyan(config.llm.provider)}`);
+  }
+  if (config.llm?.model) {
+    console.log(`  ${dim('LLM Model:')}    ${cyan(config.llm.model)}`);
+  }
+  if (config.architecture) {
+    console.log(`  ${dim('Architecture:')} ${cyan(config.architecture)}`);
+  }
+  
+  console.log();
+  console.log(dim('  Set values with: phoenix config key=value'));
+  console.log(dim('  Example: phoenix config llm.provider=anthropic llm.model=claude-sonnet-4-20250514'));
+}
+
 function cmdVersion(): void {
   console.log(`Phoenix VCS v${VERSION}`);
+}
+
+async function cmdModels(): Promise<void> {
+  const { phoenixDir } = requirePhoenixRoot();
+  const { listAvailableModels } = await import('./llm/pi-sdk.js');
+  
+  console.log(bold('🤖 Available Models'));
+  console.log();
+  
+  try {
+    const models = await listAvailableModels(phoenixDir);
+    
+    if (models.length === 0) {
+      console.log(yellow('  ⚠ No models available.'));
+      console.log(dim('    Set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable LLM generation.'));
+      return;
+    }
+    
+    // Group by provider
+    const byProvider = new Map<string, typeof models>();
+    for (const m of models) {
+      const list = byProvider.get(m.provider) || [];
+      list.push(m);
+      byProvider.set(m.provider, list);
+    }
+    
+    for (const [provider, providerModels] of byProvider) {
+      console.log(`  ${bold(provider)}:`);
+      for (const m of providerModels) {
+        console.log(`    ${dim('·')} ${cyan(m.id)}`);
+        if (m.description) {
+          console.log(`      ${dim(m.description)}`);
+        }
+      }
+    }
+    
+    console.log();
+    console.log(dim('  Set a model with: phoenix config llm.provider=<name> llm.model=<id>'));
+  } catch (err) {
+    console.error(red(`✖ Failed to list models: ${err instanceof Error ? err.message : err}`));
+  }
 }
 
 function cmdHelp(): void {
@@ -1539,9 +1644,9 @@ ${bold('Canonical Graph:')}
 
 ${bold('Implementation:')}
   ${cyan('plan')}                  Plan Implementation Units from canonical graph
-  ${cyan('regen')} [--iu=<id>]    Regenerate code (all or specific IU)
-                         ${dim('Uses LLM if ANTHROPIC_API_KEY or OPENAI_API_KEY is set')}
+  ${cyan('regen')} [--iu=<id>] [-v] Regenerate code (all or specific IU)
                          ${dim('--stubs  Force stub generation (skip LLM)')}
+                         ${dim('-v       Verbose: show timing & streaming progress')}
 
 ${bold('Verification:')}
   ${cyan('status')}                Trust dashboard — the primary UX
@@ -1556,6 +1661,8 @@ ${bold('Inspection:')}
   ${cyan('bot')} "<command>"       Route a bot command (e.g., "SpecBot: help")
 
 ${bold('Meta:')}
+  ${cyan('models')}                List available LLM models
+  ${cyan('config')} [key=value...]  View/set configuration (llm.provider, llm.model, architecture)
   ${cyan('version')}               Show version
   ${cyan('help')}                  Show this help
 
@@ -1624,6 +1731,12 @@ async function main(): Promise<void> {
       break;
     case 'bot':
       cmdBot(commandArgs);
+      break;
+    case 'config':
+      cmdConfig(commandArgs);
+      break;
+    case 'models':
+      await cmdModels();
       break;
     case 'version':
     case '--version':

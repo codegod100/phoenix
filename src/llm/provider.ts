@@ -16,8 +16,9 @@ export interface LLMProvider {
   /**
    * Generate a completion from a prompt.
    * Returns the raw text response.
+   * Optional onChunk callback receives streaming deltas.
    */
-  generate(prompt: string, options?: GenerateOptions): Promise<string>;
+  generate(prompt: string, options?: GenerateOptions, onChunk?: (chunk: string) => void): Promise<string>;
 }
 
 export interface GenerateOptions {
@@ -27,6 +28,8 @@ export interface GenerateOptions {
   temperature?: number;
   /** System prompt / role. */
   system?: string;
+  /** Streaming callback for progress updates. */
+  onChunk?: (chunk: string) => void;
 }
 
 export interface LLMConfig {
