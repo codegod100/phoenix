@@ -63,7 +63,7 @@ router.post('/', async (c) => {
     }
   }
   
-  const insertResult = db.prepare('INSERT INTO items (name, quantity, category_id) VALUES (?, ?, ?').run(name, quantity, category_id ?? null);
+  const insertResult = db.prepare('INSERT INTO items (name, quantity, category_id) VALUES (?, ?, ?)').run(name, quantity, category_id ?? null);
   
   const item = db.prepare(`SELECT i.id, i.name, i.quantity, i.category_id, i.created_at, c.name as category_name FROM items i LEFT JOIN categories c ON i.category_id = c.id WHERE i.id = ?`).get(insertResult.lastInsertRowid);
   

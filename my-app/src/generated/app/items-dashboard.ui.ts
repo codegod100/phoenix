@@ -306,6 +306,37 @@ class ItemsDashboard {
         alert(error.error || 'Failed to delete item');
       }
     }
+    
+    // Load items on page load
+    async function initDashboard() {
+      try {
+        const res = await fetch('/items');
+        if (!res.ok) throw new Error('Failed to load items');
+        const items = await res.json();
+        
+        // Render items into table
+        const tbody = document.querySelector('tbody');
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No items found</td></tr>';
+        } else {
+          tbody.innerHTML = items.map(item => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.category_name ? `<span class="badge">${item.category_name}</span>` : '<span class="badge none">None</span>'}</td>
+              <td class="actions">
+                <button class="btn btn-secondary btn-sm" onclick="openEditModal(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.quantity}, ${item.category_id || 'null'})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Failed to load items:', err);
+      }
+    }
+    
+    initDashboard();
   </script>
 </body>
 </html>`;
