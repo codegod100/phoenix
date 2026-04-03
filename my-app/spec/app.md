@@ -16,10 +16,17 @@
 
 ## Categories
 
-- A category has a name and description
+- A category has a name and optional description
 - Items belong to a category (optional)
 - Users can create, view, update, and delete categories
 - When fetching items, include the category name
+
+### Category Management UI
+- Dashboard includes a "Manage Categories" button
+- Clicking opens a modal with category list
+- Modal allows creating, editing, and deleting categories
+- Form fields: name (required), description (optional)
+- Deleting a category unassigns items from that category
 
 ## Items Dashboard
 
@@ -30,6 +37,7 @@
 - Allow filtering by category
 - Include a search box for item names
 - Provide buttons to create, edit, and delete items
+- Include a "Manage Categories" button that opens category management modal
 - Editing opens a modal form with minimum quantity field
 - All actions use the items API endpoints
 

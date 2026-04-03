@@ -3,12 +3,28 @@ import { app, mount } from './app.js';
 import { runMigrations } from './db.js';
 
 // Generated API route modules
+import categories from './generated/app/categories.js';
 import items_dashboard from './generated/app/items-dashboard.js';
 import items from './generated/app/items.js';
 
+// Generated UI component modules
+import Categories from './generated/app/categories.ui.js';
+import ItemsDashboard from './generated/app/items-dashboard.ui.js';
+
 // Mount API routes
+mount('/categories', categories);
 mount('/items-dashboard', items_dashboard);
 mount('/items', items);
+
+// Register UI routes that use runtime HTML generation
+app.get('/ui/categories', (c) => {
+  const ui = new Categories();
+  return c.html(ui.generateHTML());
+});
+app.get('/ui/items-dashboard', (c) => {
+  const ui = new ItemsDashboard();
+  return c.html(ui.generateHTML());
+});
 
 const port = parseInt(process.env.PORT ?? '3000', 10);
 runMigrations();
