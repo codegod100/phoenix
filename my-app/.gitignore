@@ -12,6 +12,10 @@ src/generated/
 # Phoenix store
 .phoenix/store/
 
+# Database files
+data/*.db-shm
+data/*.db-wal
+
 # Logs
 *.log
 logs/
