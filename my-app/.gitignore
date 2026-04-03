@@ -37,3 +37,8 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# Backups & output
+*.backup
+output.txt
+output.ts
