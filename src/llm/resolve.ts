@@ -32,6 +32,12 @@ export async function resolveProvider(phoenixDir?: string): Promise<PiSDKProvide
   // Create the provider via pi SDK with preferences
   const provider = await createPiSDKProvider(phoenixDir, preferredProvider, preferredModel);
 
+  // Warn about Fireworks token limits with Pi SDK
+  if (provider?.name === 'fireworks') {
+    console.warn('⚠️  Fireworks models may truncate output with Pi SDK (max 4096 tokens without streaming).');
+    console.warn('   Set PHOENIX_CLI_POOL=1 to use CLI pool with proper streaming support.');
+  }
+
   // Save preference if we detected it (and have a phoenix dir)
   if (phoenixDir && provider && !config.llm) {
     saveConfig(phoenixDir, {
