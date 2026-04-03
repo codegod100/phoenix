@@ -6,7 +6,7 @@ import type { ImplementationUnit } from './models/iu.js';
 import type { CanonicalNode } from './models/canonical.js';
 import type { IUManifest, RegenMetadata, FileManifestEntry } from './models/manifest.js';
 import type { PiSDKProvider } from './llm/pi-sdk.js';
-import { buildPrompt, getSystemPrompt } from './llm/prompt.js';
+import { buildPrompt, buildClientPrompt, buildTsUiPrompt, getSystemPrompt } from './llm/prompt.js';
 import type { ResolvedTarget } from './models/architecture.js';
 import { sha256 } from './semhash.js';
 
@@ -44,7 +44,7 @@ export async function generateIU(iu: ImplementationUnit, ctx?: RegenContext): Pr
     let content: string;
 
     if (ctx?.llm && ctx.canonNodes) {
-      content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx);
+      content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx, outputPath);
     } else {
       content = generateStub(iu);
     }
@@ -85,7 +85,8 @@ async function generateWithLLM(
   iu: ImplementationUnit,
   llm: PiSDKProvider,
   canonNodes: CanonicalNode[],
-  ctx?: RegenContext
+  ctx?: RegenContext,
+  outputPath?: string
 ): Promise<string> {
   const log = ctx?.verbose && ctx?.log ? ctx.log : () => {};
   const startTime = Date.now();
@@ -96,8 +97,19 @@ async function generateWithLLM(
     ?.filter(o => o.iu_id !== iu.iu_id && o.output_files[0]?.startsWith(iuDir || ''))
     .map(o => o.name) ?? [];
 
-  // Build prompt
-  const prompt = buildPrompt(iu, canonNodes, siblings, ctx?.target);
+  // Choose the right prompt based on output file type
+  let prompt: string;
+  const isUi = outputPath?.endsWith('.ui.ts');
+  const isClient = outputPath?.endsWith('.client.ts');
+  
+  if (isUi) {
+    prompt = buildTsUiPrompt(iu, canonNodes);
+  } else if (isClient) {
+    prompt = buildClientPrompt(iu, canonNodes);
+  } else {
+    prompt = buildPrompt(iu, canonNodes, siblings, ctx?.target);
+  }
+  
   const systemPrompt = getSystemPrompt(ctx?.target);
 
   log(`  [${iu.name}] Prompt: ${prompt.length} chars`);
@@ -116,17 +128,47 @@ async function generateWithLLM(
 }
 
 /**
- * Simple code cleaner - just extract from markdown blocks.
+ * Simple code cleaner - extract from markdown blocks or XML tags, fix common issues.
  */
 function cleanCode(raw: string): string {
   const trimmed = raw.trim();
 
   // If wrapped in ```typescript, extract it
-  const match = trimmed.match(/```(?:typescript|ts)?\s*\n?([\s\S]*?)\n?```/);
-  if (match) return match[1].trim();
+  const mdMatch = trimmed.match(/```(?:typescript|ts)?\s*\n?([\s\S]*?)\n?```/);
+  let code = mdMatch ? mdMatch[1].trim() : trimmed;
 
-  // Otherwise return as-is
-  return trimmed;
+  // If wrapped in <output> tags, extract it
+  const xmlMatch = code.match(/<output>\s*\n?([\s\S]*?)\n?\s*<\/output>/);
+  if (xmlMatch) code = xmlMatch[1].trim();
+
+  // Strip any stray <output> or </output> tags
+  code = code.replace(/<output>/g, '').replace(/<\/output>/g, '');
+  
+  // Remove invalid section markers that some models output
+  code = code.replace(/__MIGRATIONS__\n?/g, '');
+  code = code.replace(/__SCHEMAS__\n?/g, '');
+  code = code.replace(/__ROUTES__\n?/g, '');
+  code = code.replace(/__TESTS__\n?/g, '');
+  
+  // Remove registerMigration calls with multiline backtick strings
+  code = code.replace(/registerMigration\s*\([\s\S]*?\`[\s\S]*?\`\s*\);?\n?/g, '');
+  
+  // Remove any remaining SQL-like content that leaked through
+  code = code.replace(/\(\s*\d+\s*\)\s*PRIMARY KEY[^\n]*\n/g, '');
+  code = code.replace(/CREATE TABLE[^;]*;\n?/gi, '');
+  code = code.replace(/FOREIGN KEY[^\n]*\n/gi, '');
+  
+  // Fix missing router declaration if router is used
+  if (code.includes('router.') && !code.includes('const router') && !code.includes('new Hono')) {
+    // Add router declaration after imports
+    const importEnd = code.lastIndexOf('import');
+    const importEndLine = code.indexOf('\n', importEnd);
+    if (importEndLine > 0) {
+      code = code.slice(0, importEndLine + 1) + '\nconst router = new Hono();\n' + code.slice(importEndLine + 1);
+    }
+  }
+  
+  return code.trim();
 }
 
 /**

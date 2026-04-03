@@ -26,6 +26,8 @@ export const KIMI_SYSTEM_PROMPT = `Generate TypeScript modules from specificatio
 - Export all public functions and types
 - Implement complete logic, never stubs
 - Include _phoenix metadata export exactly as specified
+- Do NOT use section markers like __MIGRATIONS__ or __SCHEMAS__ - write actual code
+- Use correct arrow function syntax: (param) => { } not (param => { }
 </core_rules>
 
 <dependencies>
@@ -284,7 +286,10 @@ export function buildPrompt(
   // Output instruction
   parts.push(`</module>`);
   parts.push('');
-  parts.push('Generate the complete TypeScript module inside <output> tags:');
+  parts.push('Generate the complete TypeScript module. Include at the end:');
+  parts.push('- export default router;');
+  parts.push('- export const _phoenix = { iu_id, name, risk_tier, canon_ids } as const;');
+  parts.push('Output raw code only, no markdown fences, no XML tags.');
 
   return parts.join('\n');
 }
@@ -316,21 +321,22 @@ ${reqs}
 5. delete(id: number): Promise<void>
 </methods>
 
-<output_format>
+CRITICAL: This is an API CLIENT, NOT a server route. Do NOT generate Hono routes or Express handlers.
+Generate a TypeScript CLASS that CALLS fetch() to communicate with an existing API.
+
+Example output structure:
 export class ${resource}Client {
   constructor(private baseUrl: string) {}
-  // implement methods with fetch(), JSDoc, error handling
+  async list(): Promise<${resource}[]> { return fetch(...).then(r => r.json()); }
+  async get(id: number): Promise<${resource}> { ... }
+  async create(data: Create${resource}Data): Promise<${resource}> { ... }
+  async update(id: number, data: Update${resource}Data): Promise<${resource}> { ... }
+  async delete(id: number): Promise<void> { ... }
 }
+export default ${resource}Client;
+export const _phoenix = { iu_id: '${iu.iu_id}', name: '${iu.name}', risk_tier: '${iu.risk_tier}', canon_ids: [${iu.source_canon_ids.length}] } as const;
 
-export const _phoenix = {
-  iu_id: '${iu.iu_id}',
-  name: '${iu.name}',
-  risk_tier: '${iu.risk_tier}',
-  canon_ids: [${iu.source_canon_ids.length}]
-} as const;
-</output_format>
-
-Generate complete client code inside <output> tags.
+Generate complete client code. Do NOT use <output> tags - just output the raw code.
 </client>`;
 }
 
@@ -370,7 +376,23 @@ ${cons ? `<constraints>\n${cons}\n</constraints>` : ''}
 </methods>
 <metadata iu_id="${iu.iu_id}" name="${iu.name}" tier="${iu.risk_tier}"/>
 
-Generate complete TypeScript class inside <output> tags.
+CRITICAL: This is a UI component, NOT an API route. Do NOT generate Hono routes or Express handlers.
+Generate a TypeScript CLASS with:
+- Private state fields
+- A generateHTML() method that returns a string containing complete HTML
+- No router.get(), no router.post(), no Hono instance
+- Fetch data from the API path using the fetch() function
+
+Example output structure:
+class ${className} {
+  private state = { data: [], loading: false, error: null };
+  async loadData() { /* fetch from API */ }
+  generateHTML(): string { return \`<!DOCTYPE html>...\`; }
+}
+export default ${className};
+export const _phoenix = { ... } as const;
+
+Generate complete TypeScript class. Do NOT use <output> tags - just output the raw code.
 </ui_component>`;
 }
 
@@ -419,7 +441,9 @@ Rules:
 - The code must compile under TypeScript strict mode (strict: true, no implicit any).
 - If the requirements describe a data structure, define and export the types.
 - If the requirements describe validation rules, implement them with clear error messages.
-- If the requirements describe state management, use a class or closure — your choice.`;
+- If the requirements describe state management, use a class or closure — your choice.
+- Do NOT use section markers like __MIGRATIONS__ or __SCHEMAS__ - write actual code.
+- Use correct arrow function syntax: (param) => { } not (param => { }`;
 
 /** Legacy architecture-aware system prompt */
 export function getSystemPrompt(target?: ResolvedTarget | null): string {

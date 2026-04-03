@@ -1,553 +1,339 @@
-registerMigration('categories', `
-  CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`);
+class Items {
+  private state = {
+    data: [] as unknown[],
+    categories: [] as unknown[],
+    loading: false,
+    error: null as string | null,
+    search: '',
+    categoryId: '',
+    sort: 'name',
+    order: 'asc'
+  };
 
-registerMigration('items', `
-  CREATE TABLE IF NOT EXISTS items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    quantity INTEGER NOT NULL DEFAULT 0,
-    category_id INTEGER,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (category_id) REFERENCES categories(id)
-  )
-`);
+  constructor(initialState?: Partial<typeof this.state>) {
+    if (initialState) {
+      Object.assign(this.state, initialState);
+    }
+  }
 
-const CreateCategorySchema = z.object({
-  name: z.string().min(1, 'Name must not be empty'),
-  description: z.string().optional()
-});
+  async loadData(): Promise<void> {
+    this.updateState({ loading: true, error: null });
+    
+    try {
+      const params = new URLSearchParams();
+      if (this.state.search) params.set('search', this.state.search);
+      if (this.state.categoryId) params.set('category_id', this.state.categoryId);
+      if (this.state.sort) params.set('sort', this.state.sort);
+      if (this.state.order) params.set('order', this.state.order);
+      
+      const queryString = params.toString();
+      const [itemsRes, categoriesRes] = await Promise.all([
+        fetch('./items' + (queryString ? '?' + queryString : '')),
+        fetch('./categories')
+      ]);
+      
+      if (!itemsRes.ok) throw new Error('Failed to load items');
+      if (!categoriesRes.ok) throw new Error('Failed to load categories');
+      
+      const items = await itemsRes.json();
+      const categories = await categoriesRes.json();
+      
+      this.updateState({ data: items, categories, loading: false });
+    } catch (err) {
+      this.updateState({ 
+        error: err instanceof Error ? err.message : 'Unknown error', 
+        loading: false 
+      });
+    }
+  }
 
-const UpdateCategorySchema = z.object({
-  name: z.string().min(1, 'Name must not be empty').optional(),
-  description: z.string().optional()
-});
+  updateState(partial: Partial<typeof this.state>): void {
+    Object.assign(this.state, partial);
+  }
 
-const CreateItemSchema = z.object({
-  name: z.string().min(1, 'Name must not be empty'),
-  quantity: z.number().int().min(0, 'Quantity must be non-negative'),
-  category_id: z.number().int().nullable().optional()
-});
+  generateHTML(): string {
+    const toggleSort = (field: string): string => {
+      if (this.state.sort === field) {
+        return this.state.order === 'asc' ? 'desc' : 'asc';
+      }
+      return 'asc';
+    };
 
-const UpdateItemSchema = z.object({
-  name: z.string().min(1, 'Name must not be empty').optional(),
-  quantity: z.number().int().min(0, 'Quantity must be non-negative').optional(),
-  category_id: z.number().int().nullable().optional()
-});
+    const sortIcon = (field: string): string => {
+      if (this.state.sort !== field) return '⇅';
+      return this.state.order === 'asc' ? '↑' : '↓';
+    };
 
-router.get('/', (c) => {
-  return c.html(`<!DOCTYPE html>
+    const items = this.state.data as Array<{
+      id: number;
+      name: string;
+      quantity: number;
+      category_id: number | null;
+      category_name: string | null;
+    }>;
+
+    const categories = this.state.categories as Array<{
+      id: number;
+      name: string;
+    }>;
+
+    return `<!DOCTYPE html>
 <html>
 <head>
-  <title>Items Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Items</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f8f9fa; }
-    h1 { color: #333; margin-bottom: 20px; }
-    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
-    input, select, button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-    button { background: #0066cc; color: white; border: none; cursor: pointer; }
-    button:hover { background: #0052a3; }
-    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background: #f5f5f5; cursor: pointer; user-select: none; }
-    th:hover { background: #e8e8e8; }
-    tr:hover { background: #f8f9fa; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-    .modal.active { display: flex; }
-    .modal-content { background: white; padding: 24px; border-radius: 8px; min-width: 400px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
-    .form-group { margin-bottom: 16px; }
-    label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
-    input[type="text"], input[type="number"], select { width: 100%; box-sizing: border-box; }
-    .actions { display: flex; gap: 8px; }
-    .btn-secondary { background: #6c757d; }
-    .btn-secondary:hover { background: #545b62; }
-    .btn-danger { background: #dc3545; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { margin-bottom: 20px; color: #333; }
+    .controls { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .search-box { flex: 1; min-width: 200px; }
+    .search-box input { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .filter-select { padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white; min-width: 150px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+    .btn-primary { background: #0066cc; color: white; }
+    .btn-primary:hover { background: #0052a3; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-secondary:hover { background: #5a6268; }
+    .btn-danger { background: #dc3545; color: white; }
     .btn-danger:hover { background: #c82333; }
-    .empty-state { text-align: center; color: #666; padding: 40px; }
-    .category-tag { background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    table { width: 100%; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f8f9fa; font-weight: 600; color: #555; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background: #e9ecef; }
+    tr:hover { background: #f8f9fa; }
+    .actions { display: flex; gap: 8px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; background: #e9ecef; color: #495057; }
+    .badge.none { background: #f8f9fa; color: #999; }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .modal h2 { margin-bottom: 20px; color: #333; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; }
+    .hidden { display: none; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
   </style>
 </head>
 <body>
-  <h1>Items Dashboard</h1>
-  
-  <div class="controls">
-    <input type="text" id="searchInput" placeholder="Search items by name..." />
-    <select id="categoryFilter">
-      <option value="">All Categories</option>
-    </select>
-    <button onclick="openItemModal()">Add Item</button>
-    <button class="btn-secondary" onclick="openCategoryModal()">Manage Categories</button>
+  <div class="container">
+    <h1>Items</h1>
+    
+    ${this.state.error ? `<div class="error">${this.state.error}</div>` : ''}
+    
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search items by name..." value="${this.state.search}">
+      </div>
+      <select id="categoryFilter" class="filter-select">
+        <option value="">All Categories</option>
+        ${categories.map(cat => `<option value="${cat.id}" ${this.state.categoryId == String(cat.id) ? 'selected' : ''}>${cat.name}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ Create Item</button>
+    </div>
+    
+    ${this.state.loading ? '<div class="loading">Loading...</div>' : `
+    <table>
+      <thead>
+        <tr>
+          <th class="sortable" onclick="handleSort('name')">Name ${sortIcon('name')}</th>
+          <th class="sortable" onclick="handleSort('quantity')">Quantity ${sortIcon('quantity')}</th>
+          <th>Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.length === 0 ? '<tr><td colspan="4" class="empty-state">No items found</td></tr>' : 
+          items.map(item => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.category_name ? `<span class="badge">${item.category_name}</span>` : '<span class="badge none">None</span>'}</td>
+              <td class="actions">
+                <button class="btn btn-secondary btn-sm" onclick="openEditModal(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.quantity}, ${item.category_id || 'null'})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id})">Delete</button>
+              </td>
+            </tr>
+          `).join('')
+        }
+      </tbody>
+    </table>
+    `}
   </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th onclick="sort('name')">Name ↕</th>
-        <th onclick="sort('quantity')">Quantity ↕</th>
-        <th>Category</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="itemsTable">
-      <tr><td colspan="4" class="empty-state">Loading...</td></tr>
-    </tbody>
-  </table>
-
-  <div id="itemModal" class="modal">
-    <div class="modal-content">
-      <h2 id="itemModalTitle">Add Item</h2>
+  
+  <div id="modalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 id="modalTitle">Create Item</h2>
       <form id="itemForm">
-        <input type="hidden" id="itemId" />
+        <input type="hidden" id="itemId">
         <div class="form-group">
-          <label>Name *</label>
-          <input type="text" id="itemName" required />
+          <label for="itemName">Name</label>
+          <input type="text" id="itemName" required>
         </div>
         <div class="form-group">
-          <label>Quantity *</label>
-          <input type="number" id="itemQuantity" min="0" required />
+          <label for="itemQuantity">Quantity</label>
+          <input type="number" id="itemQuantity" required min="0">
         </div>
         <div class="form-group">
-          <label>Category</label>
-          <select id="itemCategory"><option value="">-- None --</option></select>
+          <label for="itemCategory">Category</label>
+          <select id="itemCategory">
+            <option value="">None</option>
+            ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+          </select>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button type="submit">Save</button>
-          <button type="button" class="btn-secondary" onclick="closeItemModal()">Cancel</button>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
         </div>
       </form>
     </div>
   </div>
-
-  <div id="categoryModal" class="modal">
-    <div class="modal-content">
-      <h2>Manage Categories</h2>
-      <div class="form-group">
-        <label>Add New Category</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="newCategoryName" placeholder="Category name" style="flex: 1;" />
-          <input type="text" id="newCategoryDesc" placeholder="Description (optional)" style="flex: 1;" />
-          <button onclick="addCategory()">Add</button>
-        </div>
-      </div>
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Description</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="categoriesTable"></tbody>
-      </table>
-      <button class="btn-secondary" onclick="closeCategoryModal()" style="margin-top: 16px;">Close</button>
-    </div>
-  </div>
-
+  
   <script>
-    let currentSort = 'created_at';
-    let categories = [];
-
-    async function loadItems() {
-      const search = document.getElementById('searchInput').value;
-      const category = document.getElementById('categoryFilter').value;
+    const state = {
+      search: '${this.state.search}',
+      categoryId: '${this.state.categoryId}',
+      sort: '${this.state.sort}',
+      order: '${this.state.order}'
+    };
+    
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const itemForm = document.getElementById('itemForm');
+    const itemId = document.getElementById('itemId');
+    const itemName = document.getElementById('itemName');
+    const itemQuantity = document.getElementById('itemQuantity');
+    const itemCategory = document.getElementById('itemCategory');
+    
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        state.search = searchInput.value;
+        refreshPage();
+      }, 300);
+    });
+    
+    categoryFilter.addEventListener('change', () => {
+      state.categoryId = categoryFilter.value;
+      refreshPage();
+    });
+    
+    function handleSort(field) {
+      if (state.sort === field) {
+        state.order = state.order === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sort = field;
+        state.order = 'asc';
+      }
+      refreshPage();
+    }
+    
+    function refreshPage() {
       const params = new URLSearchParams();
-      if (search) params.set('search', search);
-      if (category) params.set('category', category);
-      params.set('sort', currentSort);
+      if (state.search) params.set('search', state.search);
+      if (state.categoryId) params.set('category_id', state.categoryId);
+      if (state.sort) params.set('sort', state.sort);
+      if (state.order) params.set('order', state.order);
+      window.location.search = params.toString();
+    }
+    
+    function openCreateModal() {
+      modalTitle.textContent = 'Create Item';
+      itemId.value = '';
+      itemName.value = '';
+      itemQuantity.value = '0';
+      itemCategory.value = '';
+      modalOverlay.classList.remove('hidden');
+    }
+    
+    function openEditModal(id, name, quantity, categoryId) {
+      modalTitle.textContent = 'Edit Item';
+      itemId.value = id;
+      itemName.value = name;
+      itemQuantity.value = quantity;
+      itemCategory.value = categoryId || '';
+      modalOverlay.classList.remove('hidden');
+    }
+    
+    function closeModal() {
+      modalOverlay.classList.add('hidden');
+    }
+    
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+    
+    itemForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
       
-      try {
-        const res = await fetch('/items?' + params.toString());
-        const items = await res.json();
-        
-        const tbody = document.getElementById('itemsTable');
-        if (items.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No items found</td></tr>';
-          return;
-        }
-        
-        tbody.innerHTML = items.map(item => \`
-          <tr>
-            <td>\${escapeHtml(item.name)}</td>
-            <td>\${item.quantity}</td>
-            <td>\${item.category_name ? '<span class="category-tag">' + escapeHtml(item.category_name) + '</span>' : '-'}</td>
-            <td class="actions">
-              <button onclick="editItem(\${item.id})">Edit</button>
-              <button class="btn-danger" onclick="deleteItem(\${item.id})">Delete</button>
-            </td>
-          </tr>
-        \`).join('');
-      } catch (err) {
-        document.getElementById('itemsTable').innerHTML = '<tr><td colspan="4" class="empty-state">Error loading items</td></tr>';
+      const name = itemName.value.trim();
+      if (!name) {
+        alert('Name must not be empty');
+        return;
       }
-    }
-
-    async function loadCategories() {
-      try {
-        const res = await fetch('/categories');
-        categories = await res.json();
-        
-        const filter = document.getElementById('categoryFilter');
-        const itemSelect = document.getElementById('itemCategory');
-        
-        const filterOptions = '<option value="">All Categories</option>' + 
-          categories.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('');
-        filter.innerHTML = filterOptions;
-        
-        const selectOptions = '<option value="">-- None --</option>' + 
-          categories.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('');
-        itemSelect.innerHTML = selectOptions;
-        
-        document.getElementById('categoriesTable').innerHTML = categories.map(c => \`
-          <tr>
-            <td>\${escapeHtml(c.name)}</td>
-            <td>\${escapeHtml(c.description || '-')}</td>
-            <td class="actions"><button class="btn-danger" onclick="deleteCategory(\${c.id})">Delete</button></td>
-          </tr>
-        \`).join('');
-      } catch (err) {
-        console.error('Failed to load categories', err);
+      
+      const quantity = parseInt(itemQuantity.value);
+      if (quantity < 0) {
+        alert('Quantity must be a non-negative integer');
+        return;
       }
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function sort(field) {
-      currentSort = currentSort === field ? field + '_desc' : field;
-      loadItems();
-    }
-
-    function openItemModal() {
-      document.getElementById('itemForm').reset();
-      document.getElementById('itemId').value = '';
-      document.getElementById('itemModalTitle').textContent = 'Add Item';
-      document.getElementById('itemModal').classList.add('active');
-    }
-
-    function closeItemModal() {
-      document.getElementById('itemModal').classList.remove('active');
-    }
-
-    function openCategoryModal() {
-      document.getElementById('categoryModal').classList.add('active');
-      loadCategories();
-    }
-
-    function closeCategoryModal() {
-      document.getElementById('categoryModal').classList.remove('active');
-    }
-
-    async function editItem(id) {
-      try {
-        const res = await fetch('/items/' + id);
-        if (!res.ok) throw new Error('Item not found');
-        const item = await res.json();
-        document.getElementById('itemId').value = item.id;
-        document.getElementById('itemName').value = item.name;
-        document.getElementById('itemQuantity').value = item.quantity;
-        document.getElementById('itemCategory').value = item.category_id || '';
-        document.getElementById('itemModalTitle').textContent = 'Edit Item';
-        document.getElementById('itemModal').classList.add('active');
-      } catch (err) {
-        alert('Failed to load item: ' + err.message);
+      
+      const data = {
+        name,
+        quantity,
+        category_id: itemCategory.value ? parseInt(itemCategory.value) : null
+      };
+      
+      const isEdit = itemId.value !== '';
+      const url = isEdit ? './items/' + itemId.value : './items';
+      const method = isEdit ? 'PATCH' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to save item');
       }
-    }
-
+    });
+    
     async function deleteItem(id) {
       if (!confirm('Are you sure you want to delete this item?')) return;
-      try {
-        const res = await fetch('/items/' + id, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Delete failed');
-        loadItems();
-      } catch (err) {
-        alert('Failed to delete item: ' + err.message);
-      }
-    }
-
-    document.getElementById('itemForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const id = document.getElementById('itemId').value;
-      const body = {
-        name: document.getElementById('itemName').value.trim(),
-        quantity: parseInt(document.getElementById('itemQuantity').value),
-        category_id: document.getElementById('itemCategory').value || null
-      };
       
-      try {
-        const url = id ? '/items/' + id : '/items';
-        const method = id ? 'PATCH' : 'POST';
-        const res = await fetch(url, { 
-          method, 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify(body) 
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Request failed');
-        }
-        closeItemModal();
-        loadItems();
-      } catch (err) {
-        alert('Error: ' + err.message);
-      }
-    };
-
-    async function addCategory() {
-      const name = document.getElementById('newCategoryName').value.trim();
-      const description = document.getElementById('newCategoryDesc').value.trim();
-      if (!name) return alert('Category name is required');
+      const response = await fetch('./items/' + id, { method: 'DELETE' });
       
-      try {
-        const res = await fetch('/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description: description || undefined })
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Failed to create category');
-        }
-        document.getElementById('newCategoryName').value = '';
-        document.getElementById('newCategoryDesc').value = '';
-        loadCategories();
-      } catch (err) {
-        alert('Error: ' + err.message);
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete item');
       }
     }
-
-    async function deleteCategory(id) {
-      if (!confirm('Delete this category? Items in this category will become uncategorized.')) return;
-      
-      try {
-        const res = await fetch('/categories/' + id, { method: 'DELETE' });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Delete failed');
-        }
-        loadCategories();
-        loadItems();
-      } catch (err) {
-        alert('Error: ' + err.message);
-      }
-    }
-
-    document.getElementById('searchInput').addEventListener('input', debounce(loadItems, 300));
-    document.getElementById('categoryFilter').addEventListener('change', loadItems);
-
-    function debounce(fn, ms) {
-      let timeout;
-      return () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(fn, ms);
-      };
-    }
-
-    document.getElementById('itemModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('itemModal')) closeItemModal();
-    });
-    document.getElementById('categoryModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('categoryModal')) closeCategoryModal();
-    });
-
-    loadItems();
-    loadCategories();
   </script>
 </body>
-</html>`);
-});
+</html>`;
+  }
+}
 
-router.get('/categories', (c) => {
-  const categories = db.queryAll('SELECT * FROM categories ORDER BY name');
-  return c.json(categories);
-});
+export default Items;
 
-router.post('/categories', async (c) => {
-  const body = await c.req.json();
-  const parsed = CreateCategorySchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: parsed.error.errors.map(e => e.message).join(', ') }, 400);
-  }
-  
-  const result = db.prepare('INSERT INTO categories (name, description) VALUES (?, ?)').run(
-    parsed.data.name,
-    parsed.data.description || null
-  );
-  const category = db.queryRow('SELECT * FROM categories WHERE id = ?', result.lastInsertRowid);
-  return c.json(category, 201);
-});
-
-router.get('/categories/:id', (c) => {
-  const id = parseInt(c.req.param('id'));
-  const category = db.queryRow('SELECT * FROM categories WHERE id = ?', id);
-  if (!category) return c.json({ error: 'Category not found' }, 404);
-  return c.json(category);
-});
-
-router.patch('/categories/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
-  const body = await c.req.json();
-  const parsed = UpdateCategorySchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: parsed.error.errors.map(e => e.message).join(', ') }, 400);
-  }
-  
-  const category = db.queryRow('SELECT * FROM categories WHERE id = ?', id);
-  if (!category) return c.json({ error: 'Category not found' }, 404);
-  
-  const updates = parsed.data;
-  const fields = [];
-  const values = [];
-  
-  if (updates.name !== undefined) {
-    fields.push('name = ?');
-    values.push(updates.name);
-  }
-  if (updates.description !== undefined) {
-    fields.push('description = ?');
-    values.push(updates.description);
-  }
-  
-  if (fields.length === 0) {
-    return c.json(category);
-  }
-  
-  values.push(id);
-  db.prepare(`UPDATE categories SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-  
-  const updated = db.queryRow('SELECT * FROM categories WHERE id = ?', id);
-  return c.json(updated);
-});
-
-router.delete('/categories/:id', (c) => {
-  const id = parseInt(c.req.param('id'));
-  
-  const dependent = db.queryRow('SELECT COUNT(*) as count FROM items WHERE category_id = ?', id);
-  if (dependent.count > 0) {
-    return c.json({ error: 'Cannot delete category with existing items' }, 400);
-  }
-  
-  const result = db.prepare('DELETE FROM categories WHERE id = ?').run(id);
-  if (result.changes === 0) return c.json({ error: 'Category not found' }, 404);
-  return c.body(null, 204);
-});
-
-router.get('/items', (c) => {
-  const { search, category, sort } = c.req.query();
-  
-  let sql = 'SELECT i.*, c.name as category_name FROM items i LEFT JOIN categories c ON i.category_id = c.id WHERE 1=1';
-  const params = [];
-  
-  if (search) {
-    sql += ' AND i.name LIKE ?';
-    params.push(`%${search}%`);
-  }
-  
-  if (category) {
-    const categoryId = parseInt(category);
-    if (!isNaN(categoryId)) {
-      sql += ' AND i.category_id = ?';
-      params.push(categoryId);
-    }
-  }
-  
-  const allowedSorts: Record<string, string> = {
-    'name': 'i.name',
-    'name_desc': 'i.name DESC',
-    'quantity': 'i.quantity',
-    'quantity_desc': 'i.quantity DESC',
-    'created_at': 'i.created_at',
-    'created_at_desc': 'i.created_at DESC'
-  };
-  
-  const orderBy = allowedSorts[sort || ''] || 'i.created_at';
-  sql += ` ORDER BY ${orderBy}`;
-  
-  const items = db.queryAll(sql, params);
-  return c.json(items);
-});
-
-router.post('/items', async (c) => {
-  const body = await c.req.json();
-  const parsed = CreateItemSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: parsed.error.errors.map(e => e.message).join(', ') }, 400);
-  }
-  
-  if (parsed.data.category_id != null) {
-    const category = db.queryRow('SELECT id FROM categories WHERE id = ?', parsed.data.category_id);
-    if (!category) return c.json({ error: 'Category not found' }, 400);
-  }
-  
-  const result = db.prepare('INSERT INTO items (name, quantity, category_id) VALUES (?, ?, ?)').run(
-    parsed.data.name,
-    parsed.data.quantity,
-    parsed.data.category_id || null
-  );
-  
-  const item = db.queryRow('SELECT i.*, c.name as category_name FROM items i LEFT JOIN categories c ON i.category_id = c.id WHERE i.id = ?', result.lastInsertRowid);
-  return c.json(item, 201);
-});
-
-router.get('/items/:id', (c) => {
-  const id = parseInt(c.req.param('id'));
-  const item = db.queryRow('SELECT i.*, c.name as category_name FROM items i LEFT JOIN categories c ON i.category_id = c.id WHERE i.id = ?', id);
-  if (!item) return c.json({ error: 'Item not found' }, 404);
-  return c.json(item);
-});
-
-router.patch('/items/:id', async (c) => {
-  const id = parseInt(c.req.param('id'));
-  const body = await c.req.json();
-  const parsed = UpdateItemSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: parsed.error.errors.map(e => e.message).join(', ') }, 400);
-  }
-  
-  const item = db.queryRow('SELECT * FROM items WHERE id = ?', id);
-  if (!item) return c.json({ error: 'Item not found' }, 404);
-  
-  const updates = parsed.data;
-  
-  if (updates.category_id !== undefined && updates.category_id != null) {
-    const category = db.queryRow('SELECT id FROM categories WHERE id = ?', updates.category_id);
-    if (!category) return c.json({ error: 'Category not found' }, 400);
-  }
-  
-  const fields = [];
-  const values = [];
-  
-  if (updates.name !== undefined) {
-    fields.push('name = ?');
-    values.push(updates.name);
-  }
-  if (updates.quantity !== undefined) {
-    fields.push('quantity = ?');
-    values.push(updates.quantity);
-  }
-  if (updates.category_id !== undefined) {
-    fields.push('category_id = ?');
-    values.push(updates.category_id);
-  }
-  
-  if (fields.length === 0) {
-    const current = db.queryRow('SELECT i.*, c.name as category_name FROM items i LEFT JOIN categories c ON i.category_id = c.id WHERE i.id = ?', id);
-    return c.json(current);
-  }
-  
-  values.push(id);
-  db.prepare(`UPDATE items SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-  
-  const updated = db.queryRow('SELECT i.*, c.name as category_name FROM items i LEFT JOIN categories c ON i.category_id = c.id WHERE i.id = ?', id);
-  return c.json(updated);
-});
-
-router.delete('/items/:id', (c) => {
-  const id = parseInt(c.req.param('id'));
-  const result = db.prepare('DELETE FROM items WHERE id = ?').run(id);
-  if (result.changes === 0) return c.json({ error: 'Item not found' }, 404);
-  return c.body(null, 204);
-});
+export const _phoenix = {
+  iu_id: 'eec5ac5bc606ad36de28ac8c69305dc84143fff6e480ecca9cbd3cebead7c3f8',
+  name: 'Items',
+  risk_tier: 'high',
+  canon_ids: [4]
+} as const;
