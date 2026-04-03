@@ -55,7 +55,7 @@ import { deriveServices, generateScaffold } from './scaffold.js';
 import { collectInspectData, renderInspectHTML, serveInspect } from './inspect.js';
 
 // LLM
-import { resolveProvider, describeAvailability } from './llm/resolve.js';
+import { resolveProvider, resolveProviderOrPool, describeAvailability } from './llm/resolve.js';
 
 // Architectures
 import { resolveTarget, listArchitectures } from './architectures/index.js';
@@ -366,7 +366,7 @@ async function cmdBootstrap(): Promise<void> {
   }
   console.log();
 
-  // Step 4: Generate code
+  // Step 4: Generate code (sequential - no pool needed)
   const llm = await resolveProvider(phoenixDir);
   const { hint } = await describeAvailability();
   if (llm) {
@@ -1044,6 +1044,7 @@ async function cmdRegen(args: string[]): Promise<void> {
     return;
   }
 
+  // Sequential generation - use direct provider, no pool needed
   const llm = forceStubs ? null : await resolveProvider(phoenixDir);
   const canonStore = new CanonicalStore(phoenixDir);
   const canonNodes = canonStore.getAllNodes();
@@ -1118,10 +1119,10 @@ async function cmdRegen(args: string[]): Promise<void> {
     }
   }
 
-  // Re-generate scaffold wiring
+  // Re-generate scaffold wiring with architecture target
   const allIUs = loadIUs(phoenixDir);
   const services = deriveServices(allIUs);
-  const scaffold = generateScaffold(services, basename(projectRoot));
+  const scaffold = generateScaffold(services, basename(projectRoot), regenArch);
   for (const [filePath, content] of scaffold.files) {
     const fullPath = join(projectRoot, filePath);
     mkdirSync(join(fullPath, '..'), { recursive: true });
@@ -1130,6 +1131,108 @@ async function cmdRegen(args: string[]): Promise<void> {
 
   console.log();
   console.log(`  ${dim(`${results.length} IU(s) regenerated. Scaffold updated.`)}`);
+}
+
+async function cmdUpgrade(): Promise<void> {
+  const { projectRoot, phoenixDir } = requirePhoenixRoot();
+  const ius = loadIUs(phoenixDir);
+  
+  if (ius.length === 0) {
+    console.log(yellow('⚠ No IUs planned. Run `phoenix plan` first.'));
+    return;
+  }
+
+  console.log(bold('🔧 Phoenix Upgrade'));
+  console.log(`  ${dim('Re-syncing scaffold files to latest templates...')}`);
+  console.log();
+
+  // Load architecture from config
+  const configPath = join(phoenixDir, 'config.json');
+  let arch: ResolvedTarget | null = null;
+  if (existsSync(configPath)) {
+    try {
+      const cfg = JSON.parse(readFileSync(configPath, 'utf8'));
+      if (cfg.architecture) {
+        arch = resolveTarget(cfg.architecture);
+        if (arch) {
+          console.log(`  ${dim('Architecture:')} ${cyan(arch.architecture.name)} / ${cyan(arch.runtime.name)}`);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  if (!arch) {
+    console.log(yellow('  ⚠ No architecture configured. Run `phoenix config architecture=<name>` first.'));
+    console.log(`  ${dim('Available:')} ${listArchitectures().join(', ')}`);
+    return;
+  }
+
+  // Backup and regenerate shared architecture files
+  const updatedFiles: string[] = [];
+  const backedUpFiles: string[] = [];
+  
+  for (const [filePath, content] of Object.entries(arch.runtime.sharedFiles)) {
+    const fullPath = join(projectRoot, filePath);
+    
+    // Backup existing file if it exists
+    if (existsSync(fullPath)) {
+      const backupPath = fullPath + '.backup';
+      const existingContent = readFileSync(fullPath, 'utf8');
+      if (existingContent !== content) {
+        writeFileSync(backupPath, existingContent, 'utf8');
+        backedUpFiles.push(filePath);
+      }
+    }
+    
+    // Write new content
+    mkdirSync(dirname(fullPath), { recursive: true });
+    writeFileSync(fullPath, content, 'utf8');
+    updatedFiles.push(filePath);
+  }
+
+  // Regenerate project config files (package.json, tsconfig.json)
+  const services = deriveServices(ius);
+  const projectName = basename(projectRoot);
+  const scaffold = generateScaffold(services, projectName, arch);
+  
+  const configFiles = ['package.json', 'tsconfig.json', 'vitest.config.ts'];
+  for (const filePath of configFiles) {
+    const content = scaffold.files.get(filePath);
+    if (!content) continue;
+    
+    const fullPath = join(projectRoot, filePath);
+    
+    // Backup existing
+    if (existsSync(fullPath)) {
+      const backupPath = fullPath + '.backup';
+      const existingContent = readFileSync(fullPath, 'utf8');
+      if (existingContent !== content) {
+        writeFileSync(backupPath, existingContent, 'utf8');
+        if (!backedUpFiles.includes(filePath)) backedUpFiles.push(filePath);
+      }
+    }
+    
+    writeFileSync(fullPath, content, 'utf8');
+    if (!updatedFiles.includes(filePath)) updatedFiles.push(filePath);
+  }
+
+  // Show results
+  console.log(`  ${green('✔')} ${updatedFiles.length} scaffold files updated`);
+  for (const file of updatedFiles) {
+    const wasBackedUp = backedUpFiles.includes(file);
+    console.log(`    ${wasBackedUp ? yellow('↻') : green('✓')} ${file}${wasBackedUp ? dim(' (backup created)') : ''}`);
+  }
+
+  if (backedUpFiles.length > 0) {
+    console.log();
+    console.log(`  ${dim('Backups:')} ${backedUpFiles.map(f => f + '.backup').join(', ')}`);
+  }
+
+  // Offer to install dependencies
+  console.log();
+  console.log(`  ${dim('Next steps:')}`);
+  console.log(`    1. Run ${cyan('bun install')} to update dependencies`);
+  console.log(`    2. Run ${cyan('phoenix regen')} to regenerate IUs with new templates`);
 }
 
 function cmdDrift(): void {
@@ -1647,6 +1750,7 @@ ${bold('Implementation:')}
   ${cyan('regen')} [--iu=<id>] [-v] Regenerate code (all or specific IU)
                          ${dim('--stubs  Force stub generation (skip LLM)')}
                          ${dim('-v       Verbose: show timing & streaming progress')}
+  ${cyan('upgrade')}              Upgrade scaffold files to latest Phoenix templates
 
 ${bold('Verification:')}
   ${cyan('status')}                Trust dashboard — the primary UX
@@ -1709,6 +1813,9 @@ async function main(): Promise<void> {
     case 'regen':
     case 'regenerate':
       await cmdRegen(commandArgs);
+      break;
+    case 'upgrade':
+      await cmdUpgrade();
       break;
     case 'drift':
       cmdDrift();

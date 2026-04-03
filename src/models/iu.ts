@@ -4,8 +4,17 @@
  * Maps canonical requirements to generated code modules.
  */
 
-export type IUKind = 'module' | 'function';
+export type IUKind = 'module' | 'function' | 'web-ui' | 'api' | 'cli';
 export type RiskTier = 'low' | 'medium' | 'high' | 'critical';
+
+export interface IUOutput {
+  /** Output type/architecture */
+  type: 'api' | 'web-ui' | 'cli' | 'test' | 'client';
+  /** File path for this output */
+  file: string;
+  /** Whether this output is primary or auxiliary */
+  primary: boolean;
+}
 
 export interface IUContract {
   /** Description of what this IU does */
@@ -57,7 +66,10 @@ export interface ImplementationUnit {
   boundary_policy: BoundaryPolicy;
   enforcement: EnforcementConfig;
   evidence_policy: EvidencePolicy;
+  /** Legacy: single output file list */
   output_files: string[];
+  /** New: typed outputs for different architectures */
+  outputs?: IUOutput[];
 }
 
 export function defaultBoundaryPolicy(): BoundaryPolicy {

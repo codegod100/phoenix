@@ -84,22 +84,50 @@ export function generateScaffold(
     }
 
     // Generate architecture-specific server entry point that mounts all generated modules
-    const routeImports: string[] = [];
-    const routeMounts: string[] = [];
+    const apiImports: string[] = [];
+    const uiImports: string[] = [];
+    const apiMounts: string[] = [];
+    const uiRoutes: string[] = [];
+    
     for (const svc of services) {
       for (let i = 0; i < svc.modules.length; i++) {
         const mod = svc.modules[i];
         const iu = svc.ius[i];
+        
+        // Skip non-TypeScript files and test files
+        if (!mod.endsWith('.ts') || mod.includes('__tests__')) {
+          continue;
+        }
+        
+        // Skip client files - they're for programmatic use
+        if (mod.endsWith('.client.ts')) {
+          continue;
+        }
+        
         const modName = mod.replace('.ts', '').replace(/-/g, '_').replace(/[^a-zA-Z0-9_]/g, '_');
         const importPath = `./generated/${svc.dir}/${mod.replace('.ts', '.js')}`;
-        routeImports.push(`import ${modName} from '${importPath}';`);
-        // Derive mount path from IU name: "Todos" → "/todos", "Categories" → "/categories"
-        const iuName = iu?.name ?? mod.replace('.ts', '');
-        const lowerName = iuName.toLowerCase();
-        // Web interface / UI modules mount at root
-        const isWebUI = /\b(web|ui|frontend|interface|page|dashboard)\b/.test(lowerName);
-        const prefix = isWebUI ? '' : '/' + lowerName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        routeMounts.push(`mount('${prefix}', ${modName});`);
+        
+        // Separate API modules from UI modules
+        if (mod.endsWith('.ui.ts')) {
+          // UI module - generate import and route
+          const baseName = mod.replace('.ui.ts', '');  // e.g., items-dashboard.ui.ts -> items-dashboard
+          // Convert to PascalCase: items-dashboard -> ItemsDashboard
+          const className = baseName.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/\s+/g, '');
+          const routePath = baseName;  // Keep original format for route
+          
+          uiImports.push(`import ${className} from '${importPath}';`);
+          uiRoutes.push(`app.get('/ui/${routePath}', (c) => {`);
+          uiRoutes.push(`  const ui = new ${className}();`);
+          uiRoutes.push(`  return c.html(ui.generateHTML());`);
+          uiRoutes.push(`});`);
+        } else {
+          // API module - mount as Hono router
+          apiImports.push(`import ${modName} from '${importPath}';`);
+          const iuName = iu?.name ?? mod.replace('.ts', '');
+          const lowerName = iuName.toLowerCase();
+          const prefix = '/' + lowerName.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          apiMounts.push(`mount('${prefix}', ${modName});`);
+        }
       }
     }
 
@@ -108,11 +136,17 @@ export function generateScaffold(
       `import { app, mount } from './app.js';`,
       `import { runMigrations } from './db.js';`,
       ``,
-      `// Generated route modules`,
-      ...routeImports,
+      `// Generated API route modules`,
+      ...apiImports,
       ``,
-      `// Mount routes`,
-      ...routeMounts,
+      `// Generated UI component modules`,
+      ...uiImports,
+      ``,
+      `// Mount API routes`,
+      ...apiMounts,
+      ``,
+      `// Register UI routes that use runtime HTML generation`,
+      ...uiRoutes,
       ``,
       `const port = parseInt(process.env.PORT ?? '3000', 10);`,
       `runMigrations();`,

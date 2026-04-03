@@ -4,19 +4,151 @@
  * Groups related requirements into module-level IUs based on:
  * - Source document (service boundary)
  * - Source section within a document (module boundary)
+ * - Detected output types (api, web-ui, cli, test)
  *
  * Naming produces natural developer-facing identifiers:
  *   spec/api-gateway.md, section "Rate Limiting"
  *   → name: "Rate Limiting"
- *   → file: src/generated/api-gateway/rate-limiting.ts
+ *   → files: src/generated/api-gateway/rate-limiting.ts (API)
+ *            src/generated/api-gateway/rate-limiting.html (UI)
  */
 
 import type { CanonicalNode } from './models/canonical.js';
 import { CanonicalType } from './models/canonical.js';
 import type { Clause } from './models/clause.js';
-import type { ImplementationUnit } from './models/iu.js';
+import type { ImplementationUnit, IUOutput, IUKind } from './models/iu.js';
 import { defaultBoundaryPolicy, defaultEnforcement } from './models/iu.js';
 import { sha256 } from './semhash.js';
+
+/**
+ * Detect the output types for an IU based on its name and canonical nodes.
+ */
+function detectOutputTypes(
+  name: string,
+  nodes: CanonicalNode[],
+): IUOutput['type'][] {
+  const outputs: IUOutput['type'][] = [];
+  const nameLower = name.toLowerCase();
+  const allStatements = nodes.map(n => n.statement).join(' ').toLowerCase();
+
+  // Detect API intent (strong signals)
+  const hasCrudOperations = /\b(create|add|new)\b.*\b(item|resource|record|data|entry)\b/.test(allStatements) ||
+    /\b(update|edit|modify|change)\b.*\b(item|resource|record|data|entry)\b/.test(allStatements) ||
+    /\b(delete|remove|destroy)\b.*\b(item|resource|record|data|entry)\b/.test(allStatements) ||
+    /\b(get|fetch|retrieve|read|view|list|find)\b.*\b(item|resource|record|data|entry)\b/.test(allStatements);
+  
+  const hasApiExplicit =
+    /\b(api|endpoint|rest|json|server|backend|route)\b/.test(nameLower) ||
+    /\b(create|read|update|delete|crud)\b.*\b(endpoint|api|route|http)\b/.test(allStatements) ||
+    /\b(expose|provide|implement|serve)\b.*\b(http|endpoint|api|rest)\b/.test(allStatements);
+  
+  const hasApiIntent = hasApiExplicit || hasCrudOperations;
+
+  // Detect UI intent
+  const hasUiIntent =
+    /\b(ui|interface|dashboard|page|html|web|frontend|view|display|show|table|form|click)\b/.test(nameLower) ||
+    /\b(display|show|render|view|table|form|click|button|page|screen)\b/.test(allStatements);
+
+  // Detect CLI intent
+  const hasCliIntent =
+    /\b(cli|command|terminal|shell|script|tool)\b/.test(nameLower) ||
+    /\b(command|argument|flag|option|stdin|stdout)\b/.test(allStatements);
+
+  // Prioritize: if CRUD operations detected, it's primarily an API
+  // UI is additive (dashboard view) unless explicitly UI-only
+  if (hasApiIntent) {
+    outputs.push('api');
+  }
+  
+  // Add UI only if explicitly requested by name or has display keywords without CRUD
+  if (hasUiIntent && (!hasApiIntent || /\b(dashboard|page|screen|interface|html)\b/.test(nameLower))) {
+    outputs.push('web-ui');
+  }
+  
+  // Force API for core entity names with CRUD operations (handle plurals)
+  const isCoreEntity = /\b(item|items|user|users|product|products|order|orders|task|tasks|project|projects|category|categories|post|posts|comment|comments)s?\b/i.test(nameLower);
+  const hasCrudVerbs = /\b(create|add|new|update|edit|modify|delete|remove|get|fetch|list|view)\b/i.test(allStatements);
+  
+  if (isCoreEntity && hasCrudVerbs && !outputs.includes('api')) {
+    outputs.unshift('api'); // Add API first
+  }
+  if (hasCliIntent) {
+    outputs.push('cli');
+  }
+
+  // Always generate tests for medium+ risk
+  const riskTier = deriveRiskTier(nodes);
+  if (riskTier !== 'low') {
+    outputs.push('test');
+  }
+
+  return outputs;
+}
+
+/**
+ * Build output files for an IU based on detected types.
+ */
+function buildOutputs(
+  name: string,
+  serviceName: string,
+  fileName: string,
+  outputTypes: IUOutput['type'][],
+): IUOutput[] {
+  const outputs: IUOutput[] = [];
+  let hasPrimary = false;
+
+  for (const type of outputTypes) {
+    switch (type) {
+      case 'api':
+        outputs.push({
+          type: 'api',
+          file: `src/generated/${serviceName}/${fileName}.ts`,
+          primary: !hasPrimary && (hasPrimary = true),
+        });
+        break;
+      case 'web-ui':
+        // Generate TypeScript UI component class (Chad's runtime HTML approach)
+        outputs.push({
+          type: 'web-ui',
+          file: `src/generated/${serviceName}/${fileName}.ui.ts`,
+          primary: false,
+        });
+        // Also generate a client TS file for API access
+        outputs.push({
+          type: 'client',
+          file: `src/generated/${serviceName}/${fileName}.client.ts`,
+          primary: false,
+        });
+        break;
+      case 'cli':
+        outputs.push({
+          type: 'cli',
+          file: `src/generated/${serviceName}/${fileName}.cli.ts`,
+          primary: !hasPrimary && (hasPrimary = true),
+        });
+        break;
+      case 'test':
+        outputs.push({
+          type: 'test',
+          file: `src/generated/${serviceName}/__tests__/${fileName}.test.ts`,
+          primary: false,
+        });
+        break;
+    }
+  }
+
+  return outputs;
+}
+
+/**
+ * Determine IU kind from output types.
+ */
+function deriveKind(outputTypes: IUOutput['type'][]): IUKind {
+  if (outputTypes.includes('api')) return 'api';
+  if (outputTypes.includes('web-ui')) return 'web-ui';
+  if (outputTypes.includes('cli')) return 'cli';
+  return 'module';
+}
 
 /**
  * Plan IUs from canonical nodes, grouping by source document + section.
@@ -101,6 +233,11 @@ export function planIUs(
     const riskTier = deriveRiskTier(nodes);
     const canonIds = nodes.map(n => n.canon_id);
 
+    // Detect output types
+    const outputTypes = detectOutputTypes(name, nodes);
+    const outputs = buildOutputs(name, serviceName, fileName, outputTypes);
+    const kind = deriveKind(outputTypes);
+
     // Build a readable description from the requirements (not a wall of text)
     const requirements = nodes.filter(n => n.type === 'REQUIREMENT').slice(0, 5);
     const constraints = nodes.filter(n => n.type === 'CONSTRAINT' || n.type === 'INVARIANT');
@@ -109,17 +246,20 @@ export function planIUs(
     const iuId = sha256(['iu', serviceName, name, ...canonIds.sort()].join('\x00'));
 
     // Derive typed inputs/outputs from node statements
-    const { inputs, outputs } = deriveContract(nodes, name);
+    const { inputs, outputs: contractOutputs } = deriveContract(nodes, name);
+
+    // Build legacy output_files for backward compatibility
+    const outputFiles = outputs.map(o => o.file);
 
     ius.push({
       iu_id: iuId,
-      kind: 'module' as const,
+      kind,
       name,
       risk_tier: riskTier,
       contract: {
         description,
         inputs,
-        outputs,
+        outputs: contractOutputs,
         invariants: constraints.map(n => n.statement),
       },
       source_canon_ids: canonIds,
@@ -129,7 +269,8 @@ export function planIUs(
       evidence_policy: {
         required: evidenceForTier(riskTier),
       },
-      output_files: [`src/generated/${serviceName}/${fileName}.ts`],
+      output_files: outputFiles,
+      outputs,
     });
   }
 

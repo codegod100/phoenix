@@ -10,7 +10,7 @@ import type { RuntimeTarget } from '../models/architecture.js';
 // ─── Module template (LLM fills in marked sections) ─────────────────────────
 
 const MODULE_TEMPLATE = `import { Hono } from 'hono';
-import { db, registerMigration } from '../../db.js';
+import { db, queryAll, queryRow, registerMigration } from '../../db.js';
 import { z } from 'zod';
 
 // ─── Database migrations ────────────────────────────────────────────────────
@@ -56,6 +56,15 @@ export function runMigrations(): void {
   }
 }
 
+// Convenience wrappers that match LLM expectations
+export function queryAll(sql: string, params?: any[]): any[] {
+  return db.prepare(sql).all(...(params || []));
+}
+
+export function queryRow(sql: string, params?: any[]): any | null {
+  return db.prepare(sql).get(...(params || []));
+}
+
 export { db };
 `;
 
@@ -69,6 +78,12 @@ app.use('*', logger());
 app.use('*', cors());
 
 app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
+
+app.get('/', (c) => c.json({
+  name: 'API',
+  version: '0.1.0',
+  endpoints: ['/health', '/items']
+}));
 
 app.onError((err, c) => {
   console.error('Unhandled error:', err.message, err.stack);
@@ -113,7 +128,7 @@ router.delete('/:id', (c) => { ... });
 \`\`\`
 
 ### Rules
-- Use bun:sqlite API: db.prepare(sql).run(), .get(), .all() - same as better-sqlite3
+- Use bun:sqlite API: db.prepare(sql).run(), .get(), .all() OR use convenience methods queryAll(sql, params) and queryRow(sql, params)
 - Use parameterized queries ALWAYS — never interpolate user input into SQL
 - In SQL, use single quotes for string literals: datetime('now'). NEVER double quotes.
 - ALWAYS use snake_case for column names and JSON response keys
@@ -128,6 +143,65 @@ router.delete('/:id', (c) => { ... });
 - Return c.html() with a complete HTML document
 - Use fetch('/resource-name') to call sibling API modules (no /api/ prefix)
 - Include ALL CSS and JavaScript inline
+`;
+
+// ─── Client JS Template ─────────────────────────────────────────────────────
+
+const CLIENT_TEMPLATE = `// Client-side TypeScript for {{IU_NAME}}
+// This module can be used for programmatic access to the {{RESOURCE_NAME}} API
+
+export interface {{RESOURCE_INTERFACE}} {
+  id: number;
+  // __INTERFACE_FIELDS__
+}
+
+export class {{RESOURCE_NAME}}Client {
+  private baseUrl: string;
+
+  constructor(baseUrl: string = '/{{RESOURCE_PATH}}') {
+    this.baseUrl = baseUrl;
+  }
+
+  // __CLIENT_METHODS__
+  // LLM fills with: list(), get(id), create(data), update(id, data), delete(id)
+
+  async list(): Promise<{{RESOURCE_INTERFACE}}[]> {
+    const res = await fetch(this.baseUrl);
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    return res.json();
+  }
+
+  async get(id: number): Promise<{{RESOURCE_INTERFACE}}> {
+    const res = await fetch(\`\${this.baseUrl}/\${id}\`);
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    return res.json();
+  }
+
+  async create(data: Omit<{{RESOURCE_INTERFACE}}, 'id'>): Promise<{{RESOURCE_INTERFACE}}> {
+    const res = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    return res.json();
+  }
+
+  async update(id: number, data: Partial<Omit<{{RESOURCE_INTERFACE}}, 'id'>>): Promise<{{RESOURCE_INTERFACE}}> {
+    const res = await fetch(\`\${this.baseUrl}/\${id}\`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    return res.json();
+  }
+
+  async delete(id: number): Promise<void> {
+    const res = await fetch(\`\${this.baseUrl}/\${id}\`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+  }
+}
 `;
 
 // ─── Code examples ──────────────────────────────────────────────────────────
@@ -233,6 +307,7 @@ export const nodeTypescript: RuntimeTarget = {
   },
 
   moduleTemplate: MODULE_TEMPLATE,
+  clientTemplate: CLIENT_TEMPLATE,
   promptExtension: PROMPT_EXTENSION,
   codeExamples: CODE_EXAMPLES,
 

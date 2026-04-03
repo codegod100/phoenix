@@ -51,8 +51,10 @@ export interface RuntimeTarget {
   /** Dev dependencies */
   devPackages: Record<string, string>;
 
-  /** Module template — the LLM fills in marked sections, structure is guaranteed */
+  /** Module template for API routes — the LLM fills in marked sections */
   moduleTemplate: string;
+  /** Client TypeScript template — the LLM fills in API client methods */
+  clientTemplate?: string;
   /** LLM prompt extension — language/framework-specific rules */
   promptExtension: string;
   /** Few-shot code examples showing the exact patterns */

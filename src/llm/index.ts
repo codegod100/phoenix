@@ -10,9 +10,23 @@ export { DEFAULT_MODELS } from './provider.js';
 // export { OpenAIProvider } from './openai.js'; // Removed - use pi SDK
 
 // New pi SDK-based provider
-export { PiSDKProvider, createPiSDKProvider, describePiSDKAvailability, listAvailableModels } from './pi-sdk.js';
+export { PiSDKProvider, ProviderPool, createPiSDKProvider, describePiSDKAvailability, listAvailableModels } from './pi-sdk.js';
+
+// CLI-based parallel pool for true process isolation
+export { CLIPool, createCLIPool } from './cli-pool.js';
 
 // Updated resolution that uses pi SDK
-export { resolveProvider, describeAvailability } from './resolve.js';
+export { resolveProvider, resolveProviderOrPool, createProviderPool, describeAvailability } from './resolve.js';
 
-export { buildPrompt, SYSTEM_PROMPT, getSystemPrompt } from './prompt.js';
+export {
+  buildPrompt,
+  buildClientPrompt,
+  buildTsUiPrompt,
+  buildFixPrompt,
+  getOptimizedPrompt,
+  estimateTokens,
+  SYSTEM_PROMPT,
+  KIMI_SYSTEM_PROMPT,
+  getSystemPrompt,
+  getKimiSystemPrompt,
+} from './prompt.js';

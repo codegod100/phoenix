@@ -18,6 +18,136 @@ import type { Model, Api } from '@mariozechner/pi-ai';
 import type { LLMProvider, GenerateOptions } from './provider.js';
 
 /**
+ * Provider Pool for concurrent LLM generation.
+ * Creates multiple AgentSessions to parallelize requests while respecting rate limits.
+ */
+export class ProviderPool implements LLMProvider {
+  name: string;
+  model: string;
+  private providers: PiSDKProvider[] = [];
+  private queue: Promise<any>[] = [];
+  private concurrency: number;
+  private phoenixDir?: string;
+  private preferredProvider?: string;
+  private preferredModel?: string;
+
+  constructor(
+    phoenixDir: string | undefined,
+    preferredProvider: string | undefined,
+    preferredModel: string | undefined,
+    concurrency: number = 3
+  ) {
+    this.phoenixDir = phoenixDir;
+    this.preferredProvider = preferredProvider;
+    this.preferredModel = preferredModel;
+    this.concurrency = concurrency;
+    this.name = preferredProvider ?? 'pi-sdk';
+    this.model = preferredModel ?? 'default';
+  }
+
+  /**
+   * Initialize the pool by creating all providers upfront.
+   * Call this before using generate().
+   */
+  async initialize(): Promise<void> {
+    const authStorage = this.phoenixDir
+      ? AuthStorage.create(`${this.phoenixDir}/.pi-agent`)
+      : AuthStorage.create();
+
+    const modelRegistry = ModelRegistry.create(authStorage);
+    const available = await modelRegistry.getAvailable();
+
+    if (available.length === 0) {
+      throw new Error('No LLM providers available');
+    }
+
+    // Select model (same logic as createPiSDKProvider)
+    let selectedModel: Model<Api> | undefined;
+    if (this.preferredProvider && this.preferredModel) {
+      selectedModel = available.find(
+        m => m.provider === this.preferredProvider && m.id === this.preferredModel
+      );
+    }
+    if (!selectedModel && this.preferredProvider) {
+      selectedModel = available.find(m => m.provider === this.preferredProvider);
+    }
+    if (!selectedModel) {
+      selectedModel = available.find(m => m.provider === 'anthropic');
+    }
+    if (!selectedModel) {
+      selectedModel = available.find(m => m.provider === 'openai');
+    }
+    if (!selectedModel) {
+      selectedModel = available[0];
+    }
+
+    this.name = selectedModel.provider;
+    this.model = selectedModel.id;
+
+    // Create N providers with separate sessions
+    for (let i = 0; i < this.concurrency; i++) {
+      const { session } = await createAgentSession({
+        sessionManager: SessionManager.inMemory(),
+        authStorage,
+        modelRegistry,
+        model: selectedModel,
+        thinkingLevel: 'off',
+        tools: [],
+      });
+
+      const provider = new PiSDKProvider(
+        session,
+        modelRegistry,
+        selectedModel.provider,
+        selectedModel.id,
+      );
+      this.providers.push(provider);
+    }
+  }
+
+  /**
+   * Generate using round-robin from the pool.
+   */
+  async generate(
+    prompt: string,
+    options?: GenerateOptions,
+    onChunk?: (chunk: string) => void
+  ): Promise<string> {
+    if (this.providers.length === 0) {
+      throw new Error('ProviderPool not initialized. Call initialize() first.');
+    }
+
+    // Find the first available provider (not busy)
+    // Simple round-robin: track queue length per provider
+    const providerIndex = this.queue.length % this.providers.length;
+    const provider = this.providers[providerIndex];
+
+    // Create the promise and add to queue tracking
+    const promise = provider.generate(prompt, options, onChunk);
+    this.queue.push(promise);
+
+    // Clean up queue when done (remove this promise)
+    promise.finally(() => {
+      const idx = this.queue.indexOf(promise);
+      if (idx > -1) this.queue.splice(idx, 1);
+    });
+
+    return promise;
+  }
+
+  /**
+   * Dispose all providers in the pool.
+   */
+  dispose(): void {
+    for (const provider of this.providers) {
+      provider.dispose();
+    }
+    this.providers = [];
+    this.queue = [];
+  }
+}
+
+/**
  * Pi SDK-based LLM provider.
  * Implements the LLMProvider interface using pi's AgentSession.
  */
@@ -250,6 +380,6 @@ export async function listAvailableModels(phoenixDir?: string): Promise<Array<{ 
   return available.map(m => ({
     provider: m.provider,
     id: m.id,
-    description: m.description,
-  }));
+    description: (m as any).description as string | undefined,
+ }));
 }
