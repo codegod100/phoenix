@@ -39,7 +39,15 @@
 - Provide buttons to create, edit, and delete items
 - Include a "Manage Categories" button that opens category management modal
 - Editing opens a modal form with minimum quantity field
-- All actions use the items API endpoints
+
+### UI Theme
+- Use Catppuccin Mocha color palette
+- Dark theme with base background `#1e1e2e`
+- Mauve accent color `#cba6f7` for primary actions and headings
+- Pink `#f38ba8` for destructive actions
+- Surface colors: `#313244` (cards), `#181825` (headers)
+- Text: `#cdd6f4` (primary), `#a6adc8` (secondary)
+- Low stock warning: left border in `#f9e2af` (yellow)
 
 ### Technical Constraints
 - Fetch and render items on initial page load
