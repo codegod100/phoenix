@@ -320,7 +320,6 @@ router.get('/', (c) => {
     }
 
     async function deleteCategory(id) {
-      const itemsInCategory = document.querySelectorAll('#itemsTable tr').length;
       if (!confirm('Delete this category? Items in this category will become uncategorized.')) return;
       
       try {

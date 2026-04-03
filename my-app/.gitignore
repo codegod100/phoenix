@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+*.lock
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Generated code (Phoenix)
+src/generated/
+
+# Phoenix store
+.phoenix/store/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+
+# Temporary
+tmp/
+temp/
+*.tmp

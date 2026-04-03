@@ -23,4 +23,13 @@ export function runMigrations(): void {
   }
 }
 
+// Convenience wrappers that match LLM expectations
+export function queryAll(sql: string, params?: any[]): any[] {
+  return db.prepare(sql).all(...(params || []));
+}
+
+export function queryRow(sql: string, params?: any[]): any | null {
+  return db.prepare(sql).get(...(params || []));
+}
+
 export { db };

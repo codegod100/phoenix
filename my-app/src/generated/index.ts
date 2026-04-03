@@ -7,5 +7,5 @@
 export * as app from './app/index.js';
 
 export const services = [
-  { name: 'App', dir: 'app', port: 3000, modules: 1 },
+  { name: 'App', dir: 'app', port: 3000, modules: 7 },
 ] as const;

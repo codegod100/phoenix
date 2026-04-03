@@ -9,6 +9,12 @@ app.use('*', cors());
 
 app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }));
 
+app.get('/', (c) => c.json({
+  name: 'API',
+  version: '0.1.0',
+  endpoints: ['/health', '/items']
+}));
+
 app.onError((err, c) => {
   console.error('Unhandled error:', err.message, err.stack);
   return c.json({ error: err.message }, 500);

@@ -1,3 +1,5 @@
+<output>
+__MIGRATIONS__
 registerMigration('categories', `
   CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,6 +20,7 @@ registerMigration('items', `
   )
 `);
 
+__SCHEMAS__
 const CreateCategorySchema = z.object({
   name: z.string().min(1, 'Name must not be empty'),
   description: z.string().optional()
@@ -40,6 +43,7 @@ const UpdateItemSchema = z.object({
   category_id: z.number().int().nullable().optional()
 });
 
+__ROUTES__
 router.get('/', (c) => {
   return c.html(`<!DOCTYPE html>
 <html>
@@ -320,7 +324,6 @@ router.get('/', (c) => {
     }
 
     async function deleteCategory(id) {
-      const itemsInCategory = document.querySelectorAll('#itemsTable tr').length;
       if (!confirm('Delete this category? Items in this category will become uncategorized.')) return;
       
       try {
@@ -552,3 +555,4 @@ router.delete('/items/:id', (c) => {
   if (result.changes === 0) return c.json({ error: 'Item not found' }, 404);
   return c.body(null, 204);
 });
+</output>
