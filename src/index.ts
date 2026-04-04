@@ -74,13 +74,10 @@ export { collectInspectData, renderInspectHTML, serveInspect } from './inspect.j
 export type { InspectData } from './inspect.js';
 export type { ServiceDescriptor, ScaffoldResult } from './scaffold.js';
 
-// LLM
+// LLM — Direct Fireworks API only
 export type { LLMProvider, GenerateOptions, LLMConfig } from './llm/provider.js';
 export { DEFAULT_MODELS } from './llm/provider.js';
-// Replaced by PiSDKProvider - old providers deprecated
-// export { AnthropicProvider } from './llm/anthropic.js';
-// export { OpenAIProvider } from './llm/openai.js';
-export { PiSDKProvider, createPiSDKProvider, describePiSDKAvailability } from './llm/pi-sdk.js';
+export { FireworksProvider, createFireworksProvider } from './llm/fireworks.js';
 export { resolveProvider, describeAvailability } from './llm/resolve.js';
 export { buildPrompt, SYSTEM_PROMPT } from './llm/prompt.js';
 

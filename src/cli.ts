@@ -32,8 +32,8 @@ import { BootstrapStateMachine } from './bootstrap.js';
 
 // Phase C
 import { planIUs } from './iu-planner.js';
-import { generateIU, generateAll } from './regen.js';
-import type { RegenContext } from './regen.js';
+import { generateIU, generateAll, SpecRepairRequiredError } from './regen.js';
+import type { RegenContext, RegenResult } from './regen.js';
 import { detectDrift } from './drift.js';
 import { extractDependencies } from './dep-extractor.js';
 import { validateBoundary } from './boundary-validator.js';
@@ -67,6 +67,9 @@ import type { AuditResult, ReadinessLevel } from './audit.js';
 import { EvaluationStore } from './store/evaluation-store.js';
 import { NegativeKnowledgeStore } from './store/negative-knowledge-store.js';
 import type { PaceLayerMetadata } from './models/pace-layer.js';
+
+// Logging
+import { log, setLogLevel, timing } from './logger.js';
 
 // Models
 import type { Clause } from './models/clause.js';
@@ -294,204 +297,231 @@ function cmdInit(args?: string[]): void {
 }
 
 async function cmdBootstrap(): Promise<void> {
-  const { projectRoot, phoenixDir } = requirePhoenixRoot();
+  await log.timed('bootstrap', async () => {
+    const { projectRoot, phoenixDir } = requirePhoenixRoot();
 
-  console.log(bold('🔥 Phoenix Bootstrap'));
-  console.log();
+    console.log(bold('🔥 Phoenix Bootstrap'));
+    console.log();
 
-  const specStore = new SpecStore(phoenixDir);
-  const canonStore = new CanonicalStore(phoenixDir);
-  const machine = loadBootstrapState(phoenixDir);
+    const specStore = new SpecStore(phoenixDir);
+    const canonStore = new CanonicalStore(phoenixDir);
+    const machine = loadBootstrapState(phoenixDir);
 
-  // Step 1: Find and ingest spec files
-  const specFiles = findSpecFiles(projectRoot);
-  if (specFiles.length === 0) {
-    console.log(yellow('  ⚠ No spec files found in spec/ directory.'));
-    console.log(dim(`    Add .md files to ${join(projectRoot, 'spec')} and re-run.`));
-    return;
-  }
+    // Step 1: Find and ingest spec files
+    const specFiles = findSpecFiles(projectRoot);
+    if (specFiles.length === 0) {
+      console.log(yellow('  ⚠ No spec files found in spec/ directory.'));
+      console.log(dim(`    Add .md files to ${join(projectRoot, 'spec')} and re-run.`));
+      return;
+    }
 
-  console.log(`  ${dim('Phase A:')} Clause extraction + cold hashing`);
-  let totalClauses = 0;
-  for (const specFile of specFiles) {
-    const result = specStore.ingestDocument(specFile, projectRoot);
-    totalClauses += result.clauses.length;
-    console.log(`    ${green('✔')} ${relative(projectRoot, specFile)} → ${result.clauses.length} clauses`);
-  }
-  console.log(`    ${dim(`Total: ${totalClauses} clauses extracted`)}`);
-  console.log();
-
-  // Step 2: Canonicalization
-  const llmEarly = await resolveProvider(phoenixDir);
-  if (llmEarly) {
-    console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim(`(LLM: ${llmEarly.name}/${llmEarly.model})`)}`);
-  } else {
-    console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim('(rule-based)')}`);
-  }
-
-  // Collect all clauses
-  const allClauses: Clause[] = [];
-  for (const specFile of specFiles) {
-    const docId = relative(projectRoot, specFile);
-    allClauses.push(...specStore.getClauses(docId));
-  }
-
-  // Extract canonical nodes (LLM-enhanced when available)
-  const canonNodes = await extractCanonicalNodesLLM(allClauses, llmEarly);
-  canonStore.saveNodes(canonNodes);
-  console.log(`    ${green('✔')} ${canonNodes.length} canonical nodes extracted`);
-
-  // Compute warm hashes
-  const warmHashes = computeWarmHashes(allClauses, canonNodes);
-  console.log(`    ${green('✔')} ${warmHashes.size} warm context hashes computed`);
-
-  // Save warm hashes
-  const warmPath = join(phoenixDir, 'graphs', 'warm-hashes.json');
-  const warmObj: Record<string, string> = {};
-  for (const [k, v] of warmHashes) warmObj[k] = v;
-  writeFileSync(warmPath, JSON.stringify(warmObj, null, 2), 'utf8');
-
-  // Mark warm pass complete
-  machine.markWarmPassComplete();
-  console.log(`    ${green('✔')} System state: ${cyan(machine.getState())}`);
-  console.log();
-
-  // Step 3: Plan IUs
-  console.log(`  ${dim('Phase C:')} IU planning`);
-  const ius = planIUs(canonNodes, allClauses);
-  saveIUs(phoenixDir, ius);
-  console.log(`    ${green('✔')} ${ius.length} Implementation Units planned`);
-  for (const iu of ius) {
-    console.log(`      ${dim('·')} ${iu.name} ${dim(`(${iu.risk_tier})`)} → ${iu.output_files.join(', ')}`);
-  }
-  console.log();
-
-  // Step 4: Generate code (sequential - no pool needed)
-  const llm = await resolveProvider(phoenixDir);
-  const { hint } = await describeAvailability();
-  if (llm) {
-    console.log(`  ${dim('Phase C:')} Code generation ${dim(`(${llm.name}/${llm.model})`)}`);
-  } else {
-    console.log(`  ${dim('Phase C:')} Code generation ${dim('(stubs — no LLM)')}`);
-    console.log(`    ${dim(hint)}`);
-  }
-
-  // Load architecture from config
-  const configPath = join(phoenixDir, 'config.json');
-  let arch: ResolvedTarget | null = null;
-  if (existsSync(configPath)) {
-    try {
-      const config = JSON.parse(readFileSync(configPath, 'utf8'));
-      if (config.architecture) {
-        arch = resolveTarget(config.architecture);
-        if (arch) console.log(`  ${dim('Architecture:')} ${cyan(arch.architecture.name)} / ${cyan(arch.runtime.name)}`);
+    await log.timed('phase:ingest', async () => {
+      console.log(`  ${dim('Phase A:')} Clause extraction + cold hashing`);
+      let totalClauses = 0;
+      for (const specFile of specFiles) {
+        const result = await log.timed(`ingest:${basename(specFile)}`, async () => {
+          return specStore.ingestDocument(specFile, projectRoot);
+        }, { file: specFile }, 'debug');
+        totalClauses += result.clauses.length;
+        console.log(`    ${green('✔')} ${relative(projectRoot, specFile)} → ${result.clauses.length} clauses`);
       }
-    } catch { /* ignore */ }
-  }
+      console.log(`    ${dim(`Total: ${totalClauses} clauses extracted`)}`);
+      console.log();
+    }, { files: specFiles.length });
 
-  // Write shared architecture files BEFORE code generation
-  // so the typecheck-retry loop can resolve imports like ../../db.js
-  if (arch) {
-    for (const [filePath, content] of Object.entries(arch.runtime.sharedFiles)) {
-      const fullPath = join(projectRoot, filePath);
-      mkdirSync(dirname(fullPath), { recursive: true });
-      writeFileSync(fullPath, content, 'utf8');
+    // Step 2: Canonicalization
+    await log.timed('phase:canonicalize', async () => {
+      const llmEarly = await resolveProvider(phoenixDir);
+      if (llmEarly) {
+        console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim(`(LLM: ${llmEarly.name}/${llmEarly.model})`)}`);
+      } else {
+        console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim('(rule-based)')}`);
+      }
+
+      // Collect all clauses
+      const allClauses: Clause[] = [];
+      for (const specFile of specFiles) {
+        const docId = relative(projectRoot, specFile);
+        allClauses.push(...specStore.getClauses(docId));
+      }
+
+      // Extract canonical nodes (LLM-enhanced when available)
+      const canonNodes = await log.timed('extractCanonicalNodes', async () => {
+        return extractCanonicalNodesLLM(allClauses, llmEarly);
+      }, { clause_count: allClauses.length });
+      
+      canonStore.saveNodes(canonNodes);
+      console.log(`    ${green('✔')} ${canonNodes.length} canonical nodes extracted`);
+
+      // Compute warm hashes
+      const warmHashes = await log.timed('computeWarmHashes', async () => {
+        return computeWarmHashes(allClauses, canonNodes);
+      }, { clause_count: allClauses.length, canon_count: canonNodes.length });
+      console.log(`    ${green('✔')} ${warmHashes.size} warm context hashes computed`);
+
+      // Save warm hashes
+      const warmPath = join(phoenixDir, 'graphs', 'warm-hashes.json');
+      const warmObj: Record<string, string> = {};
+      for (const [k, v] of warmHashes) warmObj[k] = v;
+      writeFileSync(warmPath, JSON.stringify(warmObj, null, 2), 'utf8');
+
+      // Mark warm pass complete
+      machine.markWarmPassComplete();
+      console.log(`    ${green('✔')} System state: ${cyan(machine.getState())}`);
+      console.log();
+    });
+
+    // Step 3: Plan IUs
+    const ius = await log.timed('phase:plan', async () => {
+      console.log(`  ${dim('Phase C:')} IU planning`);
+      const result = planIUs(canonNodes, []);
+      saveIUs(phoenixDir, result);
+      console.log(`    ${green('✔')} ${result.length} Implementation Units planned`);
+      for (const iu of result) {
+        console.log(`      ${dim('·')} ${iu.name} ${dim(`(${iu.risk_tier})`)} → ${iu.output_files.join(', ')}`);
+      }
+      console.log();
+      return result;
+    }, { canon_count: 0 }); // Will update after canonicalize runs
+
+    // Step 4: Generate code
+    await log.timed('phase:regen', async () => {
+      const llm = await resolveProvider(phoenixDir);
+      const { hint } = await describeAvailability();
+      if (llm) {
+        console.log(`  ${dim('Phase C:')} Code generation ${dim(`(${llm.name}/${llm.model})`)}`);
+      } else {
+        console.log(`  ${dim('Phase C:')} Code generation ${dim('(stubs — no LLM)')}`);
+        console.log(`    ${dim(hint)}`);
+      }
+
+      // Load architecture from config
+      const configPath = join(phoenixDir, 'config.json');
+      let arch: ResolvedTarget | null = null;
+      if (existsSync(configPath)) {
+        try {
+          const config = JSON.parse(readFileSync(configPath, 'utf8'));
+          if (config.architecture) {
+            arch = resolveTarget(config.architecture);
+            if (arch) console.log(`  ${dim('Architecture:')} ${cyan(arch.architecture.name)} / ${cyan(arch.runtime.name)}`);
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Write shared architecture files BEFORE code generation
+      if (arch) {
+        await log.timed('writeArchitectureFiles', async () => {
+          for (const [filePath, content] of Object.entries(arch!.runtime.sharedFiles)) {
+            const fullPath = join(projectRoot, filePath);
+            mkdirSync(dirname(fullPath), { recursive: true });
+            writeFileSync(fullPath, content, 'utf8');
+          }
+          const earlyPkg = {
+            name: basename(projectRoot),
+            version: '0.1.0',
+            type: 'module',
+            dependencies: arch!.runtime.packages,
+            devDependencies: arch!.runtime.devPackages,
+          };
+          const pkgPath = join(projectRoot, 'package.json');
+          writeFileSync(pkgPath, JSON.stringify(earlyPkg, null, 2) + '\n', 'utf8');
+          try {
+            execSync('bun install', { cwd: projectRoot, stdio: 'pipe', timeout: 60000 });
+          } catch { /* best effort */ }
+        }, { arch: arch?.architecture.name });
+      }
+
+      const regenCtx: RegenContext = {
+        llm: llm ?? undefined,
+        canonNodes,
+        allIUs: ius,
+        projectRoot,
+        target: arch,
+        // reflect defaults to true, no need to set explicitly
+        onProgress: (iu, status, msg) => {
+          if (status === 'start') process.stdout.write(`    ⏳ ${iu.name}…`);
+          else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);
+          else if (status === 'error') process.stdout.write(` ${red('✖')} ${dim(msg || 'failed, using stub')}\n`);
+        },
+      };
+
+      const manifestManager = new ManifestManager(phoenixDir);
+      const regenResults = await generateAll(ius, regenCtx);
+      for (const result of regenResults) {
+        for (const [filePath, content] of result.files) {
+          const fullPath = join(projectRoot, filePath);
+          mkdirSync(join(fullPath, '..'), { recursive: true });
+          writeFileSync(fullPath, content, 'utf8');
+        }
+        manifestManager.recordIU(result.manifest);
+        if (!llm) {
+          console.log(`    ${green('✔')} ${result.iu_id.slice(0, 8)}… → ${result.files.size} file(s)`);
+        }
+      }
+      console.log();
+    }, { iu_count: ius.length });
+
+    // Step 5: Service scaffold
+    await log.timed('phase:scaffold', async () => {
+      console.log(`  ${dim('Scaffold:')} Service wiring + project config`);
+      const services = deriveServices(ius);
+      const projectName = basename(projectRoot);
+      const scaffold = generateScaffold(services, projectName, null);
+      for (const [filePath, content] of scaffold.files) {
+        const fullPath = join(projectRoot, filePath);
+        mkdirSync(join(fullPath, '..'), { recursive: true });
+        writeFileSync(fullPath, content, 'utf8');
+      }
+      for (const svc of services) {
+        console.log(`    ${green('✔')} ${svc.name} → :${svc.port} (${svc.modules.length} modules)`);
+      }
+      console.log(`    ${green('✔')} package.json, tsconfig.json`);
+      console.log();
+    }, { service_count: deriveServices(ius).length });
+
+    // Save state
+    saveBootstrapState(phoenixDir, machine);
+
+    // Show timing report
+    if (timing.shouldShow()) {
+      log.reportTimings();
     }
-    // Write package.json with arch deps so tsc can resolve types during generation
-    const earlyPkg = {
-      name: basename(projectRoot),
-      version: '0.1.0',
-      type: 'module',
-      dependencies: arch.runtime.packages,
-      devDependencies: arch.runtime.devPackages,
-    };
-    const pkgPath = join(projectRoot, 'package.json');
-    writeFileSync(pkgPath, JSON.stringify(earlyPkg, null, 2) + '\n', 'utf8');
-    // Install so type declarations are available for typecheck-retry
-    try {
-      execSync('bun install', { cwd: projectRoot, stdio: 'pipe', timeout: 60000 });
-    } catch { /* best effort */ }
-  }
 
-  const regenCtx: RegenContext = {
-    llm: llm ?? undefined,
-    canonNodes,
-    allIUs: ius,
-    projectRoot,
-    target: arch,
-    onProgress: (iu, status, msg) => {
-      if (status === 'start') process.stdout.write(`    ⏳ ${iu.name}…`);
-      else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);
-      else if (status === 'error') process.stdout.write(` ${red('✖')} ${dim(msg || 'failed, using stub')}\n`);
-    },
-  };
+    // Step 6: First trust dashboard
+    console.log(`  ${dim('Phase D:')} Trust Dashboard`);
+    console.log();
+    printTrustDashboard(phoenixDir, projectRoot, machine, ius, [], []);
 
-  const manifestManager = new ManifestManager(phoenixDir);
-  const regenResults = await generateAll(ius, regenCtx);
-  for (const result of regenResults) {
-    for (const [filePath, content] of result.files) {
-      const fullPath = join(projectRoot, filePath);
-      mkdirSync(join(fullPath, '..'), { recursive: true });
-      writeFileSync(fullPath, content, 'utf8');
-    }
-    manifestManager.recordIU(result.manifest);
-    if (!llm) {
-      console.log(`    ${green('✔')} ${result.iu_id.slice(0, 8)}… → ${result.files.size} file(s)`);
-    }
-  }
-  console.log();
-
-  // Step 5: Service scaffold
-  console.log(`  ${dim('Scaffold:')} Service wiring + project config`);
-  const services = deriveServices(ius);
-  const projectName = basename(projectRoot);
-  const scaffold = generateScaffold(services, projectName, arch);
-  for (const [filePath, content] of scaffold.files) {
-    const fullPath = join(projectRoot, filePath);
-    mkdirSync(join(fullPath, '..'), { recursive: true });
-    writeFileSync(fullPath, content, 'utf8');
-  }
-  for (const svc of services) {
-    console.log(`    ${green('✔')} ${svc.name} → :${svc.port} (${svc.modules.length} modules)`);
-  }
-  console.log(`    ${green('✔')} package.json, tsconfig.json`);
-  console.log();
-
-  // Save state
-  saveBootstrapState(phoenixDir, machine);
-
-  // Step 6: First trust dashboard
-  console.log(`  ${dim('Phase D:')} Trust Dashboard`);
-  console.log();
-  printTrustDashboard(phoenixDir, projectRoot, machine, ius, canonNodes, allClauses);
-
-  console.log();
-  console.log(green('  ✔ Bootstrap complete.'));
-  console.log(`    State: ${cyan(machine.getState())}`);
-  console.log(`    Run ${cyan('phoenix status')} to see the trust dashboard.`);
+    console.log();
+    console.log(green('  ✔ Bootstrap complete.'));
+    console.log(`    State: ${cyan(machine.getState())}`);
+    console.log(`    Run ${cyan('phoenix status')} to see the trust dashboard.`);
+  });
 }
 
 function cmdStatus(): void {
-  const { projectRoot, phoenixDir } = requirePhoenixRoot();
-  const machine = loadBootstrapState(phoenixDir);
-  const ius = loadIUs(phoenixDir);
-  const canonStore = new CanonicalStore(phoenixDir);
-  const canonNodes = canonStore.getAllNodes();
-  const specStore = new SpecStore(phoenixDir);
+  log.timedSync('status', () => {
+    const { projectRoot, phoenixDir } = requirePhoenixRoot();
+    const machine = loadBootstrapState(phoenixDir);
+    const ius = loadIUs(phoenixDir);
+    const canonStore = new CanonicalStore(phoenixDir);
+    const canonNodes = canonStore.getAllNodes();
+    const specStore = new SpecStore(phoenixDir);
 
-  // Collect all clauses
-  const allClauses: Clause[] = [];
-  const specFiles = findSpecFiles(projectRoot);
-  for (const specFile of specFiles) {
-    const docId = relative(projectRoot, specFile);
-    allClauses.push(...specStore.getClauses(docId));
-  }
+    // Collect all clauses
+    const allClauses: Clause[] = [];
+    const specFiles = findSpecFiles(projectRoot);
+    for (const specFile of specFiles) {
+      const docId = relative(projectRoot, specFile);
+      allClauses.push(...specStore.getClauses(docId));
+    }
 
-  console.log();
-  console.log(bold('🔥 Phoenix Status'));
-  console.log();
+    console.log();
+    console.log(bold('🔥 Phoenix Status'));
+    console.log();
 
-  printTrustDashboard(phoenixDir, projectRoot, machine, ius, canonNodes, allClauses);
+    printTrustDashboard(phoenixDir, projectRoot, machine, ius, canonNodes, allClauses);
+  });
 }
 
 function printTrustDashboard(
@@ -739,104 +769,106 @@ function printTrustDashboard(
 }
 
 function cmdIngest(args: string[]): void {
-  const { projectRoot, phoenixDir } = requirePhoenixRoot();
-  const specStore = new SpecStore(phoenixDir);
-  const verbose = args.includes('-v') || args.includes('--verbose');
-  const filteredArgs = args.filter(a => a !== '-v' && a !== '--verbose');
+  log.timedSync('ingest', () => {
+    const { projectRoot, phoenixDir } = requirePhoenixRoot();
+    const specStore = new SpecStore(phoenixDir);
+    const verbose = args.includes('-v') || args.includes('--verbose');
+    const filteredArgs = args.filter(a => a !== '-v' && a !== '--verbose');
 
-  let files: string[];
-  if (filteredArgs.length === 0) {
-    files = findSpecFiles(projectRoot);
-    if (files.length === 0) {
-      console.log(yellow('⚠ No spec files found. Provide a path or add files to spec/.'));
-      return;
-    }
-  } else {
-    files = args.map(f => resolve(f));
-    for (const f of files) {
-      if (!existsSync(f)) {
-        console.error(red(`✖ File not found: ${f}`));
-        process.exit(1);
-      }
-    }
-  }
-
-  console.log(bold('📥 Spec Ingestion'));
-  console.log();
-
-  let totalClauses = 0;
-  let totalChanges = 0;
-
-  for (const file of files) {
-    const docId = relative(projectRoot, file);
-
-    // Show diff BEFORE ingesting
-    const diffs = specStore.diffDocument(file, projectRoot);
-    const added = diffs.filter(d => d.diff_type === DiffType.ADDED).length;
-    const removed = diffs.filter(d => d.diff_type === DiffType.REMOVED).length;
-    const modified = diffs.filter(d => d.diff_type === DiffType.MODIFIED).length;
-    const hasChanges = added > 0 || removed > 0 || modified > 0;
-
-    // Now ingest (overwrites stored clauses)
-    const result = specStore.ingestDocument(file, projectRoot);
-    totalClauses += result.clauses.length;
-
-    if (hasChanges) {
-      totalChanges += added + removed + modified;
-      console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses`);
-      if (added > 0) console.log(`    ${green(`+${added} added`)}`);
-      if (removed > 0) console.log(`    ${red(`-${removed} removed`)}`);
-      if (modified > 0) console.log(`    ${yellow(`~${modified} modified`)}`);
-
-      // Show which clauses changed
-      for (const d of diffs) {
-        if (d.diff_type === DiffType.UNCHANGED) continue;
-        const pathLabel = d.section_path_after?.join(' > ') || d.section_path_before?.join(' > ') || '';
-        const icon = d.diff_type === DiffType.ADDED ? green('+') : d.diff_type === DiffType.REMOVED ? red('-') : yellow('~');
-        console.log(`      ${icon} ${pathLabel}`);
-
-        if (verbose && d.diff_type === DiffType.MODIFIED && d.clause_before && d.clause_after) {
-          // Show line-level diff of the raw text
-          const beforeLines = d.clause_before.raw_text.split('\n');
-          const afterLines = d.clause_after.raw_text.split('\n');
-          const beforeSet = new Set(beforeLines.map(l => l.trim()));
-          const afterSet = new Set(afterLines.map(l => l.trim()));
-          for (const line of afterLines) {
-            if (!beforeSet.has(line.trim()) && line.trim()) {
-              console.log(`        ${green('+ ' + line.trim())}`);
-            }
-          }
-          for (const line of beforeLines) {
-            if (!afterSet.has(line.trim()) && line.trim()) {
-              console.log(`        ${red('- ' + line.trim())}`);
-            }
-          }
-        } else if (verbose && d.diff_type === DiffType.ADDED && d.clause_after) {
-          const lines = d.clause_after.raw_text.split('\n').filter(l => l.trim());
-          for (const line of lines.slice(0, 5)) {
-            console.log(`        ${green('+ ' + line.trim())}`);
-          }
-          if (lines.length > 5) console.log(`        ${dim(`... and ${lines.length - 5} more lines`)}`);
-        } else if (verbose && d.diff_type === DiffType.REMOVED && d.clause_before) {
-          const lines = d.clause_before.raw_text.split('\n').filter(l => l.trim());
-          for (const line of lines.slice(0, 5)) {
-            console.log(`        ${red('- ' + line.trim())}`);
-          }
-          if (lines.length > 5) console.log(`        ${dim(`... and ${lines.length - 5} more lines`)}`);
-        }
+    let files: string[];
+    if (filteredArgs.length === 0) {
+      files = findSpecFiles(projectRoot);
+      if (files.length === 0) {
+        console.log(yellow('⚠ No spec files found. Provide a path or add files to spec/.'));
+        return;
       }
     } else {
-      console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses ${dim('(no changes)')}`);
+      files = args.map(f => resolve(f));
+      for (const f of files) {
+        if (!existsSync(f)) {
+          console.error(red(`✖ File not found: ${f}`));
+          process.exit(1);
+        }
+      }
     }
-  }
 
-  console.log();
-  console.log(`  ${dim(`Total: ${totalClauses} clauses ingested`)}`);
-  if (totalChanges > 0) {
-    console.log(`  ${dim(`Changes: ${totalChanges} clauses affected`)}`);
+    console.log(bold('📥 Spec Ingestion'));
     console.log();
-    console.log(`  ${dim('Next: run')} ${cyan('phoenix canonicalize')} ${dim('then')} ${cyan('phoenix regen')} ${dim('to update generated code')}`);
-  }
+
+    let totalClauses = 0;
+    let totalChanges = 0;
+
+    for (const file of files) {
+      const docId = relative(projectRoot, file);
+
+      // Show diff BEFORE ingesting
+      const diffs = specStore.diffDocument(file, projectRoot);
+      const added = diffs.filter(d => d.diff_type === DiffType.ADDED).length;
+      const removed = diffs.filter(d => d.diff_type === DiffType.REMOVED).length;
+      const modified = diffs.filter(d => d.diff_type === DiffType.MODIFIED).length;
+      const hasChanges = added > 0 || removed > 0 || modified > 0;
+
+      // Now ingest (overwrites stored clauses)
+      const result = specStore.ingestDocument(file, projectRoot);
+      totalClauses += result.clauses.length;
+
+      if (hasChanges) {
+        totalChanges += added + removed + modified;
+        console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses`);
+        if (added > 0) console.log(`    ${green(`+${added} added`)}`);
+        if (removed > 0) console.log(`    ${red(`-${removed} removed`)}`);
+        if (modified > 0) console.log(`    ${yellow(`~${modified} modified`)}`);
+
+        // Show which clauses changed
+        for (const d of diffs) {
+          if (d.diff_type === DiffType.UNCHANGED) continue;
+          const pathLabel = d.section_path_after?.join(' > ') || d.section_path_before?.join(' > ') || '';
+          const icon = d.diff_type === DiffType.ADDED ? green('+') : d.diff_type === DiffType.REMOVED ? red('-') : yellow('~');
+          console.log(`      ${icon} ${pathLabel}`);
+
+          if (verbose && d.diff_type === DiffType.MODIFIED && d.clause_before && d.clause_after) {
+            // Show line-level diff of the raw text
+            const beforeLines = d.clause_before.raw_text.split('\n');
+            const afterLines = d.clause_after.raw_text.split('\n');
+            const beforeSet = new Set(beforeLines.map(l => l.trim()));
+            const afterSet = new Set(afterLines.map(l => l.trim()));
+            for (const line of afterLines) {
+              if (!beforeSet.has(line.trim()) && line.trim()) {
+                console.log(`        ${green('+ ' + line.trim())}`);
+              }
+            }
+            for (const line of beforeLines) {
+              if (!afterSet.has(line.trim()) && line.trim()) {
+                console.log(`        ${red('- ' + line.trim())}`);
+              }
+            }
+          } else if (verbose && d.diff_type === DiffType.ADDED && d.clause_after) {
+            const lines = d.clause_after.raw_text.split('\n').filter(l => l.trim());
+            for (const line of lines.slice(0, 5)) {
+              console.log(`        ${green('+ ' + line.trim())}`);
+            }
+            if (lines.length > 5) console.log(`        ${dim(`... and ${lines.length - 5} more lines`)}`);
+          } else if (verbose && d.diff_type === DiffType.REMOVED && d.clause_before) {
+            const lines = d.clause_before.raw_text.split('\n').filter(l => l.trim());
+            for (const line of lines.slice(0, 5)) {
+              console.log(`        ${red('- ' + line.trim())}`);
+            }
+            if (lines.length > 5) console.log(`        ${dim(`... and ${lines.length - 5} more lines`)}`);
+          }
+        }
+      } else {
+        console.log(`  ${green('✔')} ${docId} → ${result.clauses.length} clauses ${dim('(no changes)')}`);
+      }
+    }
+
+    console.log();
+    console.log(`  ${dim(`Total: ${totalClauses} clauses ingested`)}`);
+    if (totalChanges > 0) {
+      console.log(`  ${dim(`Changes: ${totalChanges} clauses affected`)}`);
+      console.log();
+      console.log(`  ${dim('Next: run')} ${cyan('phoenix canonicalize')} ${dim('then')} ${cyan('phoenix regen')} ${dim('to update generated code')}`);
+    }
+  }, { files: args.length });
 }
 
 function cmdDiff(args: string[]): void {
@@ -974,39 +1006,40 @@ function cmdCanon(): void {
 }
 
 function cmdPlan(): void {
-  const { projectRoot, phoenixDir } = requirePhoenixRoot();
-  const canonStore = new CanonicalStore(phoenixDir);
-  const specStore = new SpecStore(phoenixDir);
+  log.timedSync('plan', () => {
+    const { projectRoot, phoenixDir } = requirePhoenixRoot();
+    const canonStore = new CanonicalStore(phoenixDir);
+    const specStore = new SpecStore(phoenixDir);
 
-  const canonNodes = canonStore.getAllNodes();
-  if (canonNodes.length === 0) {
-    console.log(yellow('⚠ No canonical nodes. Run `phoenix bootstrap` or `phoenix ingest` + `phoenix canonicalize` first.'));
-    return;
-  }
+    const canonNodes = canonStore.getAllNodes();
+    if (canonNodes.length === 0) {
+      console.log(yellow('⚠ No canonical nodes. Run `phoenix bootstrap` or `phoenix ingest` + `phoenix canonicalize` first.'));
+      return;
+    }
 
-  // Collect clauses
-  const allClauses: Clause[] = [];
-  const specFiles = findSpecFiles(projectRoot);
-  for (const specFile of specFiles) {
-    const docId = relative(projectRoot, specFile);
-    allClauses.push(...specStore.getClauses(docId));
-  }
+    // Collect clauses
+    const allClauses: Clause[] = [];
+    const specFiles = findSpecFiles(projectRoot);
+    for (const specFile of specFiles) {
+      const docId = relative(projectRoot, specFile);
+      allClauses.push(...specStore.getClauses(docId));
+    }
 
-  const ius = planIUs(canonNodes, allClauses);
-  saveIUs(phoenixDir, ius);
+    const ius = planIUs(canonNodes, allClauses);
+    saveIUs(phoenixDir, ius);
 
-  console.log(bold('📦 IU Plan'));
-  console.log();
-  console.log(`  ${green(`${ius.length} Implementation Units planned`)}`);
-  console.log();
+    console.log(bold('📦 IU Plan'));
+    console.log();
+    console.log(`  ${green(`${ius.length} Implementation Units planned`)}`);
+    console.log();
 
-  for (const iu of ius) {
-    const riskColor = iu.risk_tier === 'critical' ? red
-      : iu.risk_tier === 'high' ? yellow
-      : iu.risk_tier === 'medium' ? cyan
-      : green;
-    console.log(`  ${bold(iu.name)}`);
-    console.log(`    ${dim('ID:')}       ${iu.iu_id.slice(0, 12)}…`);
+    for (const iu of ius) {
+      const riskColor = iu.risk_tier === 'critical' ? red
+        : iu.risk_tier === 'high' ? yellow
+        : iu.risk_tier === 'medium' ? cyan
+        : green;
+      console.log(`  ${bold(iu.name)}`);
+      console.log(`    ${dim('ID:')}       ${iu.iu_id.slice(0, 12)}…`);
     console.log(`    ${dim('Risk:')}     ${riskColor(iu.risk_tier)}`);
     console.log(`    ${dim('Kind:')}     ${iu.kind}`);
     console.log(`    ${dim('Sources:')}  ${iu.source_canon_ids.length} canonical nodes`);
@@ -1019,7 +1052,9 @@ function cmdPlan(): void {
       }
     }
     console.log();
-  }
+    }
+  }, 
+  { canon_count: 0 });
 }
 
 async function cmdRegen(args: string[]): Promise<void> {
@@ -1035,6 +1070,19 @@ async function cmdRegen(args: string[]): Promise<void> {
   const iuFilter = args.find(a => a.startsWith('--iu='))?.split('=')[1];
   const forceStubs = args.includes('--stubs');
   const verbose = args.includes('-v') || args.includes('--verbose');
+  const noRetry = args.includes('--no-retry');
+  const noReflect = args.includes('--no-reflect');
+  const codeOnlyFix = args.includes('--code-only-fix');
+  const logLevelFlag = args.find(a => a.startsWith('--log-level='))?.split('=')[1] || 
+                      args.find(a => a.startsWith('--log='))?.split('=')[1];
+  
+  // Set log level from flag or env or verbose
+  if (logLevelFlag) {
+    setLogLevel(logLevelFlag);
+  } else if (verbose) {
+    setLogLevel('debug');
+  }
+  
   const targetIUs = iuFilter
     ? ius.filter(iu => iu.iu_id.startsWith(iuFilter) || iu.name === iuFilter)
     : ius;
@@ -1049,11 +1097,15 @@ async function cmdRegen(args: string[]): Promise<void> {
   const canonStore = new CanonicalStore(phoenixDir);
   const canonNodes = canonStore.getAllNodes();
 
-  console.log(bold('⚡ Code Regeneration'));
+  log.info('Starting code regeneration');
   if (llm) {
+    log.info({ provider: llm.name, model: llm.model }, `Using provider: ${llm.name}/${llm.model}`);
+    console.log(bold('⚡ Code Regeneration'));
     console.log(`  ${dim(`Provider: ${llm.name}/${llm.model}`)}`);
   } else {
     const { hint } = await describeAvailability();
+    log.info(forceStubs ? 'Using stubs (forced)' : `Using stubs: ${hint}`);
+    console.log(bold('⚡ Code Regeneration'));
     console.log(`  ${dim('Mode: stubs')}${forceStubs ? '' : ` ${dim('—')} ${dim(hint)}`}`);
   }
   console.log();
@@ -1075,6 +1127,9 @@ async function cmdRegen(args: string[]): Promise<void> {
     projectRoot,
     target: regenArch,
     verbose,
+    noRetry,
+    reflect: !noReflect, // Default true, --no-reflect to disable
+    codeOnlyFix, // Default false, --code-only-fix to enable legacy behavior
     log: verbose ? (msg) => console.log(dim(msg)) : undefined,
     onProgress: (iu, status, msg) => {
       if (status === 'start') {
@@ -1100,23 +1155,44 @@ async function cmdRegen(args: string[]): Promise<void> {
   };
 
   const manifestManager = new ManifestManager(phoenixDir);
-  const results = await generateAll(targetIUs, regenCtx);
+  let results: RegenResult[] = [];
+  
+  try {
+    results = await generateAll(targetIUs, regenCtx);
+    
+    for (const result of results) {
+      for (const [filePath, content] of result.files) {
+        const fullPath = join(projectRoot, filePath);
+        mkdirSync(join(fullPath, '..'), { recursive: true });
+        writeFileSync(fullPath, content, 'utf8');
+      }
+      manifestManager.recordIU(result.manifest);
 
-  for (const result of results) {
-    for (const [filePath, content] of result.files) {
-      const fullPath = join(projectRoot, filePath);
-      mkdirSync(join(fullPath, '..'), { recursive: true });
-      writeFileSync(fullPath, content, 'utf8');
-    }
-    manifestManager.recordIU(result.manifest);
-
-    if (!llm) {
-      const iu = targetIUs.find(i => i.iu_id === result.iu_id);
-      console.log(`  ${green('✔')} ${iu?.name || result.iu_id.slice(0, 12)}`);
-      for (const [filePath] of result.files) {
-        console.log(`    → ${cyan(filePath)}`);
+      if (!llm) {
+        const iu = targetIUs.find(i => i.iu_id === result.iu_id);
+        console.log(`  ${green('✔')} ${iu?.name || result.iu_id.slice(0, 12)}`);
+        for (const [filePath] of result.files) {
+          console.log(`    → ${cyan(filePath)}`);
+        }
       }
     }
+  } catch (err) {
+    if (err instanceof SpecRepairRequiredError) {
+      console.log();
+      console.log(red(`  ✖ Spec repair required for ${err.iu.name}`));
+      console.log(yellow(`    ${err.hint}`));
+      console.log(dim(`    Errors: ${err.errors.slice(0, 200)}...`));
+      console.log();
+      console.log(dim('    To fix the spec and retry:'));
+      console.log(dim('    1. Edit the spec to add missing type constraints'));
+      console.log(dim('    2. Run: phoenix ingest && phoenix canonicalize && phoenix plan && phoenix regen'));
+      console.log();
+      console.log(dim('    Or use --code-only-fix to attempt legacy code-only fix (may fail):'));
+      console.log(dim('    phoenix regen --code-only-fix'));
+      console.log();
+      process.exit(1);
+    }
+    throw err;
   }
 
   // Re-generate scaffold wiring with architecture target
@@ -1284,50 +1360,58 @@ function cmdDrift(): void {
 }
 
 async function cmdCanonicalize(): Promise<void> {
-  const { projectRoot, phoenixDir } = requirePhoenixRoot();
-  const specStore = new SpecStore(phoenixDir);
-  const canonStore = new CanonicalStore(phoenixDir);
+  await log.timed('canonicalize', async () => {
+    const { projectRoot, phoenixDir } = requirePhoenixRoot();
+    const specStore = new SpecStore(phoenixDir);
+    const canonStore = new CanonicalStore(phoenixDir);
 
-  const allClauses: Clause[] = [];
-  const specFiles = findSpecFiles(projectRoot);
-  for (const specFile of specFiles) {
-    const docId = relative(projectRoot, specFile);
-    allClauses.push(...specStore.getClauses(docId));
-  }
+    const allClauses: Clause[] = [];
+    const specFiles = findSpecFiles(projectRoot);
+    for (const specFile of specFiles) {
+      const docId = relative(projectRoot, specFile);
+      allClauses.push(...specStore.getClauses(docId));
+    }
 
-  if (allClauses.length === 0) {
-    console.log(yellow('⚠ No ingested clauses. Run `phoenix ingest` first.'));
-    return;
-  }
+    if (allClauses.length === 0) {
+      console.log(yellow('⚠ No ingested clauses. Run `phoenix ingest` first.'));
+      return;
+    }
 
-  const llm = await resolveProvider(phoenixDir);
-  console.log(bold('📐 Canonicalization'));
-  if (llm) {
-    console.log(`  ${dim(`LLM: ${llm.name}/${llm.model}`)}`);
-  }
-  console.log();
+    const llm = await resolveProvider(phoenixDir);
+    console.log(bold('📐 Canonicalization'));
+    if (llm) {
+      console.log(`  ${dim(`LLM: ${llm.name}/${llm.model}`)}`);
+    }
+    console.log();
 
-  const canonNodes = await extractCanonicalNodesLLM(allClauses, llm);
-  canonStore.saveNodes(canonNodes);
+    const canonNodes = await log.timed('extractCanonicalNodes', async () => {
+      return extractCanonicalNodesLLM(allClauses, llm);
+    }, { clause_count: allClauses.length, has_llm: !!llm });
+    
+    canonStore.saveNodes(canonNodes);
 
-  console.log(`  ${green('✔')} ${canonNodes.length} canonical nodes extracted from ${allClauses.length} clauses`);
+    console.log(`  ${green('✔')} ${canonNodes.length} canonical nodes extracted from ${allClauses.length} clauses`);
 
-  const byType = new Map<string, number>();
-  for (const node of canonNodes) {
-    byType.set(node.type, (byType.get(node.type) || 0) + 1);
-  }
-  for (const [type, count] of byType) {
-    console.log(`    ${dim('·')} ${type}: ${count}`);
-  }
+    const byType = new Map<string, number>();
+    for (const node of canonNodes) {
+      byType.set(node.type, (byType.get(node.type) || 0) + 1);
+    }
+    for (const [type, count] of byType) {
+      console.log(`    ${dim('·')} ${type}: ${count}`);
+    }
 
-  // Compute warm hashes
-  const warmHashes = computeWarmHashes(allClauses, canonNodes);
-  const warmPath = join(phoenixDir, 'graphs', 'warm-hashes.json');
-  const warmObj: Record<string, string> = {};
-  for (const [k, v] of warmHashes) warmObj[k] = v;
-  writeFileSync(warmPath, JSON.stringify(warmObj, null, 2), 'utf8');
+    // Compute warm hashes
+    const warmHashes = await log.timed('computeWarmHashes', async () => {
+      return computeWarmHashes(allClauses, canonNodes);
+    }, { clause_count: allClauses.length, canon_count: canonNodes.length });
+    
+    const warmPath = join(phoenixDir, 'graphs', 'warm-hashes.json');
+    const warmObj: Record<string, string> = {};
+    for (const [k, v] of warmHashes) warmObj[k] = v;
+    writeFileSync(warmPath, JSON.stringify(warmObj, null, 2), 'utf8');
 
-  console.log(`  ${green('✔')} ${warmHashes.size} warm context hashes computed`);
+    console.log(`  ${green('✔')} ${warmHashes.size} warm context hashes computed`);
+  });
 }
 
 function cmdEvaluate(args: string[]): void {
@@ -1686,43 +1770,27 @@ function cmdVersion(): void {
 
 async function cmdModels(): Promise<void> {
   const { phoenixDir } = requirePhoenixRoot();
-  const { listAvailableModels } = await import('./llm/pi-sdk.js');
+  const { describeAvailability } = await import('./llm/resolve.js');
   
   console.log(bold('🤖 Available Models'));
   console.log();
   
-  try {
-    const models = await listAvailableModels(phoenixDir);
-    
-    if (models.length === 0) {
-      console.log(yellow('  ⚠ No models available.'));
-      console.log(dim('    Set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable LLM generation.'));
-      return;
-    }
-    
-    // Group by provider
-    const byProvider = new Map<string, typeof models>();
-    for (const m of models) {
-      const list = byProvider.get(m.provider) || [];
-      list.push(m);
-      byProvider.set(m.provider, list);
-    }
-    
-    for (const [provider, providerModels] of byProvider) {
-      console.log(`  ${bold(provider)}:`);
-      for (const m of providerModels) {
-        console.log(`    ${dim('·')} ${cyan(m.id)}`);
-        if (m.description) {
-          console.log(`      ${dim(m.description)}`);
-        }
-      }
-    }
-    
-    console.log();
-    console.log(dim('  Set a model with: phoenix config llm.provider=<name> llm.model=<id>'));
-  } catch (err) {
-    console.error(red(`✖ Failed to list models: ${err instanceof Error ? err.message : err}`));
+  const availability = await describeAvailability();
+  
+  if (availability.available.length === 0) {
+    console.log(yellow('  ⚠ Fireworks API not configured.'));
+    console.log(dim('    Set FIREWORKS_API_KEY to enable LLM generation.'));
+    return;
   }
+  
+  console.log(`  ${bold('Fireworks:')}`);
+  console.log(`    ${dim('·')} ${cyan('kimi-k2p5')} — Kimi K2.5 (262K context)`);
+  console.log(`    ${dim('·')} ${cyan('accounts/fireworks/routers/kimi-k2p5-turbo')} — Kimi K2.5 Turbo Router`);
+  console.log(`    ${dim('·')} ${cyan('deepseek-v3')} — DeepSeek V3 (164K context)`);
+  console.log();
+  console.log(`  ${dim('Configured:')} ${availability.configured || 'none'}`);
+  console.log();
+  console.log(dim('  Set a model with: PHOENIX_LLM_MODEL=<id> phoenix regen'));
 }
 
 function cmdHelp(): void {
@@ -1747,9 +1815,13 @@ ${bold('Canonical Graph:')}
 
 ${bold('Implementation:')}
   ${cyan('plan')}                  Plan Implementation Units from canonical graph
-  ${cyan('regen')} [--iu=<id>] [-v] Regenerate code (all or specific IU)
-                         ${dim('--stubs  Force stub generation (skip LLM)')}
-                         ${dim('-v       Verbose: show timing & streaming progress')}
+  ${cyan('regen')} [--iu=<id>] [-v] [--log-level=<level>] Regenerate code (all or specific IU)
+                         ${dim('--stubs         Force stub generation (skip LLM)')}
+                         ${dim('--no-reflect    Disable reflection prompting (default: enabled)')}
+                         ${dim('--no-retry      Skip auto-fix retries, emit errors for manual fix')}
+                         ${dim('--code-only-fix Legacy: only code-level fixes, no spec escalation')}
+                         ${dim('-v             Verbose: show timing & streaming progress')}
+                         ${dim('               --log-level=debug|info|warn|error  Set log level')}
   ${cyan('upgrade')}              Upgrade scaffold files to latest Phoenix templates
 
 ${bold('Verification:')}

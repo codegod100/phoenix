@@ -30,6 +30,15 @@ export const KIMI_SYSTEM_PROMPT = `Generate TypeScript modules from specificatio
 - Use correct arrow function syntax: (param) => { } not (param => { }
 </core_rules>
 
+<error_prevention>
+CRITICAL: Before outputting, verify:
+- All imports use correct relative paths (../file.js not ../file)
+- All referenced variables/functions are defined in scope
+- All async calls use 'await'
+- SQL uses single quotes: datetime('now') not datetime("now")
+- Exports are actual values, not empty objects {}
+</error_prevention>
+
 <dependencies>
 - ZERO external dependencies unless explicitly listed
 - Use Node.js built-ins: node:crypto, node:events, node:http
@@ -396,26 +405,102 @@ Generate complete TypeScript class. Do NOT use <output> tags - just output the r
 </ui_component>`;
 }
 
-/** Typecheck fix prompt - focused on error correction */
-export function buildFixPrompt(code: string, errors: string): string {
+/** Typecheck fix prompt - structured error correction with constraints */
+export function buildFixPrompt(code: string, errors: string, isUi: boolean = false): string {
   return `<fix_task>
+You are fixing TypeScript compilation errors. Follow this exact process:
+
 <current_code>
-${code.slice(0, 2000)}${code.length > 2000 ? '\n... (truncated)' : ''}
+${code.slice(0, 2500)}${code.length > 2500 ? '\n... (truncated)' : ''}
 </current_code>
 
 <errors>
-${errors.slice(0, 1000)}${errors.length > 1000 ? '\n... (truncated)' : ''}
+${errors.slice(0, 1500)}${errors.length > 1500 ? '\n... (truncated)' : ''}
 </errors>
 
-<rules>
-- Fix all TypeScript errors
-- Keep all existing exports
-- Maintain _phoenix metadata
-- No new dependencies
-</rules>
+<fix_process>
+1. ANALYZE: Identify the root cause of each error
+2. PLAN: Determine the minimal fix for each error
+3. VERIFY: Ensure fixes don't introduce new errors
+4. OUTPUT: Return complete corrected file
+</fix_process>
 
-Output fixed code inside <output> tags.
+<constraints>
+- Fix ALL errors, not just the first one
+- Keep all existing exports and function signatures
+- Maintain _phoenix metadata export unchanged
+- Do not add new dependencies
+- Do not change the module's public API
+- Use existing types from imports, don't redefine them
+</constraints>
+
+<common_fixes>
+- "Cannot find name 'X'" → Add import or define X
+- "Property 'X' does not exist" → Check object shape, add missing property
+- "Argument of type 'X' is not assignable" → Fix type annotation or add type guard
+- "Missing 'await'" → Add await to async call
+- "Expected 2 arguments, got 1" → Check function signature, add missing arg
+</common_fixes>
+
+Output the COMPLETE fixed file wrapped in triple backticks:
+\`\`\`typescript
+// Fixed code here
+\`\`\`
 </fix_task>`;
+}
+
+/** 
+ * Reflection prompt - structured self-critique with concrete checks.
+ * Forces the LLM to verify specific error patterns before outputting.
+ */
+export function buildReflectPrompt(basePrompt: string): string {
+  return `${basePrompt}
+
+<critique_checklist>
+You MUST verify each item before outputting code. If ANY check fails, rewrite the code to fix it.
+
+[IMPORTS]
+□ All import paths use correct relative paths (../, ./)
+□ No imports reference non-existent files
+□ No circular import patterns with sibling modules
+□ Type imports use 'import type { ... }' syntax
+
+[TYPES]
+□ All function parameters have explicit types
+□ All return types are declared (no implicit any)
+□ No 'any' types used (use 'unknown' with type guards if needed)
+□ All interface properties have types (not inferred)
+
+[VARIABLES]
+□ All variables used are declared in scope
+□ No undefined variables referenced
+□ All constants have explicit types if complex
+
+[EXPORTS]
+□ Required exports from contract are present
+□ No extra exports beyond what's needed
+□ _phoenix metadata export is EXACTLY as specified
+
+[SYNTAX]
+□ No missing closing braces/parentheses
+□ Arrow functions use correct syntax: (param: Type) => { ... }
+□ Template literals are properly closed
+□ No trailing commas in function calls
+
+[COMMON_MISTAKES_TO_AVOID]
+- DO NOT use "datetime('now')" - SQLite uses single quotes
+- DO NOT export empty objects {} - always export the router/Hono instance
+- DO NOT use Hono's .get() with async without await
+- DO NOT forget 'await' on db.query() calls
+- DO NOT use import paths like './items' when file is './items.ts'
+</critique_checklist>
+
+<output_requirements>
+Output the COMPLETE corrected file wrapped in triple backticks:
+\`\`\`typescript
+// Your verified, corrected code here
+\`\`\`
+</output_requirements>`;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

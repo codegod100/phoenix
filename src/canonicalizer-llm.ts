@@ -11,7 +11,7 @@
 import type { Clause } from './models/clause.js';
 import type { CanonicalNode, CandidateNode } from './models/canonical.js';
 import { CanonicalType } from './models/canonical.js';
-import type { PiSDKProvider } from './llm/pi-sdk.js';
+import type { LLMProvider } from './llm/provider.js';
 import { sha256 } from './semhash.js';
 import { extractCandidates } from './canonicalizer.js';
 import { resolveGraph } from './resolution.js';
@@ -28,7 +28,7 @@ export interface LLMCanonOptions {
  */
 export async function extractCanonicalNodesLLM(
   clauses: Clause[],
-  llm: PiSDKProvider | null,
+  llm: LLMProvider | null,
   options?: LLMCanonOptions,
 ): Promise<CanonicalNode[]> {
   // Phase 1: rule-based extraction (always deterministic)
@@ -49,7 +49,7 @@ export async function extractCanonicalNodesLLM(
 
 async function normalizeCandidates(
   candidates: CandidateNode[],
-  llm: PiSDKProvider,
+  llm: LLMProvider,
   k: number = 1,
 ): Promise<CandidateNode[]> {
   const results: CandidateNode[] = [];
@@ -179,7 +179,7 @@ function parseNormalizerResponse(raw: string): string | null {
  */
 export async function reclassifyCandidatesLLM(
   clauses: Clause[],
-  llm: PiSDKProvider,
+  llm: LLMProvider,
 ): Promise<CanonicalNode[]> {
   const { candidates } = extractCandidates(clauses);
   if (!llm || candidates.length === 0) {
@@ -257,7 +257,7 @@ interface LLMExtractedNode {
  */
 export async function extractWithLLMFull(
   clauses: Clause[],
-  llm: PiSDKProvider,
+  llm: LLMProvider,
 ): Promise<CanonicalNode[]> {
   try {
     const candidates = await extractBatchLLM(clauses, llm);
@@ -275,7 +275,7 @@ export async function extractWithLLMFull(
 
 async function extractBatchLLM(
   clauses: Clause[],
-  llm: PiSDKProvider,
+  llm: LLMProvider,
 ): Promise<CandidateNode[]> {
   const BATCH_SIZE = CONFIG.LLM_EXTRACTOR_BATCH_SIZE;
   const allCandidates: CandidateNode[] = [];

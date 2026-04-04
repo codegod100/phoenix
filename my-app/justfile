@@ -20,12 +20,20 @@ help:
 # Phoenix binary path
 phoenix := "bun /home/nandi/code/phoenix/dist/cli.js"
 
+# Ensure phoenix is built from source (only if needed)
+build-phoenix:
+    @if [ ! -f /home/nandi/code/phoenix/dist/cli.js ] || [ -n "$(find /home/nandi/code/phoenix/src -type f -name '*.ts' -newer /home/nandi/code/phoenix/dist/cli.js 2>/dev/null | head -1)" ]; then \
+        echo "Building phoenix..."; \
+        cd /home/nandi/code/phoenix && npm run build 2>&1 | grep -E "(Bundled|error)" || echo "Build complete"; \
+        echo ""; \
+    fi
+
 # Show trust dashboard
-status:
+status: build-phoenix
     {{phoenix}} status
 
 # Check drift vs manifest
-drift:
+drift: build-phoenix
     {{phoenix}} drift
 
 # Test LLM provider connectivity
@@ -33,43 +41,43 @@ health:
     bun scripts/health.ts
 
 # Regenerate all IUs
-regen:
+regen: build-phoenix
     {{phoenix}} regen
 
 # Regenerate specific IU (usage: just regen-iu Items)
-regen-iu IU:
+regen-iu IU: build-phoenix
     {{phoenix}} regen --iu={{IU}}
 
 # Regenerate with stubs (no LLM)
-stubs:
+stubs: build-phoenix
     {{phoenix}} regen --stubs
 
 # Full pipeline: ingest → canonicalize → plan → generate
-bootstrap:
+bootstrap: build-phoenix
     {{phoenix}} bootstrap
 
 # Ingest spec changes
-ingest:
+ingest: build-phoenix
     {{phoenix}} ingest
 
 # Extract canonical requirements
-canonicalize:
+canonicalize: build-phoenix
     {{phoenix}} canonicalize
 
 # Plan Implementation Units
-plan:
+plan: build-phoenix
     {{phoenix}} plan
 
 # Show clause-level diffs
-diff:
+diff: build-phoenix
     {{phoenix}} diff
 
 # Open interactive pipeline visualizer
-inspect:
+inspect: build-phoenix
     {{phoenix}} inspect
 
 # Phoenix help
-phoenix-help:
+phoenix-help: build-phoenix
     {{phoenix}} help
 
 # Run dev server (conventional, not phoenix-specific)

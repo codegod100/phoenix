@@ -1,12 +1,11 @@
 /**
- * LLM Provider Resolution — uses pi SDK for unified provider management.
+ * LLM Provider Resolution — Direct Fireworks API only.
  *
- * Replaced native fetch-based providers with pi SDK's AuthStorage and ModelRegistry.
+ * Uses raw HTTP streaming to Fireworks API. No Pi SDK, no CLI spawning.
  */
 
 import type { LLMConfig, LLMProvider } from './provider.js';
-import { PiSDKProvider, ProviderPool, createPiSDKProvider, describePiSDKAvailability } from './pi-sdk.js';
-import { CLIPool, createCLIPool } from './cli-pool.js';
+import { FireworksProvider, createFireworksProvider } from './fireworks.js';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -14,156 +13,89 @@ interface PhoenixConfig {
   llm?: LLMConfig;
 }
 
+const DEFAULT_PROVIDER = 'fireworks';
+const DEFAULT_MODEL = 'accounts/fireworks/routers/kimi-k2p5-turbo';
+
 /**
- * Resolve the LLM provider using pi SDK.
- * Returns null if no provider is available.
+ * Resolve the LLM provider — direct Fireworks API only.
+ * Returns null if API key not available.
  */
-export async function resolveProvider(phoenixDir?: string): Promise<PiSDKProvider | null> {
+export async function resolveProvider(phoenixDir?: string): Promise<LLMProvider | null> {
   const config = phoenixDir ? loadConfig(phoenixDir) : {};
 
   // Check for explicit env var override
   const envProvider = process.env.PHOENIX_LLM_PROVIDER;
   const envModel = process.env.PHOENIX_LLM_MODEL;
 
-  // Determine preferred provider/model (env vars take precedence over config)
-  const preferredProvider = envProvider ?? config.llm?.provider;
-  const preferredModel = envModel ?? config.llm?.model;
+  // Use explicit settings, config, or defaults
+  const provider = envProvider ?? config.llm?.provider ?? DEFAULT_PROVIDER;
+  const model = envModel ?? config.llm?.model ?? DEFAULT_MODEL;
 
-  // Create the provider via pi SDK with preferences
-  const provider = await createPiSDKProvider(phoenixDir, preferredProvider, preferredModel);
-
-  // Warn about Fireworks token limits with Pi SDK
-  if (provider?.name === 'fireworks') {
-    console.warn('⚠️  Fireworks models may truncate output with Pi SDK (max 4096 tokens without streaming).');
-    console.warn('   Set PHOENIX_CLI_POOL=1 to use CLI pool with proper streaming support.');
+  if (provider !== 'fireworks') {
+    console.warn(`Provider ${provider} not supported. Only 'fireworks' is available.`);
+    return null;
   }
 
-  // Save preference if we detected it (and have a phoenix dir)
-  if (phoenixDir && provider && !config.llm) {
-    saveConfig(phoenixDir, {
-      ...config,
-      llm: { provider: provider.name, model: provider.model },
-    });
+  try {
+    const fw = createFireworksProvider(model);
+    console.log(`Using Fireworks API: ${model}`);
+    return fw;
+  } catch (err) {
+    console.error(`Failed to create Fireworks provider: ${err}`);
+    return null;
   }
-
-  return provider;
 }
 
 /**
- * Create a Provider Pool for concurrent generation.
- * Each worker gets its own AgentSession for true parallelism.
+ * Create a provider pool — uses multiple Fireworks providers for parallelism.
+ * Note: Fireworks has rate limits, so we use a single provider with concurrency control.
  */
 export async function createProviderPool(
   phoenixDir: string,
-  concurrency: number = 3
-): Promise<ProviderPool | null> {
-  const config = loadConfig(phoenixDir);
-
-  // Check for explicit env var override
-  const envProvider = process.env.PHOENIX_LLM_PROVIDER;
-  const envModel = process.env.PHOENIX_LLM_MODEL;
-
-  // Determine preferred provider/model
-  const preferredProvider = envProvider ?? config.llm?.provider;
-  const preferredModel = envModel ?? config.llm?.model;
-
-  // Create the pool
-  const pool = new ProviderPool(phoenixDir, preferredProvider, preferredModel, concurrency);
-  await pool.initialize();
-
-  // Save preference if we detected it
-  if (!config.llm) {
-    saveConfig(phoenixDir, {
-      ...config,
-      llm: { provider: pool.name, model: pool.model },
-    });
-  }
-
-  return pool;
+  _concurrency: number = 3
+): Promise<LLMProvider | null> {
+  // Fireworks benefits more from sequential streaming than parallel requests
+  // due to rate limits. Return single provider.
+  return resolveProvider(phoenixDir);
 }
 
 /**
- * Create a CLI Pool for true process-parallel generation.
- * Uses separate pi CLI processes - no shared state, no serialization.
+ * Create a CLI Pool — NOT USED. Direct API only.
+ * @deprecated Use resolveProvider() instead
  */
 export async function createCLIPoolForPhoenix(
   phoenixDir: string,
-  concurrency: number = 4
-): Promise<CLIPool | null> {
-  const config = loadConfig(phoenixDir);
-
-  // Check for explicit env var override
-  const envProvider = process.env.PHOENIX_LLM_PROVIDER;
-  const envModel = process.env.PHOENIX_LLM_MODEL;
-
-  // Determine preferred provider/model
-  const preferredProvider = envProvider ?? config.llm?.provider;
-  const preferredModel = envModel ?? config.llm?.model;
-
-  // Create CLI pool
-  const pool = await createCLIPool(phoenixDir, preferredProvider, preferredModel, concurrency);
-
-  // Save preference if we detected it
-  if (pool && !config.llm) {
-    saveConfig(phoenixDir, {
-      ...config,
-      llm: { provider: pool.name, model: pool.model },
-    });
-  }
-
-  return pool;
+  _concurrency: number = 4
+): Promise<never> {
+  throw new Error('CLI pool disabled. Use direct Fireworks API via resolveProvider().');
 }
 
 /**
- * Create a Provider Pool for concurrent generation, or fall back to single provider.
- * Returns null if no provider is available.
- *
- * Set PHOENIX_CLI_POOL=1 to use CLI-based process pool instead of SDK pool.
+ * Resolve provider or pool — always returns direct Fireworks provider.
  */
 export async function resolveProviderOrPool(
   phoenixDir: string,
-  concurrency: number = 3
+  _concurrency: number = 3
 ): Promise<LLMProvider | null> {
-  // Check if user wants CLI pool (process spawning)
-  const useCLIPool = process.env.PHOENIX_CLI_POOL === '1' || process.env.PHOENIX_CLI_POOL === 'true';
-
-  // For single IU or low concurrency, use single provider (lighter weight)
-  if (concurrency <= 1 && !useCLIPool) {
-    return resolveProvider(phoenixDir);
-  }
-
-  // Try CLI pool first if requested
-  if (useCLIPool) {
-    try {
-      const pool = await createCLIPoolForPhoenix(phoenixDir, concurrency);
-      if (pool) {
-        console.log(`Using CLI pool (concurrency: ${concurrency})`);
-        return pool;
-      }
-    } catch (err) {
-      console.log(`CLI pool unavailable: ${err}, falling back to SDK`);
-    }
-  }
-
-  // Try SDK pool
-  try {
-    const pool = await createProviderPool(phoenixDir, concurrency);
-    return pool;
-  } catch {
-    // Fall back to single provider
-    return resolveProvider(phoenixDir);
-  }
+  return resolveProvider(phoenixDir);
 }
 
 /**
- * Describe which providers are available (for CLI help).
+ * Describe which providers are available.
  */
 export async function describeAvailability(): Promise<{
   available: string[];
   configured: string | null;
   hint: string;
 }> {
-  return describePiSDKAvailability();
+  const hasKey = !!(process.env.FIREWORKS_API_KEY || process.env.PHOENIX_FIREWORKS_KEY);
+  return {
+    available: hasKey ? ['fireworks'] : [],
+    configured: hasKey ? 'fireworks' : null,
+    hint: hasKey
+      ? 'Using direct Fireworks API with streaming. Set FIREWORKS_API_KEY if needed.'
+      : 'Set FIREWORKS_API_KEY or PHOENIX_FIREWORKS_KEY env var.',
+  };
 }
 
 /**
@@ -182,7 +114,7 @@ function loadConfig(phoenixDir: string): PhoenixConfig {
 /**
  * Save Phoenix config to .phoenix/config.json.
  */
-function saveConfig(phoenixDir: string, config: PhoenixConfig): void {
+export function saveConfig(phoenixDir: string, config: PhoenixConfig): void {
   mkdirSync(phoenixDir, { recursive: true });
   writeFileSync(
     join(phoenixDir, 'config.json'),
@@ -190,3 +122,6 @@ function saveConfig(phoenixDir: string, config: PhoenixConfig): void {
     'utf8',
   );
 }
+
+// Re-export Fireworks provider for direct use
+export { FireworksProvider, createFireworksProvider };
