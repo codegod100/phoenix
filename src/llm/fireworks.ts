@@ -11,7 +11,7 @@ export class FireworksProvider implements LLMProvider {
   readonly name = 'fireworks';
   readonly model: string;
   private apiKey: string;
-  private baseUrl = 'https://api.fireworks.ai/inference/v1/chat/completions';
+  private baseUrl = 'https://api.fireworks.ai/inference/v1/completions';
 
   constructor(model: string = 'accounts/fireworks/routers/kimi-k2p5-turbo') {
     this.model = model;
@@ -27,22 +27,18 @@ export class FireworksProvider implements LLMProvider {
     options?: GenerateOptions,
     onChunk?: (chunk: string) => void
   ): Promise<string> {
-    const maxTokens = options?.maxTokens ?? 8192;
+    const maxTokens = options?.maxTokens ?? 4096;
     const temperature = options?.temperature ?? 0.1;
     const systemPrompt = options?.system ?? this.getSystemPrompt();
 
-    // Fireworks REQUIRES streaming for max_tokens > 4096
-    const useStreaming = maxTokens > 4096;
+    // Combine system and user prompt for completions endpoint
+    const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
 
     const body = {
       model: this.model.startsWith('accounts/') ? this.model : `accounts/fireworks/models/${this.model}`,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
+      prompt: fullPrompt,
       max_tokens: maxTokens,
       temperature: temperature,
-      stream: useStreaming,
     };
 
     const response = await fetch(this.baseUrl, {
@@ -56,83 +52,12 @@ export class FireworksProvider implements LLMProvider {
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`Fireworks API error: ${response.status} ${error}`);
+      console.error('[Fireworks] API Error:', response.status, error.slice(0, 500));
+      throw new Error(`Fireworks API error: ${response.status} ${error.slice(0, 200)}`);
     }
 
-    if (useStreaming) {
-      return this.handleStreaming(response, onChunk);
-    } else {
-      const data = await response.json();
-      return data.choices?.[0]?.message?.content ?? '';
-    }
-  }
-
-  private async handleStreaming(
-    response: Response,
-    onChunk?: (chunk: string) => void
-  ): Promise<string> {
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No response body');
-
-    let result = '';
-    let buffer = ''; // Buffer for incomplete SSE lines
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      // Append to buffer and process lines
-      buffer += decoder.decode(value, { stream: true });
-      
-      // Extract complete lines (those ending with \n)
-      const lines: string[] = [];
-      let lineEnd = buffer.indexOf('\n');
-      while (lineEnd !== -1) {
-        lines.push(buffer.slice(0, lineEnd));
-        buffer = buffer.slice(lineEnd + 1);
-        lineEnd = buffer.indexOf('\n');
-      }
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith('data: ')) continue;
-
-        const data = trimmed.slice(6);
-        if (data === '[DONE]') continue;
-
-        try {
-          const parsed = JSON.parse(data);
-          const content = parsed.choices?.[0]?.delta?.content ?? '';
-          if (content) {
-            result += content;
-            onChunk?.(content);
-          }
-        } catch (err) {
-          // Log parse errors for debugging
-          console.error(`[Fireworks] Failed to parse SSE data: ${data.slice(0, 100)}`);
-        }
-      }
-    }
-
-    // Process any remaining data in buffer
-    if (buffer.trim()) {
-      const trimmed = buffer.trim();
-      if (trimmed.startsWith('data: ')) {
-        const data = trimmed.slice(6);
-        if (data !== '[DONE]') {
-          try {
-            const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content ?? '';
-            if (content) result += content;
-          } catch {
-            // Ignore final parse errors
-          }
-        }
-      }
-    }
-
-    return result;
+    const data = await response.json();
+    return data.choices?.[0]?.text ?? '';
   }
 
   private getSystemPrompt(): string {
@@ -141,7 +66,7 @@ export class FireworksProvider implements LLMProvider {
       'Follow these rules strictly:',
       '- Use TypeScript with proper types',
       '- Use Hono framework for web APIs',
-      '- Always escape backticks in template literals: use \\\` not just `',
+      '- Always escape backticks in template literals: use \\` not just `',
       '- Return only the code, no markdown fences',
       '- Ensure all SQL queries use correct column names from the schema'
     ].join('\n');

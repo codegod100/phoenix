@@ -1454,8 +1454,13 @@ Only output clauses that are actually missing. Be specific and actionable.`;
       );
       const newClauses = response.trim();
 
+      // Debug: Show raw response
       if (!newClauses || newClauses.length < 20) {
-        console.log(yellow('⚠ LLM did not generate meaningful clauses. Try manually reviewing the drift.'));
+        console.log(yellow('⚠ LLM did not generate meaningful clauses.'));
+        console.log(dim('  Raw response:'));
+        console.log(dim('  ' + JSON.stringify(response).slice(0, 500)));
+        console.log();
+        console.log(dim('  Try manually reviewing the drift.'));
         return;
       }
 

@@ -2,6 +2,6 @@
   "architecture": "web-api",
   "llm": {
     "provider": "fireworks",
-    "model": "accounts/fireworks/models/deepseek-v3p2"
+    "model": "accounts/fireworks/models/qwen3p6-plus"
   }
 }
