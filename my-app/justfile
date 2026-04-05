@@ -1,9 +1,9 @@
-# Phoenix Justfile — wraps phoenix CLI commands using bun
+# Phoenix Justfile — wraps phoenix CLI commands using source (no build needed)
 # Usage: just status, just regen, just regen-iu Items, etc.
 
 # Default recipe shows help
 help:
-    @echo "Phoenix commands:"
+    @echo "Phoenix commands (using source - no build needed):"
     @echo "  just status          - Show trust dashboard"
     @echo "  just drift           - Check drift vs manifest"
     @echo "  just health          - Test LLM provider connectivity"
@@ -17,23 +17,15 @@ help:
     @echo "  just diff            - Show clause-level diffs"
     @echo "  just inspect         - Open interactive pipeline visualizer"
 
-# Phoenix binary path
-phoenix := "bun /home/nandi/code/phoenix/dist/cli.js"
-
-# Ensure phoenix is built from source (only if needed)
-build-phoenix:
-    @if [ ! -f /home/nandi/code/phoenix/dist/cli.js ] || [ -n "$(find /home/nandi/code/phoenix/src -type f -name '*.ts' -newer /home/nandi/code/phoenix/dist/cli.js 2>/dev/null | head -1)" ]; then \
-        echo "Building phoenix..."; \
-        cd /home/nandi/code/phoenix && npm run build 2>&1 | grep -E "(Bundled|error)" || echo "Build complete"; \
-        echo ""; \
-    fi
+# Phoenix source path (runs directly from source - no build needed!)
+phoenix := "bun run /home/nandi/code/phoenix/src/cli.ts"
 
 # Show trust dashboard
-status: build-phoenix
+status:
     {{phoenix}} status
 
 # Check drift vs manifest
-drift: build-phoenix
+drift:
     {{phoenix}} drift
 
 # Test LLM provider connectivity
@@ -41,43 +33,43 @@ health:
     bun scripts/health.ts
 
 # Regenerate all IUs
-regen: build-phoenix
+regen:
     {{phoenix}} regen
 
 # Regenerate specific IU (usage: just regen-iu Items)
-regen-iu IU: build-phoenix
+regen-iu IU:
     {{phoenix}} regen --iu={{IU}}
 
 # Regenerate with stubs (no LLM)
-stubs: build-phoenix
+stubs:
     {{phoenix}} regen --stubs
 
 # Full pipeline: ingest → canonicalize → plan → generate
-bootstrap: build-phoenix
+bootstrap:
     {{phoenix}} bootstrap
 
 # Ingest spec changes
-ingest: build-phoenix
+ingest:
     {{phoenix}} ingest
 
 # Extract canonical requirements
-canonicalize: build-phoenix
+canonicalize:
     {{phoenix}} canonicalize
 
 # Plan Implementation Units
-plan: build-phoenix
+plan:
     {{phoenix}} plan
 
 # Show clause-level diffs
-diff: build-phoenix
+diff:
     {{phoenix}} diff
 
 # Open interactive pipeline visualizer
-inspect: build-phoenix
+inspect:
     {{phoenix}} inspect
 
 # Phoenix help
-phoenix-help: build-phoenix
+phoenix-help:
     {{phoenix}} help
 
 # Run dev server (conventional, not phoenix-specific)

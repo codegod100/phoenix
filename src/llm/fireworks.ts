@@ -37,14 +37,24 @@ export class FireworksProvider implements LLMProvider {
     // Combine system and user prompt for completions endpoint
     const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
 
-    const body = {
+    const body: Record<string, any> = {
       model: this.model.startsWith('accounts/') ? this.model : `accounts/fireworks/models/${this.model}`,
       prompt: fullPrompt,
       max_tokens: maxTokens,
       temperature: temperature,
       stream: useStreaming,
-      reasoning_effort: 'none', // Completely disable thinking for codegen
     };
+
+    // Only set reasoning_effort for models that support disabling it
+    // MiniMax M2.5 requires reasoning (always on), Qwen/DeepSeek/GLM support 'none'
+    const modelName = body.model.toLowerCase();
+    if (modelName.includes('minimax')) {
+      // MiniMax requires reasoning - use 'low' for minimal thinking
+      body.reasoning_effort = 'low';
+    } else {
+      // Other models can disable reasoning entirely
+      body.reasoning_effort = 'none';
+    }
 
     const response = await fetch(this.baseUrl, {
       method: 'POST',

@@ -334,6 +334,7 @@ async function cmdBootstrap(): Promise<void> {
       const llmEarly = await resolveProvider(phoenixDir);
       if (llmEarly) {
         console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim(`(LLM: ${llmEarly.name}/${llmEarly.model})`)}`);
+        console.log(`  ${dim('Options:')} reasoning=none, maxTokens=4096, temperature=0.2`);
       } else {
         console.log(`  ${dim('Phase B:')} Canonicalization + warm context hashing ${dim('(rule-based)')}`);
       }
@@ -400,6 +401,7 @@ async function cmdBootstrap(): Promise<void> {
       const { hint } = await describeAvailability();
       if (llm) {
         console.log(`  ${dim('Phase C:')} Code generation ${dim(`(${llm.name}/${llm.model})`)}`);
+        console.log(`  ${dim('Options:')} reasoning=none, maxTokens=4096, temperature=0.2`);
       } else {
         console.log(`  ${dim('Phase C:')} Code generation ${dim('(stubs — no LLM)')}`);
         console.log(`    ${dim(hint)}`);
@@ -1110,6 +1112,7 @@ async function cmdRegen(args: string[]): Promise<void> {
     log.info({ provider: llm.name, model: llm.model }, `Using provider: ${llm.name}/${llm.model}`);
     console.log(bold('⚡ Code Regeneration'));
     console.log(`  ${dim(`Provider: ${llm.name}/${llm.model}`)}`);
+    console.log(`  ${dim(`Options: reasoning=none, maxTokens=4096, temperature=0.2`)}`);
   } else {
     const { hint } = await describeAvailability();
     log.info(forceStubs ? 'Using stubs (forced)' : `Using stubs: ${hint}`);
@@ -1389,6 +1392,7 @@ async function cmdPromote(args: string[]): Promise<void> {
       return;
     }
     console.log(`  ${dim(`LLM: ${llm.name}/${llm.model}`)}`);
+    console.log(`  ${dim('Options:')} reasoning=none, maxTokens=4096, temperature=0.2`);
     console.log();
 
     // Find spec file
@@ -1547,6 +1551,7 @@ async function cmdCanonicalize(): Promise<void> {
     console.log(bold('📐 Canonicalization'));
     if (llm) {
       console.log(`  ${dim(`LLM: ${llm.name}/${llm.model}`)}`);
+      console.log(`  ${dim('Options:')} reasoning=none, maxTokens=4096, temperature=0.2`);
     }
     console.log();
 
