@@ -54,15 +54,16 @@ export async function generateIU(iu: ImplementationUnit, ctx?: RegenContext): Pr
 
   for (const outputPath of iu.output_files) {
     let content: string;
+    const fileName = outputPath.split('/').pop() || outputPath;
 
     if (ctx?.llm && ctx.canonNodes) {
-      ctx.onProgress?.(iu, 'start', `Generating ${iu.name} via ${ctx.llm.name}…`);
+      ctx.onProgress?.(iu, 'start', `${iu.name} (${fileName})`);
       try {
         content = await generateWithLLM(iu, ctx.llm, ctx.canonNodes, ctx.allIUs, ctx.projectRoot, ctx.target);
-        ctx.onProgress?.(iu, 'done');
+        ctx.onProgress?.(iu, 'done', `${iu.name} (${fileName})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        ctx.onProgress?.(iu, 'error', msg);
+        ctx.onProgress?.(iu, 'error', `${iu.name} (${fileName}): ${msg}`);
         // Fall back to stub on LLM failure
         content = ctx.target ? generateArchStub(iu) : generateModule(iu);
       }

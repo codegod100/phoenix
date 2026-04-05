@@ -449,7 +449,8 @@ async function cmdBootstrap(): Promise<void> {
         target: arch,
         // reflect defaults to true, no need to set explicitly
         onProgress: (iu, status, msg) => {
-          if (status === 'start') process.stdout.write(`    ⏳ ${iu.name}…`);
+          const displayName = msg || iu.name;
+          if (status === 'start') process.stdout.write(`    ⏳ ${displayName}…`);
           else if (status === 'done') process.stdout.write(` ${green('✔')}\n`);
           else if (status === 'error') process.stdout.write(` ${red('✖')} ${dim(msg || 'failed, using stub')}\n`);
         },
@@ -1136,23 +1137,24 @@ async function cmdRegen(args: string[]): Promise<void> {
     verbose,
     log: verbose ? (msg) => console.log(dim(msg)) : undefined,
     onProgress: (iu, status, msg) => {
+      const displayName = msg || iu.name;
       if (status === 'start') {
         if (verbose) {
-          console.log(`  ⏳ ${iu.name}…`);
+          console.log(`  ⏳ ${displayName}…`);
         } else {
-          process.stdout.write(`  ⏳ ${iu.name}…`);
+          process.stdout.write(`  ⏳ ${displayName}…`);
         }
       } else if (status === 'done') {
         if (verbose) {
-          // Verbose logs its own completion
+          console.log(`  ✅ ${displayName}`);
         } else {
-          process.stdout.write(`\r  ✅ ${iu.name}   \n`);
+          process.stdout.write(`\r  ✅ ${displayName.padEnd(50)}\n`);
         }
       } else if (status === 'error') {
         if (verbose) {
-          console.log(`  ❌ ${iu.name}: ${msg}`);
+          console.log(`  ❌ ${displayName}`);
         } else {
-          process.stdout.write(`\r  ❌ ${iu.name}: ${msg}\n`);
+          process.stdout.write(`\r  ❌ ${displayName}\n`);
         }
       }
     },
