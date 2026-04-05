@@ -2,6 +2,6 @@
   "architecture": "web-api",
   "llm": {
     "provider": "fireworks",
-    "model": "accounts/fireworks/routers/kimi-k2p5-turbo"
+    "model": "accounts/fireworks/models/deepseek-v3p2"
   }
 }

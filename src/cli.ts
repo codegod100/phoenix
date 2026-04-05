@@ -374,7 +374,17 @@ async function cmdBootstrap(): Promise<void> {
     // Step 3: Plan IUs
     const ius = await log.timed('phase:plan', async () => {
       console.log(`  ${dim('Phase C:')} IU planning`);
-      const result = planIUs(canonNodes, []);
+      // Load canonNodes from store (saved by canonicalize phase)
+      const canonNodes = canonStore.getAllNodes();
+      
+      // Collect all clauses (needed for IU planning to group by doc/section)
+      const allClauses: Clause[] = [];
+      for (const specFile of specFiles) {
+        const docId = relative(projectRoot, specFile);
+        allClauses.push(...specStore.getClauses(docId));
+      }
+      
+      const result = planIUs(canonNodes, allClauses);
       saveIUs(phoenixDir, result);
       console.log(`    ${green('✔')} ${result.length} Implementation Units planned`);
       for (const iu of result) {
@@ -382,7 +392,7 @@ async function cmdBootstrap(): Promise<void> {
       }
       console.log();
       return result;
-    }, { canon_count: 0 }); // Will update after canonicalize runs
+    }, { canon_count: canonStore.getAllNodes().length });
 
     // Step 4: Generate code
     await log.timed('phase:regen', async () => {
@@ -433,7 +443,7 @@ async function cmdBootstrap(): Promise<void> {
 
       const regenCtx: RegenContext = {
         llm: llm ?? undefined,
-        canonNodes,
+        canonNodes: canonStore.getAllNodes(),
         allIUs: ius,
         projectRoot,
         target: arch,
@@ -1359,6 +1369,130 @@ function cmdDrift(): void {
   }
 }
 
+/*
+ * Promote drifted code changes back to spec as requirements.
+ * Analyzes drift and generates spec additions.
+ */
+async function cmdPromote(args: string[]): Promise<void> {
+  await log.timed('promote', async () => {
+    const { projectRoot, phoenixDir } = requirePhoenixRoot();
+    const manifestManager = new ManifestManager(phoenixDir);
+    const manifest = manifestManager.load();
+
+    if (!manifest.generated_at) {
+      console.log(yellow('⚠ No generated manifest. Run `phoenix regen` first.'));
+      return;
+    }
+
+    // Detect drift
+    const report = detectDrift(manifest, projectRoot);
+    const driftedEntries = report.entries.filter(e => e.status === DriftStatus.DRIFTED);
+
+    if (driftedEntries.length === 0) {
+      console.log(green('✔ No drift detected. All generated files match manifest.'));
+      return;
+    }
+
+    console.log(bold('🔥 Promote Drift to Spec'));
+    console.log();
+    console.log(`  Found ${driftedEntries.length} drifted file(s):`);
+    for (const entry of driftedEntries) {
+      console.log(`    ${dim('•')} ${entry.file_path}`);
+    }
+    console.log();
+
+    // Get LLM for analysis
+    const llm = await resolveProvider(phoenixDir);
+    if (!llm) {
+      console.log(red('✖ No LLM provider available. Set llm.provider in config.'));
+      return;
+    }
+    console.log(`  ${dim(`LLM: ${llm.name}/${llm.model}`)}`);
+    console.log();
+
+    // Find spec file
+    const specFiles = findSpecFiles(projectRoot);
+    if (specFiles.length === 0) {
+      console.log(red('✖ No spec files found in ./spec/'));
+      return;
+    }
+
+    // Use first spec file or specified one
+    const targetSpecFile = args[0] || specFiles[0];
+    console.log(`  Target spec: ${relative(projectRoot, targetSpecFile)}`);
+    console.log();
+
+    // Read current drifted files
+    const driftContents = driftedEntries.map(entry => {
+      const fullPath = projectRoot + '/' + entry.file_path;
+      const content = readFileSync(fullPath, 'utf8');
+      return { file: entry.file_path, content };
+    });
+
+    // Build prompt for LLM to extract requirements
+    const prompt = `Analyze these drifted implementation files and extract what requirements should be added to the spec document.
+
+Drifted Files:
+${driftContents.map(d => `
+--- ${d.file} ---
+${d.content.slice(0, 2000)}${d.content.length > 2000 ? '\n... (truncated)' : ''}
+`).join('\n')}
+
+Based on these implementations, what CONSTRAINT or REQUIREMENT clauses are missing from the spec?
+
+Generate spec clauses in this format:
+- CONSTRAINT: [description]
+- REQUIREMENT: [description]
+- CONTEXT: [description]
+
+Focus on:
+1. Data model requirements (fields, types, constraints)
+2. API endpoint requirements
+3. UI/UX requirements
+4. Business logic rules
+
+Output only the new clauses, one per line, prefixed with "- ". Be specific and actionable.`;
+
+    console.log('  Analyzing drift with LLM...');
+    console.log();
+
+    try {
+      const response = await llm.generate(
+        prompt,
+        { system: 'You are a specification writer. Convert implementation details into formal requirement clauses.', temperature: 0.3, maxTokens: 4096 },
+        (chunk: string) => {} // No streaming
+      );
+      const newClauses = response.trim();
+
+      if (!newClauses || newClauses.length < 20) {
+        console.log(yellow('⚠ LLM did not generate meaningful clauses. Try manually reviewing the drift.'));
+        return;
+      }
+
+      console.log(bold('  Proposed new spec clauses:'));
+      console.log();
+      console.log(newClauses.split('\n').map(l => `    ${l}`).join('\n'));
+      console.log();
+
+      // Append to spec file
+      const timestamp = new Date().toISOString().split('T')[0];
+      const appendix = `\n\n## Auto-Promoted Requirements (${timestamp})\n\n${newClauses}\n`;
+
+      writeFileSync(targetSpecFile, readFileSync(targetSpecFile, 'utf8') + appendix, 'utf8');
+
+      console.log(green(`  ✔ Appended ${newClauses.split('\n').filter(l => l.trim()).length} clauses to ${relative(projectRoot, targetSpecFile)}`));
+      console.log();
+      console.log(dim('  Next steps:'));
+      console.log(dim('    1. Review the added clauses'));
+      console.log(dim('    2. Run `phoenix ingest` to update canonical graph'));
+      console.log(dim('    3. Run `phoenix regen` to regenerate from updated spec'));
+
+    } catch (err: any) {
+      console.log(red(`  ✖ LLM analysis failed: ${err?.message || err}`));
+    }
+  });
+}
+
 async function cmdCanonicalize(): Promise<void> {
   await log.timed('canonicalize', async () => {
     const { projectRoot, phoenixDir } = requirePhoenixRoot();
@@ -1827,6 +1961,7 @@ ${bold('Implementation:')}
 ${bold('Verification:')}
   ${cyan('status')}                Trust dashboard — the primary UX
   ${cyan('drift')}                 Check generated files for drift
+  ${cyan('promote')} [spec-file]   Promote drifted code back to spec (auto-extract requirements)
   ${cyan('evaluate')} [--iu=<id>] Evaluate evidence against policy
   ${cyan('cascade')}               Show cascade failure effects
   ${cyan('audit')} [--iu=<id>]    Replacement audit — readiness per IU
@@ -1891,6 +2026,9 @@ async function main(): Promise<void> {
       break;
     case 'drift':
       cmdDrift();
+      break;
+    case 'promote':
+      await cmdPromote(commandArgs);
       break;
     case 'evaluate':
     case 'eval':

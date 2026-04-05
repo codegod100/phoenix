@@ -477,6 +477,20 @@ function cleanAndRepairCode(raw: string): string {
     }
   }
   
+  // DETECT NESTED TEMPLATE LITERALS: Count backticks to detect unterminated literals
+  // This is a smoke test - if odd number of backticks, there's likely a problem
+  const backtickCount = (code.match(/`/g) || []).length;
+  if (backtickCount % 2 !== 0) {
+    // Odd number of backticks - likely an unterminated template literal
+    // Try to fix by closing the last template literal if it looks unterminated
+    const lastBacktick = code.lastIndexOf('`');
+    const afterLastBacktick = code.slice(lastBacktick + 1);
+    // If there's significant content after last backtick without a closing pattern, close it
+    if (afterLastBacktick.length > 10 && !afterLastBacktick.includes('export')) {
+      code = code + '\n`;\n';
+    }
+  }
+  
   return code.trim();
 }
 function repairSQLQuotes(code: string): string {

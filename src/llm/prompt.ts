@@ -391,6 +391,7 @@ Generate a TypeScript CLASS with:
 - A generateHTML() method that returns a string containing complete HTML
 - No router.get(), no router.post(), no Hono instance
 - Fetch data from the API path using the fetch() function
+- IMPORTANT: In generateHTML(), use \${...} for template literals but NEVER nest backticks. Use string concatenation (+) or .join() for any inner dynamic content. Avoid nested template literals at all costs.
 
 Example output structure:
 class ${className} {

@@ -66,3 +66,45 @@
 - Users can filter to show only low stock items
 - Low stock items have a visual indicator (red badge or row highlight)
 - The low stock count is shown in the page title
+
+## Auto-Promoted Requirements (2026-04-05)
+
+- CONSTRAINT: The items table shall include a min_quantity field of type INTEGER with NOT NULL constraint, DEFAULT value 0, and CHECK constraint ensuring values are non-negative (>= 0).
+- CONSTRAINT: The items table shall include a quantity field of type INTEGER with NOT NULL constraint, DEFAULT value 0, and CHECK constraint ensuring values are non-negative (>= 0).
+- CONSTRAINT: The items table shall include a category_id foreign key referencing categories(id) with ON DELETE SET NULL referential action.
+- CONSTRAINT: Item names shall be constrained to a maximum length of 200 characters and minimum length of 1 character.
+- CONSTRAINT: Category names shall be constrained to a maximum length of 200 characters and minimum length of 1 character.
+- CONSTRAINT: The categories table shall include a description field of type TEXT with NOT NULL constraint and DEFAULT value of empty string.
+- REQUIREMENT: The items dashboard API shall support query parameters for filtering by category_id, search string (LIKE pattern matching on name), sort criteria, and a boolean flag to show only low-stock items (where quantity <= min_quantity).
+- REQUIREMENT: The items list endpoint shall return item data joined with category names via LEFT JOIN with the categories table.
+- REQUIREMENT: API endpoints shall perform input validation using Zod schemas, returning HTTP 400 status code with descriptive error messages for schema validation failures.
+- REQUIREMENT: API endpoints shall handle malformed JSON payloads by returning HTTP 400 status code with an "Invalid JSON" error message.
+- REQUIREMENT: API endpoints shall return HTTP 404 status code when attempting to access, update, or delete resources by non-existent IDs.
+- REQUIREMENT: All server-side rendered HTML output shall be escaped to prevent XSS attacks, specifically converting &, <, >, ", and ' characters to their corresponding HTML entities.
+- REQUIREMENT: The categories management UI shall implement state management for loading indicators, error messages, and data persistence during fetch operations.
+- REQUIREMENT: The categories UI shall provide navigation controls (e.g., back buttons) allowing users to return to parent or previous screens.
+- REQUIREMENT: UI forms shall enforce client-side validation matching API constraints: required name fields (1-200 characters) and optional description fields.
+- REQUIREMENT: The system shall implement idempotent database migrations that execute on application startup, adding missing columns (e.g., min_quantity) with appropriate constraints and default values, while gracefully handling duplicate column errors.
+- REQUIREMENT: The items dashboard UI shall fetch item data from the '/items' endpoint and render it dynamically.
+- CONTEXT: The items dashboard component is classified as high-risk (risk_tier: high) and requires strict input validation and output encoding.
+- CONTEXT: Database migrations must support existing databases by conditionally adding columns only if they do not already exist.
+
+
+## Auto-Promoted Requirements (2026-04-05)
+
+- CONSTRAINT: Item name must be a string with minimum length 1 and maximum length 200 characters.
+- CONSTRAINT: Item quantity must be a non-negative integer.
+- CONSTRAINT: Item min_quantity must be a non-negative integer, defaulting to 0 if not provided.
+- CONSTRAINT: Category name must be a string with minimum length 1 and maximum length 200 characters.
+- CONSTRAINT: Category description must be a string, defaulting to an empty string if not provided.
+- CONSTRAINT: Item category_id must be either null or reference an existing category ID in the database.
+- REQUIREMENT: The system must provide a GET API endpoint for items supporting query parameters: search (string), category_id (integer), sort (string), order (asc/desc), and low_stock (boolean).
+- REQUIREMENT: The API must validate all input for item and category operations using defined schemas and return descriptive error messages for invalid data.
+- REQUIREMENT: A web-based dashboard must be available for item management, featuring real-time search, category filtering, column sorting, and a low stock toggle.
+- REQUIREMENT: Low stock items must be visually highlighted in the dashboard using badges or color coding.
+- CONTEXT: Low stock is defined as when an item's quantity is less than or equal to its min_quantity value.
+- REQUIREMENT: The dashboard must escape all dynamic content to prevent cross-site scripting (XSS) attacks.
+- REQUIREMENT: The dashboard must use a responsive design that adapts to various screen sizes.
+- REQUIREMENT: The dashboard must support pagination or infinite scrolling for item lists.
+- REQUIREMENT: The API must support sorting items by columns: name, quantity, min_quantity, and created_at, with ascending or descending order.
+- REQUIREMENT: The system must verify category existence when creating or updating an item with a category_id.
