@@ -93,6 +93,7 @@
 - REQUIREMENT: Dashboard must include a modal form for creating new categories
 - REQUIREMENT: Dashboard must include a modal form for editing existing categories
 - REQUIREMENT: Dashboard must include a button to open the category management modal
+- REQUIREMENT: Dashboard must be served at the root path "/" as the default landing page
 - CONSTRAINT: Modal forms must include client-side validation that matches API validation rules
 - CONSTRAINT: Modal forms must close after successful submission
 - CONSTRAINT: Table rows must include edit and delete action buttons for each item

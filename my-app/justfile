@@ -78,22 +78,30 @@ plan:
 # === Phase 2: Regenerate (Step 4 via Skill) ===
 
 # Step 4: Regenerate all IUs (using skill)
+# ⚠️ DEPRECATED: Run from pi TUI instead: pi "files are prepped, regenerate"
 skill-regen:
+    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'files are prepped, regenerate'"
     @echo "🔄 Phase 2: Regeneration (step 4 via skill)"
     {{skill}} regen --stub
 
 # Step 4: Regenerate specific IU (using skill)
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-regen-iu IU:
+    @echo "⚠️  WARNING: Run from pi TUI instead"
     {{skill}} regen --stub --iu "{{IU}}"
 
 # Step 4: Regenerate stubs only (using skill)
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-stubs:
+    @echo "⚠️  WARNING: Run from pi TUI instead"
     {{skill}} regen --stub
 
 # === Phase 3: Validate (Steps 5-7 via Skill) ===
 
 # Steps 5-7: Boundary + Evidence + Drift
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-validate:
+    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'validate the code'"
     @echo "🧪 Phase 3: Validation (steps 5-7 via skill)"
     @echo ""
     @echo "Step 5/7: Boundary validation..."
@@ -108,24 +116,32 @@ skill-validate:
     @echo "✅ Validation complete"
 
 # Step 5: Boundary validation
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-boundary:
+    @echo "⚠️  WARNING: Run from pi TUI instead"
     @echo "Step 5: Boundary validation"
     {{skill}} validate
 
 # Step 6: Evidence (tests)
+# ⚠️ DEPRECATED: Use 'bun test' directly or run from pi TUI
 skill-evidence:
+    @echo "⚠️  WARNING: Use 'bun test' directly or run from pi TUI"
     @echo "Step 6: Running evidence checks..."
     bun test
 
 # Step 7: Drift detection
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-drift:
+    @echo "⚠️  WARNING: Run from pi TUI instead"
     @echo "Step 7: Drift detection"
     {{skill}} drift
 
 # === Phase 4: Status (Step 8 via Skill) ===
 
 # Step 8: Trust dashboard
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-status:
+    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'show status'"
     {{skill}} status
 
 # === Provenance Commands ===
@@ -143,7 +159,9 @@ provenance-spec IU:
     @bun -e 'const ius=JSON.parse(require("fs").readFileSync(".phoenix/graphs/ius.json","utf-8"));const canonical=JSON.parse(require("fs").readFileSync(".phoenix/graphs/canonical.json","utf-8"));const iu=ius.find(i=>i.name==="{{IU}}"||i.iu_id==="{{IU}}");if(!iu){console.log("IU not found");process.exit(1)}console.log("═══ {{IU}} Sources ═══\n");const clauses=new Set();iu.source_canon_ids.forEach(cid=>{const n=canonical.nodes[cid];if(n&&n.source_clause_ids)n.source_clause_ids.forEach(id=>clauses.add(id))});console.log("Source clauses: "+clauses.size);clauses.forEach(id=>console.log("  📄 "+id.substring(0,16)+"..."))'
 
 # Full pipeline using skill for steps 4-8
+# ⚠️ DEPRECATED: Run from pi TUI instead
 skill-full:
+    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'run full pipeline'"
     @echo "🚀 Full Pipeline (CLI steps 1-3, Skill steps 4-8)"
     just prep
     @echo ""

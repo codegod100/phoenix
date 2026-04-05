@@ -22,6 +22,9 @@ mount('/items', items);
 mount('/ui/database', Database);
 mount('/ui/items-dashboard', ItemsDashboardUI);
 
+// REQUIREMENT: Dashboard must be served at the root path "/" as the default landing page
+app.get('/', (c) => c.redirect('/ui/items-dashboard'));
+
 const port = parseInt(process.env.PORT ?? '3000', 10);
 runMigrations();
 console.log(`Server running at http://localhost:${port}`);
