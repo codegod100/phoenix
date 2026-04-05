@@ -17,7 +17,7 @@ import type { ImplementationUnit } from './models/iu.js';
 import type { CanonicalNode } from './models/canonical.js';
 import type { IUManifest, RegenMetadata, FileManifestEntry } from './models/manifest.js';
 import type { LLMProvider } from './llm/provider.js';
-import { buildPrompt, getSystemPrompt } from './llm/prompt.js';
+import { buildPrompt, buildClientPrompt, buildTsUiPrompt, getSystemPrompt } from './llm/prompt.js';
 import type { ResolvedTarget } from './models/architecture.js';
 import { sha256 } from './semhash.js';
 
@@ -141,12 +141,23 @@ async function generateWithLLM(
     .map(other => other.name) ?? [];
 
   const systemPrompt = getSystemPrompt(target);
-  const prompt = buildPrompt(iu, canonNodes, siblings, target);
+  
+  // Dynamic prompt selection based on output file type
+  const outputPath = iu.output_files[0] || '';
+  let prompt: string;
+  
+  if (outputPath.endsWith('.ui.ts')) {
+    prompt = buildTsUiPrompt(iu, canonNodes);
+  } else if (outputPath.endsWith('.client.ts')) {
+    prompt = buildClientPrompt(iu, canonNodes);
+  } else {
+    prompt = buildPrompt(iu, canonNodes, siblings, target);
+  }
 
   let code = cleanCodeResponse(await llm.generate(prompt, {
     system: systemPrompt,
     temperature: 0.2,
-    maxTokens: 8192,
+    maxTokens: 4096, // Reduced to avoid streaming issues
   }));
 
   // Typecheck-and-retry loop
@@ -160,7 +171,7 @@ async function generateWithLLM(
       code = cleanCodeResponse(await llm.generate(fixPrompt, {
         system: systemPrompt,
         temperature: 0.1,
-        maxTokens: 8192,
+        maxTokens: 4096,
       }));
     }
   }
@@ -273,6 +284,14 @@ function cleanCodeResponse(raw: string): string {
   
   // Remove registerMigration calls with multiline backtick strings
   code = code.replace(/registerMigration\s*\([\s\S]*?\`[\s\S]*?\`\s*\);?\n?/g, '');
+  
+  // Remove thinking/reasoning markers that qwen outputs
+  code = code.replace(/\[thinking\]\s*\n?/gi, '');
+  code = code.replace(/\[output\]\s*\n?/gi, '');
+  code = code.replace(/\[reflection\]\s*\n?/gi, '');
+  code = code.replace(/\[improvement\]\s*\n?/gi, '');
+  code = code.replace(/\[summary\]\s*\n?/gi, '');
+  code = code.replace(/Thinking Process:\s*\n?/gi, '');
   
   // Remove any remaining SQL-like content that leaked through
   code = code.replace(/\(\s*\d+\s*\)\s*PRIMARY KEY[^\n]*\n/g, '');

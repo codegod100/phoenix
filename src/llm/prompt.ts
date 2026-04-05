@@ -189,3 +189,136 @@ export function buildPrompt(
 
   return lines.join('\n');
 }
+
+/**
+ * Build a prompt for UI component files (.ui.ts).
+ * Generates HTML-generating classes, NOT Hono routes.
+ */
+export function buildTsUiPrompt(
+  iu: ImplementationUnit,
+  canonNodes: CanonicalNode[],
+): string {
+  const lines: string[] = [];
+
+  lines.push(`Generate a TypeScript UI component class for "${iu.name}".`);
+  lines.push('');
+  lines.push('CRITICAL: This is a UI component, NOT an API route. Do NOT generate Hono routes or Express handlers.');
+  lines.push('Generate a TypeScript CLASS with:');
+  lines.push('- Private state fields');
+  lines.push('- A generateHTML() method that returns a string containing complete HTML');
+  lines.push('- No router.get(), no router.post(), no Hono instance');
+  lines.push('- Fetch data from the API using the fetch() function');
+  lines.push('');
+
+  // Get requirements
+  const iuNodes = canonNodes.filter(n => iu.source_canon_ids.includes(n.canon_id));
+  const requirements = iuNodes.filter(n => n.type === 'REQUIREMENT');
+  const constraints = iuNodes.filter(n => n.type === 'CONSTRAINT');
+
+  if (requirements.length > 0) {
+    lines.push('## Requirements');
+    for (const r of requirements) {
+      lines.push(`- ${r.statement}`);
+    }
+    lines.push('');
+  }
+
+  if (constraints.length > 0) {
+    lines.push('## Constraints');
+    for (const c of constraints) {
+      lines.push(`- ${c.statement}`);
+    }
+    lines.push('');
+  }
+
+  lines.push('## Required metadata export');
+  lines.push('Include this exact constant at the end:');
+  lines.push('```');
+  lines.push(`export const _phoenix = {`);
+  lines.push(`  iu_id: '${iu.iu_id}',`);
+  lines.push(`  name: '${iu.name}',`);
+  lines.push(`  risk_tier: '${iu.risk_tier}',`);
+  lines.push(`  canon_ids: [${iu.source_canon_ids.length} as const],`);
+  lines.push(`} as const;`);
+  lines.push('```');
+  lines.push('');
+  lines.push('Example output structure:');
+  lines.push('```typescript');
+  lines.push('class DashboardUI {');
+  lines.push('  private state = { items: [], loading: false };');
+  lines.push('  async loadData() { /* fetch from API */ }');
+  lines.push('  generateHTML(): string { return `<!DOCTYPE html>...`; }');
+  lines.push('}');
+  lines.push('export default DashboardUI;');
+  lines.push('export const _phoenix = { ... } as const;');
+  lines.push('```');
+  lines.push('');
+  lines.push('Output raw TypeScript code only, no markdown fences, no XML tags.');
+
+  return lines.join('\n');
+}
+
+/**
+ * Build a prompt for API client files (.client.ts).
+ * Generates fetch() wrapper classes, NOT server routes.
+ */
+export function buildClientPrompt(
+  iu: ImplementationUnit,
+  canonNodes: CanonicalNode[],
+): string {
+  const lines: string[] = [];
+
+  lines.push(`Generate a TypeScript API client class for "${iu.name}".`);
+  lines.push('');
+  lines.push('CRITICAL: This is an API CLIENT, NOT a server route. Do NOT generate Hono routes or Express handlers.');
+  lines.push('Generate a TypeScript CLASS that CALLS fetch() to communicate with an existing API.');
+  lines.push('');
+
+  // Get requirements
+  const iuNodes = canonNodes.filter(n => iu.source_canon_ids.includes(n.canon_id));
+  const requirements = iuNodes.filter(n => n.type === 'REQUIREMENT');
+  const constraints = iuNodes.filter(n => n.type === 'CONSTRAINT');
+
+  if (requirements.length > 0) {
+    lines.push('## Requirements');
+    for (const r of requirements) {
+      lines.push(`- ${r.statement}`);
+    }
+    lines.push('');
+  }
+
+  if (constraints.length > 0) {
+    lines.push('## Constraints');
+    for (const c of constraints) {
+      lines.push(`- ${c.statement}`);
+    }
+    lines.push('');
+  }
+
+  lines.push('## Required metadata export');
+  lines.push('Include this exact constant at the end:');
+  lines.push('```');
+  lines.push(`export const _phoenix = {`);
+  lines.push(`  iu_id: '${iu.iu_id}',`);
+  lines.push(`  name: '${iu.name}',`);
+  lines.push(`  risk_tier: '${iu.risk_tier}',`);
+  lines.push(`  canon_ids: [${iu.source_canon_ids.length} as const],`);
+  lines.push(`} as const;`);
+  lines.push('```');
+  lines.push('');
+  lines.push('Example output structure:');
+  lines.push('```typescript');
+  lines.push('export class ItemsClient {');
+  lines.push('  constructor(private baseUrl: string) {}');
+  lines.push('  async list(): Promise<Item[]> { return fetch(...).then(r => r.json()); }');
+  lines.push('  async get(id: number): Promise<Item> { ... }');
+  lines.push('  async create(data: CreateItemData): Promise<Item> { ... }');
+  lines.push('}');
+  lines.push('export default ItemsClient;');
+  lines.push('export const _phoenix = { ... } as const;');
+  lines.push('```');
+  lines.push('');
+  lines.push('Output raw TypeScript code only, no markdown fences, no XML tags.');
+
+  return lines.join('\n');
+}

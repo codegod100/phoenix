@@ -43,6 +43,7 @@ export class FireworksProvider implements LLMProvider {
       max_tokens: maxTokens,
       temperature: temperature,
       stream: useStreaming,
+      reasoning_effort: 'low', // Minimize thinking for faster, cleaner output
     };
 
     const response = await fetch(this.baseUrl, {
