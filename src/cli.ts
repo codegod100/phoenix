@@ -1751,9 +1751,9 @@ async function cmdInspect(args: string[]): Promise<void> {
   const html = renderInspectHTML(data);
   const dataJson = JSON.stringify(data);
 
-  // Parse --port flag
+  // Parse --port flag - default to 3001 instead of random
   const portArg = args.find(a => a.startsWith('--port='))?.split('=')[1];
-  const port = portArg ? parseInt(portArg, 10) : 0; // 0 = random
+  const port = portArg ? parseInt(portArg, 10) : 3001; // default to 3001
 
   const instance = serveInspect(html, port, dataJson);
   await instance.ready;
@@ -2001,7 +2001,7 @@ ${bold('Verification:')}
   ${cyan('audit')} [--iu=<id>]    Replacement audit — readiness per IU
 
 ${bold('Inspection:')}
-  ${cyan('inspect')} [--port=N]    Interactive pipeline visualisation (opens browser)
+  ${cyan('inspect')} [--port=N]    Interactive pipeline visualisation (default port 3001)
   ${cyan('graph')}                 Show provenance graph summary
   ${cyan('bot')} "<command>"       Route a bot command (e.g., "SpecBot: help")
 

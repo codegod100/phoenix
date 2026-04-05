@@ -395,7 +395,7 @@ D.canonNodes.forEach(n=>items['canon:'+n.id]={col:'canon',d:n});
 D.ius.forEach(u=>items['iu:'+u.id]={col:'iu',d:u});
 D.generatedFiles.forEach(f=>items['file:'+f.path]={col:'file',d:f});
 
-function E(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function E(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 // ── Traversal (skip canon↔canon to keep pipeline linear) ──
 function getConnected(id){
@@ -419,7 +419,7 @@ function nodeTitle(id){const it=items[id];if(!it)return id;const d=it.d;
 function nodeSub(id){const it=items[id];if(!it)return'';const d=it.d;
   if(it.col==='spec')return d.clauseCount+' clauses';
   if(it.col==='clause')return d.lineRange+' · '+d.semhash+'…';
-  if(it.col==='canon'){let s=d.tags.slice(0,4).map(t=>'<span class="tag">'+E(t)+'</span>').join('');if(d.confidence!=null)s+=' <span class="tag">conf:'+d.confidence.toFixed(2)+'</span>';if(d.linkCount)s+=' · '+d.linkCount+' links';if(d.extractionMethod)s+=' · '+d.extractionMethod;return s;}
+  if(it.col==='canon'){let s=(d.tags||[]).slice(0,4).map(t=>'<span class="tag">'+E(t)+'</span>').join('');if(d.confidence!=null)s+=' <span class="tag">conf:'+d.confidence.toFixed(2)+'</span>';if(d.linkCount)s+=' · '+d.linkCount+' links';if(d.extractionMethod)s+=' · '+d.extractionMethod;return s;}
   if(it.col==='iu')return d.canonCount+' nodes · '+d.outputFiles.length+' file(s)';
   if(it.col==='file')return E(d.iuName)+' · '+(d.size/1024).toFixed(1)+'KB';
   return'';}
