@@ -61,6 +61,19 @@ This prevents overwriting manual edits and preserves existing implementations.
 - Use Catppuccin Mocha theme
 - Connect to API endpoints
 
+**After generating each file, validate syntax:**
+```bash
+# Check TypeScript syntax compiles
+bun build src/generated/app/<file>.ts --outfile=/dev/null
+```
+
+If syntax error found:
+1. Read the error message and line number
+2. Fix the specific syntax issue
+3. Re-validate until clean
+4. Only then mark file as "generated"
+```
+
 **For all files:**
 - Add `// CONTRACT:` comment with IU description
 - Add `// INVARIANT:` comments for each invariant
@@ -75,10 +88,12 @@ Check that generated files:
 
 ### Step 6: Evidence (Tests)
 
-Run tests to verify:
-```bash
-bun test
-```
+Generate tests that verify the spec requirements actually work. Tests must exercise real functionality, not just check that files load.
+
+**For APIs:** Verify data is created, read, updated, deleted in the database
+**For UIs:** Verify required elements exist and user flows work
+
+**Rule:** If the test passes but the feature doesn't work, the test is wrong.
 
 ### Step 7: Drift Detection
 
@@ -134,24 +149,56 @@ src/generated/app/__tests__/*.ts  # Tests
 
 ## Implementation Patterns
 
+**Database Integration (REQUIRED):**
+```typescript
+import { db, registerMigration } from '../../db.js';
+
+// Register migration for table creation
+registerMigration('items', `
+  CREATE TABLE IF NOT EXISTS items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    quantity INTEGER DEFAULT 0,
+    category_id INTEGER REFERENCES categories(id)
+  )
+`);
+
+// Use database in routes - NEVER return static data
+router.get('/', async (c) => {
+  const items = db.prepare('SELECT * FROM items').all();
+  return c.json(items);
+});
+
+router.post('/', async (c) => {
+  const body = await c.req.json();
+  const insert = db.prepare('INSERT INTO items (name, quantity) VALUES (?, ?)');
+  const info = insert.run(body.name, body.quantity);
+  const item = db.prepare('SELECT * FROM items WHERE id = ?').get(info.lastInsertRowid);
+  return c.json(item, 201);
+});
+```
+
 ### Items API
 - Routes: GET /, GET /:id, POST /, PATCH /:id, DELETE /:id
 - Query params: search, categoryid, lowstock, sort, order
-- Database: items table with category_id foreign key
+- Database: items table with category_id foreign key, min_quantity, low_stock calculated field
 - Validation: zod schemas for create/update
+- **MUST use actual db.prepare() queries - no static data**
 
 ### Categories API
 - Routes: GET /, GET /:id, POST /, PATCH /:id, DELETE /:id
-- Database: categories table
+- Database: categories table with name, description
+- **MUST use actual db.prepare() queries - no static data**
+- Order by name ascending on GET /
 
 ### Items Dashboard UI
 - Full HTML page with Catppuccin Mocha styling
 - Search input, category filter, low stock checkbox
 - Sort dropdowns (name/quantity, asc/desc)
 - Table with item rows, low stock highlighting
-- Add/Edit modal with form
-- Category management button
-- JavaScript fetch API integration
+- Add/Edit modal with form - **pre-populate edit modal with current data**
+- Category management button with working modal
+- JavaScript fetch API integration to real API endpoints
 
 ## Traceability
 

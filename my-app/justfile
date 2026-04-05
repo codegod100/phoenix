@@ -1,51 +1,26 @@
-# Phoenix Justfile — split pipeline: just prep (steps 1-3), skill handles rest
-# Usage: just prep → just skill-regen → just skill-validate
+# Phoenix Justfile — CLI handles prep (steps 1-3), PI skill handles the rest
+# Usage: just prep → then tell PI: "run the phoenix-regen skill"
 
 # Default recipe shows help
 help:
     @echo "Phoenix Pipeline Commands:"
     @echo ""
-    @echo "=== Phase 1: Prep (CLI steps 1-3) ==="
-    @echo "  just prep            - Ingest → Canonicalize → Plan"
-    @echo "  just ingest          - Step 1: Ingest spec"
-    @echo "  just canonicalize    - Step 2: Extract canonical nodes"
-    @echo "  just plan            - Step 3: Plan IUs"
+    @echo "  just prep            - CLI: Ingest → Canonicalize → Plan (steps 1-3)"
     @echo ""
-    @echo "=== Phase 2: Regen (Skill step 4) ==="
-    @echo "  just skill-regen         - Regenerate all IUs (skill)"
-    @echo "  just skill-regen-iu IU=  - Regenerate specific IU (skill)"
-    @echo "  just skill-stubs         - Regenerate stubs (skill)"
+    @echo "After prep, use PI TUI:"
+    @echo '  pi "run phoenix-regen skill"  - Regenerate (step 4)'
+    @echo '  pi "validate and show status" - Validate (steps 5-7) + Dashboard (step 8)'
     @echo ""
-    @echo "=== Phase 3: Validate (Skill steps 5-7) ==="
-    @echo "  just skill-validate      - Boundary + Evidence + Drift"
-    @echo "  just skill-boundary      - Step 5: Boundary validation"
-    @echo "  just skill-evidence      - Step 6: Run tests/typecheck"
-    @echo "  just skill-drift         - Step 7: Drift detection"
+    @echo "Provenance (optional):"
+    @echo "  just provenance IU=  - Trace spec → code for IU"
     @echo ""
-    @echo "=== Phase 4: Status (Skill step 8) ==="
-    @echo "  just skill-status        - Step 8: Trust dashboard"
-    @echo ""
-    @echo "=== Provenance (Traceability) ==="
-    @echo "  just provenance IU=      - Trace spec → code for IU"
-    @echo "  just provenance-summary  - Summary of all IUs"
-    @echo "  just provenance-spec IU= - Show spec clauses for IU"
-    @echo ""
-    @echo "=== Combined ==="
-    @echo "  just skill-full          - Full pipeline: prep + skill all steps"
-    @echo "  just cli-full            - Full pipeline via CLI (old way)"
-    @echo ""
-    @echo "Legacy CLI commands:"
-    @echo "  just cli-regen       - Regenerate via Phoenix CLI"
-    @echo "  just cli-stubs       - Regenerate stubs via CLI"
-    @echo "  just cli-status      - Status via Phoenix CLI"
+    @echo "Health check:"
+    @echo "  just health          - Check server and tests"
 
 # Phoenix source path (runs directly from source)
 phoenix := "bun run /home/nandi/code/phoenix/src/cli.ts"
 
-# Skill path for regeneration and validation
-skill := "bun /home/nandi/.pi/agent/skills/phoenix-regen-skill/phoenix-regen.ts"
-
-# === Phase 1: Prep (Steps 1-3 via CLI) ===
+# === Phase 1: Prep (Steps 1-3 via CLI only) ===
 
 # Step 1-3: Ingest → Canonicalize → Plan
 prep:
@@ -61,157 +36,25 @@ prep:
     {{phoenix}} plan
     @echo ""
     @echo "✅ Prep complete! IUs planned."
-    @echo "   Run: just skill-regen → just skill-validate → just skill-status"
+    @echo "   Now run PI: pi \"run phoenix-regen skill\""
 
-# Step 1: Ingest spec
-ingest:
-    {{phoenix}} ingest
+# === Health Check ===
 
-# Step 2: Canonicalize
-canonicalize:
-    {{phoenix}} canonicalize
-
-# Step 3: Plan IUs
-plan:
-    {{phoenix}} plan
-
-# === Phase 2: Regenerate (Step 4 via Skill) ===
-
-# Step 4: Regenerate all IUs (using skill)
-# ⚠️ DEPRECATED: Run from pi TUI instead: pi "files are prepped, regenerate"
-skill-regen:
-    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'files are prepped, regenerate'"
-    @echo "🔄 Phase 2: Regeneration (step 4 via skill)"
-    {{skill}} regen --stub
-
-# Step 4: Regenerate specific IU (using skill)
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-regen-iu IU:
-    @echo "⚠️  WARNING: Run from pi TUI instead"
-    {{skill}} regen --stub --iu "{{IU}}"
-
-# Step 4: Regenerate stubs only (using skill)
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-stubs:
-    @echo "⚠️  WARNING: Run from pi TUI instead"
-    {{skill}} regen --stub
-
-# === Phase 3: Validate (Steps 5-7 via Skill) ===
-
-# Steps 5-7: Boundary + Evidence + Drift
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-validate:
-    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'validate the code'"
-    @echo "🧪 Phase 3: Validation (steps 5-7 via skill)"
-    @echo ""
-    @echo "Step 5/7: Boundary validation..."
-    {{skill}} validate
-    @echo ""
-    @echo "Step 6/7: Evidence (tests)..."
-    bun test
-    @echo ""
-    @echo "Step 7/7: Drift detection..."
-    {{skill}} drift
-    @echo ""
-    @echo "✅ Validation complete"
-
-# Step 5: Boundary validation
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-boundary:
-    @echo "⚠️  WARNING: Run from pi TUI instead"
-    @echo "Step 5: Boundary validation"
-    {{skill}} validate
-
-# Step 6: Evidence (tests)
-# ⚠️ DEPRECATED: Use 'bun test' directly or run from pi TUI
-skill-evidence:
-    @echo "⚠️  WARNING: Use 'bun test' directly or run from pi TUI"
-    @echo "Step 6: Running evidence checks..."
-    bun test
-
-# Step 7: Drift detection
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-drift:
-    @echo "⚠️  WARNING: Run from pi TUI instead"
-    @echo "Step 7: Drift detection"
-    {{skill}} drift
-
-# === Phase 4: Status (Step 8 via Skill) ===
-
-# Step 8: Trust dashboard
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-status:
-    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'show status'"
-    {{skill}} status
-
-# === Provenance Commands ===
-
-# Trace provenance for an IU
-provenance IU:
-    @bun -e 'const ius=JSON.parse(require("fs").readFileSync(".phoenix/graphs/ius.json","utf-8"));const canonical=JSON.parse(require("fs").readFileSync(".phoenix/graphs/canonical.json","utf-8"));const manifest=JSON.parse(require("fs").readFileSync(".phoenix/manifests/generated_manifest.json","utf-8"));const iu=ius.find(i=>i.name==="{{IU}}"||i.iu_id==="{{IU}}");if(!iu){console.log("IU not found");process.exit(1)}console.log("\n═══ Provenance: {{IU}} ═══\n");console.log("1. SPEC → CANONICAL ("+iu.source_canon_ids.length+" nodes)");iu.source_canon_ids.slice(0,3).forEach(id=>{const n=canonical.nodes[id];if(n)console.log("   📄 "+n.type+": \""+n.statement.substring(0,40)+"...\"")});console.log("\n2. IU → CODE");const m=manifest.iu_manifests[iu.iu_id];if(m){Object.keys(m.files).forEach(f=>console.log("   📁 "+f));console.log("   Generated: "+m.regen_metadata.generated_at)}console.log("\n3. RUNTIME");console.log("   _phoenix.iu_id: "+iu.iu_id.substring(0,24)+"...");console.log("   _phoenix.risk_tier: "+iu.risk_tier);console.log("")'
-
-# Show all IUs with provenance summary
-provenance-summary:
-    @bun -e 'const ius=JSON.parse(require("fs").readFileSync(".phoenix/graphs/ius.json","utf-8"));console.log("═══ Provenance Summary ═══\n");console.log("IU\t\t\tCanon Nodes\tFiles\tRisk");console.log("─".repeat(55));ius.forEach(iu=>{console.log(iu.name.padEnd(20)+"\t"+iu.source_canon_ids.length+"\t\t"+iu.output_files.length+"\t"+iu.risk_tier)});console.log("\nTotal: "+ius.length+" IUs")'
-
-# Show spec clauses feeding into IU  
-provenance-spec IU:
-    @bun -e 'const ius=JSON.parse(require("fs").readFileSync(".phoenix/graphs/ius.json","utf-8"));const canonical=JSON.parse(require("fs").readFileSync(".phoenix/graphs/canonical.json","utf-8"));const iu=ius.find(i=>i.name==="{{IU}}"||i.iu_id==="{{IU}}");if(!iu){console.log("IU not found");process.exit(1)}console.log("═══ {{IU}} Sources ═══\n");const clauses=new Set();iu.source_canon_ids.forEach(cid=>{const n=canonical.nodes[cid];if(n&&n.source_clause_ids)n.source_clause_ids.forEach(id=>clauses.add(id))});console.log("Source clauses: "+clauses.size);clauses.forEach(id=>console.log("  📄 "+id.substring(0,16)+"..."))'
-
-# Full pipeline using skill for steps 4-8
-# ⚠️ DEPRECATED: Run from pi TUI instead
-skill-full:
-    @echo "⚠️  WARNING: Run from pi TUI instead: pi 'run full pipeline'"
-    @echo "🚀 Full Pipeline (CLI steps 1-3, Skill steps 4-8)"
-    just prep
-    @echo ""
-    just skill-regen
-    @echo ""
-    just skill-validate
-    @echo ""
-    just skill-status
-
-# Full pipeline via CLI (legacy)
-cli-full:
-    {{phoenix}} bootstrap
-
-# Legacy CLI commands
-cli-regen:
-    {{phoenix}} regen
-
-cli-stubs:
-    {{phoenix}} regen --stubs
-
-cli-status:
-    {{phoenix}} status
-
-# === Other Commands ===
-
-# Quick test regen to verify model quality
-regen-test:
-    @echo "🧪 Testing model quality with quick regen (temp mode)..."
-    @echo ""
-    @# Create temp copy of project
-    @rm -rf /tmp/phoenix-test
-    @mkdir -p /tmp/phoenix-test
-    @cp -r . /tmp/phoenix-test/
-    @cd /tmp/phoenix-test && {{phoenix}} regen --iu=Categories -v 2>&1 | head -60
-    @echo ""
-    @echo "✅ Test complete - check output above for quality"
-    @echo "ℹ️  Temp files at /tmp/phoenix-test (cleaned up on next run)"
-
-# Test LLM provider connectivity
 health:
-    bun scripts/health.ts
+    @echo "Checking server health..."
+    @curl -s http://localhost:3000/health || echo "❌ Server not running"
+    @echo ""
+    @echo "Running tests..."
+    bun test
 
-# Show clause-level diffs
-diff:
-    {{phoenix}} diff
+# === Provenance (optional debugging) ===
 
-# Open interactive pipeline visualizer
-inspect:
-    {{phoenix}} inspect
+# Trace spec → code for an IU
+provenance IU:
+    @echo "Provenance for {{IU}}:"
+    @jq '.[] | select(.iu_id == "{{IU}}") | {name: .name, canon_ids: .source_canon_ids, files: [.outputs[].file]}' .phoenix/graphs/ius.json
 
-# Run dev server
-dev:
-    bun run dev
+# Show summary of all IUs and their files
+provenance-summary:
+    @echo "=== IU Summary ==="
+    @jq -r '.[] | "\(.name) (\(.iu_id | .[0:8])): \(.outputs | length) files"' .phoenix/graphs/ius.json
