@@ -5,7 +5,7 @@ Generate implementation code from Phoenix Implementation Units (IUs) after the p
 ## When to Use
 
 Use this skill when:
-- The user has run `pi prep` (steps 1-3: ingest, canonicalize, plan)
+- The user has run `just prep` (steps 1-3: ingest, canonicalize, plan)
 - IU graph exists at `.phoenix/graphs/ius.json`
 - You need to generate actual code implementations from IUs, not stubs
 
@@ -13,7 +13,7 @@ Use this skill when:
 
 Before using this skill, the pipeline must be prepped:
 ```bash
-pi prep  # Creates .phoenix/graphs/ius.json
+just prep  # Creates .phoenix/graphs/ius.json
 ```
 
 ## How to Run
@@ -32,6 +32,39 @@ The skill will:
 4. Run tests
 5. Show status
 
+## Core Philosophy: Mechanical Generation
+
+**Phoenix is not creative coding.** 
+
+Code generation is a **mechanical transformation** from spec → canonical → IU → code. You are a transformer, not a designer.
+
+**The Rule:**
+> Every generated line of code must trace to a specific requirement in the IU contract, which traces to canonical nodes, which trace to spec lines.
+
+**What this means:**
+- If the IU contract says "Real-time filtering" → generate `oninput="handler()"`
+- If the IU contract does NOT mention a button → DO NOT generate that button
+- If the IU contract does NOT mention a feature → DO NOT generate that feature
+- If you're unsure how to implement a requirement → check the spec, not your intuition
+- If the spec is ambiguous → flag it, don't fill the gap creatively
+
+**Anti-patterns (NEVER do these):**
+- ❌ "Users probably want..." 
+- ❌ "A good UI should have..."
+- ❌ "Let me add buttons to make it usable"
+- ❌ "Standard practice is..."
+
+**Correct patterns:**
+- ✅ "Spec line 34 says real-time → inputs need oninput handlers"
+- ✅ "No canonical node mentions X → not generated"
+- ✅ "IU invariant says 'without reload' → no submit buttons"
+
+**When stuck:**
+If the spec says "filterable" but doesn't specify the UX mechanism:
+1. Check canonical nodes for more detail
+2. If still unclear, choose the *simplest* implementation that satisfies the requirement
+3. Never add elements not mentioned in the chain of provenance
+
 ## Steps (Run via pi TUI, NOT justfile)
 
 ### Step 4: Regenerate (Generate Code from IUs)
@@ -48,18 +81,13 @@ Before generating, check each output file:
 
 This prevents overwriting manual edits and preserves existing implementations.
 
-**For API IUs (Items, Categories, API):**
+**Generation Rules:**
 - Read the IU contract description and invariants
-- Generate full Hono router with all CRUD operations
-- Include proper validation (zod schemas)
-- Include database migrations
-- Export `_phoenix` metadata
-
-**For UI IUs (Items Dashboard):**
-- Generate full HTML/CSS/JS dashboard
-- Include filtering, sorting, modals
-- Use Catppuccin Mocha theme
-- Connect to API endpoints
+- Generate implementations that satisfy ALL invariants
+- Include proper validation as specified in contract
+- For APIs: include database integration as required
+- For UIs: include all required elements, no extras
+- Export `_phoenix` metadata for traceability
 
 **After generating each file, validate syntax:**
 ```bash
@@ -72,7 +100,6 @@ If syntax error found:
 2. Fix the specific syntax issue
 3. Re-validate until clean
 4. Only then mark file as "generated"
-```
 
 **For all files:**
 - Add `// CONTRACT:` comment with IU description
@@ -82,7 +109,7 @@ If syntax error found:
 ### Step 5: Boundary Validation
 
 Check that generated files:
-- Only import from allowed packages
+- Only import from allowed packages (per IU boundary_policy)
 - Don't use forbidden paths
 - Respect IU isolation boundaries
 
@@ -117,7 +144,10 @@ Drift detection compares generated files against the manifest. If drift is detec
 
 ### Step 8: Status Dashboard
 
-Display final pipeline status.
+Display final pipeline status:
+- Files in sync / drifted / orphaned
+- Test results
+- Boundary violations
 
 ## Handling Drift (Emergency Procedure Only)
 
@@ -130,13 +160,16 @@ If you must bypass the full pipeline (emergency hotfix):
 
 **This breaks provenance. Use only for production emergencies.**
 
-## Helper Functions
+## Traceability Requirements
 
-This skill provides helper code in `phoenix-regen.ts`:
-
+Every generated file must export:
 ```typescript
-// Use these utilities when generating code
-import { computeHash, ensureDir, writeGeneratedFile } from './phoenix-regen.ts';
+export const _phoenix = {
+  iu_id: '...',
+  name: 'IU Name',
+  risk_tier: 'high' | 'medium' | 'low',
+  canon_ids: ['abc123...', 'def456...']  // from IU source_canon_ids
+} as const;
 ```
 
 ## File Structure
@@ -145,69 +178,4 @@ import { computeHash, ensureDir, writeGeneratedFile } from './phoenix-regen.ts';
 .phoenix/graphs/ius.json          # IU graph (input)
 src/generated/app/*.ts            # Generated code (output)
 src/generated/app/__tests__/*.ts  # Tests
-```
-
-## Implementation Patterns
-
-**Database Integration (REQUIRED):**
-```typescript
-import { db, registerMigration } from '../../db.js';
-
-// Register migration for table creation
-registerMigration('items', `
-  CREATE TABLE IF NOT EXISTS items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    quantity INTEGER DEFAULT 0,
-    category_id INTEGER REFERENCES categories(id)
-  )
-`);
-
-// Use database in routes - NEVER return static data
-router.get('/', async (c) => {
-  const items = db.prepare('SELECT * FROM items').all();
-  return c.json(items);
-});
-
-router.post('/', async (c) => {
-  const body = await c.req.json();
-  const insert = db.prepare('INSERT INTO items (name, quantity) VALUES (?, ?)');
-  const info = insert.run(body.name, body.quantity);
-  const item = db.prepare('SELECT * FROM items WHERE id = ?').get(info.lastInsertRowid);
-  return c.json(item, 201);
-});
-```
-
-### Items API
-- Routes: GET /, GET /:id, POST /, PATCH /:id, DELETE /:id
-- Query params: search, categoryid, lowstock, sort, order
-- Database: items table with category_id foreign key, min_quantity, low_stock calculated field
-- Validation: zod schemas for create/update
-- **MUST use actual db.prepare() queries - no static data**
-
-### Categories API
-- Routes: GET /, GET /:id, POST /, PATCH /:id, DELETE /:id
-- Database: categories table with name, description
-- **MUST use actual db.prepare() queries - no static data**
-- Order by name ascending on GET /
-
-### Items Dashboard UI
-- Full HTML page with Catppuccin Mocha styling
-- Search input, category filter, low stock checkbox
-- Sort dropdowns (name/quantity, asc/desc)
-- Table with item rows, low stock highlighting
-- Add/Edit modal with form - **pre-populate edit modal with current data**
-- Category management button with working modal
-- JavaScript fetch API integration to real API endpoints
-
-## Traceability
-
-Every generated file must export:
-```typescript
-export const _phoenix = {
-  iu_id: '...',
-  name: 'IU Name',
-  risk_tier: 'high',
-  canon_ids: ['abc123...', 'def456...']  // from IU source_canon_ids
-} as const;
 ```

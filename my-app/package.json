@@ -12,8 +12,9 @@
     "start": "bun src/server.ts"
   },
   "dependencies": {
-    "hono": "^4.6.0",
     "@hono/node-server": "^1.13.0",
+    "@hono/zod-validator": "^0.7.6",
+    "hono": "^4.6.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
