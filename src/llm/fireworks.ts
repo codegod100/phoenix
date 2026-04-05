@@ -31,6 +31,9 @@ export class FireworksProvider implements LLMProvider {
     const temperature = options?.temperature ?? 0.1;
     const systemPrompt = options?.system ?? this.getSystemPrompt();
 
+    // Fireworks REQUIRES streaming for max_tokens > 4096
+    const useStreaming = maxTokens > 4096;
+
     // Combine system and user prompt for completions endpoint
     const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
 
@@ -39,6 +42,7 @@ export class FireworksProvider implements LLMProvider {
       prompt: fullPrompt,
       max_tokens: maxTokens,
       temperature: temperature,
+      stream: useStreaming,
     };
 
     const response = await fetch(this.baseUrl, {
@@ -56,8 +60,73 @@ export class FireworksProvider implements LLMProvider {
       throw new Error(`Fireworks API error: ${response.status} ${error.slice(0, 200)}`);
     }
 
-    const data = await response.json();
-    return data.choices?.[0]?.text ?? '';
+    if (useStreaming) {
+      return this.handleStreaming(response, onChunk);
+    } else {
+      const data = await response.json();
+      return data.choices?.[0]?.text ?? '';
+    }
+  }
+
+  private async handleStreaming(
+    response: Response,
+    onChunk?: (chunk: string) => void
+  ): Promise<string> {
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response body');
+
+    let result = '';
+    let buffer = '';
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process SSE lines
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+        const data = trimmed.slice(6); // Remove 'data: ' prefix
+        if (data === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          const text = parsed.choices?.[0]?.text ?? '';
+          if (text) {
+            result += text;
+            onChunk?.(text);
+          }
+        } catch {
+          // Ignore parse errors for incomplete chunks
+        }
+      }
+    }
+
+    // Process any remaining data
+    if (buffer.trim()) {
+      const trimmed = buffer.trim();
+      if (trimmed.startsWith('data: ')) {
+        const data = trimmed.slice(6);
+        if (data !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(data);
+            const text = parsed.choices?.[0]?.text ?? '';
+            if (text) result += text;
+          } catch {
+            // Ignore final parse errors
+          }
+        }
+      }
+    }
+
+    return result;
   }
 
   private getSystemPrompt(): string {
