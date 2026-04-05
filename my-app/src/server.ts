@@ -10,7 +10,6 @@ import items from './generated/app/items.js';
 
 // Generated UI component modules (only those defined in IU graph)
 import CategoriesUI from './generated/app/categories.ui.js';
-import Database from './generated/app/database.ui.js';
 import ItemsDashboardUI from './generated/app/items-dashboard.ui.js';
 import LowStockUI from './generated/app/low-stock.ui.js';
 
@@ -22,7 +21,6 @@ mount('/items', items);
 
 // Mount UI apps (must exist in IU graph outputs)
 mount('/ui/categories', CategoriesUI);
-mount('/ui/database', Database);
 mount('/ui/items-dashboard', ItemsDashboardUI);
 mount('/ui/low-stock', LowStockUI);
 
