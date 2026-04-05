@@ -275,7 +275,7 @@ export function planIUs(
   }
 
   // Sort for deterministic output
-  ius.sort((a, b) => a.output_files[0].localeCompare(b.output_files[0]));
+  ius.sort((a, b) => (a.output_files[0] || '').localeCompare(b.output_files[0] || ''));
 
   return ius;
 }

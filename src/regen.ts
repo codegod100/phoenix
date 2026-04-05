@@ -243,7 +243,8 @@ Output the complete fixed TypeScript module now.`;
 }
 
 /**
- * Strip markdown code fences from LLM response.
+ * Strip markdown code fences and section markers from LLM response.
+ * Also removes SQL migrations that leak through and other non-code content.
  */
 function cleanCodeResponse(raw: string): string {
   let code = raw.trim();
@@ -260,7 +261,24 @@ function cleanCodeResponse(raw: string): string {
     code = innerMatch[1];
   }
 
-  return code;
+  // Strip any stray <output> or </output> tags
+  code = code.replace(/<output>/g, '').replace(/<\/output>/g, '');
+  
+  // Remove invalid section markers that some models output
+  code = code.replace(/__MIGRATIONS__\n?/g, '');
+  code = code.replace(/__SCHEMAS__\n?/g, '');
+  code = code.replace(/__ROUTES__\n?/g, '');
+  code = code.replace(/__TESTS__\n?/g, '');
+  
+  // Remove registerMigration calls with multiline backtick strings
+  code = code.replace(/registerMigration\s*\([\s\S]*?\`[\s\S]*?\`\s*\);?\n?/g, '');
+  
+  // Remove any remaining SQL-like content that leaked through
+  code = code.replace(/\(\s*\d+\s*\)\s*PRIMARY KEY[^\n]*\n/g, '');
+  code = code.replace(/CREATE TABLE[^;]*;\n?/gi, '');
+  code = code.replace(/FOREIGN KEY[^\n]*\n/gi, '');
+
+  return code.trim();
 }
 
 // ─── Module Generation ───────────────────────────────────────────────────────

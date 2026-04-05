@@ -4,13 +4,11 @@ import { runMigrations } from './db.js';
 
 // API route modules - import from generated/app/
 import items from './generated/app/items.js';
-import categories from './generated/app/categories.js';
 import items_dashboard from './generated/app/items-dashboard.js';
 
 // Mount API routes
-mount('/categories', categories);
+mount('/', items);  // items router has both /categories and /items
 mount('/items-dashboard', items_dashboard);
-mount('/items', items);
 
 const port = parseInt(process.env.PORT ?? '3000', 10);
 runMigrations();
