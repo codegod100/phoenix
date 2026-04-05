@@ -32,7 +32,7 @@ import { BootstrapStateMachine } from './bootstrap.js';
 
 // Phase C
 import { planIUs } from './iu-planner.js';
-import { generateIU, generateAll, SpecRepairRequiredError } from './regen.js';
+import { generateIU, generateAll } from './regen.js';
 import type { RegenContext, RegenResult } from './regen.js';
 import { detectDrift } from './drift.js';
 import { extractDependencies } from './dep-extractor.js';
@@ -1080,9 +1080,6 @@ async function cmdRegen(args: string[]): Promise<void> {
   const iuFilter = args.find(a => a.startsWith('--iu='))?.split('=')[1];
   const forceStubs = args.includes('--stubs');
   const verbose = args.includes('-v') || args.includes('--verbose');
-  const noRetry = args.includes('--no-retry');
-  const noReflect = args.includes('--no-reflect');
-  const codeOnlyFix = args.includes('--code-only-fix');
   const logLevelFlag = args.find(a => a.startsWith('--log-level='))?.split('=')[1] || 
                       args.find(a => a.startsWith('--log='))?.split('=')[1];
   
@@ -1137,9 +1134,6 @@ async function cmdRegen(args: string[]): Promise<void> {
     projectRoot,
     target: regenArch,
     verbose,
-    noRetry,
-    reflect: !noReflect, // Default true, --no-reflect to disable
-    codeOnlyFix, // Default false, --code-only-fix to enable legacy behavior
     log: verbose ? (msg) => console.log(dim(msg)) : undefined,
     onProgress: (iu, status, msg) => {
       if (status === 'start') {
@@ -1187,21 +1181,6 @@ async function cmdRegen(args: string[]): Promise<void> {
       }
     }
   } catch (err) {
-    if (err instanceof SpecRepairRequiredError) {
-      console.log();
-      console.log(red(`  ✖ Spec repair required for ${err.iu.name}`));
-      console.log(yellow(`    ${err.hint}`));
-      console.log(dim(`    Errors: ${err.errors.slice(0, 200)}...`));
-      console.log();
-      console.log(dim('    To fix the spec and retry:'));
-      console.log(dim('    1. Edit the spec to add missing type constraints'));
-      console.log(dim('    2. Run: phoenix ingest && phoenix canonicalize && phoenix plan && phoenix regen'));
-      console.log();
-      console.log(dim('    Or use --code-only-fix to attempt legacy code-only fix (may fail):'));
-      console.log(dim('    phoenix regen --code-only-fix'));
-      console.log();
-      process.exit(1);
-    }
     throw err;
   }
 
@@ -1429,8 +1408,13 @@ async function cmdPromote(args: string[]): Promise<void> {
       return { file: entry.file_path, content };
     });
 
-    // Build prompt for LLM to extract requirements
+    // Build prompt for LLM to extract AND place requirements
+    const currentSpecContent = readFileSync(targetSpecFile, 'utf8');
+    
     const prompt = `Analyze these drifted implementation files and extract what requirements should be added to the spec document.
+
+Current Spec Structure:
+${currentSpecContent.split('\n').slice(0, 100).join('\n')}${currentSpecContent.length > 5000 ? '\n... (truncated)' : ''}
 
 Drifted Files:
 ${driftContents.map(d => `
@@ -1438,20 +1422,24 @@ ${driftContents.map(d => `
 ${d.content.slice(0, 2000)}${d.content.length > 2000 ? '\n... (truncated)' : ''}
 `).join('\n')}
 
-Based on these implementations, what CONSTRAINT or REQUIREMENT clauses are missing from the spec?
+Based on these implementations, what CONSTRAINT, REQUIREMENT, or CONTEXT clauses are missing from the spec?
 
-Generate spec clauses in this format:
-- CONSTRAINT: [description]
-- REQUIREMENT: [description]
-- CONTEXT: [description]
+For each missing requirement, specify which section it belongs in (e.g., "Items", "Categories", "Items Dashboard", etc.).
 
-Focus on:
-1. Data model requirements (fields, types, constraints)
-2. API endpoint requirements
-3. UI/UX requirements
-4. Business logic rules
+Output format:
+SECTION: [section name]
+- [CLAUSE_TYPE]: [description]
 
-Output only the new clauses, one per line, prefixed with "- ". Be specific and actionable.`;
+Examples:
+SECTION: Items
+- CONSTRAINT: Item names must be unique within a category
+- REQUIREMENT: Items can be filtered by low stock status
+
+SECTION: Items Dashboard  
+- REQUIREMENT: Dashboard must show low stock count in header
+- CONSTRAINT: Theme must use only approved color palette
+
+Only output clauses that are actually missing. Be specific and actionable.`;
 
     console.log('  Analyzing drift with LLM...');
     console.log();
@@ -1459,7 +1447,7 @@ Output only the new clauses, one per line, prefixed with "- ". Be specific and a
     try {
       const response = await llm.generate(
         prompt,
-        { system: 'You are a specification writer. Convert implementation details into formal requirement clauses.', temperature: 0.3, maxTokens: 4096 },
+        { system: 'You are a specification writer. Convert implementation details into formal requirement clauses and place them in the correct spec sections.', temperature: 0.3, maxTokens: 4096 },
         (chunk: string) => {} // No streaming
       );
       const newClauses = response.trim();
@@ -1474,16 +1462,53 @@ Output only the new clauses, one per line, prefixed with "- ". Be specific and a
       console.log(newClauses.split('\n').map(l => `    ${l}`).join('\n'));
       console.log();
 
-      // Append to spec file
-      const timestamp = new Date().toISOString().split('T')[0];
-      const appendix = `\n\n## Auto-Promoted Requirements (${timestamp})\n\n${newClauses}\n`;
+      // Parse the response and integrate into existing sections
+      let updatedSpec = currentSpecContent;
+      const lines = newClauses.split('\n');
+      let currentSection: string | null = null;
+      const sectionClauses: Record<string, string[]> = {};
 
-      writeFileSync(targetSpecFile, readFileSync(targetSpecFile, 'utf8') + appendix, 'utf8');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('SECTION:')) {
+          currentSection = trimmed.replace('SECTION:', '').trim();
+          sectionClauses[currentSection] = sectionClauses[currentSection] || [];
+        } else if (trimmed.startsWith('- ') && currentSection) {
+          sectionClauses[currentSection].push(trimmed);
+        }
+      }
 
-      console.log(green(`  ✔ Appended ${newClauses.split('\n').filter(l => l.trim()).length} clauses to ${relative(projectRoot, targetSpecFile)}`));
+      // Insert clauses into appropriate sections
+      for (const [section, clauses] of Object.entries(sectionClauses)) {
+        if (clauses.length === 0) continue;
+
+        // Find the section in the spec
+        const sectionRegex = new RegExp(`##\\s*${section}\\b`, 'i');
+        const sectionMatch = updatedSpec.match(sectionRegex);
+
+        if (sectionMatch) {
+          // Find the end of this section (next ## or end of file)
+          const sectionStart = sectionMatch.index! + sectionMatch[0].length;
+          const nextSection = updatedSpec.indexOf('\n## ', sectionStart);
+          const sectionEnd = nextSection === -1 ? updatedSpec.length : nextSection;
+
+          // Insert clauses before the section ends
+          const insertPos = sectionEnd;
+          const clausesText = '\n' + clauses.join('\n') + '\n';
+          updatedSpec = updatedSpec.slice(0, insertPos) + clausesText + updatedSpec.slice(insertPos);
+        } else {
+          // Section doesn't exist, append at end
+          updatedSpec += `\n\n## ${section}\n\n${clauses.join('\n')}\n`;
+        }
+      }
+
+      writeFileSync(targetSpecFile, updatedSpec, 'utf8');
+
+      const totalClauses = Object.values(sectionClauses).reduce((sum, arr) => sum + arr.length, 0);
+      console.log(green(`  ✔ Integrated ${totalClauses} clauses into ${Object.keys(sectionClauses).length} spec sections`));
       console.log();
       console.log(dim('  Next steps:'));
-      console.log(dim('    1. Review the added clauses'));
+      console.log(dim('    1. Review the integrated clauses'));
       console.log(dim('    2. Run `phoenix ingest` to update canonical graph'));
       console.log(dim('    3. Run `phoenix regen` to regenerate from updated spec'));
 
@@ -1951,9 +1976,6 @@ ${bold('Implementation:')}
   ${cyan('plan')}                  Plan Implementation Units from canonical graph
   ${cyan('regen')} [--iu=<id>] [-v] [--log-level=<level>] Regenerate code (all or specific IU)
                          ${dim('--stubs         Force stub generation (skip LLM)')}
-                         ${dim('--no-reflect    Disable reflection prompting (default: enabled)')}
-                         ${dim('--no-retry      Skip auto-fix retries, emit errors for manual fix')}
-                         ${dim('--code-only-fix Legacy: only code-level fixes, no spec escalation')}
                          ${dim('-v             Verbose: show timing & streaming progress')}
                          ${dim('               --log-level=debug|info|warn|error  Set log level')}
   ${cyan('upgrade')}              Upgrade scaffold files to latest Phoenix templates
