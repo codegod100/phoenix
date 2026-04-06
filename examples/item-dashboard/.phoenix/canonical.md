@@ -23,12 +23,11 @@
 - node-5b8e2c6f: updating category only updates provided fields (partial update)
 - node-e1f9c4a7: get categories returns results ordered by name ascending
 
-## Items Dashboard (9 requirements)
+## Items Dashboard (8 requirements)
 
 - node-7d3a8e5c: display items in sortable filterable table
 - node-f2e6b9a1: table shows name, quantity, min quantity, category, edit/delete buttons
 - node-a8c5e3d7: highlight low stock items with visual indicator (color #f38ba8)
-- node-4b7f2e9c: show low stock count indicator
 - node-d9e3a6b4: support filtering by category and searching by name
 - node-6c4f8e2a: provide create/edit/delete item buttons and category management button
 - node-3e9b7d5f: open modal forms for creating/editing items and categories
@@ -68,17 +67,11 @@
 - node-4e9b2d8c: client-side validation matching api validation rules
 - node-8f2c6e1a: modal forms close after successful submission
 
-## Low Stock (3 requirements)
-
-- node-d7a5f3e9: show notification when items are low stock
-- node-5c8e4b2a: toggle to show only low stock items
-- node-b3e9d7c5: low stock count shown in page title
-
-## API (9 requirements)
+## API (8 requirements)
 
 - node-2e8c6f4a: rest api endpoints for crud operations on items and categories
 - node-9f5c3e7b: endpoints validate input using zod schemas
-- node-6a3f8e2c: get items supports search, categoryid, lowstock, sort, order
+- node-6a3f8e2c: get items supports search, categoryid, sort, order
 - node-c4f9e6a1: sortable columns name, quantity, created_at ascending or descending
 - node-7d2b8e5f: post returns 201 with created object, patch returns updated object
 - node-a6f4e9c3: include low_stock boolean and category_name in item responses

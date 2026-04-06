@@ -1,3 +1,8 @@
+---
+name: phoenix-spec
+description: Guidelines and helpers for writing and editing Phoenix specification files. Ensures no IU references and proper spec structure.
+---
+
 # Phoenix Spec Editor
 
 Guidelines and helpers for writing and editing Phoenix specification files.

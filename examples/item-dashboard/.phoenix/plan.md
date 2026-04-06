@@ -45,7 +45,7 @@
 **Requirements:**
 - node-2e8c6f4a: rest api endpoints for crud operations on items and categories
 - node-9f5c3e7b: endpoints validate input using zod schemas
-- node-6a3f8e2c: get items supports search, categoryid, lowstock, sort, order
+- node-6a3f8e2c: get items supports search, categoryid, sort, order
 - node-c4f9e6a1: sortable columns name, quantity, created_at ascending or descending
 - node-7d2b8e5f: post returns 201 with created object, patch returns updated object
 - node-a6f4e9c3: include low_stock boolean and category_name in item responses
@@ -60,15 +60,11 @@
 - node-7d3a8e5c: display items in sortable filterable table
 - node-f2e6b9a1: table shows name, quantity, min quantity, category, edit/delete buttons
 - node-a8c5e3d7: highlight low stock items with visual indicator (color #f38ba8)
-- node-4b7f2e9c: show low stock count indicator
 - node-d9e3a6b4: support filtering by category and searching by name
 - node-6c4f8e2a: provide create/edit/delete item buttons and category management button
 - node-1a7c4e9d: dashboard served at root path redirecting to /ui/items-dashboard
-- node-d7a5f3e9: show notification when items are low stock
-- node-5c8e4b2a: toggle to show only low stock items
-- node-b3e9d7c5: low stock count shown in page title
 
-**Contract:** Main dashboard page with sortable/filterable table and low stock indicators
+**Contract:** Main dashboard page with sortable/filterable table and low stock row highlighting
 **Output:** `src/generated/app/items-dashboard.ts`
 
 ## IU-6: Dashboard UI - Modals (HIGH)
@@ -128,7 +124,7 @@
 | IU-2 | Item Domain | HIGH | 9 | src/generated/app/items.ts |
 | IU-3 | Category Domain | MEDIUM | 8 | src/generated/app/categories.ts |
 | IU-4 | API Routes | HIGH | 7 | src/generated/app/api.ts |
-| IU-5 | Dashboard Main | HIGH | 10 | src/generated/app/items-dashboard.ts |
+| IU-5 | Dashboard Main | HIGH | 6 | src/generated/app/items-dashboard.ts |
 | IU-6 | Dashboard Modals | HIGH | 12 | (merged) |
 | IU-7 | Theme & Styles | MEDIUM | 11 | (inline) |
 | IU-8 | Error Handling | MEDIUM | 5 | (merged) |

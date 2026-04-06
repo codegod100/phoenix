@@ -30,7 +30,6 @@
 - REQUIREMENT: Display items in a sortable, filterable table
 - REQUIREMENT: Table shows: name, quantity, min quantity, category, edit/delete buttons
 - REQUIREMENT: Highlight low stock items with visual indicator (#f38ba8)
-- REQUIREMENT: Show low stock count indicator
 - REQUIREMENT: Support filtering by category and searching by name
 - REQUIREMENT: Provide create/edit/delete item buttons and category management button
 - REQUIREMENT: Open modal forms for creating/editing items and categories
@@ -67,17 +66,11 @@
 - CONSTRAINT: Form layout: inputs full-width within container, two-column grid for related fields (quantity/min-quantity)
 - CONSTRAINT: Close button: top-right positioned, inherits text color, 24px font-size, no background
 
-## Low Stock
-
-- REQUIREMENT: Show notification when items are low stock
-- REQUIREMENT: Toggle to show only low stock items
-- REQUIREMENT: Low stock count shown in page title
-
 ## API
 
 - REQUIREMENT: REST API endpoints for CRUD operations on items and categories
 - REQUIREMENT: Endpoints validate input using zod schemas
-- REQUIREMENT: GET /items supports: search, categoryid, lowstock, sort, order
+- REQUIREMENT: GET /items supports: search, categoryid, sort, order
 - REQUIREMENT: Sortable columns: name, quantity, created_at (ascending or descending)
 - REQUIREMENT: POST returns 201 with created object; PATCH returns updated object
 - REQUIREMENT: Include low_stock boolean and category_name in item responses
