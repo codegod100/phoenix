@@ -368,17 +368,25 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       border-radius: 8px; min-width: 280px; max-width: 280px;
       display: flex; flex-direction: column; max-height: calc(100vh - 32px);
     ">
-      <div style="
+      <div class="column-header" style="
         padding: 12px 16px;
         border-bottom: 1px solid ${DesignSystem.layout.boardBackground};
         display: flex; justify-content: space-between; align-items: center;
+        position: relative;
       ">
         <h3 style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600;">${col.name}</h3>
-        <span id="count-${col.id}" style="
-          background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
-          border-radius: ${DesignSystem.badge.borderRadius}; padding: ${DesignSystem.badge.padding};
-          font-size: ${DesignSystem.badge.fontSize};
-        ">${col.cards.length}</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="count-${col.id}" style="
+            background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
+            border-radius: ${DesignSystem.badge.borderRadius}; padding: ${DesignSystem.badge.padding};
+            font-size: ${DesignSystem.badge.fontSize};
+          ">${col.cards.length}</span>
+          <button class="delete-column-btn" data-column-id="${col.id}" style="
+            background: transparent; border: none; color: #f38ba8;
+            cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.2s;
+            padding: 0 4px; display: none;
+          " title="Delete column">×</button>
+        </div>
       </div>
       <div class="column-cards" style="
         flex: 1; overflow-y: auto; padding: 12px;
@@ -417,6 +425,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     .card { transition: opacity 0.2s; }
     .card[draggable="true"]:hover { opacity: 0.8; }
     .column-cards.drag-over { background: rgba(137, 180, 250, 0.1) !important; }
+    .column-header:hover .delete-column-btn { opacity: 1 !important; display: inline-block !important; }
+    .delete-column-btn:hover { color: #f38ba8 !important; }
   </style>
 </head>
 <body>
@@ -581,9 +591,12 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
           }).then(function(col) {
             // Create column element and insert before Add Column button
             var colHtml = '<div class="column" data-column-id="' + col.id + '" style="background:#313244;border-radius:8px;min-width:280px;max-width:280px;display:flex;flex-direction:column;max-height:calc(100vh - 32px);">' +
-              '<div style="padding:12px 16px;border-bottom:1px solid #1e1e2e;display:flex;justify-content:space-between;align-items:center;">' +
+              '<div class="column-header" style="padding:12px 16px;border-bottom:1px solid #1e1e2e;display:flex;justify-content:space-between;align-items:center;position:relative;">' +
                 '<h3 style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;">' + col.name + '</h3>' +
-                '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                  '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
+                  '<button class="delete-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#f38ba8;cursor:pointer;font-size:16px;opacity:0;transition:opacity 0.2s;padding:0 4px;" title="Delete column">×</button>' +
+                '</div>' +
               '</div>' +
               '<div class="column-cards" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>' +
               '<button class="add-card-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#6c7086;padding:12px;cursor:pointer;font-size:12px;text-align:left;">+ Add Card</button>' +
@@ -658,11 +671,58 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                 }
               }, 'Create');
             });
+            
+            // Wire up delete column button for new column
+            newCol.querySelector('.delete-column-btn').addEventListener('click', function() {
+              var cardCount = parseInt(document.getElementById('count-' + col.id).textContent || '0');
+              var content = '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this column?</p>' +
+                '<p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This will also delete ' + cardCount + ' card' + (cardCount !== 1 ? 's' : '') + '. This action cannot be undone.</p>';
+              showModal('Delete Column', content, function() {
+                fetch('/api/columns/' + col.id, { method: 'DELETE' })
+                  .then(function(res) {
+                    if (res.ok) {
+                      newCol.remove();
+                    } else {
+                      console.error('Failed to delete column:', res.status);
+                      alert('Cannot delete the last column');
+                    }
+                  })
+                  .catch(function(err) { console.error('Error deleting column:', err); });
+              }, 'Delete', 'Cancel');
+            });
           }).catch(function(err) {
             console.error('Error creating column:', err);
           });
         }
       }, 'Create');
+    });
+    
+    // Delete column buttons
+    document.querySelectorAll('.delete-column-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var columnId = btn.dataset.columnId;
+        var columnEl = btn.closest('.column');
+        var cardCount = parseInt(document.getElementById('count-' + columnId).textContent || '0');
+        
+        var content = '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this column?</p>' +
+          '<p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This will also delete ' + cardCount + ' card' + (cardCount !== 1 ? 's' : '') + '. This action cannot be undone.</p>';
+        
+        showModal('Delete Column', content, function() {
+          fetch('/api/columns/' + columnId, {
+            method: 'DELETE'
+          }).then(function(res) {
+            if (res.ok) {
+              // Remove column from DOM
+              if (columnEl) columnEl.remove();
+            } else {
+              console.error('Failed to delete column:', res.status);
+              alert('Cannot delete the last column');
+            }
+          }).catch(function(err) {
+            console.error('Error deleting column:', err);
+          });
+        }, 'Delete', 'Cancel');
+      });
     });
     
     // Update card count badge

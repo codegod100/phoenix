@@ -53,6 +53,15 @@ export const Database = {
     return column;
   },
 
+  deleteColumn(id: string): boolean {
+    // Delete all cards in this column first
+    const cardsToDelete = Array.from(cards.values()).filter(c => c.column_id === id);
+    for (const card of cardsToDelete) {
+      cards.delete(card.id);
+    }
+    return columns.delete(id);
+  },
+
   // Cards
   createCard(title: string, description: string | null, column_id: string, order_index: number): Card {
     const id = crypto.randomUUID();

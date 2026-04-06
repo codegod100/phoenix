@@ -29,16 +29,20 @@ A simple task management board with columns and cards.
 - REQUIREMENT: PATCH /cards/:id/move moves card to different column with new order
 - REQUIREMENT: DELETE /cards/:id removes a card
 - REQUIREMENT: POST /columns creates a new column
+- REQUIREMENT: DELETE /columns/:id removes a column and all its cards
 - REQUIREMENT: PATCH /columns/:id renames a column
 
 - CONSTRAINT: Moving card validates column exists (400 if not)
 - CONSTRAINT: Card order is 0-indexed integer, automatically rebalanced on conflicts
+- CONSTRAINT: Deleting column requires at least 2 columns exist (minimum 1 must remain)
 
 ## UI
 
 - REQUIREMENT: Display board as horizontal row of columns
 - REQUIREMENT: Each column shows cards stacked vertically
-- REQUIREMENT: Each column header displays card count badge
+- REQUIREMENT: Each column header has delete button (visible on hover, destructive styling)
+- REQUIREMENT: Clicking delete column button opens confirmation modal (destructive action)
+- REQUIREMENT: Modal on confirm deletes column, removes all cards in it, updates UI dynamically
 - REQUIREMENT: Show add-card button at bottom of each column
 - REQUIREMENT: Clicking add-card button opens styled modal for card creation
 - REQUIREMENT: Show add-column button at right of board

@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { initDatabase, seedDefaultColumns, getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn } from './generated/app/index.js';
+import { initDatabase, seedDefaultColumns, getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn, deleteColumn } from './generated/app/index.js';
 import { renderPage } from './generated/app/ui.ui.js';
 
 const db = new Database('data/app.db');
@@ -76,6 +76,17 @@ const server = Bun.serve({
         const col = renameColumn(db, id, body.name);
         return Response.json(col);
       }).catch(err => Response.json({ error: String(err) }, { status: 400 }));
+    }
+    
+    // Delete column
+    if (path.startsWith('/api/columns/') && method === 'DELETE') {
+      const id = path.split('/')[3];
+      const columnCount = getBoard(db).columns.length;
+      if (columnCount <= 1) {
+        return Response.json({ error: 'Cannot delete the last column' }, { status: 400 });
+      }
+      deleteColumn(db, id);
+      return new Response(null, { status: 204 });
     }
     
     // Main UI page

@@ -108,6 +108,11 @@ export const API = {
     }
     
     return Database.updateColumn(id, { name });
+  },
+
+  // DELETE /columns/:id - removes column and all its cards
+  deleteColumn(id: string): boolean {
+    return Database.deleteColumn(id);
   }
 };
 
@@ -140,6 +145,10 @@ export function createColumn(_db: unknown, name: string): Column {
 
 export function renameColumn(_db: unknown, id: string | number, name: string): Column | undefined {
   return API.renameColumn(String(id), name);
+}
+
+export function deleteColumn(_db: unknown, id: string | number): boolean {
+  return API.deleteColumn(String(id));
 }
 
 // Phoenix traceability
