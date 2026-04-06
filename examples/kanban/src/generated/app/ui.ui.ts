@@ -487,8 +487,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     // Helper: Convert URLs in text to clickable links
     function linkify(text) {
       if (!text) return '';
-      // URL regex: matches http/https/ftp URLs
-      var urlRegex = /(https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+)/gi;
+      // URL regex: matches http/https/ftp URLs (using RegExp constructor to avoid escape issues)
+      var urlRegex = new RegExp('(https?://[^\\s<]+|ftp://[^\\s<]+)', 'gi');
       return text.replace(urlRegex, function(url) {
         // Escape HTML in the URL
         var safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
