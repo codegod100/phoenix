@@ -107,6 +107,143 @@ afterAll(() => {
 });
 ```
 
+## Server Testing with Ephemeral Ports
+
+### Critical Rule: Never Kill Running Server
+
+Tests that start a server MUST use an ephemeral port (port 0), never a fixed port like 3000.
+
+### Why Port 0?
+
+- **Port 0** tells the OS to assign an available ephemeral port
+- Tests can run while development server is running on :3000
+- Multiple test files can start servers simultaneously
+- No port conflicts between tests and dev environment
+
+### Pattern for Server Tests
+
+```typescript
+// ❌ NEVER use fixed port
+describe('Server', () => {
+  let server: any;
+  
+  beforeAll(() => {
+    server = Bun.serve({
+      port: 3000,  // ❌ CONFLICT with running dev server!
+      fetch(req) { /* ... */ }
+    });
+  });
+  
+  afterAll(() => {
+    server.stop();  // ❌ Kills dev server if it was running
+  });
+});
+
+// ✅ ALWAYS use ephemeral port
+describe('Server', () => {
+  let server: any;
+  let baseUrl: string;
+  
+  beforeAll(() => {
+    server = Bun.serve({
+      port: 0,  // ✅ OS assigns available port
+      fetch(req) { /* ... */ }
+    });
+    baseUrl = `http://localhost:${server.port}`;
+  });
+  
+  afterAll(() => {
+    server.stop();  // ✅ Only stops test server
+  });
+  
+  it('should respond on ephemeral port', async () => {
+    const res = await fetch(`${baseUrl}/health`);
+    expect(res.status).toBe(200);
+  });
+});
+```
+
+### Example: Full Server Test with Test Database
+
+```typescript
+// __tests__/server.test.ts
+import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
+import { Database as SQLiteDB } from 'bun:sqlite';
+import * as db from '../database';
+
+const TEST_DB_PATH = 'data/test-server.db';
+
+describe('Server Integration', () => {
+  let sqliteDb: SQLiteDB;
+  let server: any;
+  let baseUrl: string;
+  
+  beforeAll(() => {
+    // Clean up and create test database
+    try { Bun.file(TEST_DB_PATH).delete(); } catch {}
+    sqliteDb = new SQLiteDB(TEST_DB_PATH);
+    db.initDatabase(sqliteDb);
+    db.seedDefaultColumns(sqliteDb);
+    
+    // Start server on ephemeral port
+    server = Bun.serve({
+      port: 0,  // Ephemeral port
+      fetch(req) {
+        const url = new URL(req.url);
+        
+        // Route handlers using test database
+        if (url.pathname === '/health') {
+          return Response.json({ status: 'ok' });
+        }
+        
+        if (url.pathname === '/api/columns' && req.method === 'GET') {
+          const cols = db.getAllColumns();
+          return Response.json(cols);
+        }
+        
+        return new Response('Not Found', { status: 404 });
+      }
+    });
+    
+    baseUrl = `http://localhost:${server.port}`;
+  });
+  
+  afterAll(() => {
+    server.stop();
+    sqliteDb.close();
+    try { Bun.file(TEST_DB_PATH).delete(); } catch {}
+  });
+  
+  it('health check on ephemeral port', async () => {
+    const res = await fetch(`${baseUrl}/health`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe('ok');
+  });
+  
+  it('API returns columns from test database', async () => {
+    const res = await fetch(`${baseUrl}/api/columns`);
+    const cols = await res.json();
+    expect(cols.length).toBe(3); // From seedDefaultColumns
+  });
+});
+
+// Phoenix traceability
+export const _phoenix = {
+  iu_id: '...',
+  name: 'Server',
+  risk_tier: 'medium'
+} as const;
+```
+
+### Server Testing Checklist
+
+- [ ] Server uses `port: 0` for ephemeral port assignment
+- [ ] Base URL constructed from `server.port` dynamically
+- [ ] Test database isolated from production
+- [ ] `afterAll` stops server AND closes database
+- [ ] Tests can run while dev server is running on :3000
+
 ## CI/CD Considerations
 
 ```yaml
