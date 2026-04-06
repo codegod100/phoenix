@@ -46,11 +46,12 @@ A simple task management board with columns and cards.
 - REQUIREMENT: Inline editing: click card title to edit (opens styled modal)
 - REQUIREMENT: Drag-and-drop cards between columns with visual feedback
 - REQUIREMENT: Styled modal dialogs have: title, input fields, confirm button, cancel button
-- REQUIREMENT: Modal on confirm calls API, waits for success response, then reloads page to show updated board
-- REQUIREMENT: Modal on cancel closes without API call, no page reload
-- REQUIREMENT: Modal closes on backdrop click (cancel action), no page reload
-- REQUIREMENT: Modal closes on ESC key (cancel action), no page reload
-- REQUIREMENT: Drag-and-drop cards between columns calls move API, waits for success, then reloads page
+- REQUIREMENT: Modal on confirm calls API and updates the board UI dynamically without page reload
+- REQUIREMENT: Modal on cancel closes without API call
+- REQUIREMENT: Modal closes on backdrop click (cancel action)
+- REQUIREMENT: Modal closes on ESC key (cancel action)
+- REQUIREMENT: Drag-and-drop cards between columns calls move API and updates UI dynamically without page reload
+- REQUIREMENT: UI updates must re-render the affected card/column in place
 
 - CONSTRAINT: Board fills viewport width, columns scroll horizontally if needed
 - CONSTRAINT: Column height fixed with internal scroll for many cards

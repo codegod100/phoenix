@@ -487,13 +487,25 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         container.classList.remove('drag-over');
         var cardId = e.dataTransfer.getData('text/plain');
         var columnId = container.closest('.column').dataset.columnId;
+        var draggedEl = document.querySelector('.card[data-card-id="' + cardId + '"]');
         fetch('/api/cards/' + cardId + '/move', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ column_id: columnId, order_index: 0 })
         }).then(function(res) {
-          if (res.ok) location.reload();
-          else console.error('Failed to move card:', res.status);
+          if (res.ok) {
+            // Move card in DOM to new column (prepend)
+            if (draggedEl) {
+              draggedEl.style.opacity = '1';
+              container.insertBefore(draggedEl, container.firstChild);
+              updateCardCount(columnId, 1);
+              var oldColumn = draggedEl.closest('.column');
+              if (oldColumn) {
+                var oldColId = oldColumn.dataset.columnId;
+                if (oldColId !== columnId) updateCardCount(oldColId, -1);
+              }
+            }
+          } else console.error('Failed to move card:', res.status);
         }).catch(function(err) {
           console.error('Error moving card:', err);
         });
@@ -504,6 +516,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     document.querySelectorAll('.add-card-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var columnId = btn.dataset.columnId;
+        var container = btn.closest('.column').querySelector('.column-cards');
         var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
           '<input id="card-title" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
           '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
@@ -517,8 +530,29 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ title: title, description: desc || null, column_id: columnId })
             }).then(function(res) {
-              if (res.ok) location.reload();
-              else console.error('Failed to create card:', res.status);
+              if (res.ok) return res.json();
+              else throw new Error('Failed to create');
+            }).then(function(card) {
+              // Create card element and append to column
+              var cardEl = document.createElement('div');
+              cardEl.className = 'card';
+              cardEl.dataset.cardId = card.id;
+              cardEl.draggable = true;
+              cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;';
+              var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;">' + card.description + '</p>' : '';
+              cardEl.innerHTML = '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;">' + card.title + '</h4>' + descHtml;
+              
+              // Add drag handlers
+              cardEl.addEventListener('dragstart', function(e) {
+                cardEl.style.opacity = '0.5';
+                e.dataTransfer.setData('text/plain', card.id);
+              });
+              cardEl.addEventListener('dragend', function() {
+                cardEl.style.opacity = '1';
+              });
+              
+              container.appendChild(cardEl);
+              updateCardCount(columnId, 1);
             }).catch(function(err) {
               console.error('Error creating card:', err);
             });
@@ -539,14 +573,103 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: name })
           }).then(function(res) {
-            if (res.ok) location.reload();
-            else console.error('Failed to create column:', res.status);
+            if (res.ok) return res.json();
+            else throw new Error('Failed to create');
+          }).then(function(col) {
+            // Create column element and insert before Add Column button
+            var colHtml = '<div class="column" data-column-id="' + col.id + '" style="background:#313244;border-radius:8px;min-width:280px;max-width:280px;display:flex;flex-direction:column;max-height:calc(100vh - 32px);">' +
+              '<div style="padding:12px 16px;border-bottom:1px solid #1e1e2e;display:flex;justify-content:space-between;align-items:center;">' +
+                '<h3 style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;">' + col.name + '</h3>' +
+                '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
+              '</div>' +
+              '<div class="column-cards" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>' +
+              '<button class="add-card-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#6c7086;padding:12px;cursor:pointer;font-size:12px;text-align:left;">+ Add Card</button>' +
+            '</div>';
+            var temp = document.createElement('div');
+            temp.innerHTML = colHtml;
+            var newCol = temp.firstChild;
+            var board = document.querySelector('.kanban-board');
+            var addBtn = document.getElementById('add-column');
+            board.insertBefore(newCol, addBtn);
+            
+            // Wire up drop zone
+            var cardsContainer = newCol.querySelector('.column-cards');
+            cardsContainer.addEventListener('dragover', function(e) {
+              e.preventDefault();
+              cardsContainer.classList.add('drag-over');
+            });
+            cardsContainer.addEventListener('dragleave', function() {
+              cardsContainer.classList.remove('drag-over');
+            });
+            cardsContainer.addEventListener('drop', function(e) {
+              e.preventDefault();
+              cardsContainer.classList.remove('drag-over');
+              var cardId = e.dataTransfer.getData('text/plain');
+              var draggedEl = document.querySelector('.card[data-card-id="' + cardId + '"]');
+              fetch('/api/cards/' + cardId + '/move', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ column_id: col.id, order_index: 0 })
+              }).then(function(res) {
+                if (res.ok) {
+                  if (draggedEl) {
+                    draggedEl.style.opacity = '1';
+                    cardsContainer.insertBefore(draggedEl, cardsContainer.firstChild);
+                    updateCardCount(col.id, 1);
+                    var oldColumn = draggedEl.closest('.column');
+                    if (oldColumn) {
+                      var oldColId = oldColumn.dataset.columnId;
+                      if (oldColId !== col.id) updateCardCount(oldColId, -1);
+                    }
+                  }
+                } else console.error('Failed to move card:', res.status);
+              });
+            });
+            
+            // Wire up add card button
+            newCol.querySelector('.add-card-btn').addEventListener('click', function() {
+              var content2 = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+                '<input id="card-title-' + col.id + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+                '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+                '<textarea id="card-desc-' + col.id + '" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;"></textarea>';
+              showModal('Create Card', content2, function() {
+                var title = document.getElementById('card-title-' + col.id).value.trim();
+                var desc = document.getElementById('card-desc-' + col.id).value.trim();
+                if (title) {
+                  fetch('/api/cards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: title, description: desc || null, column_id: col.id })
+                  }).then(function(r) { return r.json(); }).then(function(card) {
+                    var cardEl = document.createElement('div');
+                    cardEl.className = 'card'; cardEl.dataset.cardId = card.id;
+                    cardEl.draggable = true;
+                    cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;';
+                    var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;">' + card.description + '</p>' : '';
+                    cardEl.innerHTML = '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;">' + card.title + '</h4>' + descHtml;
+                    cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
+                    cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
+                    cardsContainer.appendChild(cardEl);
+                    updateCardCount(col.id, 1);
+                  });
+                }
+              }, 'Create');
+            });
           }).catch(function(err) {
             console.error('Error creating column:', err);
           });
         }
       }, 'Create');
     });
+    
+    // Update card count badge
+    function updateCardCount(columnId, delta) {
+      var badge = document.getElementById('count-' + columnId);
+      if (badge) {
+        var count = parseInt(badge.textContent || '0') + delta;
+        badge.textContent = count;
+      }
+    }
   </script>
 </body>
 </html>`;
