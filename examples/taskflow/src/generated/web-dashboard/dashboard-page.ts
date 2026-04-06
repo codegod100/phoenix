@@ -238,20 +238,21 @@ export class DashboardPage {
         .header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 0.5rem 0;
+            padding: 0.25rem 0;
         }
 
         .header-content {
             display: flex;
             justify-content: flex-start;
             align-items: center;
-            min-height: 40px;
+            min-height: 32px;
         }
 
         .logo {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: var(--primary);
+            line-height: 1;
         }
 
         /* Status Bar - Compact inline metrics */
