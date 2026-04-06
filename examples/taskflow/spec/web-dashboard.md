@@ -19,7 +19,7 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 - Status badges must be color-coded: open=gray, in_progress=blue, review=purple, done=green
 - Overdue tasks must have a red border and an "OVERDUE" indicator
 - Each card must have buttons for status transitions (based on current status)
-- Each task card must have an edit button that opens a modal to modify task properties
+- Each task card must have an edit button that shows an inline edit panel below the task card (not a modal dialog)
 - Each task card must have a delete button that opens a confirmation modal (not browser alert) before permanent removal
 - The delete button must use the danger color (red) and include a trash icon
 - Bulk selection checkboxes must appear on each task card for multi-select operations
@@ -27,8 +27,9 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 - All confirmation dialogs must be custom modal overlays (not browser confirm()/alert() popups)
 - Archived tasks must be viewable via a separate "Archived" tab or filter
 - Switching between Active and Archived views must update the task list without a full page reload
-- The edit modal must contain pre-populated form fields for all editable properties
-- The edit modal must have save and cancel buttons with clear visual distinction
+- The edit panel must appear inline below the task card and contain pre-populated form fields for all editable properties
+- The edit panel must have save and cancel buttons with clear visual distinction
+- Clicking cancel or saving must collapse the edit panel back to the task card view
 
 ## Task Management
 

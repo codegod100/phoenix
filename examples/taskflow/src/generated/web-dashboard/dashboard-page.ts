@@ -645,6 +645,55 @@ export class DashboardPage {
             margin-bottom: 1rem;
         }
 
+        /* Inline Edit Panel */
+        .edit-panel {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .edit-panel.active {
+            display: block;
+        }
+
+        .edit-panel .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .edit-panel .form-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .edit-panel .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .edit-panel .form-group input,
+        .edit-panel .form-group select,
+        .edit-panel .form-group textarea {
+            width: 100%;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .edit-panel .panel-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
         .modal-actions {
             display: flex;
             gap: 0.75rem;
@@ -769,54 +818,6 @@ export class DashboardPage {
             </section>
         </div>
     </main>
-
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal-overlay">
-        <div class="modal">
-            <h3>Edit Task</h3>
-            <form id="editForm">
-                <input type="hidden" id="editId">
-                <div class="form-group">
-                    <label for="editTitle">Title *</label>
-                    <input type="text" id="editTitle" required>
-                </div>
-                <div class="form-group">
-                    <label for="editDescription">Description</label>
-                    <textarea id="editDescription" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="editPriority">Priority</label>
-                    <select id="editPriority">
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="editAssignee">Assignee</label>
-                    <input type="text" id="editAssignee">
-                </div>
-                <div class="form-group">
-                    <label for="editDeadline">Deadline</label>
-                    <input type="date" id="editDeadline">
-                </div>
-                <div class="form-group">
-                    <label for="editStatus">Status</label>
-                    <select id="editStatus">
-                        <option value="open">Open</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="review">Review</option>
-                        <option value="done">Done</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal-overlay">
@@ -960,23 +961,39 @@ export class DashboardPage {
             updateStats();
         }
 
-        function openEditModal(taskId) {
+        function openEditPanel(taskId) {
+            // Close any other open edit panels first
+            document.querySelectorAll('.edit-panel.active').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            const panel = document.getElementById('edit-panel-' + taskId);
+            if (panel) panel.classList.add('active');
+        }
+
+        function closeEditPanel(taskId) {
+            const panel = document.getElementById('edit-panel-' + taskId);
+            if (panel) panel.classList.remove('active');
+        }
+
+        function saveEditPanel(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
             
-            document.getElementById('editId').value = task.id;
-            document.getElementById('editTitle').value = task.title;
-            document.getElementById('editDescription').value = task.description || '';
-            document.getElementById('editPriority').value = task.priority;
-            document.getElementById('editAssignee').value = task.assignee || '';
-            document.getElementById('editDeadline').value = task.deadline || '';
-            document.getElementById('editStatus').value = task.status;
+            const title = document.getElementById('edit-title-' + taskId).value.trim();
+            if (!title) return; // Don't save empty titles
             
-            document.getElementById('editModal').classList.add('active');
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').classList.remove('active');
+            task.title = title;
+            task.description = document.getElementById('edit-description-' + taskId).value.trim();
+            task.priority = document.getElementById('edit-priority-' + taskId).value;
+            task.assignee = document.getElementById('edit-assignee-' + taskId).value.trim() || undefined;
+            task.deadline = document.getElementById('edit-deadline-' + taskId).value || undefined;
+            task.status = document.getElementById('edit-status-' + taskId).value;
+            task.updatedAt = new Date();
+            
+            closeEditPanel(taskId);
+            updateStats();
+            renderTaskList();
+            saveTasks();
         }
 
         function confirmDelete(taskId) {
@@ -1095,32 +1112,7 @@ export class DashboardPage {
             document.getElementById('priority').value = 'medium';
         });
 
-        // Edit form submission
-        document.getElementById('editForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const id = document.getElementById('editId').value;
-            const task = tasks.find(t => t.id === id);
-            if (!task) return;
-            
-            task.title = document.getElementById('editTitle').value.trim();
-            task.description = document.getElementById('editDescription').value.trim();
-            task.priority = document.getElementById('editPriority').value;
-            task.assignee = document.getElementById('editAssignee').value.trim() || undefined;
-            task.deadline = document.getElementById('editDeadline').value || undefined;
-            task.status = document.getElementById('editStatus').value;
-            task.updatedAt = new Date();
-            
-            closeEditModal();
-            updateStats();
-            renderTaskList();
-            saveTasks();
-        });
-
         // Close modals on overlay click
-        document.getElementById('editModal').addEventListener('click', function(e) {
-            if (e.target === this) closeEditModal();
-        });
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
         });
@@ -1153,7 +1145,7 @@ export class DashboardPage {
                     onchange="toggleSelection('${task.id}')">
                 <div class="task-title">${task.title}</div>
                 <div class="task-actions">
-                    <button class="btn-edit" onclick="openEditModal('${task.id}')">Edit</button>
+                    <button class="btn-edit" onclick="openEditPanel('${task.id}')">Edit</button>
                     <button class="btn-delete" onclick="confirmDelete('${task.id}')">🗑️</button>
                 </div>
             </div>
@@ -1164,6 +1156,51 @@ export class DashboardPage {
                 ${task.assignee ? `<span>👤 ${task.assignee}</span>` : ''}
                 ${task.deadline ? `<span>📅 ${new Date(task.deadline).toLocaleDateString()}</span>` : ''}
                 ${isOverdue ? '<span class="badge overdue-badge">OVERDUE</span>' : ''}
+            </div>
+            <!-- Inline Edit Panel -->
+            <div id="edit-panel-${task.id}" class="edit-panel">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Title *</label>
+                        <input type="text" id="edit-title-${task.id}" value="${task.title}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select id="edit-priority-${task.id}">
+                            <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Low</option>
+                            <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                            <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High</option>
+                            <option value="critical" ${task.priority === 'critical' ? 'selected' : ''}>Critical</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="edit-status-${task.id}">
+                            <option value="open" ${task.status === 'open' ? 'selected' : ''}>Open</option>
+                            <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="review" ${task.status === 'review' ? 'selected' : ''}>Review</option>
+                            <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assignee</label>
+                        <input type="text" id="edit-assignee-${task.id}" value="${task.assignee || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Deadline</label>
+                        <input type="date" id="edit-deadline-${task.id}" value="${task.deadline || ''}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="edit-description-${task.id}" rows="2">${task.description || ''}</textarea>
+                </div>
+                <div class="panel-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditPanel('${task.id}')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveEditPanel('${task.id}')">Save Changes</button>
+                </div>
             </div>
         </div>
     `;
