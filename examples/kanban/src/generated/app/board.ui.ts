@@ -2,7 +2,7 @@
 // Source: spec/app.md - Board section
 
 import { Column, Database } from './database';
-import { DesignSystem } from './design-system.ui';
+import { DesignSystem, Theme } from './design-system.ui';
 
 export interface BoardProps {
   onColumnAdd: () => void;
@@ -122,7 +122,7 @@ export const BoardComponent = {
     btn.textContent = '+ Add Column';
     btn.style.cssText = `
       background: transparent;
-      border: 2px dashed ${DesignSystem.colors.surface1};
+      border: 2px dashed ${Theme.colors.surface1};
       color: ${DesignSystem.typography.secondary};
       border-radius: 8px;
       padding: 12px 24px;
@@ -149,7 +149,7 @@ export const BoardComponent = {
       text-align: left;
     `;
     btn.addEventListener('mouseenter', () => {
-      btn.style.background = DesignSystem.colors.surface1;
+      btn.style.background = Theme.colors.surface1;
     });
     btn.addEventListener('mouseleave', () => {
       btn.style.background = 'transparent';
