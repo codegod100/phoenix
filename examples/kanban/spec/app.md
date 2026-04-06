@@ -78,6 +78,8 @@ A simple task management board with columns and cards.
 - CONSTRAINT: When card moved between columns via drag-and-drop, source column count decrements by 1, destination column count increments by 1
 - CONSTRAINT: When card moved within same column (reordering), counts remain unchanged
 - CONSTRAINT: Dragging a card MUST move only the card - column position MUST remain unchanged
+- CONSTRAINT: All cards (initial and dynamically created) MUST have identical drag behavior and event handlers
+- CONSTRAINT: Card dragstart handler MUST set global draggedCard variable for proper detection by column handlers
 - CONSTRAINT: Card count updates must NOT require page reload for drag-and-drop operations
 - CONSTRAINT: Column count badge DOM element id format: "count-{columnId}"
 - CONSTRAINT: Do not use browser native alert(), prompt(), or confirm() - use DOM-based modals only
