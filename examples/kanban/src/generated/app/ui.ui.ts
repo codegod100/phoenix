@@ -650,9 +650,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               cardEl.className = 'card';
               cardEl.dataset.cardId = card.id;
               cardEl.draggable = true;
-              cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;';
+              cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
               var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;">' + card.description + '</p>' : '';
-              cardEl.innerHTML = '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;">' + card.title + '</h4>' + descHtml;
+              cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Edit card"><span style=\"pointer-events:none;\">✏️</span></button>' +
+                '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Delete card"><span style=\"pointer-events:none;\">🗑️</span></button>' +
+                '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
               
               // Add drag handlers
               cardEl.addEventListener('dragstart', function(e) {
@@ -661,6 +663,58 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               });
               cardEl.addEventListener('dragend', function() {
                 cardEl.style.opacity = '1';
+              });
+              
+              // Add edit/delete handlers for this card
+              cardEl.querySelector('.edit-card-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                var titleEl = cardEl.querySelector('h4');
+                var descEl = cardEl.querySelector('p');
+                var currentTitle = titleEl ? titleEl.textContent : '';
+                var currentDesc = descEl ? descEl.textContent : '';
+                
+                var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+                  '<input id="edit-card-title-existing" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+                  '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+                  '<textarea id="edit-card-desc-existing" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+                
+                showModal('Edit Card', content, function() {
+                  var newTitle = document.getElementById('edit-card-title-existing').value.trim();
+                  var newDesc = document.getElementById('edit-card-desc-existing').value.trim();
+                  if (newTitle) {
+                    fetch('/api/cards/' + card.id, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title: newTitle, description: newDesc || null })
+                    }).then(function(res) {
+                      if (res.ok) {
+                        if (titleEl) titleEl.textContent = newTitle;
+                        if (newDesc) {
+                          if (descEl) descEl.textContent = newDesc;
+                          else {
+                            var p = document.createElement('p');
+                            p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
+                            p.textContent = newDesc;
+                            cardEl.appendChild(p);
+                          }
+                        } else if (descEl) descEl.remove();
+                      }
+                    });
+                  }
+                }, 'Save');
+              });
+              
+              cardEl.querySelector('.delete-card-btn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure?</p>', function() {
+                  fetch('/api/cards/' + card.id, { method: 'DELETE' })
+                    .then(function(res) {
+                      if (res.ok) {
+                        cardEl.remove();
+                        updateCardCount(columnId, -1);
+                      }
+                    });
+                }, 'Delete', 'Cancel');
               });
               
               container.appendChild(cardEl);
