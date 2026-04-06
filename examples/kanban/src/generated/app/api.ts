@@ -196,8 +196,20 @@ export function renameColumn(db: Database, id: number, name: string): Column {
 }
 
 export const _phoenix = {
-  iu_id: 'bc7a5e2be9006e1e47d83a68f394a84edf0a72430fe4c371467c8c01e0ac663c',
+  iu_id: '1ff7069a9997147047673e3ad462c57cb31c5374c07c35244cce3a81d877e98e',
   name: 'API',
-  risk_tier: 'high',
-  canon_ids: []
+  risk_tier: 'medium',
+  canon_ids: [
+    '0b188f3a1146b9012c5b8f828bb1dae040dd9f636d4cf81293ba75504badaa70',
+    '0b78412542ffc126a61c447152bedb798842219ac5a316713296c7d7b1fa553c',
+    '3a13a7707f9aedd05a520c8b42ea75794278d7845cc8bbbfa5070f621d4ee2fe',
+    '53acc6fc41a2fb54673f5635883f196596f4fa71e54eae60c893cd48641234fa',
+    '792f5cf84c5c3e4db22a4342ccac3cab6b9b71a2f3a51aa63273d0cca3acf638',
+    '8911cbfd7f5c767f586693a42c804b0fda5e8034b1756d9ac48934dc80d0aaca',
+    '908aea6ec388c55cf183cb681e971ecc3ea69292670fe85c2638123818a5c186',
+    'a7f1870c79de6724ab9390937490e9290ee7862a9d2a7a5e03e7d90337dd8eb0',
+    'df146a7e13a736d80e55e5998f40074e054440e94eb0fc2e54ca391d4efab812',
+    'e60fb850ae066007763db0eefe69826859f441ca6c6df26bed4ae862e56e19c8',
+    'faab3a53e9c29c822049b62c9981cb646cedc766318146380e88b61dc20feeed'
+  ]
 } as const;

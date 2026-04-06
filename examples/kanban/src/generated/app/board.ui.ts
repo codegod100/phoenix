@@ -215,8 +215,15 @@ export const boardStyles = `
 `;
 
 export const _phoenix = {
-  iu_id: 'cf37732283a9bb519ce626705db5b8a75ae6324fc3260a19d2cd1c0fe5f96cb7',
+  iu_id: 'a8940dc3893b9753f980954c61a1c1433506ca84fc47282de2b19dd2a12b64ed',
   name: 'Board',
-  risk_tier: 'high',
-  canon_ids: []
+  risk_tier: 'medium',
+  canon_ids: [
+    '0565af4a14e155b5986a9cf9a0fd3e55a9ee1899258ace428877b0896a0b221f',
+    '421729737acedf9a26b83a5fc79be28b0a34a07cf4250b42e74386ec0f13909b',
+    '49c134d04b8db0b98bd8ca40a9a3551fb44473626046694a7e08abaae429b9a7',
+    '98068257ac537b19de80fc392425dc114d8e50ab20c238933d965a84a57ab327',
+    'e8c1dae4211fe0b57ab1a80a2c6d953f0f2925e76e202b32690971b54ba0e3b2',
+    'f865a365f3b043e76ad7c65b1d90dbadebfe518978966e14c1c14b88be1cc2f8'
+  ]
 } as const;

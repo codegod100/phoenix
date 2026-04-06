@@ -93,8 +93,15 @@ export function seedDefaultColumns(db: Database) {
 }
 
 export const _phoenix = {
-  iu_id: 'f9b51a2c1e76fcfb352162fb0471ab7d9c3f00dc57b8b3dbd555c9e5ed74f67b',
+  iu_id: '7755b823586edf2b4eb27f4e28cbacc704809df8821f3f9950ba00536baf3702',
   name: 'Database',
-  risk_tier: 'high',
-  canon_ids: []
+  risk_tier: 'medium',
+  canon_ids: [
+    '2bc80b42956d76df8cd3010236a272501316a874225a89df3e9df30bb681e225',
+    '5a398662b56d7e1d33a32297a11da8595051a36f3e834bcb3a7deca5c4fb380c',
+    '774c9c614c4509db05064898929bebff56a92ee9882c111392bb6c9500e1904b',
+    'a0d5d632dba5bdf516af26691ccb019a6f5d439d1c91694c075053cf5017227c',
+    'f0abeb96cfce90f28ac1cc85d55fb6e3ea64aa031f99d3f03d3cc44fd198c5db',
+    'f1938740d570b6b328ad641e41e5e301bd7e845f3f82949d67bd1b6ab32f2119'
+  ]
 } as const;
