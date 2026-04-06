@@ -374,13 +374,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         display: flex; justify-content: space-between; align-items: center;
         position: relative;
       ">
-        <span class="column-name" data-column-id="${col.id}" style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600; padding-right: 48px;">${col.name}</span>
+        <span class="column-name" data-column-id="${col.id}" style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600; padding-right: 80px;">${col.name}</span>
         <div style="display: flex; align-items: center; gap: 8px; position: absolute; right: 16px;">
-          <span id="count-${col.id}" style="
-            background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
-            border-radius: ${DesignSystem.badge.borderRadius}; padding: ${DesignSystem.badge.padding};
-            font-size: ${DesignSystem.badge.fontSize};
-          ">${col.cards.length}</span>
           <button class="edit-column-btn" data-column-id="${col.id}" style="
             background: transparent; border: none; color: ${DesignSystem.typography.secondary};
             cursor: pointer; font-size: 14px; opacity: 0; transition: opacity 0.2s;
@@ -391,6 +386,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             cursor: pointer; font-size: 14px; opacity: 0; transition: opacity 0.2s;
             padding: 4px; border-radius: 4px;
           " title="Delete column">🗑️</button>
+          <span id="count-${col.id}" style="
+            background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
+            border-radius: ${DesignSystem.badge.borderRadius}; padding: ${DesignSystem.badge.padding};
+            font-size: ${DesignSystem.badge.fontSize};
+          ">${col.cards.length}</span>
         </div>
       </div>
       <div class="column-cards" style="
@@ -691,11 +691,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             // Create column element and insert before Add Column button
             var colHtml = '<div class="column" data-column-id="' + col.id + '" style="background:#313244;border-radius:8px;min-width:280px;max-width:280px;display:flex;flex-direction:column;max-height:calc(100vh - 32px);">' +
               '<div class="column-header" style="padding:12px 16px;border-bottom:1px solid #1e1e2e;display:flex;justify-content:space-between;align-items:center;position:relative;">' +
-                '<span class="column-name" data-column-id="' + col.id + '" style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;padding-right:48px;">' + col.name + '</span>' +
+                '<span class="column-name" data-column-id="' + col.id + '" style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;padding-right:80px;">' + col.name + '</span>' +
                 '<div style="display:flex;align-items:center;gap:8px;position:absolute;right:16px;">' +
-                  '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
                   '<button class="edit-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#6c7086;cursor:pointer;font-size:14px;opacity:0;transition:opacity 0.2s;padding:4px;border-radius:4px;" title="Edit column">✏️</button>' +
                   '<button class="delete-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#f38ba8;cursor:pointer;font-size:14px;opacity:0;transition:opacity 0.2s;padding:4px;border-radius:4px;" title="Delete column">🗑️</button>' +
+                  '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
                 '</div>' +
               '</div>' +
               '<div class="column-cards" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>' +
