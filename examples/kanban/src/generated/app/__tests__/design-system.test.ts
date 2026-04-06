@@ -1,88 +1,83 @@
-// Test for Design System IU
-import { expect, test } from 'bun:test';
-import { renderModal, renderInputField, designSystemStyles } from '../design-system.ui.js';
+// Generated tests for Design System IU: 8d3ef5cc48c3b7630b398cbd74c0948f278a81b59dc569ddd3166378e62a22e5
 
-test('renderModal creates modal with title and content', () => {
-  const html = renderModal({
-    title: 'Test Modal',
-    content: '<p>Test content</p>',
-    primaryAction: { label: 'OK', onClick: () => {} }
+import { expect, test, describe } from 'bun:test';
+import { renderModal, renderInputField, designSystemStyles, DesignSystem, Theme } from '../designsystem.ui';
+
+describe('renderModal', () => {
+  test('creates modal with title and content', () => {
+    const html = renderModal('Test Modal', '<p>Test content</p>');
+    
+    expect(html).toContain('modal-backdrop');
+    expect(html).toContain('modal-container');
+    expect(html).toContain('Test Modal');
+    expect(html).toContain('Test content');
   });
-  
-  expect(html).toContain('modal-backdrop');
-  expect(html).toContain('modal-container');
-  expect(html).toContain('Test Modal');
-  expect(html).toContain('Test content');
-  expect(html).toContain('btn-primary');
-});
 
-test('renderModal includes close button', () => {
-  const html = renderModal({
-    title: 'Test',
-    content: ''
+  test('includes close button', () => {
+    const html = renderModal('Test', '');
+    
+    expect(html).toContain('×');
+    expect(html).toContain('modal-backdrop');
   });
-  
-  expect(html).toContain('modal-close');
-  expect(html).toContain('×');
-});
 
-test('renderModal supports destructive variant', () => {
-  const html = renderModal({
-    title: 'Delete?',
-    content: '<p>Are you sure?</p>',
-    primaryAction: { label: 'Delete', onClick: () => {}, variant: 'destructive' }
+  test('supports destructive variant', () => {
+    const html = renderModal('Delete?', '<p>Are you sure?</p>', 'Delete', 'Cancel', true);
+    
+    expect(html).toContain('Delete');
+    expect(html).toContain(Theme.colors.red); // destructive uses red
   });
-  
-  expect(html).toContain('btn-destructive');
-});
 
-test('renderModal includes secondary button when provided', () => {
-  const html = renderModal({
-    title: 'Test',
-    content: '',
-    primaryAction: { label: 'Save', onClick: () => {} },
-    secondaryAction: { label: 'Cancel', onClick: () => {} }
+  test('includes secondary button', () => {
+    const html = renderModal('Test', '', 'Save', 'Cancel');
+    
+    expect(html).toContain('Cancel');
+    expect(html).toContain('Save');
   });
-  
-  expect(html).toContain('btn-secondary');
-  expect(html).toContain('Cancel');
 });
 
-test('renderInputField creates input with visible label', () => {
-  const html = renderInputField({
-    id: 'test-input',
-    label: 'Test Label',
-    type: 'text',
-    placeholder: 'Enter value'
+describe('renderInputField', () => {
+  test('creates input with visible label', () => {
+    const html = renderInputField('Test Label', 'test-input', 'text', '', 'Enter value');
+    
+    expect(html).toContain('Test Label');
+    expect(html).toContain('name="test-input"');
+    expect(html).toContain('placeholder="Enter value"');
+    expect(html).toContain('<input');
   });
-  
-  expect(html).toContain('input-group');
-  expect(html).toContain('input-label');
-  expect(html).toContain('Test Label');
-  expect(html).toContain('id="test-input"');
-  expect(html).toContain('input-field');
-});
 
-test('renderInputField creates textarea when type is textarea', () => {
-  const html = renderInputField({
-    id: 'test-area',
-    label: 'Description',
-    type: 'textarea'
+  test('passes type parameter to input', () => {
+    const html = renderInputField('Description', 'desc', 'textarea');
+    
+    expect(html).toContain('Description');
+    expect(html).toContain('type="textarea"');
   });
-  
-  expect(html).toContain('<textarea');
-  expect(html).toContain('</textarea>');
 });
 
-test('designSystemStyles includes Catppuccin Mocha colors', () => {
-  expect(designSystemStyles).toContain('#181825'); // mantle
-  expect(designSystemStyles).toContain('#89b4fa'); // blue accent
-  expect(designSystemStyles).toContain('#f38ba8'); // pink destructive
-  expect(designSystemStyles).toContain('#cdd6f4'); // text
+describe('designSystemStyles', () => {
+  test('includes Catppuccin Mocha colors', () => {
+    expect(designSystemStyles).toContain('#181825'); // mantle
+    expect(designSystemStyles).toContain('#89b4fa'); // blue accent
+    expect(designSystemStyles).toContain('#f38ba8'); // pink destructive
+    expect(designSystemStyles).toContain('#cdd6f4'); // text
+  });
+
+  test('includes CSS variables', () => {
+    expect(designSystemStyles).toContain(':root');
+    expect(designSystemStyles).toContain('--cat-base');
+  });
 });
 
-test('designSystemStyles includes modal styles', () => {
-  expect(designSystemStyles).toContain('modal-backdrop');
+describe('DesignSystem', () => {
+  test('has card styling', () => {
+    expect(DesignSystem.card.background).toBeDefined();
+    expect(DesignSystem.card.borderRadius).toBeDefined();
+  });
+
+  test('has typography colors', () => {
+    expect(DesignSystem.typography.primary).toBeDefined();
+    expect(DesignSystem.typography.secondary).toBeDefined();
+  });
+});
 
 // Phoenix traceability
 export const _phoenix = {

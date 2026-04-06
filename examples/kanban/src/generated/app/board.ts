@@ -2,7 +2,7 @@
 // Source: spec/app.md - Board section
 
 import { Column, Database } from './database';
-import { DesignSystem, Theme } from './design-system.ui';
+import { DesignSystem, Theme } from './designsystem.ui';
 
 export interface BoardProps {
   onColumnAdd: () => void;

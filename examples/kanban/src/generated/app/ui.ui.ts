@@ -3,7 +3,7 @@
 // Source: spec/app.md - UI section
 // Dependencies: Cards, Design System
 
-import { DesignSystem, Theme, designSystemStyles } from './design-system.ui';
+import { DesignSystem, Theme, designSystemStyles } from './designsystem.ui';
 import { API, CreateCardRequest, UpdateCardRequest, MoveCardRequest } from './api';
 import { CardComponent, DragState } from './cards.ui';
 import { BoardComponent } from './board.ui';

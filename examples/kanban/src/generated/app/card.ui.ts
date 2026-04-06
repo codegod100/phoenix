@@ -3,7 +3,7 @@
 // Dependencies: Board, Database
 
 import { Card as CardType } from './database';
-import { DesignSystem, Theme } from './design-system.ui';
+import { DesignSystem, Theme } from './designsystem.ui';
 
 export interface CardProps {
   card: CardType;
