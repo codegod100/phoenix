@@ -48,6 +48,7 @@ A simple task management board with columns and cards.
 - REQUIREMENT: Show add-column button at right of board
 - REQUIREMENT: Clicking add-column button opens styled modal for column creation
 - REQUIREMENT: Inline editing: click card title to edit (opens styled modal)
+- REQUIREMENT: Inline editing: click column name to edit inline (transforms to input field, Enter to save, Escape to cancel, blur to save)
 - REQUIREMENT: Drag-and-drop cards between columns with visual feedback
 - REQUIREMENT: Styled modal dialogs have: title, input fields, confirm button, cancel button
 - REQUIREMENT: Modal on confirm calls API and updates the board UI dynamically without page reload
