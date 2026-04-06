@@ -369,6 +369,65 @@ function generateRecommendations(result: AuditResult): string[] {
     Total: 3 errors, 4 warnings, 0 info
 ```
 
+## Smoketest Checklist (Light Implementation Testing)
+
+Beyond traceability checks, the audit can perform light implementation verification:
+
+### What Smoketests Catch
+
+1. **Database Implementation**: SQLite vs in-memory Maps
+   - Check: Does database.ts import `bun:sqlite`?
+   - Check: Are there SQL queries (INSERT/SELECT/UPDATE/DELETE)?
+   - Check: Are there no `new Map()` or `Map.set()` calls?
+
+2. **No-Op Functions**: Empty init functions that look correct
+   - Check: Does `initDatabase()` actually do initialization?
+   - Check: Are there empty blocks or just variable assignments?
+
+3. **Export Compatibility**: Server expects functions that exist
+   - Check: Does index.ts export functions server.ts imports?
+   - Check: Are there empty export blocks?
+
+4. **Traceability Exports**: All files have `_phoenix`
+   - Check: Every generated file exports `_phoenix` constant?
+   - Check: Does `_phoenix` contain iu_id, name, risk_tier?
+
+5. **Basic Syntax**: Quick brace matching, no obvious errors
+   - Check: Equal opening/closing braces
+   - Check: No empty export blocks
+
+### When to Run Smoketests
+
+- After regeneration to catch obvious implementation bugs
+- Before committing to verify spec compliance
+- When audit passes but behavior is wrong (structural mismatch)
+
+### Example Finding
+
+```
+=== Smoketest Checklist ===
+
+✗ Database uses SQLite, not in-memory Maps
+  → Uses in-memory Maps instead of SQLite
+     Database.ts must use bun:sqlite with SQL queries, not Map objects
+
+⚠ Database initialization is not a no-op
+  → initDatabase is a no-op
+     initDatabase() must actually initialize SQLite
+
+✓ Generated files have _phoenix exports
+✓ Server has required exports
+```
+
+### Why Smoketests Matter
+
+Traceability checks that IDs match and files exist, but NOT that implementation satisfies requirements. A file can have:
+- ✓ Correct `_phoenix` export
+- ✓ Valid IU ID linkage
+- ✗ Wrong implementation (Maps instead of SQLite)
+
+Smoketests bridge this gap with light static analysis.
+
 ## Readiness Levels
 
 | Score | Level | Action |
