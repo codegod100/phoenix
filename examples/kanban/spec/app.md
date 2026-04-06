@@ -17,6 +17,7 @@ A simple task management board with columns and cards.
 - REQUIREMENT: URLs in card descriptions MUST be rendered as clickable links at all times, including after editing
 - CONSTRAINT: URLs displayed as link text MUST show the original unescaped URL (not HTML entities like &amp;)
 - CONSTRAINT: Card description text MUST NOT be HTML-escaped when editing - textarea receives raw text
+- CONSTRAINT: Each URL in a multi-line description MUST be independently linkified (URLs separated by newlines must each be clickable)
 - REQUIREMENT: Cards belong to exactly one column
 - REQUIREMENT: Cards can be moved between columns via drag-and-drop
 - REQUIREMENT: Columns can be reordered via drag-and-drop left to right
