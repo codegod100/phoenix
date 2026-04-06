@@ -9,6 +9,7 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 - The page must include a form to create new tasks with fields: title, description, priority dropdown, and optional deadline date
 - The create form must validate that title is non-empty before submission
 - Tasks must persist in browser localStorage and survive page refreshes
+- The dashboard must immediately display all tasks from localStorage on page load (no manual refresh needed)
 
 ## Task List Display
 
