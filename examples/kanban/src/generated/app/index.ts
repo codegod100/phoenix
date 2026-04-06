@@ -2,10 +2,10 @@
 
 export { initDatabase, registerMigrations, seedDefaultColumns } from './database';
 export { getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn, deleteColumn } from './api';
-export { renderPage, renderBoard, renderColumn } from './board';
-export { renderCard, CardComponent } from './card.ui';
-export { renderPage as renderUIPage, showModal } from './ui.ui';
-export { DesignSystem, Theme, renderModal, renderInputField } from './designsystem.ui';
+export { BoardComponent } from './board';
+export { CardComponent, DragState } from './card.ui';
+export { renderPage } from './ui.ui';
+export { DesignSystem, Theme, renderModal, renderInputField, designSystemStyles } from './designsystem.ui';
 export { InputDesign, LabelDesign, FormDesign, getInputStyle, getLabelStyle } from './general';
 
 // Phoenix traceability
