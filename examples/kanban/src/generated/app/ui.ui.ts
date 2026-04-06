@@ -768,7 +768,61 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
                     cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
                     
-                    // Note: edit/delete handlers are handled by event delegation on kanban-board
+                    // Explicit handlers for dynamic cards (event delegation backup)
+                    cardEl.querySelector('.edit-card-btn').addEventListener('click', function(e) {
+                      e.stopPropagation();
+                      var btn = e.currentTarget;
+                      var cardId = btn.dataset.cardId;
+                      var titleEl2 = cardEl.querySelector('h4');
+                      var descEl2 = cardEl.querySelector('p');
+                      var currentTitle2 = titleEl2 ? titleEl2.textContent : '';
+                      var currentDesc2 = descEl2 ? descEl2.textContent : '';
+                      
+                      var content2 = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+                        '<input id="edit-card-title-dyn" value="' + currentTitle2.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+                        '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+                        '<textarea id="edit-card-desc-dyn" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc2.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+                      
+                      showModal('Edit Card', content2, function() {
+                        var newTitle2 = document.getElementById('edit-card-title-dyn').value.trim();
+                        var newDesc2 = document.getElementById('edit-card-desc-dyn').value.trim();
+                        if (newTitle2) {
+                          fetch('/api/cards/' + cardId, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: newTitle2, description: newDesc2 || null })
+                          }).then(function(res) {
+                            if (res.ok) {
+                              if (titleEl2) titleEl2.textContent = newTitle2;
+                              if (newDesc2) {
+                                if (descEl2) descEl2.textContent = newDesc2;
+                                else {
+                                  var p2 = document.createElement('p');
+                                  p2.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
+                                  p2.textContent = newDesc2;
+                                  cardEl.appendChild(p2);
+                                }
+                              } else if (descEl2) descEl2.remove();
+                            }
+                          });
+                        }
+                      }, 'Save');
+                    });
+                    
+                    cardEl.querySelector('.delete-card-btn').addEventListener('click', function(e) {
+                      e.stopPropagation();
+                      var btn = e.currentTarget;
+                      var cardId = btn.dataset.cardId;
+                      showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure?</p>', function() {
+                        fetch('/api/cards/' + cardId, { method: 'DELETE' })
+                          .then(function(res) {
+                            if (res.ok) {
+                              cardEl.remove();
+                              updateCardCount(col.id, -1);
+                            }
+                          });
+                      }, 'Delete', 'Cancel');
+                    });
                     
                     cardsContainer.appendChild(cardEl);
                     updateCardCount(col.id, 1);
