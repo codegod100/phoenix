@@ -646,7 +646,7 @@ export class DashboardPage {
         }
 
         /* Inline Edit Panel */
-        .edit-panel {
+        .edit-form {
             display: none;
             background: var(--surface);
             border: 1px solid var(--border);
@@ -655,37 +655,37 @@ export class DashboardPage {
             margin-top: 0.75rem;
         }
 
-        .edit-panel.active {
+        .edit-form.active {
             display: block;
         }
 
-        .edit-panel .form-row {
+        .edit-form .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 0.75rem;
             margin-bottom: 0.75rem;
         }
 
-        .edit-panel .form-group {
+        .edit-form .form-group {
             margin-bottom: 0.5rem;
         }
 
-        .edit-panel .form-group label {
+        .edit-form .form-group label {
             display: block;
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 0.25rem;
         }
 
-        .edit-panel .form-group input,
-        .edit-panel .form-group select,
-        .edit-panel .form-group textarea {
+        .edit-form .form-group input,
+        .edit-form .form-group select,
+        .edit-form .form-group textarea {
             width: 100%;
             padding: 0.4rem 0.6rem;
             font-size: 0.9rem;
         }
 
-        .edit-panel .panel-actions {
+        .edit-form .panel-actions {
             display: flex;
             gap: 0.5rem;
             justify-content: flex-end;
@@ -961,21 +961,21 @@ export class DashboardPage {
             updateStats();
         }
 
-        function openEditPanel(taskId) {
+        function showEditForm(taskId) {
             // Close any other open edit panels first
-            document.querySelectorAll('.edit-panel.active').forEach(panel => {
+            document.querySelectorAll('.edit-form.active').forEach(panel => {
                 panel.classList.remove('active');
             });
-            const panel = document.getElementById('edit-panel-' + taskId);
+            const panel = document.getElementById('edit-form-' + taskId);
             if (panel) panel.classList.add('active');
         }
 
-        function closeEditPanel(taskId) {
-            const panel = document.getElementById('edit-panel-' + taskId);
+        function hideEditForm(taskId) {
+            const panel = document.getElementById('edit-form-' + taskId);
             if (panel) panel.classList.remove('active');
         }
 
-        function saveEditPanel(taskId) {
+        function saveEditForm(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
             
@@ -990,7 +990,7 @@ export class DashboardPage {
             task.status = document.getElementById('edit-status-' + taskId).value;
             task.updatedAt = new Date();
             
-            closeEditPanel(taskId);
+            hideEditForm(taskId);
             updateStats();
             renderTaskList();
             saveTasks();
@@ -1064,7 +1064,7 @@ export class DashboardPage {
                             onchange="toggleSelection('\${task.id}')">
                         <div class="task-title">\${task.title}</div>
                         <div class="task-actions">
-                            <button class="btn-edit" onclick="openEditPanel('\${task.id}')">Edit</button>
+                            <button class="btn-edit" onclick="showEditForm('\${task.id}')">Edit</button>
                             <button class="btn-delete" onclick="confirmDelete('\${task.id}')">🗑️</button>
                         </div>
                     </div>
@@ -1077,7 +1077,7 @@ export class DashboardPage {
                         \${isOverdue(task) ? '<span class="badge overdue-badge">OVERDUE</span>' : ''}
                     </div>
                     <!-- Inline Edit Panel -->
-                    <div id="edit-panel-\${task.id}" class="edit-panel">
+                    <div id="edit-form-\${task.id}" class="edit-form" style="display: none;">
                         <div class="form-row">
                             <div class="form-group" style="flex: 2;">
                                 <label>Title *</label>
@@ -1117,8 +1117,8 @@ export class DashboardPage {
                             <textarea id="edit-description-\${task.id}" rows="2">\${task.description || ''}</textarea>
                         </div>
                         <div class="panel-actions">
-                            <button type="button" class="btn btn-secondary" onclick="closeEditPanel('\${task.id}')">Cancel</button>
-                            <button type="button" class="btn btn-primary" onclick="saveEditPanel('\${task.id}')">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideEditForm('\${task.id}')">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveEditForm('\${task.id}')">Save Changes</button>
                         </div>
                     </div>
                 </div>
@@ -1184,13 +1184,15 @@ export class DashboardPage {
     
     return `
         <div class="task-card ${isOverdue ? 'overdue' : ''}" data-task-id="${task.id}">
+                    <!-- Card Content View -->
+                    <div id="card-content-${task.id}" class="card-content">
             <div class="task-card-header">
                 <input type="checkbox" class="task-checkbox" 
                     ${this.selectedIds.includes(task.id) ? 'checked' : ''} 
                     onchange="toggleSelection('${task.id}')">
                 <div class="task-title">${task.title}</div>
                 <div class="task-actions">
-                    <button class="btn-edit" onclick="openEditPanel('${task.id}')">Edit</button>
+                    <button class="btn-edit" onclick="showEditForm('${task.id}')">Edit</button>
                     <button class="btn-delete" onclick="confirmDelete('${task.id}')">🗑️</button>
                 </div>
             </div>
@@ -1203,7 +1205,7 @@ export class DashboardPage {
                 ${isOverdue ? '<span class="badge overdue-badge">OVERDUE</span>' : ''}
             </div>
             <!-- Inline Edit Panel -->
-            <div id="edit-panel-${task.id}" class="edit-panel">
+            <div id="edit-form-${task.id}" class="edit-form" style="display: none;">
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
                         <label>Title *</label>
@@ -1243,8 +1245,8 @@ export class DashboardPage {
                     <textarea id="edit-description-${task.id}" rows="2">${task.description || ''}</textarea>
                 </div>
                 <div class="panel-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeEditPanel('${task.id}')">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveEditPanel('${task.id}')">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditForm('${task.id}')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveEditForm('${task.id}')">Save Changes</button>
                 </div>
             </div>
         </div>
