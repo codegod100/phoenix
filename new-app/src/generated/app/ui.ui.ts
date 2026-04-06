@@ -67,12 +67,22 @@ export function renderPage(board: Board): string {
         const siblings = Array.from(column.children);
         const orderIndex = siblings.indexOf(draggedCard);
         
+        // Track source column for count update
+        const sourceColumn = draggedCard.closest('.column');
+        const sourceColumnId = sourceColumn?.dataset.columnId;
+        
         try {
           await fetch('/api/cards/' + cardId + '/move', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ column_id: parseInt(columnId), order_index: orderIndex })
           });
+          
+          // Update column counts
+          updateColumnCount(columnId);
+          if (sourceColumnId && sourceColumnId !== columnId) {
+            updateColumnCount(sourceColumnId);
+          }
         } catch (err) {
           console.error('Failed to move card:', err);
           location.reload();
@@ -93,6 +103,15 @@ export function renderPage(board: Board): string {
           return closest;
         }
       }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    
+    // Update column count badge
+    function updateColumnCount(columnId) {
+      const column = document.querySelector('[data-column-id="' + columnId + '"]');
+      if (!column) return;
+      const count = column.querySelectorAll('.column-card').length;
+      const badge = document.getElementById('count-' + columnId);
+      if (badge) badge.textContent = count;
     }
     
     // Card actions

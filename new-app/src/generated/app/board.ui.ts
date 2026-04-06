@@ -1,6 +1,8 @@
 // CONTRACT: Board IU - Main board display with columns and cards
 // INVARIANT: Display board as horizontal row of columns
 // INVARIANT: Each column shows cards stacked vertically
+// INVARIANT: Each column header displays card count badge
+// INVARIANT: Card count badge updates when cards are added/moved/deleted
 // INVARIANT: Board fills viewport width, columns scroll horizontally if needed
 // INVARIANT: Column height fixed with internal scroll for many cards
 
@@ -32,6 +34,7 @@ function renderColumn(column: Column): string {
     <div class="column" data-column-id="${column.id}">
       <div class="column-header">
         <span class="column-name" onclick="editColumnName(${column.id})">${escapeHtml(column.name)}</span>
+        <span class="column-count" id="count-${column.id}">${column.cards.length}</span>
       </div>
       <div class="column-cards" data-column-id="${column.id}">
         ${cards}
@@ -91,6 +94,15 @@ export const boardStyles = `
 .column-name:hover {
   background: rgba(137, 180, 250, 0.1);
   border-radius: 3px;
+}
+
+.column-count {
+  background: #313244;
+  color: #a6adc8;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  margin-left: 8px;
 }
 
 .column-cards {

@@ -22,13 +22,20 @@ just prep  # Creates .phoenix/graphs/ius.json
 
 **DO NOT use `pi` command from inside the PI TUI.**
 
-When inside PI TUI, execute the regeneration steps directly:
-1. Read `.phoenix/graphs/ius.json` to get IU definitions
-2. Generate code for each IU following the steps below
-3. Validate and test
+**DO NOT run `just prep` when this skill is invoked** - the IU graph should already exist.
+
+When this skill is invoked (e.g., `/skill:phoenix regen IUs`):
+1. **Check** `.phoenix/graphs/ius.json` exists (fail if not)
+2. **Read** each IU and its contract from the existing graph
+3. **Generate** code for each IU following the steps below
+4. **Validate** and test
+
+**Prerequisites check:**
+- If `ius.json` doesn't exist → tell user to run `just prep` first, then exit
+- If `ius.json` exists but is stale → warn user, but still proceed with regen
 
 The skill will:
-1. Check `.phoenix/graphs/ius.json` exists
+1. Read `.phoenix/graphs/ius.json`
 2. Read each IU and its contract
 3. Generate full implementations (not stubs)
 4. Run tests
