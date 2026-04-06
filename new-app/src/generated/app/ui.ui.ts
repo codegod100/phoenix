@@ -158,26 +158,9 @@ export function renderPage(board: Board): string {
             body: JSON.stringify({ column_id: parseInt(destColumnId), order_index: orderIndex })
           });
           
-          // Update column counts - source loses one, destination gains one
-          if (sourceColumnId && sourceColumnId !== destColumnId) {
-            console.log('Moving between columns, updating counts');
-            // Moving between columns: decrement source, increment destination
-            const sourceBadge = document.getElementById('count-' + sourceColumnId);
-            const destBadge = document.getElementById('count-' + destColumnId);
-            console.log('Source badge:', sourceBadge, 'Dest badge:', destBadge);
-            if (sourceBadge) {
-              const currentSource = parseInt(sourceBadge.textContent || '0');
-              sourceBadge.textContent = Math.max(0, currentSource - 1);
-              console.log('Updated source count to:', Math.max(0, currentSource - 1));
-            }
-            if (destBadge) {
-              const currentDest = parseInt(destBadge.textContent || '0');
-              destBadge.textContent = currentDest + 1;
-              console.log('Updated dest count to:', currentDest + 1);
-            }
-          } else {
-            console.log('Same column or no source, skipping count update');
-          }
+          // Recount ALL column badges from actual DOM state (most reliable)
+          recountAllColumnCounts();
+          console.log('Recounted all columns after move');
           // If same column, counts don't change (just reordering)
         } catch (err) {
           console.error('Failed to move card:', err);
@@ -186,6 +169,20 @@ export function renderPage(board: Board): string {
           location.reload();
         }
       });
+    });
+    
+    // Recount all column badges from actual DOM card counts
+    function recountAllColumnCounts() {
+      document.querySelectorAll('.column').forEach(col => {
+        const colId = col.dataset.columnId;
+        const count = col.querySelectorAll('.column-card').length;
+        const badge = document.getElementById('count-' + colId);
+        if (badge) {
+          badge.textContent = count;
+          console.log('Column', colId, 'count updated to:', count);
+        }
+      });
+    }
     });
     
     function getDragAfterElement(container, y) {
