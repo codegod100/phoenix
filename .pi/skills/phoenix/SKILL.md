@@ -46,6 +46,7 @@ await executeSkill('phoenix', ['regen', '--force']);
 /skill:phoenix audit              # Audit IUs for quality
 /skill:phoenix drift              # Check spec/code sync
 /skill:phoenix inspect            # Visualize project
+/skill:phoenix constraint-review  # Review spec for missing constraints
 /skill:phoenix --help             # Show this help
 ```
 
@@ -70,6 +71,8 @@ const commands: Record<string, string> = {
   'drift': 'phoenix-drift',
   'inspect': 'phoenix-inspect',
   'status': 'phoenix-status',
+  'constraint-review': 'phoenix-constraint-review',
+  'constraints': 'phoenix-constraint-review',
   '--help': 'help',
   '-h': 'help'
 };
