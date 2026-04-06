@@ -13,7 +13,7 @@
     {
       "id": "b4e8d9f0a2c3",
       "type": "REQUIREMENT",
-      "text": "The page must display a header with the title 'TaskFlow' and a task count summary",
+      "text": "The page must display a compact header with the title 'TaskFlow' (minimal vertical padding ~32px height, larger text)",
       "source_file": "spec/web-dashboard.md",
       "section": "Dashboard Page",
       "confidence": 0.95
@@ -30,6 +30,22 @@
       "id": "d60af1b2c4e5",
       "type": "CONSTRAINT",
       "text": "The create form must validate that title is non-empty before submission",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Dashboard Page",
+      "confidence": 0.95
+    },
+    {
+      "id": "e71b02c3d5f7",
+      "type": "REQUIREMENT",
+      "text": "Tasks must persist in browser localStorage and survive page refreshes",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Dashboard Page",
+      "confidence": 0.95
+    },
+    {
+      "id": "f82c13d4d6f8",
+      "type": "REQUIREMENT",
+      "text": "The dashboard must immediately display all tasks from localStorage on page load (no manual refresh needed)",
       "source_file": "spec/web-dashboard.md",
       "section": "Dashboard Page",
       "confidence": 0.95
@@ -77,7 +93,7 @@
     {
       "id": "3c6057b8c0e1",
       "type": "REQUIREMENT",
-      "text": "Each task card must have an edit button that opens a modal to modify task properties",
+      "text": "Each task card must have an edit button that shows an inline edit panel below the task card (not a modal dialog)",
       "source_file": "spec/web-dashboard.md",
       "section": "Task List Display",
       "confidence": 0.95
@@ -85,7 +101,7 @@
     {
       "id": "4d7168c9d1f2",
       "type": "REQUIREMENT",
-      "text": "Each task card must have a delete button with a confirmation dialog before permanent removal",
+      "text": "Each task card must have a delete button that opens a confirmation modal (not browser alert) before permanent removal",
       "source_file": "spec/web-dashboard.md",
       "section": "Task List Display",
       "confidence": 0.95
@@ -94,6 +110,22 @@
       "id": "5e8279d0e2a3",
       "type": "CONSTRAINT",
       "text": "The delete button must use the danger color (red) and include a trash icon",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Task List Display",
+      "confidence": 0.95
+    },
+    {
+      "id": "5f938ae1f4b5",
+      "type": "CONSTRAINT",
+      "text": "All confirmation dialogs must be custom modal overlays (not browser confirm()/alert() popups)",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Task List Display",
+      "confidence": 0.95
+    },
+    {
+      "id": "6a049bf3a4c6",
+      "type": "REQUIREMENT",
+      "text": "Switching between Active and Archived views must update the task list without a full page reload",
       "source_file": "spec/web-dashboard.md",
       "section": "Task List Display",
       "confidence": 0.95
@@ -125,7 +157,7 @@
     {
       "id": "92c6b1d4c6e7",
       "type": "REQUIREMENT",
-      "text": "The edit modal must contain pre-populated form fields for all editable properties",
+      "text": "The edit panel must appear inline below the task card and contain pre-populated form fields for all editable properties",
       "source_file": "spec/web-dashboard.md",
       "section": "Task List Display",
       "confidence": 0.95
@@ -133,7 +165,15 @@
     {
       "id": "a3d7c2e5d7f8",
       "type": "REQUIREMENT",
-      "text": "The edit modal must have save and cancel buttons with clear visual distinction",
+      "text": "The edit panel must have save and cancel buttons with clear visual distinction",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Task List Display",
+      "confidence": 0.95
+    },
+    {
+      "id": "b4e8d4f7e9b0",
+      "type": "CONSTRAINT",
+      "text": "Clicking cancel or saving must collapse the edit panel back to the task card view",
       "source_file": "spec/web-dashboard.md",
       "section": "Task List Display",
       "confidence": 0.95
@@ -149,7 +189,7 @@
     {
       "id": "c5f9e4a7f9b0",
       "type": "CONSTRAINT",
-      "text": "Deleting a task must require confirmation before permanent removal",
+      "text": "Deleting a task must require confirmation via a custom modal dialog (not browser confirm/alert)",
       "source_file": "spec/web-dashboard.md",
       "section": "Task Management",
       "confidence": 0.95
@@ -157,7 +197,7 @@
     {
       "id": "d60af5b8a0c1",
       "type": "REQUIREMENT",
-      "text": "The system must provide a function to bulk delete multiple tasks by ID list",
+      "text": "The system must provide a function to bulk delete multiple tasks by ID list with confirmation modal",
       "source_file": "spec/web-dashboard.md",
       "section": "Task Management",
       "confidence": 0.95
@@ -197,7 +237,7 @@
     {
       "id": "2b5f4aa3f5b6",
       "type": "REQUIREMENT",
-      "text": "The dashboard must include a stats panel showing: total tasks, completed count, overdue count, and completion rate percentage",
+      "text": "The dashboard must include a compact status bar showing key metrics inline",
       "source_file": "spec/web-dashboard.md",
       "section": "Analytics Panel",
       "confidence": 0.95
@@ -205,15 +245,31 @@
     {
       "id": "3c605bb4a6c7",
       "type": "REQUIREMENT",
-      "text": "The stats panel must render as a row of metric cards at the top of the page",
+      "text": "The status bar must display: total tasks count, completed count, overdue count, and completion rate percentage",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Analytics Panel",
+      "confidence": 0.95
+    },
+    {
+      "id": "3d615cb5b7d9",
+      "type": "CONSTRAINT",
+      "text": "The status bar must render as a single horizontal bar below the header, max 48px height",
       "source_file": "spec/web-dashboard.md",
       "section": "Analytics Panel",
       "confidence": 0.95
     },
     {
       "id": "4d716cc5b7d8",
-      "type": "REQUIREMENT",
-      "text": "Each metric card must show the metric name, value, and an appropriate emoji icon",
+      "type": "CONSTRAINT",
+      "text": "The status bar must be centered horizontally and only as wide as its content (not full-width)",
+      "source_file": "spec/web-dashboard.md",
+      "section": "Analytics Panel",
+      "confidence": 0.95
+    },
+    {
+      "id": "4e817dd6c8e1",
+      "type": "CONSTRAINT",
+      "text": "Metrics must be displayed inline with simple separators, format: '12 tasks • 8 done • 2 overdue • 67%'",
       "source_file": "spec/web-dashboard.md",
       "section": "Analytics Panel",
       "confidence": 0.95

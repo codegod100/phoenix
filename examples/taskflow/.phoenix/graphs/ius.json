@@ -5,13 +5,15 @@
     {
       "id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
       "name": "Dashboard Page",
-      "description": "A single-page web dashboard for managing tasks with Catppuccin Mocha styling. Includes task creation, editing, deletion, bulk operations, and statistics display.",
+      "description": "A single-page web dashboard for managing tasks with Catppuccin Mocha styling. Includes localStorage persistence, inline edit panels, task creation, deletion, bulk operations, and compact status bar.",
       "risk_tier": "high",
       "source_canon_ids": [
         "a3f7c8d9e1b2",
         "b4e8d9f0a2c3",
         "c5f9e0a1b3d4",
         "d60af1b2c4e5",
+        "e71b02c3d5f7",
+        "f82c13d4d6f8",
         "e71b02c3d5f6",
         "f82c13d4e6a7",
         "093d24e5f7b8",
@@ -20,11 +22,14 @@
         "3c6057b8c0e1",
         "4d7168c9d1f2",
         "5e8279d0e2a3",
+        "5f938ae1f4b5",
+        "6a049bf3a4c6",
         "6f938ae1f3b4",
         "70a49bf2a4c5",
         "81b5a0c3b5d6",
         "92c6b1d4c6e7",
         "a3d7c2e5d7f8",
+        "b4e8d4f7e9b0",
         "b4e8d3f6e8a9",
         "c5f9e4a7f9b0",
         "d60af5b8a0c1",
@@ -34,7 +39,9 @@
         "1a4e39f2e4a5",
         "2b5f4aa3f5b6",
         "3c605bb4a6c7",
-        "4d716cc5b7d8"
+        "3d615cb5b7d9",
+        "4d716cc5b7d8",
+        "4e817dd6c8e1"
       ],
       "contract": {
         "description": "Complete HTML dashboard with inline CSS and JavaScript for task management",
@@ -61,7 +68,10 @@
           "Title validation: form rejects empty titles before submission",
           "Catppuccin Mocha only: no theme toggle or light mode",
           "Responsive layout: single column mobile, multi-column desktop",
-          "Overdue tasks show red border and OVERDUE indicator"
+          "Overdue tasks show red border and OVERDUE indicator",
+          "localStorage persistence: tasks survive page refreshes",
+          "Inline edit panels: no modal dialogs for editing",
+          "Client-side view switching: no page reload between active/archived"
         ]
       },
       "output_path": "src/generated/web-dashboard/dashboard-page.ts",
@@ -72,15 +82,17 @@
     {
       "id": "59d32939d50083b6ecf70e500f215a179f42a5ea99a186cb8af2720e3aaa1d74",
       "name": "Analytics Panel",
-      "description": "Statistics calculation and metric display for task dashboard. Computes completion rates, overdue counts, and renders metric cards with emoji icons.",
+      "description": "Statistics calculation and compact status bar display for task dashboard. Computes completion rates, overdue counts, and renders inline status bar with metrics.",
       "risk_tier": "low",
       "source_canon_ids": [
         "2b5f4aa3f5b6",
         "3c605bb4a6c7",
-        "4d716cc5b7d8"
+        "3d615cb5b7d9",
+        "4d716cc5b7d8",
+        "4e817dd6c8e1"
       ],
       "contract": {
-        "description": "Analytics calculation and metric card generation",
+        "description": "Analytics calculation and compact status bar generation",
         "inputs": [
           {
             "name": "tasks",
@@ -95,15 +107,15 @@
             "description": "Calculated statistics including completion rate"
           },
           {
-            "name": "renderMetricCards",
+            "name": "renderStatusBar",
             "type": "string",
-            "description": "HTML for metric cards with emojis"
+            "description": "HTML for compact inline status bar with metrics"
           }
         ],
         "invariants": [
           "Completion rate is calculated as (completed / total) * 100",
           "Overdue tasks exclude completed and archived tasks",
-          "Metric cards always show emoji, value, and label"
+          "Status bar is compact, centered, and fit-content width"
         ]
       },
       "output_path": "src/generated/web-dashboard/analytics-panel.ts",

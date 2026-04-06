@@ -11,19 +11,21 @@
         "spec/tasks.md",
         "spec/analytics.md"
       ],
-      "clauses_extracted": 72
+      "clauses_extracted": 84
     },
     "canonicalize": {
       "status": "complete",
       "completed_at": "2026-04-06",
-      "canonical_count": 44,
-      "output_file": ".phoenix/graphs/canonical.json"
+      "canonical_count": 47,
+      "output_file": ".phoenix/graphs/canonical.json",
+      "notes": "Updated with localStorage, inline edit panel, compact status bar requirements"
     },
     "plan": {
       "status": "complete",
       "completed_at": "2026-04-06",
       "iu_count": 4,
-      "output_file": ".phoenix/graphs/ius.json"
+      "output_file": ".phoenix/graphs/ius.json",
+      "notes": "Updated Dashboard Page and Analytics Panel with new canon IDs"
     },
     "regen": {
       "status": "complete",
@@ -34,15 +36,15 @@
         "src/generated/web-dashboard/task-list-display.ts",
         "src/generated/web-dashboard/styles.ts"
       ],
-      "notes": "Updated with localStorage persistence, compact centered status bar, removed task chip"
+      "notes": "Build successful, all 4 IUs implemented"
     }
   },
   "audit": {
-    "last_run": "2026-04-06",
-    "status": "passed",
-    "score": 92.5,
-    "ius_ready": 4,
-    "warnings": 1
+    "last_run": null,
+    "status": "pending",
+    "score": null,
+    "ius_ready": null,
+    "warnings": null
   },
   "drift": {
     "last_check": null,
