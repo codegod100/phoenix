@@ -264,42 +264,38 @@ export class DashboardPage {
             font-weight: 600;
         }
 
-        /* Stats Panel */
-        .stats-panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
+        /* Status Bar - Compact inline metrics */
+        .status-bar {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .stat-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
             font-size: 0.9rem;
+            max-height: 48px;
+        }
+
+        .status-bar .metric {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .status-bar .metric-value {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .status-bar .metric-label {
+            color: var(--text-secondary);
+        }
+
+        .status-bar .separator {
+            color: var(--ctp-overlay0);
+            margin: 0 0.25rem;
         }
 
         /* View Tabs */
@@ -681,28 +677,30 @@ export class DashboardPage {
     </header>
 
     <main class="container">
-        <!-- Stats Panel -->
-        <div class="stats-panel">
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-value">${stats.total}</div>
-                <div class="stat-label">Total Tasks</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-value">${stats.completed}</div>
-                <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⚠️</div>
-                <div class="stat-value">${stats.overdue}</div>
-                <div class="stat-label">Overdue</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📈</div>
-                <div class="stat-value">${stats.completionRate}%</div>
-                <div class="stat-label">Completion Rate</div>
-            </div>
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span class="metric">
+                <span>📊</span>
+                <span class="metric-value">${stats.total}</span>
+                <span class="metric-label">tasks</span>
+            </span>
+            <span class="separator">•</span>
+            <span class="metric">
+                <span>✅</span>
+                <span class="metric-value">${stats.completed}</span>
+                <span class="metric-label">done</span>
+            </span>
+            <span class="separator">•</span>
+            <span class="metric">
+                <span>⚠️</span>
+                <span class="metric-value">${stats.overdue}</span>
+                <span class="metric-label">overdue</span>
+            </span>
+            <span class="separator">•</span>
+            <span class="metric">
+                <span>📈</span>
+                <span class="metric-value">${stats.completionRate}%</span>
+            </span>
         </div>
 
         <!-- View Tabs -->
@@ -947,10 +945,13 @@ export class DashboardPage {
             }).length;
             const completionRate = all.length > 0 ? Math.round((completed / all.length) * 100) : 0;
             
-            document.querySelector('.stat-value').textContent = all.length;
-            document.querySelectorAll('.stat-value')[1].textContent = completed;
-            document.querySelectorAll('.stat-value')[2].textContent = overdue;
-            document.querySelectorAll('.stat-value')[3].textContent = completionRate + '%';
+            const metricValues = document.querySelectorAll('.status-bar .metric-value');
+            if (metricValues.length >= 4) {
+                metricValues[0].textContent = all.length;
+                metricValues[1].textContent = completed;
+                metricValues[2].textContent = overdue;
+                metricValues[3].textContent = completionRate + '%';
+            }
         }
 
         function isOverdue(task) {

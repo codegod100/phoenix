@@ -41,9 +41,15 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 
 ## Analytics Panel
 
-- The dashboard must include a stats panel showing: total tasks, completed count, overdue count, and completion rate percentage
-- The stats panel must render as a row of metric cards at the top of the page
-- Each metric card must show the metric name, value, and an appropriate emoji icon
+- The dashboard must include a compact status bar showing key metrics inline
+- The status bar must display: total tasks count, completed count, overdue count, and completion rate percentage
+- The status bar must render as a single horizontal bar below the header
+- The status bar must be visually compact (max 48px height) with minimal padding
+- Metrics must be displayed inline with simple separators (e.g., "•" or "|")
+- Format example: "📊 12 tasks • ✅ 8 done • ⚠️ 2 overdue • 📈 67%"
+- Use subtle text colors: primary metric values in --ctp-text, labels/separators in --ctp-subtext0
+- No emoji icons larger than the text itself, no card backgrounds, no hover effects
+- The status bar must not consume vertical space like the previous metric cards design
 
 ## Catppuccin Theme
 
