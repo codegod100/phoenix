@@ -1,107 +1,137 @@
-// CONTRACT: Database IU - Store columns and cards with proper schema and relations
-// INVARIANT: Foreign key: cards.column_id → columns.id (ON DELETE CASCADE)
-// INVARIANT: Unique constraint: (column_id, order_index) for card ordering
+// Generated from IU: Database (3a7c98df84dab8dcc333d70c9d351e2aaa2cbda2093f4571f871179d1dfa7ed5)
+// Source: spec/app.md - Database section
 
-import { Database } from 'bun:sqlite';
-
-// Database initialization with schema
-export function initDatabase(db: Database) {
-  // Enable foreign key constraints
-  db.run('PRAGMA foreign_keys = ON');
-  
-  // Columns table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS columns (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      order_index INTEGER NOT NULL DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Cards table with foreign key to columns
-  db.run(`
-    CREATE TABLE IF NOT EXISTS cards (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      description TEXT,
-      column_id INTEGER NOT NULL,
-      order_index INTEGER NOT NULL DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (column_id) REFERENCES columns(id) ON DELETE CASCADE
-    )
-  `);
-
-  // Unique constraint for card ordering within column
-  db.run(`
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_cards_column_order 
-    ON cards(column_id, order_index)
-  `);
+export interface Column {
+  id: string;
+  name: string;
+  order_index: number;
+  created_at: Date;
 }
 
-// Register migration for Phoenix tracking
-export function registerMigrations(db: Database) {
-  const migrations = [
-    {
-      id: '001_init_columns',
-      sql: `
-        CREATE TABLE IF NOT EXISTS columns (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `
-    },
-    {
-      id: '002_init_cards',
-      sql: `
-        CREATE TABLE IF NOT EXISTS cards (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL,
-          description TEXT,
-          column_id INTEGER NOT NULL,
-          order_index INTEGER NOT NULL DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (column_id) REFERENCES columns(id) ON DELETE CASCADE
-        )
-      `
-    },
-    {
-      id: '003_card_ordering_index',
-      sql: `
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_cards_column_order 
-        ON cards(column_id, order_index)
-      `
+export interface Card {
+  id: string;
+  title: string;
+  description: string | null;
+  column_id: string;
+  order_index: number;
+  created_at: Date;
+}
+
+// In-memory store (can be replaced with SQLite/PostgreSQL)
+const columns = new Map<string, Column>();
+const cards = new Map<string, Card>();
+
+export const Database = {
+  // Columns
+  createColumn(name: string, order_index: number): Column {
+    const id = crypto.randomUUID();
+    const column: Column = {
+      id,
+      name,
+      order_index,
+      created_at: new Date()
+    };
+    columns.set(id, column);
+    return column;
+  },
+
+  getColumn(id: string): Column | undefined {
+    return columns.get(id);
+  },
+
+  getAllColumns(): Column[] {
+    return Array.from(columns.values()).sort((a, b) => a.order_index - b.order_index);
+  },
+
+  updateColumn(id: string, updates: Partial<Pick<Column, 'name'>>): Column | undefined {
+    const column = columns.get(id);
+    if (!column) return undefined;
+    
+    if (updates.name !== undefined) {
+      column.name = updates.name;
     }
-  ];
+    return column;
+  },
 
-  for (const m of migrations) {
-    db.prepare('INSERT OR IGNORE INTO _migrations (id, applied_at, sql) VALUES (?, datetime("now"), ?)')
-      .run(m.id, m.sql);
+  // Cards
+  createCard(title: string, description: string | null, column_id: string, order_index: number): Card {
+    const id = crypto.randomUUID();
+    const card: Card = {
+      id,
+      title,
+      description,
+      column_id,
+      order_index,
+      created_at: new Date()
+    };
+    cards.set(id, card);
+    return card;
+  },
+
+  getCard(id: string): Card | undefined {
+    return cards.get(id);
+  },
+
+  getCardsByColumn(column_id: string): Card[] {
+    return Array.from(cards.values())
+      .filter(c => c.column_id === column_id)
+      .sort((a, b) => a.order_index - b.order_index);
+  },
+
+  updateCard(id: string, updates: Partial<Pick<Card, 'title' | 'description'>>): Card | undefined {
+    const card = cards.get(id);
+    if (!card) return undefined;
+    
+    if (updates.title !== undefined) card.title = updates.title;
+    if (updates.description !== undefined) card.description = updates.description;
+    return card;
+  },
+
+  moveCard(id: string, new_column_id: string, new_order_index: number): Card | undefined {
+    // Validate column exists
+    if (!columns.has(new_column_id)) {
+      throw new Error(`Column ${new_column_id} does not exist`);
+    }
+    
+    const card = cards.get(id);
+    if (!card) return undefined;
+    
+    card.column_id = new_column_id;
+    card.order_index = new_order_index;
+    
+    // Rebalance order indices on conflict
+    const columnCards = this.getCardsByColumn(new_column_id);
+    for (let i = 0; i < columnCards.length; i++) {
+      columnCards[i].order_index = i;
+    }
+    
+    return card;
+  },
+
+  deleteCard(id: string): boolean {
+    return cards.delete(id);
+  },
+
+  // Board state
+  getBoardState(): { columns: Column[]; cards: Card[] } {
+    return {
+      columns: this.getAllColumns(),
+      cards: Array.from(cards.values())
+    };
+  },
+
+  // Initialize with default columns
+  initDefaults(): void {
+    if (columns.size === 0) {
+      this.createColumn('Todo', 0);
+      this.createColumn('In Progress', 1);
+      this.createColumn('Done', 2);
+    }
+  },
+
+  // Clear all data (for testing)
+  clear(): void {
+    columns.clear();
+    cards.clear();
   }
-}
-
-// Seed default columns: Todo, In Progress, Done
-export function seedDefaultColumns(db: Database) {
-  const defaultColumns = ['Todo', 'In Progress', 'Done'];
-  const stmt = db.prepare('INSERT OR IGNORE INTO columns (id, name, order_index) VALUES (?, ?, ?)');
-  
-  for (let i = 0; i < defaultColumns.length; i++) {
-    stmt.run(i + 1, defaultColumns[i], i);
-  }
-}
-
-export const _phoenix = {
-  iu_id: '7755b823586edf2b4eb27f4e28cbacc704809df8821f3f9950ba00536baf3702',
-  name: 'Database',
-  risk_tier: 'medium',
-  canon_ids: [
-    '2bc80b42956d76df8cd3010236a272501316a874225a89df3e9df30bb681e225',
-    '5a398662b56d7e1d33a32297a11da8595051a36f3e834bcb3a7deca5c4fb380c',
-    '774c9c614c4509db05064898929bebff56a92ee9882c111392bb6c9500e1904b',
-    'a0d5d632dba5bdf516af26691ccb019a6f5d439d1c91694c075053cf5017227c',
-    'f0abeb96cfce90f28ac1cc85d55fb6e3ea64aa031f99d3f03d3cc44fd198c5db',
-    'f1938740d570b6b328ad641e41e5e301bd7e845f3f82949d67bd1b6ab32f2119'
-  ]
-} as const;
+};

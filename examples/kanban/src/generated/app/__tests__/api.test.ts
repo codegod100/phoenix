@@ -1,93 +1,166 @@
-// Test for API IU
-import { expect, test, beforeAll } from 'bun:test';
-import { Database } from 'bun:sqlite';
-import { initDatabase, seedDefaultColumns } from '../database.js';
-import { getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn } from '../api.js';
+// Generated tests for API IU
 
-let db: Database;
+import { describe, it, expect, beforeEach } from 'bun:test';
+import { API } from '../api';
+import { Database } from '../database';
 
-beforeAll(() => {
-  db = new Database(':memory:');
-  initDatabase(db);
-  seedDefaultColumns(db);
+describe('API', () => {
+  beforeEach(() => {
+    Database.clear();
+    Database.initDefaults();
+  });
+
+  describe('GET /board', () => {
+    it('should return board state with columns and cards', () => {
+      const state = API.getBoard();
+      expect(state.columns.length).toBe(3);
+      expect(state.columns[0].cards).toBeDefined();
+    });
+  });
+
+  describe('POST /cards', () => {
+    it('should create a new card', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'New Card' }, col.id);
+      expect(card.title).toBe('New Card');
+      expect(card.column_id).toBe(col.id);
+    });
+
+    it('should create card with description', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'Card', description: 'Desc' }, col.id);
+      expect(card.description).toBe('Desc');
+    });
+
+    it('should validate title length (1-200 chars)', () => {
+      const col = Database.getAllColumns()[0];
+      expect(() => API.createCard({ title: '' }, col.id)).toThrow();
+      expect(() => API.createCard({ title: 'a'.repeat(201) }, col.id)).toThrow();
+    });
+
+    it('should validate column exists (400 if not)', () => {
+      let error: any;
+      try {
+        API.createCard({ title: 'Test' }, 'non-existent');
+      } catch (e) {
+        error = e;
+      }
+      expect(error?.statusCode).toBe(400);
+    });
+
+    it('should enforce max 100 cards per board', () => {
+      const col = Database.getAllColumns()[0];
+      for (let i = 0; i < 100; i++) {
+        API.createCard({ title: `Card ${i}` }, col.id);
+      }
+      expect(() => API.createCard({ title: 'One too many' }, col.id)).toThrow('Maximum 100 cards');
+    });
+  });
+
+  describe('PATCH /cards/:id', () => {
+    it('should update card title', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'Original' }, col.id);
+      const updated = API.updateCard(card.id, { title: 'Updated' });
+      expect(updated?.title).toBe('Updated');
+    });
+
+    it('should update card description', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'Card', description: 'Old' }, col.id);
+      const updated = API.updateCard(card.id, { description: 'New' });
+      expect(updated?.description).toBe('New');
+    });
+
+    it('should validate title length on update', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'Card' }, col.id);
+      expect(() => API.updateCard(card.id, { title: '' })).toThrow();
+      expect(() => API.updateCard(card.id, { title: 'a'.repeat(201) })).toThrow();
+    });
+
+    it('should return undefined for non-existent card', () => {
+      const updated = API.updateCard('non-existent', { title: 'Test' });
+      expect(updated).toBeUndefined();
+    });
+  });
+
+  describe('PATCH /cards/:id/move', () => {
+    it('should move card to different column', () => {
+      const cols = Database.getAllColumns();
+      const card = API.createCard({ title: 'Move me' }, cols[0].id);
+      const moved = API.moveCard(card.id, { column_id: cols[1].id, order_index: 0 });
+      expect(moved?.column_id).toBe(cols[1].id);
+    });
+
+    it('should validate column exists on move (400 if not)', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'Test' }, col.id);
+      
+      let error: any;
+      try {
+        API.moveCard(card.id, { column_id: 'non-existent', order_index: 0 });
+      } catch (e) {
+        error = e;
+      }
+      expect(error?.statusCode).toBe(400);
+    });
+
+    it('should auto-rebalance order on conflicts', () => {
+      const cols = Database.getAllColumns();
+      API.createCard({ title: 'A' }, cols[1].id);
+      API.createCard({ title: 'B' }, cols[1].id);
+      
+      const card = API.createCard({ title: 'Move me' }, cols[0].id);
+      API.moveCard(card.id, { column_id: cols[1].id, order_index: 0 });
+      
+      const cards = Database.getCardsByColumn(cols[1].id);
+      expect(cards[0].order_index).toBe(0);
+      expect(cards[1].order_index).toBe(1);
+      expect(cards[2].order_index).toBe(2);
+    });
+  });
+
+  describe('DELETE /cards/:id', () => {
+    it('should remove a card', () => {
+      const col = Database.getAllColumns()[0];
+      const card = API.createCard({ title: 'Delete me' }, col.id);
+      const deleted = API.deleteCard(card.id);
+      expect(deleted).toBe(true);
+    });
+
+    it('should return false for non-existent card', () => {
+      const deleted = API.deleteCard('non-existent');
+      expect(deleted).toBe(false);
+    });
+  });
+
+  describe('POST /columns', () => {
+    it('should create a new column', () => {
+      const col = API.createColumn({ name: 'New Column' });
+      expect(col.name).toBe('New Column');
+    });
+
+    it('should validate column name is required', () => {
+      expect(() => API.createColumn({ name: '' })).toThrow('Column name is required');
+    });
+  });
+
+  describe('PATCH /columns/:id', () => {
+    it('should rename a column', () => {
+      const col = Database.getAllColumns()[0];
+      const renamed = API.renameColumn(col.id, 'Renamed');
+      expect(renamed?.name).toBe('Renamed');
+    });
+
+    it('should validate name is required', () => {
+      const col = Database.getAllColumns()[0];
+      expect(() => API.renameColumn(col.id, '')).toThrow('Column name is required');
+    });
+
+    it('should return undefined for non-existent column', () => {
+      const renamed = API.renameColumn('non-existent', 'Name');
+      expect(renamed).toBeUndefined();
+    });
+  });
 });
-
-test('getBoard returns full board state', () => {
-  const board = getBoard(db);
-  expect(board.columns).toHaveLength(3);
-  expect(board.columns[0].name).toBe('Todo');
-});
-
-test('createCard creates card with valid data', () => {
-  const card = createCard(db, 'Test Card', 'Description', 1);
-  expect(card.title).toBe('Test Card');
-  expect(card.column_id).toBe(1);
-  expect(card.description).toBe('Description');
-});
-
-test('createCard validates title length', () => {
-  expect(() => createCard(db, '', null, 1)).toThrow();
-  expect(() => createCard(db, 'a'.repeat(201), null, 1)).toThrow();
-});
-
-test('createCard validates column exists', () => {
-  expect(() => createCard(db, 'Test', null, 999)).toThrow('Column not found');
-});
-
-test('updateCard updates title and description', () => {
-  const card = createCard(db, 'Old Title', 'Old Desc', 1);
-  const updated = updateCard(db, card.id, 'New Title', 'New Desc');
-  expect(updated.title).toBe('New Title');
-  expect(updated.description).toBe('New Desc');
-});
-
-test('moveCard changes column and order', () => {
-  const card = createCard(db, 'Move Me', null, 1);
-  const moved = moveCard(db, card.id, 2, 0);
-  expect(moved.column_id).toBe(2);
-  expect(moved.order_index).toBe(0);
-});
-
-test('moveCard validates column exists', () => {
-  const card = createCard(db, 'Test', null, 1);
-  expect(() => moveCard(db, card.id, 999, 0)).toThrow('Column not found');
-});
-
-test('deleteCard removes card and reorders', () => {
-  const card = createCard(db, 'Delete Me', null, 1);
-  deleteCard(db, card.id);
-  const board = getBoard(db);
-  expect(board.columns[0].cards.find(c => c.id === card.id)).toBeUndefined();
-});
-
-test('createColumn creates new column', () => {
-  const col = createColumn(db, 'New Column');
-  expect(col.name).toBe('New Column');
-  expect(col.order_index).toBe(3);
-});
-
-test('renameColumn updates column name', () => {
-  const col = createColumn(db, 'Rename Me');
-  const renamed = renameColumn(db, col.id, 'Renamed');
-  expect(renamed.name).toBe('Renamed');
-});
-
-// Phoenix metadata
-export const _phoenix = {
-  iu_id: '1ff7069a9997147047673e3ad462c57cb31c5374c07c35244cce3a81d877e98e',
-  name: 'API',
-  risk_tier: 'medium',
-  canon_ids: [
-    '0b188f3a1146b9012c5b8f828bb1dae040dd9f636d4cf81293ba75504badaa70',
-    '0b78412542ffc126a61c447152bedb798842219ac5a316713296c7d7b1fa553c',
-    '3a13a7707f9aedd05a520c8b42ea75794278d7845cc8bbbfa5070f621d4ee2fe',
-    '53acc6fc41a2fb54673f5635883f196596f4fa71e54eae60c893cd48641234fa',
-    '792f5cf84c5c3e4db22a4342ccac3cab6b9b71a2f3a51aa63273d0cca3acf638',
-    '8911cbfd7f5c767f586693a42c804b0fda5e8034b1756d9ac48934dc80d0aaca',
-    '908aea6ec388c55cf183cb681e971ecc3ea69292670fe85c2638123818a5c186',
-    'a7f1870c79de6724ab9390937490e9290ee7862a9d2a7a5e03e7d90337dd8eb0',
-    'df146a7e13a736d80e55e5998f40074e054440e94eb0fc2e54ca391d4efab812',
-    'e60fb850ae066007763db0eefe69826859f441ca6c6df26bed4ae862e56e19c8',
-    'faab3a53e9c29c822049b62c9981cb646cedc766318146380e88b61dc20feeed'
-  ]
-} as const;

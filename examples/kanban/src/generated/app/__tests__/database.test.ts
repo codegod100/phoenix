@@ -1,64 +1,126 @@
-// Test for Database IU
-import { expect, test, beforeAll } from 'bun:test';
-import { Database } from 'bun:sqlite';
-import { initDatabase, seedDefaultColumns } from '../database.js';
+// Generated tests for Database IU
 
-let db: Database;
+import { describe, it, expect, beforeEach } from 'bun:test';
+import { Database, Column, Card } from '../database';
 
-beforeAll(() => {
-  db = new Database(':memory:');
-  db.run('PRAGMA foreign_keys = ON');
-  initDatabase(db);
-  seedDefaultColumns(db);
+describe('Database', () => {
+  beforeEach(() => {
+    Database.clear();
+  });
+
+  describe('Columns', () => {
+    it('should create a column with id, name, order_index, and created_at', () => {
+      const col = Database.createColumn('Test', 0);
+      expect(col.id).toBeDefined();
+      expect(col.name).toBe('Test');
+      expect(col.order_index).toBe(0);
+      expect(col.created_at).toBeInstanceOf(Date);
+    });
+
+    it('should get all columns sorted by order_index', () => {
+      Database.createColumn('C', 2);
+      Database.createColumn('A', 0);
+      Database.createColumn('B', 1);
+      
+      const cols = Database.getAllColumns();
+      expect(cols.length).toBe(3);
+      expect(cols[0].name).toBe('A');
+      expect(cols[1].name).toBe('B');
+      expect(cols[2].name).toBe('C');
+    });
+
+    it('should update column name', () => {
+      const col = Database.createColumn('Original', 0);
+      const updated = Database.updateColumn(col.id, { name: 'Updated' });
+      expect(updated?.name).toBe('Updated');
+    });
+
+    it('should return undefined for non-existent column', () => {
+      const col = Database.getColumn('non-existent');
+      expect(col).toBeUndefined();
+    });
+  });
+
+  describe('Cards', () => {
+    let column: Column;
+
+    beforeEach(() => {
+      column = Database.createColumn('Test', 0);
+    });
+
+    it('should create a card with required fields', () => {
+      const card = Database.createCard('Title', null, column.id, 0);
+      expect(card.id).toBeDefined();
+      expect(card.title).toBe('Title');
+      expect(card.column_id).toBe(column.id);
+      expect(card.order_index).toBe(0);
+      expect(card.created_at).toBeInstanceOf(Date);
+    });
+
+    it('should create a card with description', () => {
+      const card = Database.createCard('Title', 'Description', column.id, 0);
+      expect(card.description).toBe('Description');
+    });
+
+    it('should get cards by column sorted by order_index', () => {
+      Database.createCard('C', null, column.id, 2);
+      Database.createCard('A', null, column.id, 0);
+      Database.createCard('B', null, column.id, 1);
+      
+      const cards = Database.getCardsByColumn(column.id);
+      expect(cards.length).toBe(3);
+      expect(cards[0].title).toBe('A');
+      expect(cards[1].title).toBe('B');
+      expect(cards[2].title).toBe('C');
+    });
+
+    it('should update card title and description', () => {
+      const card = Database.createCard('Original', 'Desc', column.id, 0);
+      const updated = Database.updateCard(card.id, { title: 'Updated', description: 'New' });
+      expect(updated?.title).toBe('Updated');
+      expect(updated?.description).toBe('New');
+    });
+
+    it('should move card to different column with rebalancing', () => {
+      const col2 = Database.createColumn('Col2', 1);
+      const card = Database.createCard('Test', null, column.id, 0);
+      
+      const moved = Database.moveCard(card.id, col2.id, 0);
+      expect(moved?.column_id).toBe(col2.id);
+    });
+
+    it('should throw when moving to non-existent column', () => {
+      const card = Database.createCard('Test', null, column.id, 0);
+      expect(() => Database.moveCard(card.id, 'non-existent', 0)).toThrow();
+    });
+
+    it('should delete a card', () => {
+      const card = Database.createCard('Test', null, column.id, 0);
+      const deleted = Database.deleteCard(card.id);
+      expect(deleted).toBe(true);
+      expect(Database.getCard(card.id)).toBeUndefined();
+    });
+  });
+
+  describe('Board State', () => {
+    it('should return full board state', () => {
+      const col = Database.createColumn('Col', 0);
+      const card = Database.createCard('Card', null, col.id, 0);
+      
+      const state = Database.getBoardState();
+      expect(state.columns.length).toBe(1);
+      expect(state.cards.length).toBe(1);
+    });
+  });
+
+  describe('Init Defaults', () => {
+    it('should create default columns on init', () => {
+      Database.initDefaults();
+      const cols = Database.getAllColumns();
+      expect(cols.length).toBe(3);
+      expect(cols[0].name).toBe('Todo');
+      expect(cols[1].name).toBe('In Progress');
+      expect(cols[2].name).toBe('Done');
+    });
+  });
 });
-
-test('columns table exists with correct schema', () => {
-  const columns = db.prepare("SELECT * FROM columns").all();
-  expect(columns).toHaveLength(3);
-  expect(columns.map((c: any) => c.name)).toEqual(['Todo', 'In Progress', 'Done']);
-});
-
-test('cards table exists with foreign key to columns', () => {
-  const result = db.prepare(
-    "SELECT sql FROM sqlite_master WHERE name = 'cards' AND type = 'table'"
-  ).get() as { sql: string };
-  expect(result.sql).toContain('FOREIGN KEY');
-  expect(result.sql).toContain('column_id');
-});
-
-test('unique index on (column_id, order_index)', () => {
-  const result = db.prepare(
-    "SELECT sql FROM sqlite_master WHERE name = 'idx_cards_column_order'"
-  ).get() as { sql: string };
-  expect(result.sql).toContain('UNIQUE INDEX');
-});
-
-test('can insert card with valid data', () => {
-  const result = db.prepare(
-    'INSERT INTO cards (title, column_id, order_index) VALUES (?, ?, ?)'
-  ).run('Test Card', 1, 0);
-  expect(result.lastInsertRowid).toBeGreaterThan(0);
-});
-
-test('foreign key enforces column exists', () => {
-  expect(() => {
-    db.prepare(
-      'INSERT INTO cards (title, column_id, order_index) VALUES (?, ?, ?)'
-    ).run('Bad Card', 999, 0);
-  }).toThrow();
-});
-
-// Phoenix metadata
-export const _phoenix = {
-  iu_id: '7755b823586edf2b4eb27f4e28cbacc704809df8821f3f9950ba00536baf3702',
-  name: 'Database',
-  risk_tier: 'medium',
-  canon_ids: [
-    '2bc80b42956d76df8cd3010236a272501316a874225a89df3e9df30bb681e225',
-    '5a398662b56d7e1d33a32297a11da8595051a36f3e834bcb3a7deca5c4fb380c',
-    '774c9c614c4509db05064898929bebff56a92ee9882c111392bb6c9500e1904b',
-    'a0d5d632dba5bdf516af26691ccb019a6f5d439d1c91694c075053cf5017227c',
-    'f0abeb96cfce90f28ac1cc85d55fb6e3ea64aa031f99d3f03d3cc44fd198c5db',
-    'f1938740d570b6b328ad641e41e5e301bd7e845f3f82949d67bd1b6ab32f2119'
-  ]
-} as const;

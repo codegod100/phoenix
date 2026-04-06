@@ -1,215 +1,112 @@
-// CONTRACT: API IU - REST endpoints for board, cards, and columns
-// INVARIANT: GET /board returns full board state with columns and cards
-// INVARIANT: POST /cards creates a new card with title and optional description
-// INVARIANT: PATCH /cards/:id updates card title/description
-// INVARIANT: PATCH /cards/:id/move moves card to different column with new order
-// INVARIANT: DELETE /cards/:id removes a card
-// INVARIANT: POST /columns creates a new column
-// INVARIANT: PATCH /columns/:id renames a column
-// INVARIANT: Moving card validates column exists (400 if not)
-// INVARIANT: Card order is 0-indexed integer, automatically rebalanced on conflicts
+// Generated from IU: API (16d86aaf6719e3ba15e04be70b2d6898dd29e40513c3195f7422ca9fae3fa01a)
+// Source: spec/app.md - API section
 
-import { Database } from 'bun:sqlite';
+import { Database, Column, Card } from './database';
 
-export type Card = {
-  id: number;
+export interface BoardState {
+  columns: (Column & { cards: Card[] })[];
+}
+
+export interface CreateCardRequest {
   title: string;
-  description: string | null;
-  column_id: number;
-  order_index: number;
-  created_at: string;
-};
+  description?: string;
+}
 
-export type Column = {
-  id: number;
+export interface CreateColumnRequest {
   name: string;
+}
+
+export interface UpdateCardRequest {
+  title?: string;
+  description?: string | null;
+}
+
+export interface MoveCardRequest {
+  column_id: string;
   order_index: number;
-  created_at: string;
-  cards: Card[];
-};
-
-export type Board = {
-  columns: Column[];
-};
-
-// Get full board state
-export function getBoard(db: Database): Board {
-  const columns = db.prepare('SELECT * FROM columns ORDER BY order_index').all() as Omit<Column, 'cards'>[];
-  const cards = db.prepare('SELECT * FROM cards ORDER BY column_id, order_index').all() as Card[];
-  
-  return {
-    columns: columns.map(col => ({
-      ...col,
-      cards: cards.filter(c => c.column_id === col.id)
-    }))
-  };
 }
 
-// Create a new card
-export function createCard(
-  db: Database,
-  title: string,
-  description: string | null,
-  column_id: number
-): Card {
-  // Validate column exists
-  const column = db.prepare('SELECT id FROM columns WHERE id = ?').get(column_id);
-  if (!column) throw new Error('Column not found');
+export const API = {
+  // GET /board - returns full board state
+  getBoard(): BoardState {
+    const columns = Database.getAllColumns();
+    return {
+      columns: columns.map(col => ({
+        ...col,
+        cards: Database.getCardsByColumn(col.id)
+      }))
+    };
+  },
 
-  // Validate title length
-  if (title.length < 1 || title.length > 200) {
-    throw new Error('Title must be 1-200 characters');
-  }
-
-  // Check max cards limit (100 per board)
-  const count = db.prepare('SELECT COUNT(*) as count FROM cards').get() as { count: number };
-  if (count.count >= 100) throw new Error('Maximum 100 cards allowed');
-
-  // Get max order_index for this column
-  const maxOrder = db.prepare('SELECT MAX(order_index) as max FROM cards WHERE column_id = ?').get(column_id) as { max: number | null };
-  const order_index = (maxOrder.max ?? -1) + 1;
-
-  const result = db.prepare(
-    'INSERT INTO cards (title, description, column_id, order_index) VALUES (?, ?, ?, ?)'
-  ).run(title, description, column_id, order_index);
-
-  return {
-    id: Number(result.lastInsertRowid),
-    title,
-    description,
-    column_id,
-    order_index,
-    created_at: new Date().toISOString()
-  };
-}
-
-// Update card title/description
-export function updateCard(
-  db: Database,
-  id: number,
-  title?: string,
-  description?: string | null
-): Card {
-  const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(id) as Card | undefined;
-  if (!card) throw new Error('Card not found');
-
-  const newTitle = title ?? card.title;
-  const newDesc = description !== undefined ? description : card.description;
-
-  if (newTitle.length < 1 || newTitle.length > 200) {
-    throw new Error('Title must be 1-200 characters');
-  }
-
-  db.prepare('UPDATE cards SET title = ?, description = ? WHERE id = ?')
-    .run(newTitle, newDesc, id);
-
-  return { ...card, title: newTitle, description: newDesc };
-}
-
-// Move card to different column with new order
-export function moveCard(
-  db: Database,
-  id: number,
-  column_id: number,
-  order_index: number
-): Card {
-  // Validate column exists
-  const column = db.prepare('SELECT id FROM columns WHERE id = ?').get(column_id);
-  if (!column) throw new Error('Column not found');
-
-  const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(id) as Card | undefined;
-  if (!card) throw new Error('Card not found');
-
-  // If moving within same column, reorder
-  if (card.column_id === column_id) {
-    if (order_index > card.order_index) {
-      // Moving down: shift cards between old+1 and new up by 1
-      db.prepare(
-        'UPDATE cards SET order_index = order_index - 1 WHERE column_id = ? AND order_index > ? AND order_index <= ?'
-      ).run(column_id, card.order_index, order_index);
-    } else if (order_index < card.order_index) {
-      // Moving up: shift cards between new and old-1 down by 1
-      db.prepare(
-        'UPDATE cards SET order_index = order_index + 1 WHERE column_id = ? AND order_index >= ? AND order_index < ?'
-      ).run(column_id, order_index, card.order_index);
+  // POST /cards - creates a new card
+  createCard(request: CreateCardRequest, columnId: string): Card {
+    if (!request.title || request.title.length < 1 || request.title.length > 200) {
+      throw new Error('Title must be 1-200 characters');
     }
-  } else {
-    // Moving to different column: shift cards in target column up
-    db.prepare(
-      'UPDATE cards SET order_index = order_index + 1 WHERE column_id = ? AND order_index >= ?'
-    ).run(column_id, order_index);
+    
+    // Validate column exists
+    if (!Database.getColumn(columnId)) {
+      const error = new Error(`Column ${columnId} does not exist`);
+      (error as any).statusCode = 400;
+      throw error;
+    }
+    
+    const cards = Database.getCardsByColumn(columnId);
+    
+    // Check max cards limit (100 per board)
+    const allCards = Database.getBoardState().cards;
+    if (allCards.length >= 100) {
+      throw new Error('Maximum 100 cards per board');
+    }
+    
+    const order_index = cards.length;
+    return Database.createCard(request.title, request.description || null, columnId, order_index);
+  },
+
+  // PATCH /cards/:id - updates card
+  updateCard(id: string, request: UpdateCardRequest): Card | undefined {
+    if (request.title !== undefined && (request.title.length < 1 || request.title.length > 200)) {
+      throw new Error('Title must be 1-200 characters');
+    }
+    
+    return Database.updateCard(id, request);
+  },
+
+  // PATCH /cards/:id/move - moves card to different column
+  moveCard(id: string, request: MoveCardRequest): Card | undefined {
+    // Validate column exists (400 if not)
+    if (!Database.getColumn(request.column_id)) {
+      const error = new Error(`Column ${request.column_id} does not exist`);
+      (error as any).statusCode = 400;
+      throw error;
+    }
+    
+    // Card order is 0-indexed, auto-rebalanced on conflicts (handled in Database.moveCard)
+    return Database.moveCard(id, request.column_id, request.order_index);
+  },
+
+  // DELETE /cards/:id - removes card
+  deleteCard(id: string): boolean {
+    return Database.deleteCard(id);
+  },
+
+  // POST /columns - creates a new column
+  createColumn(request: CreateColumnRequest): Column {
+    if (!request.name || request.name.trim().length === 0) {
+      throw new Error('Column name is required');
+    }
+    
+    const columns = Database.getAllColumns();
+    const order_index = columns.length;
+    return Database.createColumn(request.name, order_index);
+  },
+
+  // PATCH /columns/:id - renames a column
+  renameColumn(id: string, name: string): Column | undefined {
+    if (!name || name.trim().length === 0) {
+      throw new Error('Column name is required');
+    }
+    
+    return Database.updateColumn(id, { name });
   }
-
-  db.prepare('UPDATE cards SET column_id = ?, order_index = ? WHERE id = ?')
-    .run(column_id, order_index, id);
-
-  return { ...card, column_id, order_index };
-}
-
-// Delete a card
-export function deleteCard(db: Database, id: number): void {
-  const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(id) as Card | undefined;
-  if (!card) throw new Error('Card not found');
-
-  // Reorder remaining cards in the column
-  db.prepare(
-    'UPDATE cards SET order_index = order_index - 1 WHERE column_id = ? AND order_index > ?'
-  ).run(card.column_id, card.order_index);
-
-  db.prepare('DELETE FROM cards WHERE id = ?').run(id);
-}
-
-// Create a new column
-export function createColumn(db: Database, name: string): Column {
-  if (!name || name.trim().length === 0) {
-    throw new Error('Column name is required');
-  }
-
-  const maxOrder = db.prepare('SELECT MAX(order_index) as max FROM columns').get() as { max: number | null };
-  const order_index = (maxOrder.max ?? -1) + 1;
-
-  const result = db.prepare(
-    'INSERT INTO columns (name, order_index) VALUES (?, ?)'
-  ).run(name, order_index);
-
-  return {
-    id: Number(result.lastInsertRowid),
-    name,
-    order_index,
-    created_at: new Date().toISOString(),
-    cards: []
-  };
-}
-
-// Rename a column
-export function renameColumn(db: Database, id: number, name: string): Column {
-  if (!name || name.trim().length === 0) {
-    throw new Error('Column name is required');
-  }
-
-  const column = db.prepare('SELECT * FROM columns WHERE id = ?').get(id) as Column | undefined;
-  if (!column) throw new Error('Column not found');
-
-  db.prepare('UPDATE columns SET name = ? WHERE id = ?').run(name, id);
-
-  return { ...column, name };
-}
-
-export const _phoenix = {
-  iu_id: '1ff7069a9997147047673e3ad462c57cb31c5374c07c35244cce3a81d877e98e',
-  name: 'API',
-  risk_tier: 'medium',
-  canon_ids: [
-    '0b188f3a1146b9012c5b8f828bb1dae040dd9f636d4cf81293ba75504badaa70',
-    '0b78412542ffc126a61c447152bedb798842219ac5a316713296c7d7b1fa553c',
-    '3a13a7707f9aedd05a520c8b42ea75794278d7845cc8bbbfa5070f621d4ee2fe',
-    '53acc6fc41a2fb54673f5635883f196596f4fa71e54eae60c893cd48641234fa',
-    '792f5cf84c5c3e4db22a4342ccac3cab6b9b71a2f3a51aa63273d0cca3acf638',
-    '8911cbfd7f5c767f586693a42c804b0fda5e8034b1756d9ac48934dc80d0aaca',
-    '908aea6ec388c55cf183cb681e971ecc3ea69292670fe85c2638123818a5c186',
-    'a7f1870c79de6724ab9390937490e9290ee7862a9d2a7a5e03e7d90337dd8eb0',
-    'df146a7e13a736d80e55e5998f40074e054440e94eb0fc2e54ca391d4efab812',
-    'e60fb850ae066007763db0eefe69826859f441ca6c6df26bed4ae862e56e19c8',
-    'faab3a53e9c29c822049b62c9981cb646cedc766318146380e88b61dc20feeed'
-  ]
-} as const;
+};
