@@ -75,14 +75,16 @@ A simple task management board with columns and cards.
 - CONSTRAINT: Card count updates must NOT require page reload for drag-and-drop operations
 - CONSTRAINT: Column count badge DOM element id format: "count-{columnId}"
 - CONSTRAINT: Do not use browser native alert(), prompt(), or confirm() - use DOM-based modals only
-- CONSTRAINT: Dark theme: bg #1e1e2e, cards #313244, accents #89b4fa
+- CONSTRAINT: Dark theme: bg #1e1e2e, cards #1e1e2e (uniform dark), accents #89b4fa
+- CONSTRAINT: All cards (initial and dynamically created) MUST use identical background color
 - CONSTRAINT: JavaScript event handlers must call fetch() to hit API endpoints
 
 ## Design System
 
 - CONSTRAINT: Theme MUST use ONLY Catppuccin Mocha palette
 - CONSTRAINT: Background SHALL be #1e1e2e (base), #181825 (mantle) for headers
-- CONSTRAINT: Surface/cards MUST use #313244
+- CONSTRAINT: Cards MUST use #1e1e2e (same as background for seamless look)
+- CONSTRAINT: Card hover/edit buttons MUST use #1e1e2e background to match card
 - CONSTRAINT: Primary accent MUST be #89b4fa (blue) for buttons and interactive elements
 - CONSTRAINT: Destructive actions MUST use #f38ba8 (pink) for delete/remove
 - CONSTRAINT: Text MUST use #cdd6f4 (primary), #a6adc8 (secondary)
