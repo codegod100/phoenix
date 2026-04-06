@@ -267,7 +267,7 @@ html, body {
   background: var(--mantle);
   border-radius: 8px;
   width: 90%;
-  max-width: 400px;
+  max-width: 500px;
   max-height: 90vh;
   overflow: hidden;
 }
@@ -327,7 +327,7 @@ html, body {
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 200px;
 }
 
 /* Column drag and drop */
