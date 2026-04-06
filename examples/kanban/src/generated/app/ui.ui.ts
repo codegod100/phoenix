@@ -441,9 +441,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
   <title>Kanban Board</title>
   <style>${designSystemStyles}</style>
   <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
     .kanban-board {
       display: flex; flex-direction: row; gap: 16px;
-      padding: 16px; min-height: 100vh; overflow-x: auto; align-items: flex-start;
+      padding: 16px; height: 100vh; overflow-x: auto; overflow-y: hidden; align-items: flex-start;
     }
     .card { transition: opacity 0.2s; cursor: grab; position: relative; }
     .card:hover .edit-card-btn, .card:hover .delete-card-btn { opacity: 1 !important; }
