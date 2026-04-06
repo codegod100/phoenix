@@ -19,10 +19,10 @@ project/
 
 ## Data Types
 
-### Clause
+### Clause (from spec)
 ```typescript
 interface Clause {
-  id: string;           // SHA-256 hash
+  id: string;           // SHA-256 hash of normalized text
   type: 'REQUIREMENT' | 'CONSTRAINT' | 'DEFINITION' | 'ASSUMPTION' | 'SCENARIO';
   text: string;         // Normalized
   raw_text: string;     // Original
@@ -31,21 +31,22 @@ interface Clause {
 }
 ```
 
-### Canonical Node
+### Canonical Node (from canonicalize)
 ```typescript
 interface CanonicalNode {
-  canon_id: string;     // node-001, node-002, etc.
+  canon_id: string;     // Content-addressed hash (SHA-256 of statement)
   type: 'REQUIREMENT' | 'CONSTRAINT' | 'DEFINITION' | 'INVARIANT';
   statement: string;    // Clean requirement
   source_clause_ids: string[];
 }
 ```
 
-### Implementation Unit
+### Implementation Unit (from plan)
 ```typescript
 interface ImplementationUnit {
-  iu_id: string;        // Hash of requirements
+  iu_id: string;        // Hash of canonical nodes + config
   name: string;         // "Dashboard Page"
+  kind: 'module' | 'api' | 'web-ui' | 'function';
   risk_tier: 'low' | 'medium' | 'high' | 'critical';
   contract: {
     description: string;
@@ -53,23 +54,29 @@ interface ImplementationUnit {
     outputs: string[];
     invariants: string[];
   };
-  source_canon_ids: string[];  // ['node-001', 'node-002']
+  source_canon_ids: string[];  // References to canonical requirements
   output_files: string[];
+  boundary_policy: { /* code constraints */ };
+  evidence_policy: { /* required validations */ };
 }
 ```
 
-## Traceability Export
+## Traceability Chain
 
-Every generated file MUST include:
+```
+CODE (iu_id) → IU (source_canon_ids) → CANON (canon_id) → CLAUSE (clause.id) → SPEC
+```
 
+**In code:**
 ```typescript
 export const _phoenix = {
-  iu_id: 'abc123...',
+  iu_id: 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88',
   name: 'Dashboard Page',
   risk_tier: 'high',
-  canon_ids: ['node-001', 'node-002'] as const,
 } as const;
 ```
+
+The IU (tracked separately) has `source_canon_ids` linking to requirements.
 
 ## Common Operations
 
@@ -91,4 +98,9 @@ const normalized = text
   .toLowerCase()
   .replace(/\s+/g, ' ')
   .trim();
+```
+
+### Compute Content Hash
+```typescript
+const hash = sha256(normalizedStatement).slice(0, 16);
 ```

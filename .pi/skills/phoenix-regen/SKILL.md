@@ -18,21 +18,18 @@ Generate code from Implementation Units.
 Implementation Unit:
 ```
 IU: Dashboard Page (HIGH)
+IU ID: ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88
 Description: Renders HTML dashboard with Catppuccin theme
-Requirements:
-  - node-001: system shall render complete html page
-  - node-002: page must display taskflow header
-  - node-004: dashboard uses catppuccin mocha colors
-  - node-005: background color is #1e1e2e
-  - node-006: card background is #313244
+Source Canon IDs: a1b2c3d4e5f67890, b2c3d4e5f6789012, ...
 Output: src/generated/web-dashboard/dashboard-page.ts
 ```
 
 ## Process
 
-1. **Read requirements**
+1. **Read IU contract**
    - Understand what the IU must do
    - Note constraints and invariants
+   - The IU's `source_canon_ids` link to requirements
 
 2. **Generate code**
    - Write TypeScript implementation
@@ -41,7 +38,7 @@ Output: src/generated/web-dashboard/dashboard-page.ts
 
 3. **Add traceability**
    - Include `_phoenix` export at end of file
-   - Reference IU ID and canon_ids
+   - Reference IU ID only (the IU tracks canon_ids)
 
 4. **Write files**
    - Save to output path
@@ -58,18 +55,24 @@ Every generated file MUST include:
 ```typescript
 /** @internal Phoenix VCS traceability — do not remove. */
 export const _phoenix = {
-  iu_id: 'abc123...',
+  iu_id: 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88',
   name: 'Dashboard Page',
   risk_tier: 'high',
-  canon_ids: ['node-001', 'node-002', 'node-004', 'node-005', 'node-006'] as const,
 } as const;
 ```
+
+**Traceability Chain:**
+```
+CODE (iu_id) → IU (source_canon_ids) → CANON → SPEC
+```
+
+The code references only the IU. The IU tracks which canonical requirements it implements.
 
 ## Output
 
 Generated files with:
 - Full implementation
-- Traceability export
+- Traceability export (iu_id only)
 - Tests (for medium+ risk)
 
 ## Example
@@ -96,17 +99,16 @@ export function renderDashboard(): string {
 }
 
 export const _phoenix = {
-  iu_id: 'ec4737a...',
+  iu_id: 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88',
   name: 'Dashboard Page',
   risk_tier: 'high',
-  canon_ids: ['node-001', 'node-002', 'node-004', 'node-005', 'node-006'] as const,
 } as const;
 ```
 
 ## Quality Checks
 
 - [ ] All requirements implemented
-- [ ] Traceability export present
-- [ ] canon_ids are actual IDs (not counts)
-- [ ] Code compiles/runs
-- [ ] Tests pass (if applicable)
+- [ ] No placeholder code
+- [ ] Error handling present
+- [ ] Tests exist (medium+ risk)
+- [ ] `_phoenix` export with `iu_id` only (IU tracks canon_ids)

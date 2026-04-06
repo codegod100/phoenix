@@ -27,14 +27,14 @@ Review IUs before or after code generation.
 - [ ] >15 requirements → high/critical
 - [ ] User-facing UI → high
 
-### Traceability
-- [ ] All canon_ids exist
-- [ ] Output paths valid
-- [ ] _phoenix export present in generated files
-- [ ] canon_ids are actual IDs, not counts
+### Traceability (in IU)
+- [ ] All `source_canon_ids` are valid canonical IDs
+- [ ] Every IU requirement traces to canon
+- [ ] No orphan canon IDs
 
 ### Code Quality (for generated files)
-- [ ] All requirements implemented
+- [ ] All IU requirements implemented
+- [ ] `_phoenix` export with `iu_id` only
 - [ ] No placeholder code
 - [ ] Error handling present
 - [ ] Tests exist (medium+ risk)
@@ -49,9 +49,9 @@ Score: 95/100
 ✓ Contract complete
 ✓ Risk tier appropriate (11 → high)
 ⚠ Invariant "responsive layout" is vague
-✓ All canon_ids valid
-✓ _phoenix export present
-✓ Code implements all requirements
+✓ source_canon_ids valid (30 refs)
+✓ _phoenix export present (iu_id only)
+✓ Code implements all IU requirements
 
 Recommendation: Minor warning only.
 ```
@@ -62,5 +62,5 @@ Recommendation: Minor warning only.
 |-------|-----|
 | Vague invariant | Add specific values |
 | Wrong risk tier | Adjust based on count |
-| Missing traceability | Add _phoenix export |
-| canon_ids as counts | Replace with actual IDs |
+| Missing _phoenix export | Add traceability |
+| Orphan canon ID | Add to IU or remove |
