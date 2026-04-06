@@ -945,7 +945,19 @@ export class DashboardPage {
 
         function setView(newView) {
             view = newView;
-            location.reload();
+            // Update tab button states
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = Array.from(tabBtns).find(btn => 
+                (view === 'active' && btn.textContent?.includes('Active')) ||
+                (view === 'archived' && btn.textContent?.includes('Archived'))
+            );
+            if (activeBtn) activeBtn.classList.add('active');
+            // Re-render without page reload
+            renderTaskList();
+            updateStats();
         }
 
         function openEditModal(taskId) {

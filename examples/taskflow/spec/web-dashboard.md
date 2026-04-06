@@ -26,6 +26,7 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 - The header must include a bulk action bar when tasks are selected: delete selected, archive selected
 - All confirmation dialogs must be custom modal overlays (not browser confirm()/alert() popups)
 - Archived tasks must be viewable via a separate "Archived" tab or filter
+- Switching between Active and Archived views must update the task list without a full page reload
 - The edit modal must contain pre-populated form fields for all editable properties
 - The edit modal must have save and cancel buttons with clear visual distinction
 
