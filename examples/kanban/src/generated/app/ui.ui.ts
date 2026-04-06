@@ -374,18 +374,23 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         display: flex; justify-content: space-between; align-items: center;
         position: relative;
       ">
-        <span class="column-name" data-column-id="${col.id}" style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600; cursor: pointer;" title="Click to edit">${col.name}</span>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="column-name" data-column-id="${col.id}" style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600; padding-right: 48px;">${col.name}</span>
+        <div style="display: flex; align-items: center; gap: 8px; position: absolute; right: 16px;">
           <span id="count-${col.id}" style="
             background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
             border-radius: ${DesignSystem.badge.borderRadius}; padding: ${DesignSystem.badge.padding};
             font-size: ${DesignSystem.badge.fontSize};
           ">${col.cards.length}</span>
+          <button class="edit-column-btn" data-column-id="${col.id}" style="
+            background: transparent; border: none; color: ${DesignSystem.typography.secondary};
+            cursor: pointer; font-size: 14px; opacity: 0; transition: opacity 0.2s;
+            padding: 4px; border-radius: 4px;
+          " title="Edit column">✏️</button>
           <button class="delete-column-btn" data-column-id="${col.id}" style="
             background: transparent; border: none; color: #f38ba8;
-            cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.2s;
-            padding: 0 4px; display: none;
-          " title="Delete column">×</button>
+            cursor: pointer; font-size: 14px; opacity: 0; transition: opacity 0.2s;
+            padding: 4px; border-radius: 4px;
+          " title="Delete column">🗑️</button>
         </div>
       </div>
       <div class="column-cards" style="
@@ -406,7 +411,14 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               font-size: 14px; padding: 4px; border-radius: 4px;
               opacity: 0; transition: opacity 0.2s; z-index: 10;
             " title="Edit card">✏️</button>
-            <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px; padding-right: 24px;">${card.title}</h4>
+            <button class="delete-card-btn" data-card-id="${card.id}" style="
+              position: absolute; top: 8px; right: 32px;
+              background: ${DesignSystem.card.background}; border: none;
+              color: #f38ba8; cursor: pointer;
+              font-size: 14px; padding: 4px; border-radius: 4px;
+              opacity: 0; transition: opacity 0.2s; z-index: 10;
+            " title="Delete card">🗑️</button>
+            <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px; padding-right: 48px;">${card.title}</h4>
             ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word;">${card.description}</p>` : ''}
           </div>
         `).join('')}
@@ -431,13 +443,14 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       padding: 16px; min-height: 100vh; overflow-x: auto; align-items: flex-start;
     }
     .card { transition: opacity 0.2s; cursor: grab; position: relative; }
-    .card:hover .edit-card-btn { opacity: 1 !important; }
+    .card:hover .edit-card-btn, .card:hover .delete-card-btn { opacity: 1 !important; }
     .edit-card-btn:hover { color: #89b4fa !important; background: #1e1e2e !important; }
+    .delete-card-btn:hover { color: #f38ba8 !important; background: #1e1e2e !important; }
     .card[draggable="true"]:hover { opacity: 0.8; }
     .column-cards.drag-over { background: rgba(137, 180, 250, 0.1) !important; }
-    .column-header:hover .delete-column-btn { opacity: 1 !important; display: inline-block !important; }
-    .delete-column-btn:hover { color: #f38ba8 !important; }
-    .column-name:hover { text-decoration: underline; color: #89b4fa !important; }
+    .column-header:hover .edit-column-btn, .column-header:hover .delete-column-btn { opacity: 1 !important; }
+    .edit-column-btn:hover { color: #89b4fa !important; background: #1e1e2e !important; }
+    .delete-column-btn:hover { color: #f38ba8 !important; background: #1e1e2e !important; }
   </style>
 </head>
 <body>
@@ -544,6 +557,29 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             });
           }
         }, 'Save');
+      });
+    });
+    
+    // Delete card buttons
+    document.querySelectorAll('.delete-card-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent drag start
+        var cardId = btn.dataset.cardId;
+        var card = btn.closest('.card');
+        var column = card.closest('.column');
+        var columnId = column.dataset.columnId;
+        
+        showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this card?</p><p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This action cannot be undone.</p>', function() {
+          fetch('/api/cards/' + cardId, { method: 'DELETE' })
+            .then(function(res) {
+              if (res.ok) {
+                // Remove card from DOM
+                card.remove();
+                updateCardCount(columnId, -1);
+              } else console.error('Failed to delete card:', res.status);
+            })
+            .catch(function(err) { console.error('Error deleting card:', err); });
+        }, 'Delete', 'Cancel');
       });
     });
     
@@ -655,10 +691,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             // Create column element and insert before Add Column button
             var colHtml = '<div class="column" data-column-id="' + col.id + '" style="background:#313244;border-radius:8px;min-width:280px;max-width:280px;display:flex;flex-direction:column;max-height:calc(100vh - 32px);">' +
               '<div class="column-header" style="padding:12px 16px;border-bottom:1px solid #1e1e2e;display:flex;justify-content:space-between;align-items:center;position:relative;">' +
-                '<span class="column-name" data-column-id="' + col.id + '" style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;cursor:pointer;" title="Click to edit">' + col.name + '</span>' +
-                '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<span class="column-name" data-column-id="' + col.id + '" style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;padding-right:48px;">' + col.name + '</span>' +
+                '<div style="display:flex;align-items:center;gap:8px;position:absolute;right:16px;">' +
                   '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
-                  '<button class="delete-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#f38ba8;cursor:pointer;font-size:16px;opacity:0;transition:opacity 0.2s;padding:0 4px;" title="Delete column">×</button>' +
+                  '<button class="edit-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#6c7086;cursor:pointer;font-size:14px;opacity:0;transition:opacity 0.2s;padding:4px;border-radius:4px;" title="Edit column">✏️</button>' +
+                  '<button class="delete-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#f38ba8;cursor:pointer;font-size:14px;opacity:0;transition:opacity 0.2s;padding:4px;border-radius:4px;" title="Delete column">🗑️</button>' +
                 '</div>' +
               '</div>' +
               '<div class="column-cards" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>' +
@@ -726,7 +763,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
                     var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;">' + card.description + '</p>' : '';
                     cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;" title="Edit card">✏️</button>' +
-                      '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:24px;">' + card.title + '</h4>' + descHtml;
+                      '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;" title="Delete card">🗑️</button>' +
+                      '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
                     cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
                     cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
                     
@@ -769,6 +807,21 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                       }, 'Save');
                     });
                     
+                    // Delete button handler for new card
+                    cardEl.querySelector('.delete-card-btn').addEventListener('click', function(e) {
+                      e.stopPropagation();
+                      showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this card?</p><p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This action cannot be undone.</p>', function() {
+                        fetch('/api/cards/' + card.id, { method: 'DELETE' })
+                          .then(function(res) {
+                            if (res.ok) {
+                              cardEl.remove();
+                              updateCardCount(col.id, -1);
+                            } else console.error('Failed to delete card:', res.status);
+                          })
+                          .catch(function(err) { console.error('Error deleting card:', err); });
+                      }, 'Delete', 'Cancel');
+                    });
+                    
                     cardsContainer.appendChild(cardEl);
                     updateCardCount(col.id, 1);
                   });
@@ -795,21 +848,16 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               }, 'Delete', 'Cancel');
             });
             
-            // Wire up column name editing for new column
-            var nameEl = newCol.querySelector('.column-name');
-            nameEl.addEventListener('click', function() {
-              var currentName = nameEl.textContent;
-              var input = document.createElement('input');
-              input.type = 'text';
-              input.value = currentName;
-              input.style.cssText = 'background:#313244;border:1px solid #89b4fa;color:#cdd6f4;border-radius:4px;padding:2px 6px;font-size:14px;font-weight:600;width:150px;';
+            // Wire up edit column button for new column
+            newCol.querySelector('.edit-column-btn').addEventListener('click', function() {
+              var nameEl = newCol.querySelector('.column-name');
+              var currentName = nameEl ? nameEl.textContent : '';
               
-              nameEl.parentNode.replaceChild(input, nameEl);
-              input.focus();
-              input.select();
+              var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Column Name *</label>' +
+                '<input id="edit-column-name" value="' + currentName.replace(/"/g, '&quot;') + '" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">';
               
-              function save() {
-                var newName = input.value.trim();
+              showModal('Edit Column', content, function() {
+                var newName = document.getElementById('edit-column-name').value.trim();
                 if (newName && newName !== currentName) {
                   fetch('/api/columns/' + col.id, {
                     method: 'PATCH',
@@ -817,26 +865,13 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     body: JSON.stringify({ name: newName })
                   }).then(function(res) {
                     if (res.ok) {
-                      nameEl.textContent = newName;
-                    }
-                    input.parentNode.replaceChild(nameEl, input);
+                      if (nameEl) nameEl.textContent = newName;
+                    } else console.error('Failed to rename column:', res.status);
                   }).catch(function(err) {
                     console.error('Error renaming column:', err);
-                    input.parentNode.replaceChild(nameEl, input);
                   });
-                } else {
-                  input.parentNode.replaceChild(nameEl, input);
                 }
-              }
-              
-              input.addEventListener('blur', save);
-              input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                  input.blur();
-                } else if (e.key === 'Escape') {
-                  input.parentNode.replaceChild(nameEl, input);
-                }
-              });
+              }, 'Save');
             });
           }).catch(function(err) {
             console.error('Error creating column:', err);
@@ -845,22 +880,18 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       }, 'Create');
     });
     
-    // Column name editing
-    document.querySelectorAll('.column-name').forEach(function(nameEl) {
-      nameEl.addEventListener('click', function() {
-        var columnId = nameEl.dataset.columnId;
-        var currentName = nameEl.textContent;
-        var input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentName;
-        input.style.cssText = 'background:#313244;border:1px solid #89b4fa;color:#cdd6f4;border-radius:4px;padding:2px 6px;font-size:14px;font-weight:600;width:150px;';
+    // Edit column buttons
+    document.querySelectorAll('.edit-column-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var columnId = btn.dataset.columnId;
+        var nameEl = document.querySelector('.column-name[data-column-id="' + columnId + '"], .column-name');
+        var currentName = nameEl ? nameEl.textContent : '';
         
-        nameEl.parentNode.replaceChild(input, nameEl);
-        input.focus();
-        input.select();
+        var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Column Name *</label>' +
+          '<input id="edit-column-name" value="' + currentName.replace(/"/g, '&quot;') + '" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">';
         
-        function save() {
-          var newName = input.value.trim();
+        showModal('Edit Column', content, function() {
+          var newName = document.getElementById('edit-column-name').value.trim();
           if (newName && newName !== currentName) {
             fetch('/api/columns/' + columnId, {
               method: 'PATCH',
@@ -868,26 +899,13 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               body: JSON.stringify({ name: newName })
             }).then(function(res) {
               if (res.ok) {
-                nameEl.textContent = newName;
-              }
-              input.parentNode.replaceChild(nameEl, input);
+                if (nameEl) nameEl.textContent = newName;
+              } else console.error('Failed to rename column:', res.status);
             }).catch(function(err) {
               console.error('Error renaming column:', err);
-              input.parentNode.replaceChild(nameEl, input);
             });
-          } else {
-            input.parentNode.replaceChild(nameEl, input);
           }
-        }
-        
-        input.addEventListener('blur', save);
-        input.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            input.blur();
-          } else if (e.key === 'Escape') {
-            input.parentNode.replaceChild(nameEl, input);
-          }
-        });
+        }, 'Save');
       });
     });
     
