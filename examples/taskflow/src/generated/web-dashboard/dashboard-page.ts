@@ -172,6 +172,7 @@ export class DashboardPage {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TaskFlow Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
     <style>
         :root {
             /* Catppuccin Mocha Palette */
@@ -1063,7 +1064,7 @@ export class DashboardPage {
                             onchange="toggleSelection('\${task.id}')">
                         <div class="task-title">\${task.title}</div>
                         <div class="task-actions">
-                            <button class="btn-edit" onclick="openEditModal('\${task.id}')">Edit</button>
+                            <button class="btn-edit" onclick="openEditPanel('\${task.id}')">Edit</button>
                             <button class="btn-delete" onclick="confirmDelete('\${task.id}')">🗑️</button>
                         </div>
                     </div>
