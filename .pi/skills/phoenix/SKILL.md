@@ -13,6 +13,25 @@ Universal entry point for all Phoenix operations. Routes commands to the appropr
 - When you want a simpler command than remembering individual skill names
 - For CI/CD scripts that need flexible Phoenix operations
 
+## How to Invoke
+
+**From the Pi TUI (interactive_shell):**
+```
+/skill:phoenix                    # Show status (default)
+/skill:phoenix pipeline           # Run full pipeline
+/skill:phoenix regen --force      # Regenerate with force
+```
+
+**From another skill or code:**
+```typescript
+// Use the Pi SDK's skill execution mechanism
+// DO NOT shell out - use the built-in skill routing
+await executeSkill('phoenix', ['pipeline', '--fast']);
+await executeSkill('phoenix', ['regen', '--force']);
+```
+
+**Important:** This skill is invoked through the Pi agent's skill system (`/skill:phoenix` or `executeSkill()`). Do NOT attempt to run it as a shell command - the `/skill:` prefix is not a valid shell path.
+
 ## Usage
 
 ```bash
@@ -57,6 +76,13 @@ const commands: Record<string, string> = {
 ```
 
 ## Implementation
+
+**Note:** This skill is a documentation-only router. The actual execution happens through the Pi agent's skill system.
+
+When implementing a caller:
+1. **In TUI/shell mode:** Use `/skill:phoenix <command> [args]`
+2. **In code/skills:** Use `executeSkill('phoenix', [command, ...args])`
+3. **Never shell out** - there's no CLI binary to execute
 
 ### Step 1: Parse Arguments
 
@@ -105,7 +131,9 @@ function parseCommand(args: string[]): { skill: string; skillArgs: string[] } {
 }
 ```
 
-### Step 2: Route to Skill
+### Step 2: Route to Target Skill
+
+The phoenix skill maps the command and delegates to the actual skill:
 
 ```typescript
 const { skill, skillArgs } = parseCommand(args);
@@ -116,9 +144,17 @@ if (!skill) {
 
 console.log(`🔥 phoenix → ${skill}${skillArgs.length > 0 ? ' ' + skillArgs.join(' ') : ''}`);
 
-// Execute the target skill with remaining arguments
+// Delegate to the target skill via Pi's skill system
+// This is NOT a shell call - it uses the internal skill router
 await executeSkill(skill, skillArgs);
 ```
+
+**Target skills are:**
+- `phoenix-init`, `phoenix-ingest`, `phoenix-canonicalize`
+- `phoenix-plan`, `phoenix-regen`, `phoenix-pipeline`
+- `phoenix-audit`, `phoenix-drift`, `phoenix-inspect`, `phoenix-status`
+
+These are all documentation-based skills that the Pi agent interprets directly.
 
 ### Step 3: Help Output
 
