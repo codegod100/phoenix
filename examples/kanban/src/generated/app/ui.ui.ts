@@ -506,6 +506,12 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       modal.querySelector('.modal-close').addEventListener('click', closeModal);
       modal.querySelector('.modal-cancel').addEventListener('click', closeModal);
       modal.querySelector('.modal-confirm').addEventListener('click', function() { onConfirm(); closeModal(); });
+      
+      // Auto-focus first input field
+      var firstInput = modal.querySelector('input, textarea');
+      if (firstInput) {
+        setTimeout(function() { firstInput.focus(); }, 0);
+      }
     }
 
     // Drag and drop
