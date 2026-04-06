@@ -107,17 +107,22 @@ export function renderPage(board: Board): string {
 
     // Drag and drop handlers
     let draggedCard = null;
+    let sourceColumnId = null;
     
     document.querySelectorAll('.column-card').forEach(card => {
       card.addEventListener('dragstart', (e) => {
         draggedCard = card;
         card.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
+        // Capture source column at dragstart, before any DOM changes
+        const sourceColumn = card.closest('.column');
+        sourceColumnId = sourceColumn?.dataset.columnId;
       });
       
       card.addEventListener('dragend', () => {
         card.classList.remove('dragging');
         draggedCard = null;
+        sourceColumnId = null;
       });
     });
     
@@ -143,8 +148,8 @@ export function renderPage(board: Board): string {
         const siblings = Array.from(column.children);
         const orderIndex = siblings.indexOf(draggedCard);
         
-        const sourceColumn = draggedCard.closest('.column');
-        const sourceColumnId = sourceColumn?.dataset.columnId;
+        // Use sourceColumnId captured at dragstart
+        const destColumnId = columnId;
         
         try {
           await fetch('/api/cards/' + cardId + '/move', {
@@ -153,9 +158,13 @@ export function renderPage(board: Board): string {
             body: JSON.stringify({ column_id: parseInt(columnId), order_index: orderIndex })
           });
           
-          updateColumnCount(columnId);
-          if (sourceColumnId && sourceColumnId !== columnId) {
-            updateColumnCount(sourceColumnId);
+          // Update both source and destination column counts
+          if (sourceColumnId && sourceColumnId !== destColumnId) {
+            updateColumnCount(sourceColumnId); // decrement source
+            updateColumnCount(destColumnId);   // increment destination
+          } else {
+            // Same column reorder - count unchanged
+            updateColumnCount(columnId);
           }
         } catch (err) {
           showError('Failed to move card');

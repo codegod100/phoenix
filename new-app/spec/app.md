@@ -50,6 +50,8 @@ A simple task management board with columns and cards.
 - CONSTRAINT: Column height fixed with internal scroll for many cards
 - CONSTRAINT: Card max-height 200px with scroll for long descriptions
 - CONSTRAINT: Card count badge updates in real-time when cards are added/moved/deleted
+- CONSTRAINT: When card moved between columns, BOTH source and destination counts update immediately
+- CONSTRAINT: Card count decrements when card leaves column, increments when card enters column
 - CONSTRAINT: Do not use browser native alert() or prompt() - use styled modals only
 - CONSTRAINT: Dark theme: bg #1e1e2e, cards #313244, accents #89b4fa
 
