@@ -14,6 +14,7 @@ A simple task management board with columns and cards.
 ## Cards
 
 - REQUIREMENT: A card has a title (required, 1-200 chars) and optional description
+- REQUIREMENT: URLs in card descriptions MUST be rendered as clickable links
 - REQUIREMENT: Cards belong to exactly one column
 - REQUIREMENT: Cards can be moved between columns via drag-and-drop
 - REQUIREMENT: Columns can be reordered via drag-and-drop left to right

@@ -360,6 +360,19 @@ export const UI = {
   }
 };
 
+// Helper: Convert URLs in text to clickable links
+function linkify(text: string): string {
+  if (!text) return '';
+  // URL regex: matches http/https/ftp URLs
+  const urlRegex = /(https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+)/gi;
+  return text.replace(urlRegex, function(url) {
+    // Escape HTML in the URL to prevent injection
+    const safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Use Catppuccin Mocha colors: #89b4fa for link, underline on hover
+    return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="color: #89b4fa; text-decoration: none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + safeUrl + '</a>';
+  });
+}
+
 // Server-side render page function (for server.ts compatibility)
 export function renderPage(board: { columns: Array<{ id: number | string; name: string; cards: Array<{ id: number | string; title: string; description: string | null; order_index: number }> }> }): string {
   const columnsHtml = board.columns.map(col => `
@@ -422,7 +435,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               pointer-events: auto;
             " title="Delete card"><span style="pointer-events: none;">🗑️</span></button>
             <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px; padding-right: 48px;">${card.title}</h4>
-            ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word;">${card.description}</p>` : ''}
+            ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word;">${linkify(card.description)}</p>` : ''}
           </div>
         `).join('')}
       </div>
@@ -471,6 +484,19 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     ">+ Add Column</button>
   </div>
   <script>
+    // Helper: Convert URLs in text to clickable links
+    function linkify(text) {
+      if (!text) return '';
+      // URL regex: matches http/https/ftp URLs
+      var urlRegex = /(https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+)/gi;
+      return text.replace(urlRegex, function(url) {
+        // Escape HTML in the URL
+        var safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Use Catppuccin Mocha colors: #89b4fa for link
+        return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="color: #89b4fa; text-decoration: none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + safeUrl + '</a>';
+      });
+    }
+
     // Modal helper (styled, not native prompt)
     function showModal(title, contentHtml, onConfirm, confirmText, cancelText) {
       confirmText = confirmText || 'Confirm';
@@ -776,7 +802,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               cardEl.dataset.cardId = card.id;
               cardEl.draggable = true;
               cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
-              var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;">' + card.description + '</p>' : '';
+              var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;">' + linkify(card.description) + '</p>' : '';
               cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Edit card"><span style=\"pointer-events:none;\">✏️</span></button>' +
                 '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Delete card"><span style=\"pointer-events:none;\">🗑️</span></button>' +
                 '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
@@ -940,7 +966,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.className = 'card'; cardEl.dataset.cardId = card.id;
                     cardEl.draggable = true;
                     cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
-                    var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;">' + card.description + '</p>' : '';
+                    var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;">' + linkify(card.description) + '</p>' : '';
                     cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Edit card"><span style=\"pointer-events:none;\">✏️</span></button>' +
                       '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Delete card"><span style=\"pointer-events:none;\">🗑️</span></button>' +
                       '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
