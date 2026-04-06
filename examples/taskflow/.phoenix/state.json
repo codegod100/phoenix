@@ -33,7 +33,8 @@
         "src/generated/web-dashboard/analytics-panel.ts",
         "src/generated/web-dashboard/task-list-display.ts",
         "src/generated/web-dashboard/styles.ts"
-      ]
+      ],
+      "notes": "Updated with localStorage persistence, compact centered status bar, removed task chip"
     }
   },
   "audit": {
