@@ -1,3 +1,7 @@
+---
+description: Generate implementation code from Phoenix Implementation Units (IUs) after the pipeline has been prepped
+---
+
 # Phoenix Regeneration Skill
 
 Generate implementation code from Phoenix Implementation Units (IUs) after the pipeline has been prepped.
