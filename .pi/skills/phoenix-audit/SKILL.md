@@ -77,48 +77,89 @@ Score: 95/100
 Recommendation: Minor warning only.
 ```
 
-## Finding Issues
+## Detecting Over-Implementation
 
-| Issue | Fix |
-|-------|-----|
-| Vague invariant | Add specific values |
-| Wrong risk tier | Adjust based on count |
-| Missing _phoenix export | Add traceability |
-| Orphan canon ID | Add to IU or remove |
-| **File too large (>500 lines)** | **Split into multiple IUs** |
-| **Too many requirements (>20)** | **Group into separate IUs by concern** |
-| **Mixed client/server logic** | **Create separate client and server IUs** |
+Files implementing more than their IU requires:
 
-## Detecting Split Candidates
-
-Use these commands to find large files:
+### Use the over-impl checker
 
 ```bash
-# Find files exceeding 500 lines
-cd examples/item-dashboard && wc -l src/generated/app/*.ts | sort -n | tail -5
-
-# Find files with >20 requirements (count canon_ids)
-grep -c "canon_ids:" src/generated/app/*.ts | grep -E ":[2-9][0-9]$|:[0-9]{3,}$"
-
-# Find IUs with multiple concerns (mixed patterns)
-grep -l "class.*Client" src/generated/app/*.ts | xargs grep -l "export.*Router\|Hono()"
+cd examples/item-dashboard
+../../.pi/skills/phoenix-audit/check-over-impl.sh src/generated/app/items.ts
 ```
 
-### Example Split Decision
+### Detection Criteria
 
+| Check | Threshold | Severity |
+|-------|-----------|----------|
+| Lines of code | By type (see below) | > threshold |
+| Export count | >5 exports | Moderate |
+| Concern mixing | >2 concern types | High |
+| External imports | >5 packages | Low |
+
+**File Type Thresholds:**
+| Type | Expected | Warning | Must Split |
+|------|----------|---------|------------|
+| `.client.ts` | 100 lines | 150 | 200 |
+| `.ui.ts` | 250 lines | 300 | 400 |
+| `api.ts` | 80 lines | 100 | 150 |
+| Core modules | 150 lines | 200 | 250 |
+
+**Concern Types to Detect:**
+- HTTP Routes (Hono router, GET/POST/PATCH/DELETE)
+- Database (db.prepare, SQL)
+- API Client (fetch, axios)
+- UI/HTML (html templates, innerHTML)
+- Validation (zod, zValidator)
+- Business Logic (validate, calculate functions)
+
+### Quick Check All Files
+
+```bash
+cd examples/item-dashboard
+for f in src/generated/app/*.ts; do
+  [[ "$f" == *"__tests__"* ]] && continue
+  [[ "$f" == *"index.ts"* ]] && continue
+  echo "=== $f ==="
+  lines=$(wc -l < "$f")
+  exports=$(grep -c "^export " "$f")
+  concerns=0
+  grep -q "router\.\(get\|post\)" "$f" && ((concerns++))
+  grep -q "db\.prepare" "$f" && ((concerns++))
+  grep -q "fetch" "$f" && ((concerns++))
+  grep -q "html\|<div" "$f" && ((concerns++))
+  echo "  Lines: $lines | Exports: $exports | Concerns: $concerns"
+done
 ```
-🔍 Audit: items-dashboard.ts
 
-Score: 65/100
+### Interpreting Results
 
-✓ Contract complete
-⚠ File size: 520 lines (exceeds 500 threshold)
-⚠ 22 canon_ids (exceeds 20 threshold)
-⚠ Contains both page HTML and API client class
-⚠ _phoenix export present (iu_id only)
+**Score 0-30:** ✅ Acceptable — minor issues only  
+**Score 31-60:** ⚠️ Consider splitting — mixed concerns or too large  
+**Score 61-100:** ❌ Must split — violating IU boundaries
 
-RECOMMENDATION: Split into 3 IUs:
-  1. items-dashboard.page.ts (HTML page, 180 lines, 10 requirements)
-  2. items-dashboard.client.ts (API client, 80 lines, 8 requirements)  
-  3. items-dashboard.ui.ts (shared UI components, 90 lines, 4 requirements)
-```
+### Common Over-Implementation Patterns
+
+1. **"God File"** — Implements multiple IUs
+   ```
+   items.ts doing: routes + DB + validation + business logic
+   → Split: items.routes.ts, items.db.ts, items.logic.ts
+   ```
+
+2. **Interface Bloat** — Client file defines domain types
+   ```
+   items-dashboard.client.ts exports 4 interfaces
+   → Should import from items.types.ts or domain IU
+   ```
+
+3. **UI Monolith** — HTML template with embedded scripts/styles
+   ```
+   design-system.ui.ts at 325 lines (mostly CSS)
+   → Split: design-system.tokens.ts, design-system.components.ts
+   ```
+
+4. **Mixed Client/Server** — Same file has fetch() and db.query()
+   ```
+   ⚠️ Violates IU boundary policy
+   → Always separate into .client.ts and .ts files
+   ```
