@@ -1022,7 +1022,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                       newCol.remove();
                     } else {
                       console.error('Failed to delete column:', res.status);
-                      alert('Cannot delete the last column');
+                      showModal('Cannot Delete', '<p style="color:#f38ba8;">Cannot delete the last column. At least one column must remain.</p>', function() {}, 'OK', null);
                     }
                   })
                   .catch(function(err) { console.error('Error deleting column:', err); });
@@ -1110,7 +1110,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               if (columnEl) columnEl.remove();
             } else {
               console.error('Failed to delete column:', res.status);
-              alert('Cannot delete the last column');
+              showModal('Cannot Delete', '<p style="color:#f38ba8;">Cannot delete the last column. At least one column must remain.</p>', function() {}, 'OK', null);
             }
           }).catch(function(err) {
             console.error('Error deleting column:', err);
