@@ -680,7 +680,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
         '<input id="edit-card-title" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
         '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
-        '<textarea id="edit-card-desc" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+        '<textarea id="edit-card-desc" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc + '</textarea>';
       
       showModal('Edit Card', content, function() {
         var newTitle = document.getElementById('edit-card-title').value.trim();
@@ -834,7 +834,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                 var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
                   '<input id="edit-card-title-existing" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
                   '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
-                  '<textarea id="edit-card-desc-existing" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+                  '<textarea id="edit-card-desc-existing" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc + '</textarea>';
                 
                 showModal('Edit Card', content, function() {
                   var newTitle = document.getElementById('edit-card-title-existing').value.trim();
@@ -1003,7 +1003,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                       var content2 = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
                         '<input id="edit-card-title-dyn" value="' + currentTitle2.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
                         '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
-                        '<textarea id="edit-card-desc-dyn" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc2.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+                        '<textarea id="edit-card-desc-dyn" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc2 + '</textarea>';
                       
                       showModal('Edit Card', content2, function() {
                         var newTitle2 = document.getElementById('edit-card-title-dyn').value.trim();
