@@ -38,7 +38,7 @@ const server = Bun.serve({
     
     // Update card
     if (path.startsWith('/api/cards/') && method === 'PATCH' && !path.endsWith('/move')) {
-      const id = parseInt(path.split('/')[3]);
+      const id = path.split('/')[3];
       return req.json().then(body => {
         const card = updateCard(db, id, body.title, body.description);
         return Response.json(card);
@@ -47,7 +47,7 @@ const server = Bun.serve({
     
     // Move card
     if (path.endsWith('/move') && method === 'PATCH') {
-      const id = parseInt(path.split('/')[3]);
+      const id = path.split('/')[3];
       return req.json().then(body => {
         const card = moveCard(db, id, body.column_id, body.order_index);
         return Response.json(card);
@@ -56,7 +56,7 @@ const server = Bun.serve({
     
     // Delete card
     if (path.startsWith('/api/cards/') && method === 'DELETE') {
-      const id = parseInt(path.split('/')[3]);
+      const id = path.split('/')[3];
       deleteCard(db, id);
       return new Response(null, { status: 204 });
     }
@@ -71,7 +71,7 @@ const server = Bun.serve({
     
     // Rename column
     if (path.startsWith('/api/columns/') && method === 'PATCH') {
-      const id = parseInt(path.split('/')[3]);
+      const id = path.split('/')[3];
       return req.json().then(body => {
         const col = renameColumn(db, id, body.name);
         return Response.json(col);

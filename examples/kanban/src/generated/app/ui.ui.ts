@@ -491,7 +491,12 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ column_id: columnId, order_index: 0 })
-        }).then(function() { location.reload(); });
+        }).then(function(res) {
+          if (res.ok) location.reload();
+          else console.error('Failed to move card:', res.status);
+        }).catch(function(err) {
+          console.error('Error moving card:', err);
+        });
       });
     });
 
@@ -511,7 +516,12 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ title: title, description: desc || null, column_id: columnId })
-            }).then(function() { location.reload(); });
+            }).then(function(res) {
+              if (res.ok) location.reload();
+              else console.error('Failed to create card:', res.status);
+            }).catch(function(err) {
+              console.error('Error creating card:', err);
+            });
           }
         }, 'Create');
       });
@@ -528,7 +538,12 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: name })
-          }).then(function() { location.reload(); });
+          }).then(function(res) {
+            if (res.ok) location.reload();
+            else console.error('Failed to create column:', res.status);
+          }).catch(function(err) {
+            console.error('Error creating column:', err);
+          });
         }
       }, 'Create');
     });
