@@ -695,11 +695,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               if (titleEl) titleEl.textContent = newTitle;
               if (newDesc) {
                 if (descEl) {
-                  descEl.textContent = newDesc;
+                  descEl.innerHTML = linkify(newDesc);
                 } else {
                   var p = document.createElement('p');
-                  p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
-                  p.textContent = newDesc;
+                  p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;white-space:pre-wrap;';
+                  p.innerHTML = linkify(newDesc);
                   card.appendChild(p);
                 }
               } else if (descEl) {
@@ -848,11 +848,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                       if (res.ok) {
                         if (titleEl) titleEl.textContent = newTitle;
                         if (newDesc) {
-                          if (descEl) descEl.textContent = newDesc;
+                          if (descEl) descEl.innerHTML = linkify(newDesc);
                           else {
                             var p = document.createElement('p');
-                            p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
-                            p.textContent = newDesc;
+                            p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;white-space:pre-wrap;';
+                            p.innerHTML = linkify(newDesc);
                             cardEl.appendChild(p);
                           }
                         } else if (descEl) descEl.remove();
@@ -1017,11 +1017,11 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                             if (res.ok) {
                               if (titleEl2) titleEl2.textContent = newTitle2;
                               if (newDesc2) {
-                                if (descEl2) descEl2.textContent = newDesc2;
+                                if (descEl2) descEl2.innerHTML = linkify(newDesc2);
                                 else {
                                   var p2 = document.createElement('p');
-                                  p2.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
-                                  p2.textContent = newDesc2;
+                                  p2.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;white-space:pre-wrap;';
+                                  p2.innerHTML = linkify(newDesc2);
                                   cardEl.appendChild(p2);
                                 }
                               } else if (descEl2) descEl2.remove();
