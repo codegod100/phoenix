@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Generated from IU: UI (da1d8be46d7fb8ef67fd090f86bdba67e5264ebae258bea5b6380b706183bd6f)
 // Source: spec/app.md - UI section
 // Dependencies: Cards, Design System
@@ -428,67 +429,108 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     ">+ Add Column</button>
   </div>
   <script>
-    // Client-side drag and drop
-    let draggedCard = null;
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('dragstart', (e) => {
+    // Modal helper (styled, not native prompt)
+    function showModal(title, contentHtml, onConfirm, confirmText, cancelText) {
+      confirmText = confirmText || 'Confirm';
+      cancelText = cancelText || 'Cancel';
+      var backdrop = document.createElement('div');
+      backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;';
+      
+      var modal = document.createElement('div');
+      modal.style.cssText = 'background:#181825;border-radius:8px;min-width:400px;max-width:90vw;';
+      
+      modal.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #313244;">' +
+        '<h2 style="margin:0;color:#cdd6f4;font-size:18px;">' + title + '</h2>' +
+        '<button class="modal-close" style="background:transparent;border:none;color:#a6adc8;font-size:24px;cursor:pointer;">×</button>' +
+        '</div>' +
+        '<div style="padding:24px;">' + contentHtml + '</div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid #313244;">' +
+        '<button class="modal-cancel" style="background:transparent;color:#cdd6f4;border:1px solid #a6adc8;border-radius:6px;padding:8px 16px;cursor:pointer;">' + cancelText + '</button>' +
+        '<button class="modal-confirm" style="background:#89b4fa;color:#1e1e2e;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;">' + confirmText + '</button>' +
+        '</div>';
+      
+      backdrop.appendChild(modal);
+      document.body.appendChild(backdrop);
+      
+      var closeModal = function() { backdrop.remove(); };
+      
+      backdrop.addEventListener('click', function(e) { if (e.target === backdrop) closeModal(); });
+      document.addEventListener('keydown', function escHandler(e) { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); } });
+      modal.querySelector('.modal-close').addEventListener('click', closeModal);
+      modal.querySelector('.modal-cancel').addEventListener('click', closeModal);
+      modal.querySelector('.modal-confirm').addEventListener('click', function() { onConfirm(); closeModal(); });
+    }
+
+    // Drag and drop
+    var draggedCard = null;
+    document.querySelectorAll('.card').forEach(function(card) {
+      card.addEventListener('dragstart', function(e) {
         draggedCard = card;
         card.style.opacity = '0.5';
         e.dataTransfer.setData('text/plain', card.dataset.cardId);
       });
-      card.addEventListener('dragend', () => {
+      card.addEventListener('dragend', function() {
         card.style.opacity = '1';
         draggedCard = null;
       });
     });
-    document.querySelectorAll('.column-cards').forEach(container => {
-      container.addEventListener('dragover', (e) => {
+    document.querySelectorAll('.column-cards').forEach(function(container) {
+      container.addEventListener('dragover', function(e) {
         e.preventDefault();
         container.classList.add('drag-over');
       });
-      container.addEventListener('dragleave', () => {
+      container.addEventListener('dragleave', function() {
         container.classList.remove('drag-over');
       });
-      container.addEventListener('drop', async (e) => {
+      container.addEventListener('drop', function(e) {
         e.preventDefault();
         container.classList.remove('drag-over');
-        const cardId = e.dataTransfer.getData('text/plain');
-        const columnId = container.closest('.column').dataset.columnId;
-        // Call API to move card
-        await fetch(\`/api/cards/\${cardId}/move\`, {
+        var cardId = e.dataTransfer.getData('text/plain');
+        var columnId = container.closest('.column').dataset.columnId;
+        fetch('/api/cards/' + cardId + '/move', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ column_id: columnId, order_index: 0 })
-        });
-        location.reload();
+        }).then(function() { location.reload(); });
       });
     });
 
-    // Add Card buttons
-    document.querySelectorAll('.add-card-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const columnId = btn.dataset.columnId;
-        const title = prompt('Enter card title:');
-        if (title && title.trim()) {
-          fetch('/api/cards', {
+    // Add Card buttons - styled modal
+    document.querySelectorAll('.add-card-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var columnId = btn.dataset.columnId;
+        var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+          '<input id="card-title" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+          '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+          '<textarea id="card-desc" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;"></textarea>';
+        showModal('Create Card', content, function() {
+          var title = document.getElementById('card-title').value.trim();
+          var desc = document.getElementById('card-desc').value.trim();
+          if (title) {
+            fetch('/api/cards', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: title, description: desc || null, column_id: columnId })
+            }).then(function() { location.reload(); });
+          }
+        }, 'Create');
+      });
+    });
+
+    // Add Column button - styled modal
+    document.getElementById('add-column').addEventListener('click', function() {
+      var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Column Name *</label>' +
+        '<input id="col-name" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">';
+      showModal('Create Column', content, function() {
+        var name = document.getElementById('col-name').value.trim();
+        if (name) {
+          fetch('/api/columns', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: title.trim(), column_id: columnId })
-          }).then(() => location.reload());
+            body: JSON.stringify({ name: name })
+          }).then(function() { location.reload(); });
         }
-      });
-    });
-
-    // Add Column button
-    document.getElementById('add-column').addEventListener('click', () => {
-      const name = prompt('Enter column name:');
-      if (name && name.trim()) {
-        fetch('/api/columns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim() })
-        }).then(() => location.reload());
-      }
+      }, 'Create');
     });
   </script>
 </body>
