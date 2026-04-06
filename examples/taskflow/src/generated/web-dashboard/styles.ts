@@ -39,14 +39,15 @@ export const defaultStyleConfig: StyleConfig = {
     desktop: '769px'
   },
   colors: {
-    primary: '#007bff',
-    secondary: '#6c757d',
-    background: '#ffffff',
-    surface: '#f8f9fa',
-    text: '#212529',
-    textSecondary: '#6c757d',
-    border: '#dee2e6',
-    shadow: 'rgba(0, 0, 0, 0.1)'
+    // Catppuccin Mocha palette
+    primary: '#89b4fa',      // Blue
+    secondary: '#a6adc8',    // Subtext0
+    background: '#1e1e2e',  // Base
+    surface: '#313244',       // Surface0
+    text: '#cdd6f4',          // Text
+    textSecondary: '#a6adc8', // Subtext0
+    border: '#45475a',        // Surface1
+    shadow: 'rgba(0, 0, 0, 0.3)'
   },
   spacing: {
     xs: '0.25rem',
@@ -62,8 +63,8 @@ export const defaultStyleConfig: StyleConfig = {
   },
   effects: {
     borderRadius: '8px',
-    cardShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    cardShadowHover: '0 4px 8px rgba(0, 0, 0, 0.15)',
+    cardShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+    cardShadowHover: '0 4px 12px rgba(0, 0, 0, 0.4)',
     transition: 'all 0.2s ease-in-out'
   }
 };
