@@ -488,6 +488,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         var cardId = e.dataTransfer.getData('text/plain');
         var columnId = container.closest('.column').dataset.columnId;
         var draggedEl = document.querySelector('.card[data-card-id="' + cardId + '"]');
+        // Get old column BEFORE moving the element
+        var oldColumn = draggedEl ? draggedEl.closest('.column') : null;
+        var oldColId = oldColumn ? oldColumn.dataset.columnId : null;
+        
         fetch('/api/cards/' + cardId + '/move', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -498,11 +502,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             if (draggedEl) {
               draggedEl.style.opacity = '1';
               container.insertBefore(draggedEl, container.firstChild);
+              // Update counts - increment new, decrement old (if different)
               updateCardCount(columnId, 1);
-              var oldColumn = draggedEl.closest('.column');
-              if (oldColumn) {
-                var oldColId = oldColumn.dataset.columnId;
-                if (oldColId !== columnId) updateCardCount(oldColId, -1);
+              if (oldColId && oldColId !== columnId) {
+                updateCardCount(oldColId, -1);
               }
             }
           } else console.error('Failed to move card:', res.status);
