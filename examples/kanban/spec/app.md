@@ -70,6 +70,7 @@ A simple task management board with columns and cards.
 - CONSTRAINT: Button icons use emoji: ✏️ for edit, 🗑️ for delete
 - CONSTRAINT: Edit button hover color: #89b4fa (accent blue), delete button hover color: #f38ba8 (red)
 - CONSTRAINT: Board fills viewport width, columns scroll horizontally if needed
+- CONSTRAINT: Board fills viewport height without vertical scroll - vertical space is managed by column internals
 - CONSTRAINT: Column height fixed with internal scroll for many cards
 - CONSTRAINT: Card max-height 200px with scroll for long descriptions
 - CONSTRAINT: Card count badge updates in real-time when cards are added/moved/deleted
