@@ -238,20 +238,18 @@ export class DashboardPage {
         .header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 1rem 0;
-            margin-bottom: 2rem;
+            padding: 0.5rem 0;
         }
 
         .header-content {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            min-height: 40px;
         }
 
         .logo {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: bold;
             color: var(--primary);
         }
