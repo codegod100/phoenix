@@ -1,67 +1,76 @@
-# Phoenix Skills - Project Version
+# 🐦 Phoenix Skills Extension
 
-Phoenix VCS skill suite - version controlled with the project.
+A pi extension that adds a `/phoenix` command to browse and run project-specific skills.
 
-## Location
+## Installation
 
-These skills are in `.pi/skills/` and travel with the repo.
+The extension is already installed in this project at `.pi/extensions/phoenix.ts`. It will be auto-discovered when you run pi in this directory.
+
+## Usage
+
+### Browse Skills
+```
+/phoenix
+```
+Shows an interactive selector with all available Phoenix skills, grouped by:
+- 📁 Project Skills (from `.pi/skills/`)
+- 🌐 Global Skills (from `~/.pi/agent/skills/`)
+
+### Run a Specific Skill
+```
+/phoenix:skill-name
+```
+Runs the skill directly without showing the selector.
+
+### List All Skills
+```
+/phoenix:list
+```
+Displays all skills in the chat with their descriptions and paths.
 
 ## Available Skills
 
-```bash
-/skill:phoenix-init        # Initialize Phoenix project
-/skill:phoenix-ingest      # Parse spec files
-/skill:phoenix-canonicalize # Extract canonical requirements
-/skill:phoenix-plan        # Plan Implementation Units
-/skill:phoenix-regen       # Generate code from IUs
-/skill:phoenix-pipeline    # Run full pipeline
-/skill:phoenix-status      # Check pipeline state
-/skill:phoenix-drift       # Detect drift
-/skill:phoenix-audit       # Audit IU quality
-/skill:phoenix-inspect     # Generate HTML report
-```
+| Skill | Description |
+|-------|-------------|
+| `project-review` | Review project structure and provide feedback |
+| `code-quality` | Analyze code for anti-patterns and issues |
+| `test-coverage` | Identify gaps in test coverage |
+| `docs-check` | Verify documentation completeness |
 
-## Quick Start
+## Creating New Skills
 
-```bash
-# From project root:
-/skill:phoenix-pipeline
-```
+Create a new directory in `.pi/skills/` with a `SKILL.md` file:
 
-## Skill Files
-
-| Skill | Path |
-|-------|------|
-| phoenix-init | `.pi/skills/phoenix-init/SKILL.md` |
-| phoenix-ingest | `.pi/skills/phoenix-ingest/SKILL.md` |
-| phoenix-canonicalize | `.pi/skills/phoenix-canonicalize/SKILL.md` |
-| phoenix-plan | `.pi/skills/phoenix-plan/SKILL.md` |
-| phoenix-regen | `.pi/skills/phoenix-regen/SKILL.md` |
-| phoenix-pipeline | `.pi/skills/phoenix-pipeline/SKILL.md` |
-| phoenix-status | `.pi/skills/phoenix-status/SKILL.md` |
-| phoenix-drift | `.pi/skills/phoenix-drift/SKILL.md` |
-| phoenix-audit | `.pi/skills/phoenix-audit/SKILL.md` |
-| phoenix-inspect | `.pi/skills/phoenix-inspect/SKILL.md` |
-| phoenix-utils | `.pi/skills/phoenix-utils/` |
-
-## Shared Utilities
-
-The `phoenix-utils` skill provides:
-- `lib/types.ts` - TypeScript interfaces
-- `lib/helpers.ts` - I/O, hashing, project detection
-- `lib/prompts.ts` - LLM prompt templates
-
-Other skills reference these via relative paths.
-
-## Documentation
-
-- `PHOENIX_INDEX.md` - Full skill suite overview
-
-## Git Tracking
-
-Add to `.gitignore` if you don't want skills versioned:
 ```
 .pi/skills/
+└── my-skill/
+    └── SKILL.md
 ```
 
-Or keep them tracked to share with the team.
+The `SKILL.md` must have frontmatter:
+
+```markdown
+---
+name: my-skill
+description: What this skill does and when to use it
+---
+
+# My Skill
+
+## Overview
+Brief explanation...
+
+## Steps
+1. Do this
+2. Do that
+
+## Output Format
+What to produce...
+```
+
+## How It Works
+
+1. **Discovery**: The extension scans `.pi/skills/` and `.agents/skills/` directories
+2. **Caching**: Skills are cached per session (use "Refresh skill list" to reload)
+3. **Execution**: When you select a skill, its content is sent as a user message to the agent
+4. **Progressive Disclosure**: The agent receives the full skill content and follows its instructions
