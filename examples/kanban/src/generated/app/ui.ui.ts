@@ -363,8 +363,8 @@ export const UI = {
 // Helper: Convert URLs in text to clickable links
 function linkify(text: string): string {
   if (!text) return '';
-  // URL regex: matches http/https/ftp URLs
-  const urlRegex = /(https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+)/gi;
+  // URL regex: matches http/https/ftp URLs (explicitly exclude newlines/carriage returns)
+  const urlRegex = /(https?:\/\/[^\s<\n\r]+|ftp:\/\/[^\s<\n\r]+)/gi;
   return text.replace(urlRegex, function(url) {
     // Escape HTML in the URL for href attribute (security)
     const safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -489,8 +489,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     // Helper: Convert URLs in text to clickable links
     function linkify(text) {
       if (!text) return '';
-      // URL regex: matches http/https/ftp URLs (using RegExp constructor to avoid escape issues)
-      var urlRegex = new RegExp('(https?://[^\\s<]+|ftp://[^\\s<]+)', 'gi');
+      // URL regex: matches http/https/ftp URLs (explicitly exclude newlines)
+      var urlRegex = new RegExp('(https?://[^\\s<\\n\\r]+|ftp://[^\\s<\\n\\r]+)', 'gi');
       return text.replace(urlRegex, function(url) {
         // Escape HTML in the URL for href attribute (security)
         var safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
