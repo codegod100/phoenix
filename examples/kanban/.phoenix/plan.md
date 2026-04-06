@@ -169,6 +169,8 @@
 **Requirements:**
 - node-5f3c8a1e: each column header shows edit (✏️) and delete (🗑️) buttons on hover, positioned left of count badge
 - node-9c6a4f3b: column header widget order from left to right: edit button, delete button, card count badge
+- node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
+- node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
 - node-4e8b2a7f: clicking column edit button opens styled modal to rename column
 - node-1f7c5e9a: clicking column delete button opens confirmation modal (destructive action)
 - node-8a3f6c2e: modal on confirm deletes column, removes all cards in it, updates ui dynamically
@@ -178,6 +180,7 @@
 - node-7e4b8f1c: column edit/delete buttons visible only on column header hover, positioned absolute right
 - node-4a7f9e3c: column count badge dom element id format: "count-{columnid}"
 - node-1b8f5c9e: card count badge updates in real-time when cards are added/moved/deleted
+- node-c3d6e4f5: dropping a column between two other columns reorders it to that position
 
 **Contract:**
 - Input: Column data, card count
@@ -215,6 +218,9 @@
 ## IU-10: Drag and Drop System (HIGH RISK)
 **Requirements:**
 - node-7d3b8f2e: drag-and-drop cards between columns with visual feedback
+- node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
+- node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
+- node-c3d6e4f5: dropping a column between two other columns reorders it to that position
 - node-3e7b5f9a: drag-and-drop cards between columns calls move api and updates ui dynamically without page reload
 - node-5a3f9c7e: when card moved between columns via drag-and-drop, source column count decrements by 1, destination column count increments by 1
 - node-9c7f4e2b: when card moved within same column (reordering), counts remain unchanged

@@ -14,8 +14,8 @@ export function renderColumn(column: Column, cards: Card[]): string {
   const cardsHTML = renderCardList(cards.filter(c => c.column_id === column.id));
 
   return `
-    <div class="column" data-column-id="${column.id}" data-order="${column.order_index}">
-      <div class="column-header">
+    <div class="column" draggable="true" data-column-id="${column.id}" data-order="${column.order_index}">
+      <div class="column-header" draggable="true" data-column-drag-handle="${column.id}">
         <span class="column-title">${escapeHtml(column.name)}</span>
         <div class="column-actions">
           <button class="btn btn-icon btn-edit" data-action="edit-col" data-column-id="${column.id}" title="Edit">✏️</button>
@@ -30,14 +30,18 @@ export function renderColumn(column: Column, cards: Card[]): string {
         <button class="btn btn-secondary" style="width:100%" data-action="add-card" data-column-id="${column.id}">+ Add Card</button>
       </div>
     </div>
+    <div class="column-drop-zone" data-drop-zone="${column.id}"></div>
   `;
 }
 
 export function renderColumnList(columns: Column[], cards: Card[]): string {
-  return columns
-    .sort((a, b) => a.order_index - b.order_index)
-    .map(col => renderColumn(col, cards))
-    .join('');
+  const sortedColumns = columns.sort((a, b) => a.order_index - b.order_index);
+  let html = '<div class="columns-container">';
+  for (const col of sortedColumns) {
+    html += renderColumn(col, cards);
+  }
+  html += '</div>';
+  return html;
 }
 
 function escapeHtml(text: string): string {
@@ -74,11 +78,112 @@ function initColumnHandlers() {
     });
   });
 
-  // Column drop zones
+  // Column drag handles (header)
+  document.querySelectorAll('[data-column-drag-handle]').forEach(header => {
+    header.addEventListener('dragstart', handleColumnDragStart);
+    header.addEventListener('dragend', handleColumnDragEnd);
+  });
+
+  // Column drop zones (between columns)
+  document.querySelectorAll('.column-drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', handleColumnDropOver);
+    zone.addEventListener('dragleave', handleColumnDropLeave);
+    zone.addEventListener('drop', handleColumnDrop);
+  });
+
+  // Card drop zones (for card drag-and-drop)
   document.querySelectorAll('.column').forEach(col => {
     col.addEventListener('dragover', handleColumnDragOver);
     col.addEventListener('dragleave', handleColumnDragLeave);
-    col.addEventListener('drop', handleColumnDrop);
+    col.addEventListener('drop', handleColumnCardDrop);
+  });
+}
+
+let draggedColumnId = null;
+
+function handleColumnDragStart(e) {
+  draggedColumnId = this.dataset.columnDragHandle;
+  const column = document.querySelector('[data-column-id="' + draggedColumnId + '"]');
+  if (column) column.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('column-id', draggedColumnId);
+  
+  // Show drop zones between columns
+  document.querySelectorAll('.column-drop-zone').forEach(zone => {
+    zone.classList.add('active');
+  });
+}
+
+function handleColumnDragEnd(e) {
+  const column = document.querySelector('[data-column-id="' + draggedColumnId + '"]');
+  if (column) column.classList.remove('dragging');
+  draggedColumnId = null;
+  
+  // Hide drop zones
+  document.querySelectorAll('.column-drop-zone').forEach(zone => {
+    zone.classList.remove('active', 'drag-over');
+  });
+}
+
+function handleColumnDropOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('drag-over');
+}
+
+function handleColumnDropLeave(e) {
+  this.classList.remove('drag-over');
+}
+
+function handleColumnDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  
+  const columnId = e.dataTransfer.getData('column-id');
+  const dropZoneId = this.dataset.dropZone;
+  
+  if (!columnId || columnId === dropZoneId) return;
+  
+  const column = document.querySelector('[data-column-id="' + columnId + '"]');
+  if (!column) return;
+  
+  // Calculate new order position
+  const allColumns = Array.from(document.querySelectorAll('.column'));
+  const dropZone = this;
+  let newIndex = allColumns.findIndex(col => col.dataset.columnId === dropZoneId);
+  const oldIndex = allColumns.findIndex(col => col.dataset.columnId === columnId);
+  
+  if (oldIndex < newIndex) {
+    newIndex--; // Adjust because we're moving from before
+  }
+  newIndex = Math.max(0, newIndex);
+  
+  // Move column in DOM
+  if (newIndex === 0) {
+    const firstColumn = document.querySelector('.column');
+    if (firstColumn && firstColumn !== column) {
+      firstColumn.parentNode.insertBefore(column, firstColumn);
+    }
+  } else {
+    const targetColumn = allColumns[newIndex];
+    if (targetColumn && targetColumn !== column) {
+      targetColumn.parentNode.insertBefore(column, targetColumn.nextSibling);
+    }
+  }
+  
+  // Update all order indexes
+  document.querySelectorAll('.column').forEach((col, idx) => {
+    col.dataset.order = idx;
+  });
+  
+  // Call API
+  fetch('/api/columns/' + columnId + '/move', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order_index: newIndex })
+  }).catch(err => {
+    console.error('Column move failed:', err);
+    // Revert would require page reload or tracking original positions
   });
 }
 
@@ -198,7 +303,10 @@ function updateColumnCount(columnId) {
   if (badge) badge.textContent = count;
 }
 
+// Card drag-and-drop handlers (for dropping on columns)
 function handleColumnDragOver(e) {
+  // Only allow card drops, not column drops
+  if (!e.dataTransfer.getData('text/plain')) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   this.classList.add('drag-over');
@@ -208,49 +316,47 @@ function handleColumnDragLeave(e) {
   this.classList.remove('drag-over');
 }
 
-function handleColumnDrop(e) {
+function handleColumnCardDrop(e) {
   e.preventDefault();
   this.classList.remove('drag-over');
 
   const cardId = e.dataTransfer.getData('text/plain');
-  const newColumnId = this.dataset.columnId;
+  const targetColumnId = this.dataset.columnId;
 
-  if (!cardId || !newColumnId) return;
+  if (!cardId || !targetColumnId) return;
 
   const card = document.querySelector('[data-card-id="' + cardId + '"]');
   if (!card) return;
 
-  const oldColumnId = card.dataset.columnId;
-  if (oldColumnId === newColumnId) return;
+  const sourceColumnId = card.dataset.columnId;
+  if (sourceColumnId === targetColumnId) return;
 
   const cardsContainer = this.querySelector('.column-cards');
   const newOrder = cardsContainer.children.length;
 
-  // Optimistic UI update
+  // Optimistic update
   cardsContainer.appendChild(card);
-  card.dataset.columnId = newColumnId;
-  updateColumnCount(oldColumnId);
-  updateColumnCount(newColumnId);
+  card.dataset.columnId = targetColumnId;
+  updateColumnCount(sourceColumnId);
+  updateColumnCount(targetColumnId);
 
   // API call
   fetch('/api/cards/' + cardId + '/move', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ column_id: newColumnId, order_index: newOrder })
-  })
-  .then(r => {
-    if (!r.ok) throw new Error('Move failed');
-    return r.json();
-  })
-  .catch(err => {
-    console.error('Move failed:', err);
-    // Revert on failure
-    const oldContainer = document.querySelector('.column-cards[data-column-id="' + oldColumnId + '"]');
+    body: JSON.stringify({
+      column_id: targetColumnId,
+      order_index: newOrder
+    })
+  }).catch(err => {
+    console.error('Card move failed:', err);
+    // Revert
+    const oldContainer = document.querySelector('.column-cards[data-column-id="' + sourceColumnId + '"]');
     if (oldContainer) {
       oldContainer.appendChild(card);
-      card.dataset.columnId = oldColumnId;
-      updateColumnCount(oldColumnId);
-      updateColumnCount(newColumnId);
+      card.dataset.columnId = sourceColumnId;
+      updateColumnCount(sourceColumnId);
+      updateColumnCount(targetColumnId);
     }
   });
 }

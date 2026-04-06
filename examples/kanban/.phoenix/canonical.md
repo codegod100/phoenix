@@ -73,6 +73,9 @@ node-9e2b7c5f: clicking card body initiates drag-and-drop to move card
 node-4c8f3a6b: clicking card edit button opens styled modal to edit title and description
 node-1a9f7e4c: clicking card delete button opens confirmation modal (destructive action)
 node-7d3b8f2e: drag-and-drop cards between columns with visual feedback
+node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
+node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
+node-c3d6e4f5: dropping a column between two other columns reorders it to that position
 node-5e9a4c8f: styled modal dialogs have: title, input fields, confirm button, cancel button
 node-2b8f6c3a: modal on confirm calls api and updates the board ui dynamically without page reload
 node-6c4f9e1b: modal on cancel closes without api call

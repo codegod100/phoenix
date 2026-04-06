@@ -83,6 +83,9 @@ A simple task management board with columns and cards.
 - REQUIREMENT: Clicking card edit button opens styled modal to edit title and description
 - REQUIREMENT: Clicking card delete button opens confirmation modal (destructive action)
 - REQUIREMENT: Drag-and-drop cards between columns with visual feedback
+- REQUIREMENT: Dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
+- REQUIREMENT: While dragging a column, other columns show drop zones between them for reordering
+- REQUIREMENT: Dropping a column between two other columns reorders it to that position
 - REQUIREMENT: Styled modal dialogs have: title, input fields, confirm button, cancel button
 - REQUIREMENT: Modal on confirm calls API and updates the board UI dynamically without page reload
 - REQUIREMENT: Modal on cancel closes without API call

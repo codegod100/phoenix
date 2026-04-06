@@ -3,7 +3,6 @@
 
 import type { Column, Card, Board } from './models.js';
 import { renderColumnList, COLUMN_JS } from './column.ui.js';
-import { CARD_JS } from './card.ui.js';
 
 export const _phoenix = {
   iu_id: 'board-ui-007',
@@ -58,17 +57,30 @@ function addColumnToDOM(column) {
   const board = document.getElementById('board');
   const addBtn = document.getElementById('add-column-btn');
 
+  // Create column HTML
   const colHTML = createColumnHTML(column);
-  addBtn.insertAdjacentHTML('beforebegin', colHTML);
 
-  const newCol = addBtn.previousElementSibling;
-  initColumnHandlersForElement(newCol);
+  // Insert before add button
+  const container = board.querySelector('.columns-container');
+  if (container) {
+    container.insertAdjacentHTML('beforeend', colHTML);
+
+    const newCol = container.lastElementChild;
+    initColumnDragHandlers(newCol);
+  }
+
+  // Add drop zone after new column
+  const dropZone = document.createElement('div');
+  dropZone.className = 'column-drop-zone';
+  dropZone.dataset.dropZone = column.id;
+  initColumnDropZone(dropZone);
+  board.insertBefore(dropZone, addBtn);
 }
 
 function createColumnHTML(column) {
   return \`
-    <div class="column" data-column-id="\${column.id}" data-order="\${column.order_index}">
-      <div class="column-header">
+    <div class="column" draggable="true" data-column-id="\${column.id}" data-order="\${column.order_index}">
+      <div class="column-header" draggable="true" data-column-drag-handle="\${column.id}">
         <span class="column-title">\${escapeHtml(column.name)}</span>
         <div class="column-actions">
           <button class="btn btn-icon btn-edit" data-action="edit-col" data-column-id="\${column.id}" title="Edit">✏️</button>
@@ -81,10 +93,18 @@ function createColumnHTML(column) {
         <button class="btn btn-secondary" style="width:100%" data-action="add-card" data-column-id="\${column.id}">+ Add Card</button>
       </div>
     </div>
+    <div class="column-drop-zone" data-drop-zone="\${column.id}"></div>
   \`;
 }
 
-function initColumnHandlersForElement(col) {
+function initColumnDragHandlers(col) {
+  // Header drag
+  const header = col.querySelector('[data-column-drag-handle]');
+  if (header) {
+    header.addEventListener('dragstart', handleColumnDragStart);
+    header.addEventListener('dragend', handleColumnDragEnd);
+  }
+
   // Edit button
   const editBtn = col.querySelector('[data-action="edit-col"]');
   if (editBtn) {
@@ -112,10 +132,10 @@ function initColumnHandlersForElement(col) {
     });
   }
 
-  // Drop zone
+  // Card drop handlers
   col.addEventListener('dragover', handleColumnDragOver);
   col.addEventListener('dragleave', handleColumnDragLeave);
-  col.addEventListener('drop', handleColumnDrop);
+  col.addEventListener('drop', handleColumnCardDrop);
 }
 
 function escapeHtml(text) {

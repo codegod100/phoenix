@@ -277,6 +277,7 @@ export function renderPage(board: Board): string {
 
     // Column handlers
     function initColumnHandlers() {
+      // Edit/delete/add buttons
       document.querySelectorAll('[data-action="edit-col"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -298,10 +299,24 @@ export function renderPage(board: Board): string {
         });
       });
 
+      // Column drag handlers (header for reordering)
+      document.querySelectorAll('[data-column-drag-handle]').forEach(header => {
+        header.addEventListener('dragstart', handleColumnDragStart);
+        header.addEventListener('dragend', handleColumnDragEnd);
+      });
+
+      // Column drop zones (between columns)
+      document.querySelectorAll('.column-drop-zone').forEach(zone => {
+        zone.addEventListener('dragover', handleColumnDropOver);
+        zone.addEventListener('dragleave', handleColumnDropLeave);
+        zone.addEventListener('drop', handleColumnDrop);
+      });
+
+      // Card drop handlers on columns
       document.querySelectorAll('.column').forEach(col => {
         col.addEventListener('dragover', handleColumnDragOver);
         col.addEventListener('dragleave', handleColumnDragLeave);
-        col.addEventListener('drop', handleColumnDrop);
+        col.addEventListener('drop', handleColumnCardDrop);
       });
     }
 
@@ -419,7 +434,9 @@ export function renderPage(board: Board): string {
       if (badge) badge.textContent = count;
     }
 
+    // Card drag-and-drop handlers (on columns)
     function handleColumnDragOver(e) {
+      // Only for card drops, not column drops
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       this.classList.add('drag-over');
@@ -429,7 +446,7 @@ export function renderPage(board: Board): string {
       this.classList.remove('drag-over');
     }
 
-    function handleColumnDrop(e) {
+    function handleColumnCardDrop(e) {
       e.preventDefault();
       this.classList.remove('drag-over');
 
@@ -470,6 +487,109 @@ export function renderPage(board: Board): string {
           updateColumnCount(oldColumnId);
           updateColumnCount(newColumnId);
         }
+      });
+    }
+
+    // Column drag-and-drop handlers (reordering)
+    let draggedColumnId = null;
+
+    function handleColumnDragStart(e) {
+      draggedColumnId = this.dataset.columnDragHandle;
+      const column = document.querySelector('[data-column-id="' + draggedColumnId + '"]');
+      if (column) column.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('type', 'column');
+      e.dataTransfer.setData('column-id', draggedColumnId);
+
+      document.querySelectorAll('.column-drop-zone').forEach(zone => {
+        zone.classList.add('active');
+      });
+    }
+
+    function handleColumnDragEnd(e) {
+      const column = document.querySelector('[data-column-id="' + draggedColumnId + '"]');
+      if (column) column.classList.remove('dragging');
+      draggedColumnId = null;
+      document.querySelectorAll('.column-drop-zone').forEach(zone => {
+        zone.classList.remove('active', 'drag-over');
+      });
+    }
+
+    function handleColumnDropOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      this.classList.add('drag-over');
+    }
+
+    function handleColumnDropLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleColumnDrop(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+
+      const columnId = e.dataTransfer.getData('column-id');
+      const dropZoneId = this.dataset.dropZone;
+
+      if (!columnId || !dropZoneId || columnId === dropZoneId) return;
+
+      const column = document.querySelector('[data-column-id="' + columnId + '"]');
+      if (!column) return;
+
+      const allColumns = Array.from(document.querySelectorAll('.column'));
+      const targetIndex = allColumns.findIndex(col => col.dataset.columnId === dropZoneId);
+      const sourceIndex = allColumns.findIndex(col => col.dataset.columnId === columnId);
+
+      if (targetIndex === -1 || sourceIndex === -1) return;
+
+      let newIndex = targetIndex;
+      if (sourceIndex < targetIndex) {
+        newIndex--;
+      }
+      newIndex = Math.max(0, newIndex);
+
+      const container = column.parentElement;
+      const columns = document.querySelectorAll('.column');
+      const targetColumn = columns[newIndex];
+
+      if (targetColumn && targetColumn !== column) {
+        container.insertBefore(column, targetColumn.nextSibling);
+      }
+
+      // Recreate drop zones
+      recreateDropZones();
+
+      document.querySelectorAll('.column').forEach((col, idx) => {
+        col.dataset.order = idx;
+      });
+
+      fetch('/api/columns/' + columnId + '/move', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_index: newIndex })
+      }).catch(err => {
+        console.error('Column move failed:', err);
+      });
+    }
+
+    function recreateDropZones() {
+      const board = document.getElementById('board');
+      if (!board) return;
+
+      board.querySelectorAll('.column-drop-zone').forEach(zone => zone.remove());
+
+      const columns = Array.from(board.querySelectorAll('.column'));
+      const addBtn = document.getElementById('add-column-btn');
+
+      columns.forEach((col) => {
+        const dropZone = document.createElement('div');
+        dropZone.className = 'column-drop-zone';
+        dropZone.dataset.dropZone = col.dataset.columnId;
+        dropZone.addEventListener('dragover', handleColumnDropOver);
+        dropZone.addEventListener('dragleave', handleColumnDropLeave);
+        dropZone.addEventListener('drop', handleColumnDrop);
+        board.insertBefore(dropZone, addBtn);
       });
     }
 

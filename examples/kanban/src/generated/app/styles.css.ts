@@ -330,7 +330,46 @@ html, body {
   min-height: 80px;
 }
 
-/* Drag and drop */
+/* Column drag and drop */
+.column-header {
+  cursor: grab;
+}
+
+.column-header:active {
+  cursor: grabbing;
+}
+
+.column.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.column-drop-zone {
+  width: 8px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.column-drop-zone.active {
+  width: 40px;
+  background: var(--surface0);
+  border: 2px dashed var(--blue);
+}
+
+.column-drop-zone.drag-over {
+  background: var(--blue);
+  border-color: var(--text);
+}
+
+.columns-container {
+  display: flex;
+  gap: 0;
+  height: 100%;
+}
+
+/* Drag and drop states */
 .card.dragging {
   opacity: 0.5;
   cursor: grabbing;
