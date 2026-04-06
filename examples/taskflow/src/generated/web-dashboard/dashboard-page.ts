@@ -1076,6 +1076,51 @@ export class DashboardPage {
                         \${task.deadline ? \`<span>📅 \${new Date(task.deadline).toLocaleDateString()}</span>\` : ''}
                         \${isOverdue(task) ? '<span class="badge overdue-badge">OVERDUE</span>' : ''}
                     </div>
+                    <!-- Inline Edit Panel -->
+                    <div id="edit-panel-\${task.id}" class="edit-panel">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label>Title *</label>
+                                <input type="text" id="edit-title-\${task.id}" value="\${task.title}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Priority</label>
+                                <select id="edit-priority-\${task.id}">
+                                    <option value="low" \${task.priority === 'low' ? 'selected' : ''}>Low</option>
+                                    <option value="medium" \${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                                    <option value="high" \${task.priority === 'high' ? 'selected' : ''}>High</option>
+                                    <option value="critical" \${task.priority === 'critical' ? 'selected' : ''}>Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="edit-status-\${task.id}">
+                                    <option value="open" \${task.status === 'open' ? 'selected' : ''}>Open</option>
+                                    <option value="in_progress" \${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="review" \${task.status === 'review' ? 'selected' : ''}>Review</option>
+                                    <option value="done" \${task.status === 'done' ? 'selected' : ''}>Done</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Assignee</label>
+                                <input type="text" id="edit-assignee-\${task.id}" value="\${task.assignee || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Deadline</label>
+                                <input type="date" id="edit-deadline-\${task.id}" value="\${task.deadline || ''}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="edit-description-\${task.id}" rows="2">\${task.description || ''}</textarea>
+                        </div>
+                        <div class="panel-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeEditPanel('\${task.id}')">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveEditPanel('\${task.id}')">Save Changes</button>
+                        </div>
+                    </div>
                 </div>
             \`).join('');
         }
