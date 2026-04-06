@@ -99,16 +99,22 @@ export async function describeAvailability(): Promise<{
 }
 
 /**
- * Load Phoenix config from .phoenix/config.json.
+ * Load Phoenix config from Phoenix root .phoenix/config.json.
+ * Single source of truth - no per-app overrides.
  */
 function loadConfig(phoenixDir: string): PhoenixConfig {
-  const configPath = join(phoenixDir, 'config.json');
-  if (!existsSync(configPath)) return {};
-  try {
-    return JSON.parse(readFileSync(configPath, 'utf8'));
-  } catch {
-    return {};
+  // Phoenix root config is at same level as project
+  // phoenixDir is like 'project/.phoenix', so go up 2 levels
+  const rootConfigPath = join(phoenixDir, '..', '..', '.phoenix', 'config.json');
+  if (existsSync(rootConfigPath)) {
+    try {
+      return JSON.parse(readFileSync(rootConfigPath, 'utf8'));
+    } catch {
+      return {};
+    }
   }
+  
+  return {};
 }
 
 /**

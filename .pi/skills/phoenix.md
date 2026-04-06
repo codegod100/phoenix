@@ -18,12 +18,14 @@ just prep  # Creates .phoenix/graphs/ius.json
 
 ## How to Run
 
-**DO NOT run this skill via justfile.** 
+**DO NOT run this skill via justfile.**
 
-Run directly from the pi TUI:
-```
-pi "files are prepped, regenerate the code"
-```
+**DO NOT use `pi` command from inside the PI TUI.**
+
+When inside PI TUI, execute the regeneration steps directly:
+1. Read `.phoenix/graphs/ius.json` to get IU definitions
+2. Generate code for each IU following the steps below
+3. Validate and test
 
 The skill will:
 1. Check `.phoenix/graphs/ius.json` exists
@@ -179,3 +181,127 @@ export const _phoenix = {
 src/generated/app/*.ts            # Generated code (output)
 src/generated/app/__tests__/*.ts  # Tests
 ```
+
+---
+
+# Phoenix IU Analyzer
+
+Use this skill section when you need to debug or understand the mapping from spec to generated code.
+
+## Purpose
+Bridge Phoenix VCS pipeline output with agent context to analyze Implementation Units, their canonical requirements, and regeneration mappings.
+
+## Capabilities
+- **Map IUs to generated files** — Understand which code files implement which IUs
+- **Trace requirements** — Follow canonical nodes → IUs → generated files
+- **Check regeneration metadata** — See model, promptpack, toolchain used for each IU
+- **Analyze IU contracts** — View risk tiers, evidence policies, boundary policies
+- **Detect drift** — Compare generated manifest with actual files
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `.phoenix/graphs/ius.json` | Implementation Units with contracts, dependencies, outputs |
+| `.phoenix/graphs/canonical.json` | Canonical requirements extracted from spec |
+| `.phoenix/manifests/generated_manifest.json` | File hashes, regen metadata per IU |
+| `.phoenix/graphs/spec.json` | Original spec clauses with IDs |
+
+## IU Structure
+
+```typescript
+interface ImplementationUnit {
+  iu_id: string;           // Content-addressed hash
+  name: string;            // Human-readable name
+  kind: 'module' | 'api' | 'web-ui' | 'function';
+  risk_tier: 'low' | 'medium' | 'high' | 'critical';
+  contract: {
+    description: string;
+    inputs: string[];
+    outputs: string[];
+    invariants: string[];
+  };
+  source_canon_ids: string[];  // Links to canonical.json
+  output_files: string[];
+  outputs: Array<{
+    type: 'api' | 'web-ui' | 'client' | 'test';
+    file: string;
+    primary: boolean;
+  }>;
+  boundary_policy: { /* code/side_channel constraints */ };
+  evidence_policy: { /* required: typecheck, lint, tests */ };
+}
+```
+
+## Regen Metadata Structure
+
+```typescript
+interface RegenMetadata {
+  model_id: string;        // e.g., "fireworks/accounts/fireworks/models/deepseek-v3p2"
+  promptpack_hash: string; // Hash of prompt template used
+  toolchain_version: string; // e.g., "phoenix-regen/0.1.0"
+  generated_at: string;    // ISO timestamp
+}
+```
+
+## Analysis Commands
+
+| Goal | Files to Read | Analysis |
+|------|---------------|----------|
+| IU → Files | `ius.json` + `generated_manifest.json` | Map iu_id to files |
+| File → IU | `generated_manifest.json` | Reverse lookup by iu_id |
+| Requirement → Code | `canonical.json` → `ius.json` | Follow canon_ids |
+| Regen Audit | `generated_manifest.json` | Compare metadata across IUs |
+| Coverage Check | `ius.json` | Find IUs without test outputs |
+| Drift Detection | `generated_manifest.json` vs fs | Compare hashes |
+
+## Example Analysis Output
+
+```
+=== Phoenix IU Analysis ===
+
+IU: Items (f9dc9b8d...)
+├── Kind: api
+├── Risk: high
+├── Contract:
+│   ├── Description: "System creates, views, updates, deletes items..."
+│   └── Invariants: 5 (name not empty, quantity >= 0, etc.)
+├── Source Requirements: 29 canonical nodes
+├── Generated Files:
+│   ├── PRIMARY: src/generated/app/items.ts (8,988 bytes, hash: e35f...)
+│   └── TEST: src/generated/app/__tests__/items.test.ts (420 bytes)
+├── Regen Metadata:
+│   ├── Model: stub-generator/1.0
+│   ├── Promptpack: 42dad4b6...
+│   ├── Toolchain: phoenix-regen/0.1.0
+│   └── Generated: 2026-04-05T21:58:53.850Z
+└── Evidence Policy:
+    ├── Required: typecheck, lint, boundary_validation, unit_tests, property_tests, static_analysis
+    └── ⚠️  WARNING: High-tier IU generated with stub-generator
+```
+
+## Common Issues Detected
+
+| Issue | Detection | Resolution |
+|-------|-----------|------------|
+| High-risk IU with stub generator | risk_tier=high + model_id=stub-generator | Re-run with LLM |
+| Missing test files | evidence_policy requires tests but no test output | Add tests to spec |
+| Orphan canonical nodes | canon_id not in any IU's source_canon_ids | Re-canonicalize |
+| Mixed toolchains | Some IUs with different toolchain versions | Re-run full regen |
+| File hash mismatch | manifest hash != current hash | Drift detected |
+
+## Drift Detection
+
+Compare `generated_manifest.json` hashes with actual file content:
+
+```bash
+# For each file in manifest:
+#   - Compute current hash
+#   - Compare with manifest hash
+#   - Report mismatch (manual edit or regen needed)
+```
+
+**Drift types:**
+- **Intentional drift:** You hand-edited a generated file (add to spec or mark as temporary)
+- **Accidental drift:** File changed without you knowing (check git history)
+- **Generation mismatch:** Different model/toolchain generated than expected
