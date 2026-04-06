@@ -366,10 +366,10 @@ function linkify(text: string): string {
   // URL regex: matches http/https/ftp URLs
   const urlRegex = /(https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+)/gi;
   return text.replace(urlRegex, function(url) {
-    // Escape HTML in the URL to prevent injection
+    // Escape HTML in the URL for href attribute (security)
     const safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // Use CSS class for hover effect (defined in page styles)
-    return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="card-link">' + safeUrl + '</a>';
+    // Show original URL as text (not escaped), use CSS class for hover
+    return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="card-link">' + url + '</a>';
   });
 }
 
@@ -492,10 +492,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       // URL regex: matches http/https/ftp URLs (using RegExp constructor to avoid escape issues)
       var urlRegex = new RegExp('(https?://[^\\s<]+|ftp://[^\\s<]+)', 'gi');
       return text.replace(urlRegex, function(url) {
-        // Escape HTML in the URL
+        // Escape HTML in the URL for href attribute (security)
         var safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        // Use CSS class for hover instead of inline JS to avoid escaping issues
-        return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="card-link">' + safeUrl + '</a>';
+        // Show original URL as text (not escaped)
+        return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="card-link">' + url + '</a>';
       });
     }
 
