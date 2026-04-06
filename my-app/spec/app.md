@@ -58,6 +58,12 @@
 - CONSTRAINT: Layout: max-width 1400px container, centered with 24px padding, flexible wrapping for responsive filters
 - CONSTRAINT: Table: row height comfortable, cell padding 14px horizontal (0.875rem), 1px solid borders between rows
 - CONSTRAINT: Focus states: blue (#89b4fa) outline for accessibility on inputs and buttons
+- CONSTRAINT: Dialog/Modal: backdrop blur 4px with 60% black overlay, centered content, max-width 500px, max-height 90vh with scroll
+- CONSTRAINT: Dialog header: flex layout with title (h2, 20px size) and close button (× icon), bottom border 1px solid surface0
+- CONSTRAINT: Dialog body: padding 24px (1.5rem), form groups with label above input, 16px margin-bottom between groups
+- CONSTRAINT: Dialog footer: top border 1px solid surface0, flex row with gap, right-aligned action buttons
+- CONSTRAINT: Form layout: inputs full-width within container, two-column grid for related fields (quantity/min-quantity)
+- CONSTRAINT: Close button: top-right positioned, inherits text color, 24px font-size, no background
 
 ## Low Stock
 
