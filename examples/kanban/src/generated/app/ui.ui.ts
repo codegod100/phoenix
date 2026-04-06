@@ -363,10 +363,11 @@ export const UI = {
 // Server-side render page function (for server.ts compatibility)
 export function renderPage(board: { columns: Array<{ id: number | string; name: string; cards: Array<{ id: number | string; title: string; description: string | null; order_index: number }> }> }): string {
   const columnsHtml = board.columns.map(col => `
-    <div class="column" data-column-id="${col.id}" style="
+    <div class="column" data-column-id="${col.id}" draggable="true" style="
       background: ${DesignSystem.layout.columnBackground};
       border-radius: 8px; min-width: 280px; max-width: 280px;
       display: flex; flex-direction: column; max-height: calc(100vh - 32px);
+      cursor: grab;
     ">
       <div class="column-header" style="
         padding: 12px 16px;
@@ -453,6 +454,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     .column-header:hover .edit-column-btn, .column-header:hover .delete-column-btn { opacity: 1 !important; }
     .edit-column-btn:hover { color: #89b4fa !important; background: #1e1e2e !important; }
     .delete-column-btn:hover { color: #f38ba8 !important; background: #1e1e2e !important; }
+    .column[draggable="true"] { transition: opacity 0.2s; }
+    .column[draggable="true"]:hover { opacity: 0.9; }
+    .column.dragging { opacity: 0.5; cursor: grabbing; }
+    .column.drag-over { border-left: 3px solid #89b4fa; }
   </style>
 </head>
 <body>
@@ -522,7 +527,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       }
     }
 
-    // Drag and drop
+    // Drag and drop for cards
     var draggedCard = null;
     document.querySelectorAll('.card').forEach(function(card) {
       card.addEventListener('dragstart', function(e) {
@@ -533,6 +538,78 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       card.addEventListener('dragend', function() {
         card.style.opacity = '1';
         draggedCard = null;
+      });
+    });
+    
+    // Drag and drop for columns
+    var draggedColumn = null;
+    document.querySelectorAll('.column').forEach(function(column) {
+      column.addEventListener('dragstart', function(e) {
+        draggedColumn = column;
+        column.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', column.dataset.columnId);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      column.addEventListener('dragend', function() {
+        column.classList.remove('dragging');
+        draggedColumn = null;
+        // Remove all drag-over indicators
+        document.querySelectorAll('.column').forEach(function(col) {
+          col.classList.remove('drag-over');
+        });
+      });
+      
+      // Drag enter/over/leave/drop for column reordering
+      column.addEventListener('dragenter', function(e) {
+        if (draggedColumn && draggedColumn !== column) {
+          column.classList.add('drag-over');
+        }
+      });
+      column.addEventListener('dragleave', function(e) {
+        column.classList.remove('drag-over');
+      });
+      column.addEventListener('dragover', function(e) {
+        if (draggedColumn) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }
+      });
+      column.addEventListener('drop', function(e) {
+        if (draggedColumn && draggedColumn !== column) {
+          e.preventDefault();
+          column.classList.remove('drag-over');
+          
+          var draggedId = draggedColumn.dataset.columnId;
+          var targetId = column.dataset.columnId;
+          
+          // Move column in DOM before API call
+          var board = document.querySelector('.kanban-board');
+          var allColumns = Array.from(board.querySelectorAll('.column'));
+          var targetIndex = allColumns.indexOf(column);
+          var draggedIndex = allColumns.indexOf(draggedColumn);
+          
+          if (targetIndex > draggedIndex) {
+            column.after(draggedColumn);
+          } else {
+            column.before(draggedColumn);
+          }
+          
+          // Calculate new order_index (0-based position)
+          var newOrderIndex = Array.from(board.querySelectorAll('.column')).indexOf(draggedColumn);
+          
+          // Call API to persist move
+          fetch('/api/columns/' + draggedId + '/move', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_index: newOrderIndex })
+          }).then(function(res) {
+            if (!res.ok) {
+              console.error('Failed to move column');
+            }
+          }).catch(function(err) {
+            console.error('Error moving column:', err);
+          });
+        }
       });
     });
     
