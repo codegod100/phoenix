@@ -33,111 +33,28 @@ const _svcModules = {
 // ─── HTML Renderer ───────────────────────────────────────────────────────────
 
 function renderPage(): string {
-  // Collect CSS from style modules
-  let css = '';
+  // Use DashboardPage to render the complete HTML page
   try {
-    const styleMod = styles as Record<string, unknown>;
-    for (const key of Object.keys(styleMod)) {
-      const val = styleMod[key];
-      if (typeof val === 'function' && /css|style/i.test(key)) {
-        const result = (val as Function)();
-        if (typeof result === 'string') css += result;
-        else if (result && typeof result === 'object' && 'generateCSS' in result) {
-          css += (result as { generateCSS: () => string }).generateCSS();
-        }
-      }
-    }
-  } catch { /* style module may not have expected exports */ }
-
-  // Collect HTML from UI modules
-  const sections: string[] = [];
-  try {
-    const uiMod = analyticsPanel as Record<string, unknown>;
-    for (const key of Object.keys(uiMod)) {
-      const val = uiMod[key];
-      // Look for factory functions that return objects with render/renderHTML
-      if (typeof val === 'function' && /^create|^make|^render|^build/i.test(key)) {
-        try {
-          const instance = (val as Function)();
-          if (typeof instance === 'string' && instance.includes('<')) {
-            sections.push(instance);
-          } else if (instance && typeof instance === 'object') {
-            const obj = instance as Record<string, unknown>;
-            if (typeof obj.render === 'function') {
-              const html = (obj.render as Function)();
-              if (typeof html === 'string') sections.push(html);
-            } else if (typeof obj.renderHTML === 'function') {
-              const html = (obj.renderHTML as Function)();
-              if (typeof html === 'string') sections.push(html);
-            }
-          }
-        } catch { /* factory may require args */ }
-      }
-    }
-  } catch { /* module may not have renderable exports */ }
-  try {
-    const uiMod = dashboardPage as Record<string, unknown>;
-    for (const key of Object.keys(uiMod)) {
-      const val = uiMod[key];
-      // Look for factory functions that return objects with render/renderHTML
-      if (typeof val === 'function' && /^create|^make|^render|^build/i.test(key)) {
-        try {
-          const instance = (val as Function)();
-          if (typeof instance === 'string' && instance.includes('<')) {
-            sections.push(instance);
-          } else if (instance && typeof instance === 'object') {
-            const obj = instance as Record<string, unknown>;
-            if (typeof obj.render === 'function') {
-              const html = (obj.render as Function)();
-              if (typeof html === 'string') sections.push(html);
-            } else if (typeof obj.renderHTML === 'function') {
-              const html = (obj.renderHTML as Function)();
-              if (typeof html === 'string') sections.push(html);
-            }
-          }
-        } catch { /* factory may require args */ }
-      }
-    }
-  } catch { /* module may not have renderable exports */ }
-  try {
-    const uiMod = taskListDisplay as Record<string, unknown>;
-    for (const key of Object.keys(uiMod)) {
-      const val = uiMod[key];
-      // Look for factory functions that return objects with render/renderHTML
-      if (typeof val === 'function' && /^create|^make|^render|^build/i.test(key)) {
-        try {
-          const instance = (val as Function)();
-          if (typeof instance === 'string' && instance.includes('<')) {
-            sections.push(instance);
-          } else if (instance && typeof instance === 'object') {
-            const obj = instance as Record<string, unknown>;
-            if (typeof obj.render === 'function') {
-              const html = (obj.render as Function)();
-              if (typeof html === 'string') sections.push(html);
-            } else if (typeof obj.renderHTML === 'function') {
-              const html = (obj.renderHTML as Function)();
-              if (typeof html === 'string') sections.push(html);
-            }
-          }
-        } catch { /* factory may require args */ }
-      }
-    }
-  } catch { /* module may not have renderable exports */ }
-
-  return `<!DOCTYPE html>
+    const { DashboardPage } = dashboardPage as { DashboardPage: new () => { renderHTML(): string } };
+    const page = new DashboardPage();
+    return page.renderHTML();
+  } catch (err) {
+    console.error('Error rendering DashboardPage:', err);
+    // Fallback to basic HTML if DashboardPage fails
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Web Dashboard</title>
-  <style>${css}</style>
+  <title>TaskFlow Dashboard - Error</title>
 </head>
 <body>
-  <div class="game-container">
-    ${sections.join('\n')}
-  </div>
+  <h1>Error Loading Dashboard</h1>
+  <p>${(err as Error).message}</p>
+  <pre>${(err as Error).stack}</pre>
 </body>
 </html>`;
+  }
 }
 
 // ─── Router ──────────────────────────────────────────────────────────────────
