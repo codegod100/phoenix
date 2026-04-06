@@ -435,7 +435,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               pointer-events: auto;
             " title="Delete card"><span style="pointer-events: none;">🗑️</span></button>
             <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px; padding-right: 48px;">${card.title}</h4>
-            ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word;">${linkify(card.description)}</p>` : ''}
+            ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word; white-space: pre-wrap;">${linkify(card.description)}</p>` : ''}
           </div>
         `).join('')}
       </div>
@@ -804,7 +804,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               cardEl.dataset.cardId = card.id;
               cardEl.draggable = true;
               cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
-              var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;">' + linkify(card.description) + '</p>' : '';
+              var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;white-space:pre-wrap;">' + linkify(card.description) + '</p>' : '';
               cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Edit card"><span style=\"pointer-events:none;\">✏️</span></button>' +
                 '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Delete card"><span style=\"pointer-events:none;\">🗑️</span></button>' +
                 '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
@@ -973,7 +973,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.className = 'card'; cardEl.dataset.cardId = card.id;
                     cardEl.draggable = true;
                     cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
-                    var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;">' + linkify(card.description) + '</p>' : '';
+                    var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;white-space:pre-wrap;">' + linkify(card.description) + '</p>' : '';
                     cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Edit card"><span style=\"pointer-events:none;\">✏️</span></button>' +
                       '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Delete card"><span style=\"pointer-events:none;\">🗑️</span></button>' +
                       '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
