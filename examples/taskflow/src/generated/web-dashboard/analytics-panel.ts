@@ -112,5 +112,4 @@ export const _phoenix = {
   iu_id: '59d32939d50083b6ecf70e500f215a179f42a5ea99a186cb8af2720e3aaa1d74',
   name: 'Analytics Panel',
   risk_tier: 'low',
-  canon_ids: [3 as const],
 } as const;

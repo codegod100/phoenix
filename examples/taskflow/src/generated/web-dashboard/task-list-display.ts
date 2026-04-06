@@ -341,5 +341,4 @@ export const _phoenix = {
   iu_id: 'a6550cdc3ef254c13571c1134a3f1ad230c942e0325c50f89ae97502a302fd01',
   name: 'Task List Display',
   risk_tier: 'medium',
-  canon_ids: [7 as const],
 } as const;
