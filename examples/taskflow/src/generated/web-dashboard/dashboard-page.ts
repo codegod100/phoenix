@@ -256,14 +256,6 @@ export class DashboardPage {
             color: var(--primary);
         }
 
-        .task-summary {
-            background: var(--primary);
-            color: var(--ctp-base);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
         /* Status Bar - Compact inline metrics */
         .status-bar-wrapper {
             display: flex;
@@ -677,7 +669,6 @@ export class DashboardPage {
         <div class="container">
             <div class="header-content">
                 <div class="logo">📋 TaskFlow</div>
-                <div class="task-summary">${this.getTaskCount()} Tasks</div>
             </div>
         </div>
     </header>
@@ -840,11 +831,40 @@ export class DashboardPage {
     </div>
 
     <script>
-        let tasks = ${JSON.stringify(tasks)};
+        const STORAGE_KEY = 'taskflow_tasks';
+        const STORAGE_COUNTER_KEY = 'taskflow_counter';
+        
+        // Load from localStorage or use initial data
+        let savedTasks = null;
+        let savedCounter = 1;
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                savedTasks = JSON.parse(stored);
+            }
+            const storedCounter = localStorage.getItem(STORAGE_COUNTER_KEY);
+            if (storedCounter) {
+                savedCounter = parseInt(storedCounter, 10);
+            }
+        } catch (e) {
+            console.warn('Failed to load from localStorage:', e);
+        }
+        
+        let tasks = savedTasks || ${JSON.stringify(tasks)};
         let selectedIds = ${JSON.stringify(this.selectedIds)};
         let view = '${this.view}';
-        let taskIdCounter = ${this.taskIdCounter};
+        let taskIdCounter = savedCounter || ${this.taskIdCounter};
         let deleteId = null;
+        
+        // Save to localStorage whenever tasks change
+        function saveTasks() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+                localStorage.setItem(STORAGE_COUNTER_KEY, taskIdCounter.toString());
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+        }
 
         function updateBulkActions() {
             const bar = document.getElementById('bulkActionBar');
@@ -876,6 +896,7 @@ export class DashboardPage {
                 updateBulkActions();
                 updateStats();
                 renderTaskList();
+                saveTasks();
             }
         }
 
@@ -887,6 +908,7 @@ export class DashboardPage {
             updateBulkActions();
             updateStats();
             renderTaskList();
+            saveTasks();
         }
 
         function bulkRestore() {
@@ -897,6 +919,7 @@ export class DashboardPage {
             updateBulkActions();
             updateStats();
             renderTaskList();
+            saveTasks();
         }
 
         function setView(newView) {
@@ -940,6 +963,7 @@ export class DashboardPage {
                 closeDeleteModal();
                 updateStats();
                 renderTaskList();
+                saveTasks();
             }
         }
 
@@ -1033,6 +1057,7 @@ export class DashboardPage {
             tasks.push(task);
             updateStats();
             renderTaskList();
+            saveTasks();
             this.reset();
             document.getElementById('priority').value = 'medium';
         });
@@ -1056,6 +1081,7 @@ export class DashboardPage {
             closeEditModal();
             updateStats();
             renderTaskList();
+            saveTasks();
         });
 
         // Close modals on overlay click
