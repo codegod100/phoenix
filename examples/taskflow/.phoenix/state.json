@@ -39,9 +39,9 @@
   "audit": {
     "last_run": "2026-04-06",
     "status": "passed",
-    "score": 87.5,
+    "score": 92.5,
     "ius_ready": 4,
-    "warnings": 3
+    "warnings": 1
   },
   "drift": {
     "last_check": null,
