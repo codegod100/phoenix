@@ -163,6 +163,28 @@ describe('API', () => {
       expect(renamed).toBeUndefined();
     });
   });
+
+  describe('DELETE /columns/:id', () => {
+    it('should delete a column and its cards', () => {
+      // Create a column with a card
+      const col = API.createColumn({ name: 'To Delete' });
+      API.createCard({ title: 'Card in deleted column' }, col.id);
+      
+      // Delete the column
+      const deleted = API.deleteColumn(col.id);
+      expect(deleted).toBe(true);
+      
+      // Column should be gone
+      expect(Database.getColumn(col.id)).toBeUndefined();
+      // Cards in that column should be gone too
+      expect(Database.getCardsByColumn(col.id)).toHaveLength(0);
+    });
+
+    it('should return false for non-existent column', () => {
+      const deleted = API.deleteColumn('non-existent');
+      expect(deleted).toBe(false);
+    });
+  });
 });
 
 // Phoenix traceability
