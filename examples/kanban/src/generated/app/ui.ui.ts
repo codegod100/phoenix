@@ -484,6 +484,56 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         card.style.opacity = '1';
         draggedCard = null;
       });
+      
+      // Click to edit card
+      card.addEventListener('click', function(e) {
+        // Don't trigger if dragging
+        if (draggedCard) return;
+        
+        var cardId = card.dataset.cardId;
+        var titleEl = card.querySelector('h4');
+        var descEl = card.querySelector('p');
+        var currentTitle = titleEl ? titleEl.textContent : '';
+        var currentDesc = descEl ? descEl.textContent : '';
+        
+        var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+          '<input id="edit-card-title" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+          '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+          '<textarea id="edit-card-desc" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+        
+        showModal('Edit Card', content, function() {
+          var newTitle = document.getElementById('edit-card-title').value.trim();
+          var newDesc = document.getElementById('edit-card-desc').value.trim();
+          if (newTitle) {
+            fetch('/api/cards/' + cardId, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title: newTitle, description: newDesc || null })
+            }).then(function(res) {
+              if (res.ok) {
+                // Update card in DOM
+                if (titleEl) titleEl.textContent = newTitle;
+                if (newDesc) {
+                  if (descEl) {
+                    descEl.textContent = newDesc;
+                  } else {
+                    // Create description element if it didn't exist
+                    var p = document.createElement('p');
+                    p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
+                    p.textContent = newDesc;
+                    card.appendChild(p);
+                  }
+                } else if (descEl) {
+                  // Remove description if cleared
+                  descEl.remove();
+                }
+              } else console.error('Failed to update card:', res.status);
+            }).catch(function(err) {
+              console.error('Error updating card:', err);
+            });
+          }
+        }, 'Save');
+      });
     });
     document.querySelectorAll('.column-cards').forEach(function(container) {
       container.addEventListener('dragover', function(e) {
@@ -666,6 +716,46 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.innerHTML = '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;">' + card.title + '</h4>' + descHtml;
                     cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
                     cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
+                    
+                    // Click to edit new card
+                    cardEl.addEventListener('click', function(e) {
+                      if (cardEl.style.opacity === '0.5') return; // Don't edit while dragging
+                      var titleEl2 = cardEl.querySelector('h4');
+                      var descEl2 = cardEl.querySelector('p');
+                      var currentTitle2 = titleEl2 ? titleEl2.textContent : '';
+                      var currentDesc2 = descEl2 ? descEl2.textContent : '';
+                      
+                      var content2 = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+                        '<input id="edit-card-title-' + card.id + '" value="' + currentTitle2.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+                        '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+                        '<textarea id="edit-card-desc-' + card.id + '" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc2.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+                      
+                      showModal('Edit Card', content2, function() {
+                        var newTitle2 = document.getElementById('edit-card-title-' + card.id).value.trim();
+                        var newDesc2 = document.getElementById('edit-card-desc-' + card.id).value.trim();
+                        if (newTitle2) {
+                          fetch('/api/cards/' + card.id, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: newTitle2, description: newDesc2 || null })
+                          }).then(function(res) {
+                            if (res.ok) {
+                              if (titleEl2) titleEl2.textContent = newTitle2;
+                              if (newDesc2) {
+                                if (descEl2) descEl2.textContent = newDesc2;
+                                else {
+                                  var p2 = document.createElement('p');
+                                  p2.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
+                                  p2.textContent = newDesc2;
+                                  cardEl.appendChild(p2);
+                                }
+                              } else if (descEl2) descEl2.remove();
+                            }
+                          });
+                        }
+                      }, 'Save');
+                    });
+                    
                     cardsContainer.appendChild(cardEl);
                     updateCardCount(col.id, 1);
                   });
