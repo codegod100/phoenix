@@ -397,8 +397,16 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             background: ${DesignSystem.card.background}; border-radius: ${DesignSystem.card.borderRadius};
             padding: ${DesignSystem.card.padding}; box-shadow: ${DesignSystem.card.shadow};
             cursor: grab; max-height: ${DesignSystem.card.maxHeight}; overflow-y: auto;
+            position: relative;
           ">
-            <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px;">${card.title}</h4>
+            <button class="edit-card-btn" data-card-id="${card.id}" style="
+              position: absolute; top: 8px; right: 8px;
+              background: ${DesignSystem.card.background}; border: none;
+              color: ${DesignSystem.typography.secondary}; cursor: pointer;
+              font-size: 14px; padding: 4px; border-radius: 4px;
+              opacity: 0; transition: opacity 0.2s; z-index: 10;
+            " title="Edit card">✏️</button>
+            <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px; padding-right: 24px;">${card.title}</h4>
             ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word;">${card.description}</p>` : ''}
           </div>
         `).join('')}
@@ -422,7 +430,9 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       display: flex; flex-direction: row; gap: 16px;
       padding: 16px; min-height: 100vh; overflow-x: auto; align-items: flex-start;
     }
-    .card { transition: opacity 0.2s; }
+    .card { transition: opacity 0.2s; cursor: grab; position: relative; }
+    .card:hover .edit-card-btn { opacity: 1 !important; }
+    .edit-card-btn:hover { color: #89b4fa !important; background: #1e1e2e !important; }
     .card[draggable="true"]:hover { opacity: 0.8; }
     .column-cards.drag-over { background: rgba(137, 180, 250, 0.1) !important; }
     .column-header:hover .delete-column-btn { opacity: 1 !important; display: inline-block !important; }
@@ -484,13 +494,14 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         card.style.opacity = '1';
         draggedCard = null;
       });
-      
-      // Click to edit card
-      card.addEventListener('click', function(e) {
-        // Don't trigger if dragging
-        if (draggedCard) return;
-        
-        var cardId = card.dataset.cardId;
+    });
+    
+    // Edit card buttons (pencil icon)
+    document.querySelectorAll('.edit-card-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent drag start
+        var cardId = btn.dataset.cardId;
+        var card = btn.closest('.card');
         var titleEl = card.querySelector('h4');
         var descEl = card.querySelector('p');
         var currentTitle = titleEl ? titleEl.textContent : '';
@@ -535,6 +546,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         }, 'Save');
       });
     });
+    
     document.querySelectorAll('.column-cards').forEach(function(container) {
       container.addEventListener('dragover', function(e) {
         e.preventDefault();
@@ -711,15 +723,16 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     var cardEl = document.createElement('div');
                     cardEl.className = 'card'; cardEl.dataset.cardId = card.id;
                     cardEl.draggable = true;
-                    cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;';
+                    cardEl.style.cssText = 'background:#1e1e2e;border-radius:6px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);cursor:grab;position:relative;';
                     var descHtml = card.description ? '<p style="margin:0;color:#6c7086;font-size:12px;">' + card.description + '</p>' : '';
-                    cardEl.innerHTML = '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;">' + card.title + '</h4>' + descHtml;
+                    cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;" title="Edit card">✏️</button>' +
+                      '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:24px;">' + card.title + '</h4>' + descHtml;
                     cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
                     cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
                     
-                    // Click to edit new card
-                    cardEl.addEventListener('click', function(e) {
-                      if (cardEl.style.opacity === '0.5') return; // Don't edit while dragging
+                    // Edit button handler for new card
+                    cardEl.querySelector('.edit-card-btn').addEventListener('click', function(e) {
+                      e.stopPropagation();
                       var titleEl2 = cardEl.querySelector('h4');
                       var descEl2 = cardEl.querySelector('p');
                       var currentTitle2 = titleEl2 ? titleEl2.textContent : '';
