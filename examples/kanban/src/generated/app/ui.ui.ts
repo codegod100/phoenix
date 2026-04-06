@@ -364,7 +364,11 @@ export const UI = {
 function linkify(text: string): string {
   if (!text) return '';
   // URL regex: matches http/https/ftp URLs (explicitly exclude newlines/carriage returns)
-  const urlRegex = /(https?:\/\/[^\s<\n\r]+|ftp:\/\/[^\s<\n\r]+)/gi;
+  const urlRegex = /(https?:\/\/[^\s<\
+\
+]+|ftp:\/\/[^\s<\
+\
+]+)/gi;
   return text.replace(urlRegex, function(url) {
     // Escape HTML in the URL for href attribute (security)
     const safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -493,7 +497,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     function linkify(text) {
       if (!text) return '';
       // URL regex: matches http/https/ftp URLs (explicitly exclude newlines)
-      var urlRegex = new RegExp('(https?://[^\\s<\\n\\r]+|ftp://[^\\s<\\n\\r]+)', 'gi');
+      var urlRegex = new RegExp('(https?://[^\\\\s<\\n\\r]+|ftp://[^\\\\s<\\n\\r]+)', 'gi');
       return text.replace(urlRegex, function(url) {
         // Escape HTML in the URL for href attribute (security)
         var safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
