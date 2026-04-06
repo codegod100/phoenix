@@ -101,6 +101,7 @@ A simple task management board with columns and cards.
 - CONSTRAINT: Input fields MUST have visible labels above (not just placeholders)
 - CONSTRAINT: Backdrop click MUST close modal (cancel action)
 - CONSTRAINT: ESC key MUST close modal (cancel action)
+- CONSTRAINT: Enter key in input fields MUST submit modal (confirm action), except in textareas where it creates newline
 
 ### Input Design
 - CONSTRAINT: All form inputs MUST have visible labels (not placeholders only)
