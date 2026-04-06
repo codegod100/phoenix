@@ -160,3 +160,10 @@ if (typeof window !== 'undefined') {
     app.init();
   }
 }
+
+// Phoenix traceability
+export const _phoenix = {
+  iu_id: '5572ff34187af4f973ec761dafc11f4279689ad905ce6886acaba0fc423a3591',
+  name: 'Cards',
+  risk_tier: 'high'
+} as const;

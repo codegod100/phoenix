@@ -164,3 +164,10 @@ describe('API', () => {
     });
   });
 });
+
+// Phoenix traceability
+export const _phoenix = {
+  iu_id: '4905258e2d2765e92ba112cb439aa28ed9e195b97ee8d8f6a632a16074e4de54',
+  name: 'Api',
+  risk_tier: 'medium'
+} as const;

@@ -124,3 +124,10 @@ describe('Database', () => {
     });
   });
 });
+
+// Phoenix traceability
+export const _phoenix = {
+  iu_id: '51bccb43096c1a9986195105833ef45765a391d60b814506b94ae5da10557846',
+  name: 'Database',
+  risk_tier: 'medium'
+} as const;

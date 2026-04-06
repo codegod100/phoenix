@@ -677,3 +677,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
 </body>
 </html>`;
 }
+
+// Phoenix traceability
+export const _phoenix = {
+  iu_id: 'c39c81f09beb196ea6fbe628b281f5e941b968fb5598f0087d68b4fd4360ce16',
+  name: 'Ui',
+  risk_tier: 'high'
+} as const;

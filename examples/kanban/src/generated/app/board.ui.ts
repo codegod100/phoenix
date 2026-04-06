@@ -167,3 +167,10 @@ export const BoardComponent = {
     return columnCount > 1;
   }
 };
+
+// Phoenix traceability
+export const _phoenix = {
+  iu_id: 'e6a25c27559f3dcdda1e24c563f0c34fe26bac56d1b1d38dbe6dabfde3ddb5ec',
+  name: 'Board',
+  risk_tier: 'medium',
+} as const;
