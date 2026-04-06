@@ -103,6 +103,7 @@ A simple task management board with columns and cards.
 - CONSTRAINT: ESC key MUST close modal (cancel action)
 - CONSTRAINT: Enter key in input fields MUST submit modal (confirm action), except in textareas where it creates newline
 - CONSTRAINT: First input field in modal MUST auto-focus when dialog opens
+- CONSTRAINT: When editing existing items, cursor MUST be positioned at end of input value
 
 ### Input Design
 - CONSTRAINT: All form inputs MUST have visible labels (not placeholders only)

@@ -507,10 +507,18 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       modal.querySelector('.modal-cancel').addEventListener('click', closeModal);
       modal.querySelector('.modal-confirm').addEventListener('click', function() { onConfirm(); closeModal(); });
       
-      // Auto-focus first input field
+      // Auto-focus first input field and position cursor at end
       var firstInput = modal.querySelector('input, textarea');
       if (firstInput) {
-        setTimeout(function() { firstInput.focus(); }, 0);
+        setTimeout(function() { 
+          firstInput.focus();
+          // Position cursor at end of value for edit dialogs
+          var val = firstInput.value;
+          if (val && val.length > 0) {
+            firstInput.selectionStart = val.length;
+            firstInput.selectionEnd = val.length;
+          }
+        }, 0);
       }
     }
 
