@@ -490,6 +490,17 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       
       var closeModal = function() { backdrop.remove(); };
       
+      // Handle Enter key to submit (unless in textarea)
+      var enterHandler = function(e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          onConfirm();
+          closeModal();
+          document.removeEventListener('keydown', enterHandler);
+        }
+      };
+      document.addEventListener('keydown', enterHandler);
+      
       backdrop.addEventListener('click', function(e) { if (e.target === backdrop) closeModal(); });
       document.addEventListener('keydown', function escHandler(e) { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); } });
       modal.querySelector('.modal-close').addEventListener('click', closeModal);
