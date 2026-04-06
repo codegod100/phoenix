@@ -7,6 +7,17 @@ description: Guidelines and helpers for writing and editing Phoenix specificatio
 
 Guidelines and helpers for writing and editing Phoenix specification files.
 
+## When Using This Skill
+
+**ALWAYS edit the spec file FIRST, then update plan.md to match.**
+
+The correct order is:
+1. **Edit** `spec/*.md` files (source of truth)
+2. **Update** `.phoenix/plan.md` to reflect new/removed requirements  
+3. **Regenerate** code if needed
+
+Never update code or plan without first updating the spec. Specs drive everything.
+
 ## Core Principle
 
 **Specs are the source of truth. IUs are generated FROM specs.**
