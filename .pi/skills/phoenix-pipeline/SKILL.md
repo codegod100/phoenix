@@ -49,15 +49,15 @@ Transform clauses into canonical requirements.
 1. Group related clauses by section
 2. Remove duplicates
 3. Normalize language (lowercase, standardize)
-4. Assign node IDs (node-001, node-002, etc.)
+4. Assign node IDs (`node-<hash>` first 8 chars of SHA-256 of normalized text)
 
 **Output:** Canonical requirements
 
 ```
 Example output:
-node-001: dashboard renders complete html page
-node-002: dashboard uses catppuccin mocha colors
-node-003: no theme toggle allowed
+node-a1b2c3d4: dashboard renders complete html page
+node-b2c3d4e5: dashboard uses catppuccin mocha colors
+node-c3d4e5f6: no theme toggle allowed
 ```
 
 ## Phase C: Plan - Group Into IUs
@@ -79,13 +79,13 @@ Organize requirements into Implementation Units.
 
 ```
 Example output:
-IU-1: Dashboard Page (HIGH)
-  Requirements: node-001, node-002, node-003, ...
+IU-ec4737a7: Dashboard Page (HIGH)
+  Requirements: node-a1b2c3d4, node-b2c3d4e5, node-c3d4e5f6, ...
   Contract: Renders HTML dashboard with Catppuccin theme
   Output: src/generated/web-dashboard/dashboard-page.ts
 
-IU-2: Styles (MEDIUM)
-  Requirements: node-002, node-004
+IU-a1b2c3d4: Styles (MEDIUM)
+  Requirements: node-b2c3d4e5, node-d4e5f678
   Contract: CSS custom properties
   Output: src/generated/web-dashboard/styles.ts
 ```
@@ -107,10 +107,9 @@ For each IU:
 **Traceability Export:**
 ```typescript
 export const _phoenix = {
-  iu_id: '<hash>',
+  iu_id: 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88',
   name: 'Dashboard Page',
   risk_tier: 'high',
-  canon_ids: ['node-001', 'node-002', ...] as const,
 } as const;
 ```
 
@@ -118,36 +117,66 @@ export const _phoenix = {
 
 ## Running the Pipeline
 
-Since this is agent-skills only (no CLI), run phases manually:
+**IMPORTANT:** The pipeline must run inline (direct tool execution), NOT in a subprocess or background process. Each phase uses standard tools (read, edit, write, bash) directly.
 
-1. **Ingest**: Read specs and list clauses
-2. **Canonicalize**: Clean and normalize requirements
-3. **Plan**: Group into IUs and assign risk
-4. **Regen**: Generate code files with traceability
+### Execution Model
+- ✅ **CORRECT:** Run phases sequentially using direct tool calls
+- ❌ **WRONG:** Delegate to subprocess, interactive_shell, or background job
 
-## Example Session
+### Phase Execution
+
+**Phase A: Ingest**
+```
+1. Use bash to: ls spec/*.md
+2. Use read to: read each spec file
+3. Extract clauses (lines starting with "- " or bullet markers)
+4. Report: "Found X clauses from Y specs"
+```
+
+**Phase B: Canonicalize**
+```
+1. Normalize each clause (lowercase, remove fluff)
+2. Generate node-<hash> IDs (SHA-256, first 8 chars)
+3. Use write to: create/update .phoenix/canonical.md
+4. Report: "Canonicalized: X requirements"
+```
+
+**Phase C: Plan**
+```
+1. Read canonical.md
+2. Group requirements into Implementation Units
+3. Assign risk tiers (low/medium/high)
+4. Use write to: create/update .phoenix/plan.md
+5. Report: "Planned: X IUs (low: A, medium: B, high: C)"
+```
+
+**Phase D: Regen**
+```
+1. Read plan.md
+2. For each IU:
+   - Use write to: generate TypeScript file
+   - Include _phoenix export with iu_id
+3. Use bash to: npm run build (verify)
+4. Report: "Generated: X files"
+```
+
+### Example Session (Inline)
 
 ```
-User: Run pipeline on taskflow web dashboard
+User: Run pipeline
 
-Agent:
-  [Phase A] Ingest
-    - Read spec/web-dashboard.md
-    - Found 20 clauses
-    - 12 REQUIREMENT, 3 CONSTRAINT, 5 DEFINITION
+Agent: [Phase A] Ingesting specs...
+  Found 67 clauses from 9 spec files
 
-  [Phase B] Canonicalize
-    - 18 canonical requirements extracted
-    - Assigned IDs: node-001 through node-018
+Agent: [Phase B] Canonicalizing...
+  75 canonical requirements → .phoenix/canonical.md
 
-  [Phase C] Plan
-    - IU-1: Dashboard Page (HIGH) - 11 requirements
-    - IU-2: Styles (MEDIUM) - 7 requirements
+Agent: [Phase C] Planning...
+  9 IUs: low=2, medium=3, high=4 → .phoenix/plan.md
 
-  [Phase D] Regen
-    - Generated dashboard-page.ts
-    - Generated styles.ts
-    - Added _phoenix exports
+Agent: [Phase D] Regenerating...
+  Generated 9 TypeScript files → src/generated/taskflow/
+  Build: ✅ passed
 
-  ✅ Pipeline complete. 2 files generated.
+✅ Pipeline complete
 ```

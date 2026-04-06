@@ -37,16 +37,16 @@ Clauses from Ingest phase:
    - Standardize terms
 
 4. **Assign node IDs**
-   - Format: node-001, node-002, etc.
-   - Sequential numbering
+   - Format: `node-<hash>` where hash is first 8 chars of SHA-256 of normalized text
+   - Example: `node-a1b2c3d4`
 
 ## Output
 
 Canonical requirements:
 ```
-node-001: system shall render complete html page with inline css and javascript
-node-002: page must display header with title taskflow and task count summary
-node-003: no theme toggle allowed
+node-a1b2c3d4: system shall render complete html page with inline css and javascript
+node-b2c3d4e5: page must display header with title taskflow and task count summary
+node-c3d4e5f6: no theme toggle allowed
 ```
 
 ## Quality Checks
