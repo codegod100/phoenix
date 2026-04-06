@@ -1,7 +1,0 @@
-{
-  "architecture": "web-api",
-  "llm": {
-    "provider": "fireworks",
-    "model": "accounts/fireworks/models/minimax-m2p5"
-  }
-}

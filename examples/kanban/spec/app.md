@@ -18,6 +18,28 @@ A simple task management board with columns and cards.
 - CONSTRAINT: URLs displayed as link text MUST show the original unescaped URL (not HTML entities like &amp;)
 - CONSTRAINT: Card description text MUST NOT be HTML-escaped when editing - textarea receives raw text
 - CONSTRAINT: Each URL in a multi-line description MUST be independently linkified (URLs separated by newlines must each be clickable)
+
+## URL Linkification Implementation
+
+- DEFINITION: `linkify(text)` converts raw URLs to clickable anchor tags
+- CONSTRAINT: `linkify()` MUST handle multiple URLs separated by newlines as separate links
+- CONSTRAINT: Server-side uses regex literal: `/https?:\/\/[^\s<\n\r]+/gi`
+- CONSTRAINT: Client-side (RegExp constructor) uses: `new RegExp('https?://[^\\s<\\n\\r]+', 'gi')` - NOTE: 4 backslashes for \s, 2 backslashes for \n\r in string
+
+### Test Cases
+- SCENARIO: Multi-URL linkification
+  - GIVEN card description: "Check https://google.com\n\nAnd https://semble.so"
+  - WHEN rendered in column view
+  - THEN output contains: `<a href="https://google.com">https://google.com</a>` AND `<a href="https://semble.so">https://semble.so</a>`
+  - AND each URL is a separate clickable link (not merged into one broken link)
+
+- SCENARIO: URL linkification after edit
+  - GIVEN card with multi-URL description is edited and saved
+  - WHEN edit modal closes and DOM updates
+  - THEN all URLs remain independently clickable (regression test for client-side linkify)
+
+- CONSTRAINT: URL regex MUST stop at newline characters - pattern `[^\s<\n\r]+` not `[^\s<]+`
+- CONSTRAINT: Client-side RegExp string escaping MUST use `\\n` not `\n` (2 backslashes for string → 1 for regex newline)
 - REQUIREMENT: Cards belong to exactly one column
 - REQUIREMENT: Cards can be moved between columns via drag-and-drop
 - REQUIREMENT: Columns can be reordered via drag-and-drop left to right
