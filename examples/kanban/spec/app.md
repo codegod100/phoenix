@@ -6,7 +6,7 @@ A simple task management board with columns and cards.
 
 - REQUIREMENT: A board has multiple columns (e.g., Todo, In Progress, Done)
 - REQUIREMENT: Columns are ordered left to right
-- REQUIREMENT: Board persists state between sessions
+- REQUIREMENT: Board persists state in SQLite database between sessions
 
 - CONSTRAINT: Default columns: "Todo", "In Progress", "Done"
 - CONSTRAINT: Columns can be renamed but not deleted below 1 column
@@ -117,6 +117,8 @@ A simple task management board with columns and cards.
 
 ## Database
 
+- REQUIREMENT: Use SQLite database for data persistence
+- REQUIREMENT: Database file path: `data/app.db`
 - REQUIREMENT: Store columns: id, name, order_index, created_at
 - REQUIREMENT: Store cards: id, title, description, column_id, order_index, created_at
 
