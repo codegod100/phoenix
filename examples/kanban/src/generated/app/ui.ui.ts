@@ -368,8 +368,8 @@ function linkify(text: string): string {
   return text.replace(urlRegex, function(url) {
     // Escape HTML in the URL to prevent injection
     const safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // Use Catppuccin Mocha colors: #89b4fa for link, underline on hover
-    return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="color: #89b4fa; text-decoration: none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + safeUrl + '</a>';
+    // Use CSS class for hover effect (defined in page styles)
+    return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="card-link">' + safeUrl + '</a>';
   });
 }
 
@@ -460,6 +460,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       padding: 16px; height: 100vh; overflow-x: auto; overflow-y: hidden; align-items: flex-start;
     }
     .card { transition: opacity 0.2s; cursor: grab; position: relative; }
+    .card-link { color: #89b4fa; text-decoration: none; }
+    .card-link:hover { text-decoration: underline; }
     .card:hover .edit-card-btn, .card:hover .delete-card-btn { opacity: 1 !important; }
     .edit-card-btn:hover { color: #89b4fa !important; background: #1e1e2e !important; }
     .delete-card-btn:hover { color: #f38ba8 !important; background: #1e1e2e !important; }
@@ -492,8 +494,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       return text.replace(urlRegex, function(url) {
         // Escape HTML in the URL
         var safeUrl = url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        // Use Catppuccin Mocha colors: #89b4fa for link
-        return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" style="color: #89b4fa; text-decoration: none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">' + safeUrl + '</a>';
+        // Use CSS class for hover instead of inline JS to avoid escaping issues
+        return '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="card-link">' + safeUrl + '</a>';
       });
     }
 
