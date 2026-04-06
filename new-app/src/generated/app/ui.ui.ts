@@ -117,6 +117,7 @@ export function renderPage(board: Board): string {
         // Capture source column at dragstart, before any DOM changes
         const sourceColumn = card.closest('.column');
         sourceColumnId = sourceColumn?.dataset.columnId;
+        console.log('Drag started from column:', sourceColumnId);
       });
       
       card.addEventListener('dragend', () => {
@@ -148,6 +149,8 @@ export function renderPage(board: Board): string {
         const siblings = Array.from(column.children);
         const orderIndex = siblings.indexOf(draggedCard);
         
+        console.log('Drop event - sourceColumnId:', sourceColumnId, 'destColumnId:', destColumnId);
+        
         try {
           await fetch('/api/cards/' + cardId + '/move', {
             method: 'PATCH',
@@ -157,20 +160,27 @@ export function renderPage(board: Board): string {
           
           // Update column counts - source loses one, destination gains one
           if (sourceColumnId && sourceColumnId !== destColumnId) {
+            console.log('Moving between columns, updating counts');
             // Moving between columns: decrement source, increment destination
             const sourceBadge = document.getElementById('count-' + sourceColumnId);
             const destBadge = document.getElementById('count-' + destColumnId);
+            console.log('Source badge:', sourceBadge, 'Dest badge:', destBadge);
             if (sourceBadge) {
               const currentSource = parseInt(sourceBadge.textContent || '0');
               sourceBadge.textContent = Math.max(0, currentSource - 1);
+              console.log('Updated source count to:', Math.max(0, currentSource - 1));
             }
             if (destBadge) {
               const currentDest = parseInt(destBadge.textContent || '0');
               destBadge.textContent = currentDest + 1;
+              console.log('Updated dest count to:', currentDest + 1);
             }
+          } else {
+            console.log('Same column or no source, skipping count update');
           }
           // If same column, counts don't change (just reordering)
         } catch (err) {
+          console.error('Failed to move card:', err);
           showError('Failed to move card');
           // On error, refresh to restore correct state
           location.reload();
