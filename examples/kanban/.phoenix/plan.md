@@ -248,14 +248,15 @@
 ## IU-12: Column Reorder System (HIGH RISK)
 **Requirements:**
 - node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
-- node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
+- node-b2c5d3e4: while dragging a column, drop zones appear on edges not touching the dragged column
 - node-c3d6e4f5: dropping a column between two other columns reorders it to that position
 - node-9a6c4e1f: columns can be reordered via drag-and-drop left to right
+- node-d4e7f6a8: drop zones touching the dragged column are hidden (dropping there would be no-op)
 
 **Contract:**
 - Input: Column drag events, board layout
 - Output: Reordered DOM, API calls to persist new order
-- Invariants: Visual feedback during drag, smooth reordering
+- Invariants: Visual feedback during drag, smooth reordering, redundant drop zones hidden
 
 **Output File:** `src/generated/app/column-reorder.ts`
 
@@ -276,6 +277,6 @@
 | IU-9 | Card UI | HIGH | 12 | `src/generated/app/card.ui.ts` |
 | IU-10 | Card Drag and Drop | HIGH | 5 | `src/generated/app/card-dragdrop.ts` |
 | IU-11 | Main Page | HIGH | 4 | `src/generated/app/page.ui.ts` |
-| IU-12 | Column Reorder | HIGH | 4 | `src/generated/app/column-reorder.ts` |
+| IU-12 | Column Reorder | HIGH | 5 | `src/generated/app/column-reorder.ts` |
 
 **Total: 12 IUs** (low: 0, medium: 2, high: 10)
