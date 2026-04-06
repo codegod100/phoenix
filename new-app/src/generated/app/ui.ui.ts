@@ -183,7 +183,6 @@ export function renderPage(board: Board): string {
         }
       });
     }
-    });
     
     function getDragAfterElement(container, y) {
       const draggableElements = [...container.querySelectorAll('.column-card:not(.dragging)')];
