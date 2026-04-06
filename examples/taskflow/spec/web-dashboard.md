@@ -45,6 +45,7 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 - The status bar must display: total tasks count, completed count, overdue count, and completion rate percentage
 - The status bar must render as a single horizontal bar below the header
 - The status bar must be visually compact (max 48px height) with minimal padding
+- The status bar must be centered horizontally and only as wide as its content (not full-width)
 - Metrics must be displayed inline with simple separators (e.g., "•" or "|")
 - Format example: "📊 12 tasks • ✅ 8 done • ⚠️ 2 overdue • 📈 67%"
 - Use subtle text colors: primary metric values in --ctp-text, labels/separators in --ctp-subtext0

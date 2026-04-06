@@ -265,17 +265,23 @@ export class DashboardPage {
         }
 
         /* Status Bar - Compact inline metrics */
+        .status-bar-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
         .status-bar {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: 0.5rem 1rem;
-            margin-bottom: 1rem;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.75rem;
             font-size: 0.9rem;
             max-height: 48px;
+            width: fit-content;
         }
 
         .status-bar .metric {
@@ -678,29 +684,31 @@ export class DashboardPage {
 
     <main class="container">
         <!-- Status Bar -->
-        <div class="status-bar">
-            <span class="metric">
-                <span>📊</span>
-                <span class="metric-value">${stats.total}</span>
-                <span class="metric-label">tasks</span>
-            </span>
-            <span class="separator">•</span>
-            <span class="metric">
-                <span>✅</span>
-                <span class="metric-value">${stats.completed}</span>
-                <span class="metric-label">done</span>
-            </span>
-            <span class="separator">•</span>
-            <span class="metric">
-                <span>⚠️</span>
-                <span class="metric-value">${stats.overdue}</span>
-                <span class="metric-label">overdue</span>
-            </span>
-            <span class="separator">•</span>
-            <span class="metric">
-                <span>📈</span>
-                <span class="metric-value">${stats.completionRate}%</span>
-            </span>
+        <div class="status-bar-wrapper">
+            <div class="status-bar">
+                <span class="metric">
+                    <span>📊</span>
+                    <span class="metric-value">${stats.total}</span>
+                    <span class="metric-label">tasks</span>
+                </span>
+                <span class="separator">•</span>
+                <span class="metric">
+                    <span>✅</span>
+                    <span class="metric-value">${stats.completed}</span>
+                    <span class="metric-label">done</span>
+                </span>
+                <span class="separator">•</span>
+                <span class="metric">
+                    <span>⚠️</span>
+                    <span class="metric-value">${stats.overdue}</span>
+                    <span class="metric-label">overdue</span>
+                </span>
+                <span class="separator">•</span>
+                <span class="metric">
+                    <span>📈</span>
+                    <span class="metric-value">${stats.completionRate}%</span>
+                </span>
+            </div>
         </div>
 
         <!-- View Tabs -->
