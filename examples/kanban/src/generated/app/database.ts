@@ -1,5 +1,11 @@
 // Generated from IU: Database (3a7c98df84dab8dcc333d70c9d351e2aaa2cbda2093f4571f871179d1dfa7ed5)
 // Source: spec/app.md - Database section
+// Uses SQLite via bun:sqlite
+
+import type { Database as SQLiteDatabase } from 'bun:sqlite';
+
+// Global SQLite instance (set by initDatabase)
+let db: SQLiteDatabase | null = null;
 
 export interface Column {
   id: string;
@@ -17,146 +23,261 @@ export interface Card {
   created_at: Date;
 }
 
-// In-memory store (can be replaced with SQLite/PostgreSQL)
-const columns = new Map<string, Column>();
-const cards = new Map<string, Card>();
+// Initialize database connection and schema
+export function initDatabase(sqliteDb?: SQLiteDatabase): void {
+  if (sqliteDb) {
+    db = sqliteDb;
+  }
+  if (!db) {
+    throw new Error('Database not initialized. Pass SQLite Database instance to initDatabase()');
+  }
+  createTables();
+}
 
+function createTables(): void {
+  if (!db) return;
+  
+  // Enable foreign keys
+  db.exec('PRAGMA foreign_keys = ON');
+  
+  // Create columns table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS columns (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      order_index INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `);
+  
+  // Create cards table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cards (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      column_id TEXT NOT NULL,
+      order_index INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (column_id) REFERENCES columns(id) ON DELETE CASCADE
+    )
+  `);
+}
+
+// Column operations
+export function createColumn(name: string, order_index: number): Column {
+  if (!db) throw new Error('Database not initialized');
+  
+  const id = crypto.randomUUID();
+  const created_at = new Date().toISOString();
+  
+  db.prepare('INSERT INTO columns (id, name, order_index, created_at) VALUES (?, ?, ?, ?)')
+    .run(id, name, order_index, created_at);
+  
+  return { id, name, order_index, created_at: new Date(created_at) };
+}
+
+export function getColumn(id: string): Column | undefined {
+  if (!db) return undefined;
+  
+  const row = db.prepare('SELECT * FROM columns WHERE id = ?').get(id) as any;
+  if (!row) return undefined;
+  
+  return {
+    id: row.id,
+    name: row.name,
+    order_index: row.order_index,
+    created_at: new Date(row.created_at)
+  };
+}
+
+export function getAllColumns(): Column[] {
+  if (!db) return [];
+  
+  const rows = db.prepare('SELECT * FROM columns ORDER BY order_index').all() as any[];
+  return rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    order_index: row.order_index,
+    created_at: new Date(row.created_at)
+  }));
+}
+
+export function updateColumn(id: string, updates: { name?: string }): Column | undefined {
+  if (!db) return undefined;
+  
+  const column = getColumn(id);
+  if (!column) return undefined;
+  
+  if (updates.name !== undefined) {
+    db.prepare('UPDATE columns SET name = ? WHERE id = ?').run(updates.name, id);
+    column.name = updates.name;
+  }
+  
+  return column;
+}
+
+export function deleteColumn(id: string): boolean {
+  if (!db) return false;
+  
+  // Foreign key cascade will delete associated cards
+  const result = db.prepare('DELETE FROM columns WHERE id = ?').run(id);
+  return result.changes > 0;
+}
+
+// Card operations
+export function createCard(
+  title: string, 
+  description: string | null, 
+  column_id: string, 
+  order_index: number
+): Card {
+  if (!db) throw new Error('Database not initialized');
+  
+  const id = crypto.randomUUID();
+  const created_at = new Date().toISOString();
+  
+  db.prepare('INSERT INTO cards (id, title, description, column_id, order_index, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, title, description, column_id, order_index, created_at);
+  
+  return { id, title, description, column_id, order_index, created_at: new Date(created_at) };
+}
+
+export function getCard(id: string): Card | undefined {
+  if (!db) return undefined;
+  
+  const row = db.prepare('SELECT * FROM cards WHERE id = ?').get(id) as any;
+  if (!row) return undefined;
+  
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    column_id: row.column_id,
+    order_index: row.order_index,
+    created_at: new Date(row.created_at)
+  };
+}
+
+export function getCardsByColumn(column_id: string): Card[] {
+  if (!db) return [];
+  
+  const rows = db.prepare('SELECT * FROM cards WHERE column_id = ? ORDER BY order_index').all(column_id) as any[];
+  return rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    column_id: row.column_id,
+    order_index: row.order_index,
+    created_at: new Date(row.created_at)
+  }));
+}
+
+export function updateCard(
+  id: string, 
+  updates: { title?: string; description?: string | null; column_id?: string; order_index?: number }
+): Card | undefined {
+  if (!db) return undefined;
+  
+  const card = getCard(id);
+  if (!card) return undefined;
+  
+  const fields: string[] = [];
+  const values: any[] = [];
+  
+  if (updates.title !== undefined) {
+    fields.push('title = ?');
+    values.push(updates.title);
+    card.title = updates.title;
+  }
+  if (updates.description !== undefined) {
+    fields.push('description = ?');
+    values.push(updates.description);
+    card.description = updates.description;
+  }
+  if (updates.column_id !== undefined) {
+    fields.push('column_id = ?');
+    values.push(updates.column_id);
+    card.column_id = updates.column_id;
+  }
+  if (updates.order_index !== undefined) {
+    fields.push('order_index = ?');
+    values.push(updates.order_index);
+    card.order_index = updates.order_index;
+  }
+  
+  if (fields.length > 0) {
+    values.push(id);
+    db.prepare(`UPDATE cards SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  }
+  
+  return card;
+}
+
+export function deleteCard(id: string): boolean {
+  if (!db) return false;
+  
+  const result = db.prepare('DELETE FROM cards WHERE id = ?').run(id);
+  return result.changes > 0;
+}
+
+// Board state
+export interface BoardState {
+  columns: Array<Column & { cards: Card[] }>;
+}
+
+export function getBoard(): BoardState {
+  const columns = getAllColumns();
+  return {
+    columns: columns.map(col => ({
+      ...col,
+      cards: getCardsByColumn(col.id)
+    }))
+  };
+}
+
+// Migrations (no-op for now - schema is created automatically)
+export function registerMigrations(_db: SQLiteDatabase, _migrations: unknown[]): void {
+  // Schema migrations handled automatically by createTables()
+}
+
+// Seed default columns
+export function seedDefaultColumns(sqliteDb?: SQLiteDatabase): void {
+  if (sqliteDb) db = sqliteDb;
+  if (!db) return;
+  
+  const count = db.prepare('SELECT COUNT(*) as count FROM columns').get() as { count: number };
+  if (count.count === 0) {
+    createColumn('Todo', 0);
+    createColumn('In Progress', 1);
+    createColumn('Done', 2);
+  }
+}
+
+// Legacy in-memory Database object (for backward compatibility)
 export const Database = {
-  // Columns
-  createColumn(name: string, order_index: number): Column {
-    const id = crypto.randomUUID();
-    const column: Column = {
-      id,
-      name,
-      order_index,
-      created_at: new Date()
-    };
-    columns.set(id, column);
-    return column;
-  },
-
-  getColumn(id: string): Column | undefined {
-    return columns.get(id);
-  },
-
-  getAllColumns(): Column[] {
-    return Array.from(columns.values()).sort((a, b) => a.order_index - b.order_index);
-  },
-
-  updateColumn(id: string, updates: Partial<Pick<Column, 'name'>>): Column | undefined {
-    const column = columns.get(id);
-    if (!column) return undefined;
-    
-    if (updates.name !== undefined) {
-      column.name = updates.name;
-    }
-    return column;
-  },
-
-  deleteColumn(id: string): boolean {
-    // Delete all cards in this column first
-    const cardsToDelete = Array.from(cards.values()).filter(c => c.column_id === id);
-    for (const card of cardsToDelete) {
-      cards.delete(card.id);
-    }
-    return columns.delete(id);
-  },
-
-  // Cards
-  createCard(title: string, description: string | null, column_id: string, order_index: number): Card {
-    const id = crypto.randomUUID();
-    const card: Card = {
-      id,
-      title,
-      description,
-      column_id,
-      order_index,
-      created_at: new Date()
-    };
-    cards.set(id, card);
-    return card;
-  },
-
-  getCard(id: string): Card | undefined {
-    return cards.get(id);
-  },
-
-  getCardsByColumn(column_id: string): Card[] {
-    return Array.from(cards.values())
-      .filter(c => c.column_id === column_id)
-      .sort((a, b) => a.order_index - b.order_index);
-  },
-
-  updateCard(id: string, updates: Partial<Pick<Card, 'title' | 'description'>>): Card | undefined {
-    const card = cards.get(id);
-    if (!card) return undefined;
-    
-    if (updates.title !== undefined) card.title = updates.title;
-    if (updates.description !== undefined) card.description = updates.description;
-    return card;
-  },
-
-  moveCard(id: string, new_column_id: string, new_order_index: number): Card | undefined {
-    // Validate column exists
-    if (!columns.has(new_column_id)) {
-      throw new Error(`Column ${new_column_id} does not exist`);
-    }
-    
-    const card = cards.get(id);
-    if (!card) return undefined;
-    
-    card.column_id = new_column_id;
-    card.order_index = new_order_index;
-    
-    // Rebalance order indices on conflict
-    const columnCards = this.getCardsByColumn(new_column_id);
-    for (let i = 0; i < columnCards.length; i++) {
-      columnCards[i].order_index = i;
-    }
-    
-    return card;
-  },
-
-  deleteCard(id: string): boolean {
-    return cards.delete(id);
-  },
-
-  // Board state
-  getBoardState(): { columns: Column[]; cards: Card[] } {
-    return {
-      columns: this.getAllColumns(),
-      cards: Array.from(cards.values())
-    };
-  },
-
-  // Initialize with default columns
-  initDefaults(): void {
-    if (columns.size === 0) {
-      this.createColumn('Todo', 0);
-      this.createColumn('In Progress', 1);
-      this.createColumn('Done', 2);
-    }
-  },
-
-  // Clear all data (for testing)
+  createColumn,
+  getColumn,
+  getAllColumns,
+  updateColumn,
+  deleteColumn,
+  createCard,
+  getCard,
+  getCardsByColumn,
+  updateCard,
+  deleteCard,
+  getBoard,
+  initDefaults: () => seedDefaultColumns(),
   clear(): void {
-    columns.clear();
-    cards.clear();
+    if (!db) return;
+    db.prepare('DELETE FROM cards').run();
+    db.prepare('DELETE FROM columns').run();
   }
 };
 
-// Server-compatible exports (for bun:sqlite compatibility)
-export function initDatabase(_db?: unknown): void {
-  // In-memory database is already initialized
-  // This function exists for API compatibility with server.ts
-}
-
-export function registerMigrations(_db: unknown, _migrations: unknown[]): void {
-  // No-op for in-memory database
-}
-
-export function seedDefaultColumns(_db?: unknown): void {
-  Database.initDefaults();
+// Export clearDatabase for tests
+export function clearDatabase(): void {
+  Database.clear();
 }
 
 // Phoenix traceability

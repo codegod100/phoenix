@@ -54,7 +54,7 @@ export const API = {
     const cards = Database.getCardsByColumn(columnId);
     
     // Check max cards limit (100 per board)
-    const allCards = Database.getBoardState().cards;
+    const allCards = Database.getBoard().columns.flatMap(col => col.cards);
     if (allCards.length >= 100) {
       throw new Error('Maximum 100 cards per board');
     }
@@ -81,8 +81,8 @@ export const API = {
       throw error;
     }
     
-    // Card order is 0-indexed, auto-rebalanced on conflicts (handled in Database.moveCard)
-    return Database.moveCard(id, request.column_id, request.order_index);
+    // Card order is 0-indexed, update via updateCard
+    return Database.updateCard(id, { column_id: request.column_id, order_index: request.order_index });
   },
 
   // DELETE /cards/:id - removes card
