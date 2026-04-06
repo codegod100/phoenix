@@ -332,13 +332,65 @@ If syntax errors found:
 3. Re-validate
 4. Only write when clean
 
+### Step 6.5: Validate Usability
+
+Beyond syntax - ensure code actually runs:
+
+```typescript
+async function validateUsability(filePath: string, content: string): Promise<{ valid: boolean; error?: string }> {
+  const tempFile = `/tmp/phoenix-val-${Date.now()}.ts`;
+  writeFileSync(tempFile, content, 'utf8');
+  
+  try {
+    // Try to bundle (catches import errors, undefined vars, etc.)
+    const result = await $`bun build ${tempFile} --outfile=/tmp/phoenix-check-${Date.now()}.js`.quiet();
+    
+    if (result.exitCode !== 0) {
+      return { 
+        valid: false, 
+        error: result.stderr.toString().slice(0, 200) 
+      };
+    }
+    
+    // Check _phoenix export exists
+    if (!content.includes('export const _phoenix')) {
+      return { 
+        valid: false, 
+        error: 'Missing _phoenix traceability export' 
+      };
+    }
+    
+    return { valid: true };
+  } catch (err) {
+    return { valid: false, error: String(err).slice(0, 200) };
+  } finally {
+    try { unlinkSync(tempFile); } catch {}
+  }
+}
+```
+
+Critical validation rules:
+- ✓ No syntax errors (TypeScript compiles)
+- ✓ No undefined imports
+- ✓ Proper export structure (objects/functions closed)
+- ✓ _phoenix export present for traceability
+
 ### Step 7: Write Files
 
 ```typescript
 for (const [filePath, content] of result.files) {
+  // Final usability check before write
+  const usability = await validateUsability(filePath, content);
+  if (!usability.valid) {
+    console.error(`✗ ${filePath}: ${usability.error}`);
+    errors.push(`Usability check failed for ${filePath}: ${usability.error}`);
+    continue;  // Skip writing broken file
+  }
+  
   const fullPath = join(root, filePath);
   mkdirSync(dirname(fullPath), { recursive: true });
   writeFileSync(fullPath, content, 'utf8');
+  console.log(`✓ ${filePath}`);
 }
 ```
 
