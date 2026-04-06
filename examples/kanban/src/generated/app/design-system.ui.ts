@@ -202,6 +202,19 @@ export const DesignSystem = {
     maxHeight: '200px',
     background: Theme.colors.surface0,
     borderRadius: '6px',
+    shadow: '0 2px 4px rgba(0,0,0,0.2)',
+    padding: '12px'
+  },
+
+  // Badge styles
+  badge: {
+    background: Theme.colors.surface0,
+    color: Theme.colors.blue,
+    borderRadius: '10px',
+    padding: '2px 8px',
+    fontSize: '12px'
+  }
+} as const;
 
 // Phoenix traceability
 export const _phoenix = {
