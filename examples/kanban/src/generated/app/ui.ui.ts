@@ -509,78 +509,76 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
       });
     });
     
-    // Edit card buttons (pencil icon)
-    document.querySelectorAll('.edit-card-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent drag start
-        var cardId = btn.dataset.cardId;
-        var card = btn.closest('.card');
-        var titleEl = card.querySelector('h4');
-        var descEl = card.querySelector('p');
-        var currentTitle = titleEl ? titleEl.textContent : '';
-        var currentDesc = descEl ? descEl.textContent : '';
-        
-        var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
-          '<input id="edit-card-title" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
-          '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
-          '<textarea id="edit-card-desc" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
-        
-        showModal('Edit Card', content, function() {
-          var newTitle = document.getElementById('edit-card-title').value.trim();
-          var newDesc = document.getElementById('edit-card-desc').value.trim();
-          if (newTitle) {
-            fetch('/api/cards/' + cardId, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title: newTitle, description: newDesc || null })
-            }).then(function(res) {
-              if (res.ok) {
-                // Update card in DOM
-                if (titleEl) titleEl.textContent = newTitle;
-                if (newDesc) {
-                  if (descEl) {
-                    descEl.textContent = newDesc;
-                  } else {
-                    // Create description element if it didn't exist
-                    var p = document.createElement('p');
-                    p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
-                    p.textContent = newDesc;
-                    card.appendChild(p);
-                  }
-                } else if (descEl) {
-                  // Remove description if cleared
-                  descEl.remove();
+    // Card action buttons (edit/delete) - using event delegation for all cards including dynamic
+    document.querySelector('.kanban-board').addEventListener('click', function(e) {
+      var btn = e.target.closest('.edit-card-btn');
+      if (!btn) return;
+      
+      e.stopPropagation();
+      var cardId = btn.dataset.cardId;
+      var card = btn.closest('.card');
+      var titleEl = card.querySelector('h4');
+      var descEl = card.querySelector('p');
+      var currentTitle = titleEl ? titleEl.textContent : '';
+      var currentDesc = descEl ? descEl.textContent : '';
+      
+      var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
+        '<input id="edit-card-title" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
+        '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
+        '<textarea id="edit-card-desc" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
+      
+      showModal('Edit Card', content, function() {
+        var newTitle = document.getElementById('edit-card-title').value.trim();
+        var newDesc = document.getElementById('edit-card-desc').value.trim();
+        if (newTitle) {
+          fetch('/api/cards/' + cardId, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle, description: newDesc || null })
+          }).then(function(res) {
+            if (res.ok) {
+              if (titleEl) titleEl.textContent = newTitle;
+              if (newDesc) {
+                if (descEl) {
+                  descEl.textContent = newDesc;
+                } else {
+                  var p = document.createElement('p');
+                  p.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
+                  p.textContent = newDesc;
+                  card.appendChild(p);
                 }
-              } else console.error('Failed to update card:', res.status);
-            }).catch(function(err) {
-              console.error('Error updating card:', err);
-            });
-          }
-        }, 'Save');
-      });
+              } else if (descEl) {
+                descEl.remove();
+              }
+            } else console.error('Failed to update card:', res.status);
+          }).catch(function(err) {
+            console.error('Error updating card:', err);
+          });
+        }
+      }, 'Save');
     });
     
-    // Delete card buttons
-    document.querySelectorAll('.delete-card-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent drag start
-        var cardId = btn.dataset.cardId;
-        var card = btn.closest('.card');
-        var column = card.closest('.column');
-        var columnId = column.dataset.columnId;
-        
-        showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this card?</p><p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This action cannot be undone.</p>', function() {
-          fetch('/api/cards/' + cardId, { method: 'DELETE' })
-            .then(function(res) {
-              if (res.ok) {
-                // Remove card from DOM
-                card.remove();
-                updateCardCount(columnId, -1);
-              } else console.error('Failed to delete card:', res.status);
-            })
-            .catch(function(err) { console.error('Error deleting card:', err); });
-        }, 'Delete', 'Cancel');
-      });
+    // Delete card buttons - using event delegation
+    document.querySelector('.kanban-board').addEventListener('click', function(e) {
+      var btn = e.target.closest('.delete-card-btn');
+      if (!btn) return;
+      
+      e.stopPropagation();
+      var cardId = btn.dataset.cardId;
+      var card = btn.closest('.card');
+      var column = card.closest('.column');
+      var columnId = column.dataset.columnId;
+      
+      showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this card?</p><p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This action cannot be undone.</p>', function() {
+        fetch('/api/cards/' + cardId, { method: 'DELETE' })
+          .then(function(res) {
+            if (res.ok) {
+              card.remove();
+              updateCardCount(columnId, -1);
+            } else console.error('Failed to delete card:', res.status);
+          })
+          .catch(function(err) { console.error('Error deleting card:', err); });
+      }, 'Delete', 'Cancel');
     });
     
     document.querySelectorAll('.column-cards').forEach(function(container) {
@@ -768,59 +766,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
                     cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
                     
-                    // Edit button handler for new card
-                    cardEl.querySelector('.edit-card-btn').addEventListener('click', function(e) {
-                      e.stopPropagation();
-                      var titleEl2 = cardEl.querySelector('h4');
-                      var descEl2 = cardEl.querySelector('p');
-                      var currentTitle2 = titleEl2 ? titleEl2.textContent : '';
-                      var currentDesc2 = descEl2 ? descEl2.textContent : '';
-                      
-                      var content2 = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Title *</label>' +
-                        '<input id="edit-card-title-' + card.id + '" value="' + currentTitle2.replace(/"/g, '&quot;') + '" maxlength="200" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;margin-bottom:16px;">' +
-                        '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Description</label>' +
-                        '<textarea id="edit-card-desc-' + card.id + '" style="width:100%;min-height:100px;resize:vertical;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">' + currentDesc2.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</textarea>';
-                      
-                      showModal('Edit Card', content2, function() {
-                        var newTitle2 = document.getElementById('edit-card-title-' + card.id).value.trim();
-                        var newDesc2 = document.getElementById('edit-card-desc-' + card.id).value.trim();
-                        if (newTitle2) {
-                          fetch('/api/cards/' + card.id, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ title: newTitle2, description: newDesc2 || null })
-                          }).then(function(res) {
-                            if (res.ok) {
-                              if (titleEl2) titleEl2.textContent = newTitle2;
-                              if (newDesc2) {
-                                if (descEl2) descEl2.textContent = newDesc2;
-                                else {
-                                  var p2 = document.createElement('p');
-                                  p2.style.cssText = 'margin:0;color:#6c7086;font-size:12px;overflow-wrap:break-word;';
-                                  p2.textContent = newDesc2;
-                                  cardEl.appendChild(p2);
-                                }
-                              } else if (descEl2) descEl2.remove();
-                            }
-                          });
-                        }
-                      }, 'Save');
-                    });
-                    
-                    // Delete button handler for new card
-                    cardEl.querySelector('.delete-card-btn').addEventListener('click', function(e) {
-                      e.stopPropagation();
-                      showModal('Delete Card', '<p style="color:#cdd6f4;margin:0;">Are you sure you want to delete this card?</p><p style="color:#a6adc8;font-size:12px;margin:8px 0 0 0;">This action cannot be undone.</p>', function() {
-                        fetch('/api/cards/' + card.id, { method: 'DELETE' })
-                          .then(function(res) {
-                            if (res.ok) {
-                              cardEl.remove();
-                              updateCardCount(col.id, -1);
-                            } else console.error('Failed to delete card:', res.status);
-                          })
-                          .catch(function(err) { console.error('Error deleting card:', err); });
-                      }, 'Delete', 'Cancel');
-                    });
+                    // Note: edit/delete handlers are handled by event delegation on kanban-board
                     
                     cardsContainer.appendChild(cardEl);
                     updateCardCount(col.id, 1);
