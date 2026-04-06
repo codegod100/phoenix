@@ -40,15 +40,18 @@ A simple task management board with columns and cards.
 
 - REQUIREMENT: Display board as horizontal row of columns
 - REQUIREMENT: Each column shows cards stacked vertically
-- REQUIREMENT: Each column header has delete button (visible on hover, destructive styling)
-- REQUIREMENT: Clicking delete column button opens confirmation modal (destructive action)
+- REQUIREMENT: Each column header shows edit (✏️) and delete (🗑️) buttons on hover, positioned right side
+- REQUIREMENT: Clicking column edit button opens styled modal to rename column
+- REQUIREMENT: Clicking column delete button opens confirmation modal (destructive action)
 - REQUIREMENT: Modal on confirm deletes column, removes all cards in it, updates UI dynamically
 - REQUIREMENT: Show add-card button at bottom of each column
 - REQUIREMENT: Clicking add-card button opens styled modal for card creation
 - REQUIREMENT: Show add-column button at right of board
 - REQUIREMENT: Clicking add-column button opens styled modal for column creation
-- REQUIREMENT: Inline editing: click card title to edit (opens styled modal)
-- REQUIREMENT: Inline editing: click column name to edit inline (transforms to input field, Enter to save, Escape to cancel, blur to save)
+- REQUIREMENT: Cards show edit (✏️) and delete (🗑️) buttons on hover, positioned top-right corner
+- REQUIREMENT: Clicking card body initiates drag-and-drop to move card
+- REQUIREMENT: Clicking card edit button opens styled modal to edit title and description
+- REQUIREMENT: Clicking card delete button opens confirmation modal (destructive action)
 - REQUIREMENT: Drag-and-drop cards between columns with visual feedback
 - REQUIREMENT: Styled modal dialogs have: title, input fields, confirm button, cancel button
 - REQUIREMENT: Modal on confirm calls API and updates the board UI dynamically without page reload
@@ -58,6 +61,10 @@ A simple task management board with columns and cards.
 - REQUIREMENT: Drag-and-drop cards between columns calls move API and updates UI dynamically without page reload
 - REQUIREMENT: UI updates must re-render the affected card/column in place
 
+- CONSTRAINT: Card edit/delete buttons visible only on card hover, positioned absolute top-right
+- CONSTRAINT: Column edit/delete buttons visible only on column header hover, positioned absolute right
+- CONSTRAINT: Button icons use emoji: ✏️ for edit, 🗑️ for delete
+- CONSTRAINT: Edit button hover color: #89b4fa (accent blue), delete button hover color: #f38ba8 (red)
 - CONSTRAINT: Board fills viewport width, columns scroll horizontally if needed
 - CONSTRAINT: Column height fixed with internal scroll for many cards
 - CONSTRAINT: Card max-height 200px with scroll for long descriptions
