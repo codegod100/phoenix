@@ -40,7 +40,8 @@ A simple task management board with columns and cards.
 
 - REQUIREMENT: Display board as horizontal row of columns
 - REQUIREMENT: Each column shows cards stacked vertically
-- REQUIREMENT: Each column header shows edit (✏️) and delete (🗑️) buttons on hover, positioned right side
+- REQUIREMENT: Each column header shows edit (✏️) and delete (🗑️) buttons on hover, positioned left of count badge
+- REQUIREMENT: Column header widget order from left to right: edit button, delete button, card count badge
 - REQUIREMENT: Clicking column edit button opens styled modal to rename column
 - REQUIREMENT: Clicking column delete button opens confirmation modal (destructive action)
 - REQUIREMENT: Modal on confirm deletes column, removes all cards in it, updates UI dynamically
