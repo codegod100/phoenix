@@ -47,6 +47,18 @@
 - CONSTRAINT: Client-side validation matching API validation rules
 - CONSTRAINT: Modal forms close after successful submission
 
+## Design System
+
+- CONSTRAINT: Use Catppuccin Mocha aesthetic: soft, rounded, elevated surfaces with warm pastels on dark backgrounds
+- CONSTRAINT: Spacing: 8px base unit (0.5rem), section margins 24px (1.5rem), component padding 16px (1rem), element gap 12px (0.75rem)
+- CONSTRAINT: Border radius: 8px for cards/containers, 6px for inputs/selects, 4px for buttons
+- CONSTRAINT: Elevation: cards get 0 4px 6px -1px rgba(0,0,0,0.1) shadow, modals get 0 25px 50px -12px rgba(0,0,0,0.5) shadow
+- CONSTRAINT: Typography: system-ui sans-serif family, 14px base size (0.875rem), 1.5 line-height, 18px headings (1.125rem)
+- CONSTRAINT: Hover states: interactive elements lighten background 10% (use var(--surface1) instead of var(--surface0))
+- CONSTRAINT: Layout: max-width 1400px container, centered with 24px padding, flexible wrapping for responsive filters
+- CONSTRAINT: Table: row height comfortable, cell padding 14px horizontal (0.875rem), 1px solid borders between rows
+- CONSTRAINT: Focus states: blue (#89b4fa) outline for accessibility on inputs and buttons
+
 ## Low Stock
 
 - REQUIREMENT: Show notification when items are low stock
