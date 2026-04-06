@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "project": "taskflow",
+  "last_updated": "2026-04-06",
+  "pipeline": {
+    "ingest": {
+      "status": "complete",
+      "completed_at": "2026-04-06",
+      "files_processed": [
+        "spec/web-dashboard.md",
+        "spec/tasks.md",
+        "spec/analytics.md"
+      ],
+      "clauses_extracted": 72
+    },
+    "canonicalize": {
+      "status": "complete",
+      "completed_at": "2026-04-06",
+      "canonical_count": 44,
+      "output_file": ".phoenix/graphs/canonical.json"
+    },
+    "plan": {
+      "status": "complete",
+      "completed_at": "2026-04-06",
+      "iu_count": 4,
+      "output_file": ".phoenix/graphs/ius.json"
+    },
+    "regen": {
+      "status": "complete",
+      "completed_at": "2026-04-06",
+      "files_generated": [
+        "src/generated/web-dashboard/dashboard-page.ts",
+        "src/generated/web-dashboard/analytics-panel.ts",
+        "src/generated/web-dashboard/task-list-display.ts",
+        "src/generated/web-dashboard/styles.ts"
+      ]
+    }
+  },
+  "audit": {
+    "last_run": null,
+    "status": "pending"
+  },
+  "drift": {
+    "last_check": null,
+    "status": "clean"
+  }
+}

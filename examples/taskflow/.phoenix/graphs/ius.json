@@ -1,0 +1,221 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06",
+  "ius": [
+    {
+      "id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+      "name": "Dashboard Page",
+      "description": "A single-page web dashboard for managing tasks with Catppuccin Mocha styling. Includes task creation, editing, deletion, bulk operations, and statistics display.",
+      "risk_tier": "high",
+      "source_canon_ids": [
+        "a3f7c8d9e1b2",
+        "b4e8d9f0a2c3",
+        "c5f9e0a1b3d4",
+        "d60af1b2c4e5",
+        "e71b02c3d5f6",
+        "f82c13d4e6a7",
+        "093d24e5f7b8",
+        "1a4e35f6a8c9",
+        "2b5f46a7b9d0",
+        "3c6057b8c0e1",
+        "4d7168c9d1f2",
+        "5e8279d0e2a3",
+        "6f938ae1f3b4",
+        "70a49bf2a4c5",
+        "81b5a0c3b5d6",
+        "92c6b1d4c6e7",
+        "a3d7c2e5d7f8",
+        "b4e8d3f6e8a9",
+        "c5f9e4a7f9b0",
+        "d60af5b8a0c1",
+        "e71b06c9b1d2",
+        "f82c17d0c2e3",
+        "093d28e1d3f4",
+        "1a4e39f2e4a5",
+        "2b5f4aa3f5b6",
+        "3c605bb4a6c7",
+        "4d716cc5b7d8"
+      ],
+      "contract": {
+        "description": "Complete HTML dashboard with inline CSS and JavaScript for task management",
+        "inputs": [
+          {
+            "name": "tasks",
+            "type": "Task[]",
+            "description": "Array of tasks to display"
+          },
+          {
+            "name": "view",
+            "type": "'active' | 'archived'",
+            "description": "Current view filter"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "renderHTML",
+            "type": "string",
+            "description": "Complete HTML page with embedded CSS and JavaScript"
+          }
+        ],
+        "invariants": [
+          "Title validation: form rejects empty titles before submission",
+          "Catppuccin Mocha only: no theme toggle or light mode",
+          "Responsive layout: single column mobile, multi-column desktop",
+          "Overdue tasks show red border and OVERDUE indicator"
+        ]
+      },
+      "output_path": "src/generated/web-dashboard/dashboard-page.ts",
+      "test_path": "src/generated/web-dashboard/__tests__/web-dashboard.test.ts",
+      "dependencies": [],
+      "tags": ["ui", "dashboard", "catppuccin", "high-risk"]
+    },
+    {
+      "id": "59d32939d50083b6ecf70e500f215a179f42a5ea99a186cb8af2720e3aaa1d74",
+      "name": "Analytics Panel",
+      "description": "Statistics calculation and metric display for task dashboard. Computes completion rates, overdue counts, and renders metric cards with emoji icons.",
+      "risk_tier": "low",
+      "source_canon_ids": [
+        "2b5f4aa3f5b6",
+        "3c605bb4a6c7",
+        "4d716cc5b7d8"
+      ],
+      "contract": {
+        "description": "Analytics calculation and metric card generation",
+        "inputs": [
+          {
+            "name": "tasks",
+            "type": "Task[]",
+            "description": "Array of tasks to analyze"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "calculateStats",
+            "type": "TaskStats",
+            "description": "Calculated statistics including completion rate"
+          },
+          {
+            "name": "renderMetricCards",
+            "type": "string",
+            "description": "HTML for metric cards with emojis"
+          }
+        ],
+        "invariants": [
+          "Completion rate is calculated as (completed / total) * 100",
+          "Overdue tasks exclude completed and archived tasks",
+          "Metric cards always show emoji, value, and label"
+        ]
+      },
+      "output_path": "src/generated/web-dashboard/analytics-panel.ts",
+      "test_path": null,
+      "dependencies": [],
+      "tags": ["analytics", "metrics", "low-risk"]
+    },
+    {
+      "id": "a6550cdc3ef254c13571c1134a3f1ad230c942e0325c50f89ae97502a302fd01",
+      "name": "Task List Display",
+      "description": "Task list rendering component with filtering and status transitions. Handles task card display, status change callbacks, and filtered views.",
+      "risk_tier": "medium",
+      "source_canon_ids": [
+        "e71b02c3d5f6",
+        "f82c13d4e6a7",
+        "093d24e5f7b8",
+        "1a4e35f6a8c9",
+        "2b5f46a7b9d0"
+      ],
+      "contract": {
+        "description": "Task list component with filtering and status management",
+        "inputs": [
+          {
+            "name": "tasks",
+            "type": "Task[]",
+            "description": "Tasks to display"
+          },
+          {
+            "name": "filter",
+            "type": "TaskFilter",
+            "description": "Optional status/priority/assignee filter"
+          },
+          {
+            "name": "options",
+            "type": "TaskListDisplayOptions",
+            "description": "Callbacks for status changes and task clicks"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "render",
+            "type": "string",
+            "description": "HTML string of task cards"
+          },
+          {
+            "name": "setTasks",
+            "type": "void",
+            "description": "Update the task list"
+          }
+        ],
+        "invariants": [
+          "Task cards always show title, priority badge, and status",
+          "Filtering respects status, priority, and assignee criteria",
+          "Status transitions trigger onStatusChange callback"
+        ]
+      },
+      "output_path": "src/generated/web-dashboard/task-list-display.ts",
+      "test_path": null,
+      "dependencies": [],
+      "tags": ["ui", "task-list", "medium-risk"]
+    },
+    {
+      "id": "8d072032308810bce8136ef5a0a51f8e99a35d83edfa38f4d69cdca300d1c6af",
+      "name": "Styles",
+      "description": "Style configuration system with Catppuccin Mocha color palette for the Task Dashboard",
+      "risk_tier": "medium",
+      "source_canon_ids": [
+        "5e827dd6c8e9",
+        "6f938ee7d9f0",
+        "70a49ff8e0a1",
+        "81b5a0g9f1b2",
+        "92c6b1h0a2c3",
+        "a3d7c2i1b3d4",
+        "b4e8d3j2c4e5",
+        "c5f9e4k3d5f6",
+        "d60af5l4e6a7",
+        "e71b06m5f7b8",
+        "f82c17n6a8c9",
+        "093d28o7b9d0",
+        "1a4e39p8c0e1"
+      ],
+      "contract": {
+        "description": "Style configuration and CSS generation for Catppuccin Mocha theme",
+        "inputs": [
+          {
+            "name": "config",
+            "type": "StyleConfig",
+            "description": "Optional style configuration override"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "generateCSS",
+            "type": "string",
+            "description": "Generated CSS with CSS custom properties"
+          },
+          {
+            "name": "defaultStyleConfig",
+            "type": "StyleConfig",
+            "description": "Default Catppuccin Mocha style configuration"
+          }
+        ],
+        "invariants": [
+          "CSS custom properties use --ctp-* prefix for all Catppuccin colors",
+          "Semantic mappings link to Catppuccin variables (--primary: var(--ctp-blue))",
+          "Default config uses Catppuccin Mocha palette exclusively"
+        ]
+      },
+      "output_path": "src/generated/web-dashboard/styles.ts",
+      "test_path": null,
+      "dependencies": [],
+      "tags": ["styles", "css", "catppuccin", "medium-risk"]
+    }
+  ]
+}
