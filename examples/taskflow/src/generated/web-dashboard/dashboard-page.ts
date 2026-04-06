@@ -1093,6 +1093,8 @@ export class DashboardPage {
         });
 
         // Initialize
+        updateStats();
+        renderTaskList();
         updateBulkActions();
     </script>
 
