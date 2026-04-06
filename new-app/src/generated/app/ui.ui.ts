@@ -144,30 +144,36 @@ export function renderPage(board: Board): string {
         if (!draggedCard) return;
         
         const cardId = draggedCard.dataset.cardId;
-        const columnId = column.dataset.columnId;
+        const destColumnId = column.dataset.columnId;
         const siblings = Array.from(column.children);
         const orderIndex = siblings.indexOf(draggedCard);
-        
-        // Use sourceColumnId captured at dragstart
-        const destColumnId = columnId;
         
         try {
           await fetch('/api/cards/' + cardId + '/move', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ column_id: parseInt(columnId), order_index: orderIndex })
+            body: JSON.stringify({ column_id: parseInt(destColumnId), order_index: orderIndex })
           });
           
-          // Update both source and destination column counts
+          // Update column counts - source loses one, destination gains one
           if (sourceColumnId && sourceColumnId !== destColumnId) {
-            updateColumnCount(sourceColumnId); // decrement source
-            updateColumnCount(destColumnId);   // increment destination
-          } else {
-            // Same column reorder - count unchanged
-            updateColumnCount(columnId);
+            // Moving between columns: decrement source, increment destination
+            const sourceBadge = document.getElementById('count-' + sourceColumnId);
+            const destBadge = document.getElementById('count-' + destColumnId);
+            if (sourceBadge) {
+              const currentSource = parseInt(sourceBadge.textContent || '0');
+              sourceBadge.textContent = Math.max(0, currentSource - 1);
+            }
+            if (destBadge) {
+              const currentDest = parseInt(destBadge.textContent || '0');
+              destBadge.textContent = currentDest + 1;
+            }
           }
+          // If same column, counts don't change (just reordering)
         } catch (err) {
           showError('Failed to move card');
+          // On error, refresh to restore correct state
+          location.reload();
         }
       });
     });
