@@ -910,10 +910,10 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               var currentName = nameEl ? nameEl.textContent : '';
               
               var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Column Name *</label>' +
-                '<input id="edit-column-name" value="' + currentName.replace(/"/g, '&quot;') + '" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">';
+                '<input id="edit-column-name-dyn" value="' + currentName.replace(/"/g, '&quot;') + '" style="width:100%;background:#313244;border:1px solid #45475a;color:#cdd6f4;border-radius:6px;padding:8px 12px;box-sizing:border-box;">';
               
               showModal('Edit Column', content, function() {
-                var newName = document.getElementById('edit-column-name').value.trim();
+                var newName = document.getElementById('edit-column-name-dyn').value.trim();
                 if (newName && newName !== currentName) {
                   fetch('/api/columns/' + col.id, {
                     method: 'PATCH',
@@ -940,7 +940,8 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     document.querySelectorAll('.edit-column-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var columnId = btn.dataset.columnId;
-        var nameEl = document.querySelector('.column-name[data-column-id="' + columnId + '"], .column-name');
+        var columnEl = btn.closest('.column');
+        var nameEl = columnEl.querySelector('.column-name');
         var currentName = nameEl ? nameEl.textContent : '';
         
         var content = '<label style="color:#a6adc8;font-size:12px;display:block;margin-bottom:4px;">Column Name *</label>' +
