@@ -1,10 +1,13 @@
 // CONTRACT: UI IU - Main UI shell and page structure
 // INVARIANT: Display board as horizontal row of columns
+// INVARIANT: Use styled modal dialogs for card creation, editing, and deletion
+// INVARIANT: Do not use browser native alert() or prompt()
 // INVARIANT: Dark theme: bg #1e1e2e
 
 import type { Board } from './api.js';
 import { renderBoard, boardStyles } from './board.ui.js';
 import { cardsStyles } from './cards.ui.js';
+import { designSystemStyles } from './design-system.ui.js';
 
 export function renderPage(board: Board): string {
   return `
@@ -23,12 +26,85 @@ export function renderPage(board: Board): string {
     }
     ${boardStyles}
     ${cardsStyles}
+    ${designSystemStyles}
   </style>
 </head>
 <body>
   ${renderBoard(board)}
   
+  <div id="modal-root"></div>
+  
   <script>
+    // Modal state and functions
+    let currentModalConfig = null;
+    
+    function showModal(config) {
+      currentModalConfig = config;
+      const root = document.getElementById('modal-root');
+      root.innerHTML = renderModalHTML(config);
+      
+      // Focus first input if exists
+      const firstInput = root.querySelector('input, textarea');
+      if (firstInput) firstInput.focus();
+      
+      // ESC key handler
+      document.addEventListener('keydown', handleModalKeydown);
+    }
+    
+    function closeModal() {
+      document.getElementById('modal-root').innerHTML = '';
+      currentModalConfig = null;
+      document.removeEventListener('keydown', handleModalKeydown);
+    }
+    
+    function handleModalKeydown(e) {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    }
+    
+    function modalPrimaryAction() {
+      if (currentModalConfig?.onPrimary) {
+        currentModalConfig.onPrimary();
+      }
+    }
+    
+    function modalSecondaryAction() {
+      if (currentModalConfig?.onSecondary) {
+        currentModalConfig.onSecondary();
+      }
+      closeModal();
+    }
+    
+    function renderModalHTML(config) {
+      const primaryBtn = config.primaryLabel ? 
+        '<button class="btn ' + (config.primaryVariant === 'destructive' ? 'btn-destructive' : 'btn-primary') + 
+        '" onclick="modalPrimaryAction()">' + escapeHtml(config.primaryLabel) + '</button>' : '';
+      
+      const secondaryBtn = config.secondaryLabel ? 
+        '<button class="btn btn-secondary" onclick="modalSecondaryAction()">' + 
+        escapeHtml(config.secondaryLabel) + '</button>' : '';
+
+      return '<div class="modal-backdrop" onclick="if(event.target===this)closeModal()">' +
+        '<div class="modal-container" onclick="event.stopPropagation()">' +
+          '<div class="modal-header">' +
+            '<h3 class="modal-title">' + escapeHtml(config.title) + '</h3>' +
+            '<button class="modal-close" onclick="closeModal()">×</button>' +
+          '</div>' +
+          '<div class="modal-body">' + config.content + '</div>' +
+          '<div class="modal-footer">' + secondaryBtn + primaryBtn + '</div>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
     // Drag and drop handlers
     let draggedCard = null;
     
@@ -67,7 +143,6 @@ export function renderPage(board: Board): string {
         const siblings = Array.from(column.children);
         const orderIndex = siblings.indexOf(draggedCard);
         
-        // Track source column for count update
         const sourceColumn = draggedCard.closest('.column');
         const sourceColumnId = sourceColumn?.dataset.columnId;
         
@@ -78,14 +153,12 @@ export function renderPage(board: Board): string {
             body: JSON.stringify({ column_id: parseInt(columnId), order_index: orderIndex })
           });
           
-          // Update column counts
           updateColumnCount(columnId);
           if (sourceColumnId && sourceColumnId !== columnId) {
             updateColumnCount(sourceColumnId);
           }
         } catch (err) {
-          console.error('Failed to move card:', err);
-          location.reload();
+          showError('Failed to move card');
         }
       });
     });
@@ -105,7 +178,6 @@ export function renderPage(board: Board): string {
       }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
     
-    // Update column count badge
     function updateColumnCount(columnId) {
       const column = document.querySelector('[data-column-id="' + columnId + '"]');
       if (!column) return;
@@ -114,94 +186,187 @@ export function renderPage(board: Board): string {
       if (badge) badge.textContent = count;
     }
     
-    // Card actions
-    async function addCard(columnId) {
-      const title = prompt('Card title:');
-      if (!title) return;
-      const description = prompt('Description (optional):') || null;
-      
-      try {
-        await fetch('/api/cards', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ column_id: columnId, title, description })
-        });
-        location.reload();
-      } catch (err) {
-        alert('Failed to create card');
-      }
+    function showError(message) {
+      showModal({
+        title: 'Error',
+        content: '<p style="color:#f38ba8">' + escapeHtml(message) + '</p>',
+        primaryLabel: 'OK',
+        primaryVariant: 'primary',
+        onPrimary: closeModal
+      });
     }
     
-    async function editCard(id) {
+    // Card actions with styled modals
+    function addCard(columnId) {
+      showModal({
+        title: 'Add Card',
+        content: 
+          '<div class="input-group">' +
+            '<label class="input-label" for="card-title">Title *</label>' +
+            '<input type="text" id="card-title" class="input-field" placeholder="Enter card title" maxlength="200">' +
+          '</div>' +
+          '<div class="input-group">' +
+            '<label class="input-label" for="card-desc">Description</label>' +
+            '<textarea id="card-desc" class="input-field" placeholder="Enter description (optional)" maxlength="1000" rows="3"></textarea>' +
+          '</div>',
+        primaryLabel: 'Create',
+        secondaryLabel: 'Cancel',
+        onPrimary: async () => {
+          const title = document.getElementById('card-title').value.trim();
+          const description = document.getElementById('card-desc').value.trim() || null;
+          
+          if (!title) {
+            document.getElementById('card-title').style.borderColor = '#f38ba8';
+            return;
+          }
+          
+          closeModal();
+          try {
+            await fetch('/api/cards', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ column_id: columnId, title, description })
+            });
+            location.reload();
+          } catch (err) {
+            showError('Failed to create card');
+          }
+        }
+      });
+    }
+    
+    function editCard(id) {
       const card = document.querySelector('[data-card-id="' + id + '"]');
       const titleEl = card.querySelector('.card-title');
       const descEl = card.querySelector('.card-desc');
       const currentTitle = titleEl.textContent;
       const currentDesc = descEl ? descEl.textContent : '';
       
-      const title = prompt('Card title:', currentTitle);
-      if (title === null) return;
-      const description = prompt('Description:', currentDesc);
-      if (description === null) return;
-      
-      try {
-        await fetch('/api/cards/' + id, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, description: description || null })
-        });
-        location.reload();
-      } catch (err) {
-        alert('Failed to update card');
-      }
+      showModal({
+        title: 'Edit Card',
+        content: 
+          '<div class="input-group">' +
+            '<label class="input-label" for="edit-title">Title *</label>' +
+            '<input type="text" id="edit-title" class="input-field" value="' + escapeHtml(currentTitle) + '" maxlength="200">' +
+          '</div>' +
+          '<div class="input-group">' +
+            '<label class="input-label" for="edit-desc">Description</label>' +
+            '<textarea id="edit-desc" class="input-field" rows="3" maxlength="1000">' + escapeHtml(currentDesc) + '</textarea>' +
+          '</div>',
+        primaryLabel: 'Save',
+        secondaryLabel: 'Cancel',
+        onPrimary: async () => {
+          const title = document.getElementById('edit-title').value.trim();
+          const description = document.getElementById('edit-desc').value.trim() || null;
+          
+          if (!title) {
+            document.getElementById('edit-title').style.borderColor = '#f38ba8';
+            return;
+          }
+          
+          closeModal();
+          try {
+            await fetch('/api/cards/' + id, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, description })
+            });
+            location.reload();
+          } catch (err) {
+            showError('Failed to update card');
+          }
+        }
+      });
     }
     
-    async function deleteCard(id) {
-      if (!confirm('Delete this card?')) return;
-      
-      try {
-        await fetch('/api/cards/' + id, { method: 'DELETE' });
-        location.reload();
-      } catch (err) {
-        alert('Failed to delete card');
-      }
+    function deleteCard(id) {
+      showModal({
+        title: 'Delete Card',
+        content: '<p style="color:#a6adc8">Are you sure you want to delete this card? This action cannot be undone.</p>',
+        primaryLabel: 'Delete',
+        primaryVariant: 'destructive',
+        secondaryLabel: 'Cancel',
+        onPrimary: async () => {
+          closeModal();
+          try {
+            await fetch('/api/cards/' + id, { method: 'DELETE' });
+            location.reload();
+          } catch (err) {
+            showError('Failed to delete card');
+          }
+        }
+      });
     }
     
-    // Column actions
-    async function addColumn() {
-      const name = prompt('Column name:');
-      if (!name) return;
-      
-      try {
-        await fetch('/api/columns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        location.reload();
-      } catch (err) {
-        alert('Failed to create column');
-      }
+    // Column actions with styled modals
+    function addColumn() {
+      showModal({
+        title: 'Add Column',
+        content: 
+          '<div class="input-group">' +
+            '<label class="input-label" for="col-name">Column Name *</label>' +
+            '<input type="text" id="col-name" class="input-field" placeholder="Enter column name">' +
+          '</div>',
+        primaryLabel: 'Create',
+        secondaryLabel: 'Cancel',
+        onPrimary: async () => {
+          const name = document.getElementById('col-name').value.trim();
+          
+          if (!name) {
+            document.getElementById('col-name').style.borderColor = '#f38ba8';
+            return;
+          }
+          
+          closeModal();
+          try {
+            await fetch('/api/columns', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name })
+            });
+            location.reload();
+          } catch (err) {
+            showError('Failed to create column');
+          }
+        }
+      });
     }
     
-    async function editColumnName(id) {
+    function editColumnName(id) {
       const col = document.querySelector('[data-column-id="' + id + '"]');
       const nameEl = col.querySelector('.column-name');
       const currentName = nameEl.textContent;
       
-      const name = prompt('Column name:', currentName);
-      if (!name || name === currentName) return;
-      
-      try {
-        await fetch('/api/columns/' + id, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        location.reload();
-      } catch (err) {
-        alert('Failed to rename column');
-      }
+      showModal({
+        title: 'Rename Column',
+        content: 
+          '<div class="input-group">' +
+            '<label class="input-label" for="rename-col">Column Name *</label>' +
+            '<input type="text" id="rename-col" class="input-field" value="' + escapeHtml(currentName) + '">' +
+          '</div>',
+        primaryLabel: 'Save',
+        secondaryLabel: 'Cancel',
+        onPrimary: async () => {
+          const name = document.getElementById('rename-col').value.trim();
+          
+          if (!name) {
+            document.getElementById('rename-col').style.borderColor = '#f38ba8';
+            return;
+          }
+          
+          closeModal();
+          try {
+            await fetch('/api/columns/' + id, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name })
+            });
+            location.reload();
+          } catch (err) {
+            showError('Failed to rename column');
+          }
+        }
+      });
     }
   </script>
 </body>
@@ -210,7 +375,7 @@ export function renderPage(board: Board): string {
 }
 
 export const _phoenix = {
-  iu_id: '93738e46037d6490e08021a2fe93cc340fa6871937f6c75937cbe6c71500e5a2',
+  iu_id: '8479eab3613ec143616b6143a45015b7d8d8dd0d4821e14008fafbe07235fa66',
   name: 'UI',
   risk_tier: 'medium',
   canon_ids: []
