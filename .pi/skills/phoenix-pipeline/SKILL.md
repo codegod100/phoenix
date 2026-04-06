@@ -1,330 +1,153 @@
 ---
 name: phoenix-pipeline
-description: Run the complete Phoenix pipeline. Executes ingest → canonicalize → plan → regen in sequence. Use for first-time setup or full regeneration after spec changes.
+description: Phoenix pipeline - step by step guide for spec → code transformation
 ---
 
 # Phoenix Pipeline
 
-Run the complete Phoenix VCS pipeline from spec to code.
-
-## When to Use
-
-- First time setting up a Phoenix project
-- After major spec changes
-- For full regeneration (clean slate)
-- CI/CD pipelines
-- When unsure which phase to run
-
-## Usage
-
-```bash
-/skill:phoenix-pipeline              # Full pipeline
-/skill:phoenix-pipeline --from plan  # Start from specific phase
-/skill:phoenix-pipeline --dry-run    # Show what would happen
-/skill:phoenix-pipeline --fast       # Skip validation (dev mode)
-```
+Transform specification files into implementation code.
 
 ## Pipeline Flow
 
 ```
-┌─────────┐    ┌─────────────┐    ┌─────────────┐    ┌───────┐
-│  Spec   │───→│  Canonical  │───→│     IUs     │───→│  Code │
-│  Files  │    │ Requirements│    │   Planned   │    │Generated│
-└─────────┘    └─────────────┘    └─────────────┘    └───────┘
-     │               │                  │               │
-     ▼               ▼                  ▼               ▼
-spec/*.md    .phoenix/graphs/   .phoenix/graphs/  src/generated/
-             canonical.json     ius.json          app/
-
-Phase A         Phase B           Phase C          Phase C
-INGEST       CANONICALIZE        PLAN              REGEN
+spec/*.md → Canonical Requirements → Implementation Units → Code
+    (Ingest)      (Canonicalize)         (Plan)         (Regen)
 ```
 
-## Implementation Steps
+## Phase A: Ingest - Read Specs
 
-### Step 1: Initialize (if needed)
+Read all `.md` files in `spec/` directory and extract clauses.
 
+**Input:** `spec/*.md`
+
+**Process:**
+1. Read each markdown file
+2. Extract lines starting with `- ` or `* `
+3. Look for markers: `REQUIREMENT:`, `CONSTRAINT:`, `DEFINITION:`, `ASSUMPTION:`, `SCENARIO:`
+4. Build clause list with:
+   - id: SHA-256 hash of text
+   - type: REQUIREMENT | CONSTRAINT | DEFINITION | ASSUMPTION | SCENARIO
+   - text: normalized content
+   - section: parent heading
+
+**Output:** List of clauses
+
+```
+Example output:
+- [REQ-001] system shall render dashboard (from web-dashboard.md)
+- [REQ-002] background color is #1e1e2e (from web-dashboard.md)
+- [CON-001] no theme toggle allowed (from web-dashboard.md)
+```
+
+## Phase B: Canonicalize - Clean Requirements
+
+Transform clauses into canonical requirements.
+
+**Input:** Clauses from Phase A
+
+**Process:**
+1. Group related clauses by section
+2. Remove duplicates
+3. Normalize language (lowercase, standardize)
+4. Assign node IDs (node-001, node-002, etc.)
+
+**Output:** Canonical requirements
+
+```
+Example output:
+node-001: dashboard renders complete html page
+node-002: dashboard uses catppuccin mocha colors
+node-003: no theme toggle allowed
+```
+
+## Phase C: Plan - Group Into IUs
+
+Organize requirements into Implementation Units.
+
+**Input:** Canonical requirements
+
+**Process:**
+1. Group by logical unit (e.g., all dashboard UI requirements)
+2. Assign risk tier:
+   - low: <5 requirements, simple
+   - medium: 5-10 requirements
+   - high: >10 requirements or user-facing
+3. Define contract (description, inputs, outputs, invariants)
+4. Assign output files
+
+**Output:** Implementation Units
+
+```
+Example output:
+IU-1: Dashboard Page (HIGH)
+  Requirements: node-001, node-002, node-003, ...
+  Contract: Renders HTML dashboard with Catppuccin theme
+  Output: src/generated/web-dashboard/dashboard-page.ts
+
+IU-2: Styles (MEDIUM)
+  Requirements: node-002, node-004
+  Contract: CSS custom properties
+  Output: src/generated/web-dashboard/styles.ts
+```
+
+## Phase D: Regen - Generate Code
+
+Implement each IU as code.
+
+**Input:** Implementation Units
+
+**Process:**
+For each IU:
+1. Read its requirements
+2. Generate TypeScript implementation
+3. Add `_phoenix` traceability export
+4. Write to output file
+5. Add tests (if medium+ risk)
+
+**Traceability Export:**
 ```typescript
-// Check if project initialized
-if (!findProjectRoot()) {
-  console.log('🔥 Phoenix not initialized. Running init first...\n');
-  await executeSkill('phoenix-init');
-}
-
-const { root, phoenixDir } = requireProjectRoot();
+export const _phoenix = {
+  iu_id: '<hash>',
+  name: 'Dashboard Page',
+  risk_tier: 'high',
+  canon_ids: ['node-001', 'node-002', ...] as const,
+} as const;
 ```
 
-### Step 2: Determine Starting Phase
+**Output:** Generated files
 
-```typescript
-function determineStartingPhase(args: string[]): string {
-  // Explicit --from flag
-  const fromIndex = args.indexOf('--from');
-  if (fromIndex >= 0 && args[fromIndex + 1]) {
-    return args[fromIndex + 1];
-  }
-  
-  // Auto-detect based on existing graphs
-  if (!existsSync(join(phoenixDir, 'graphs', 'spec.json'))) {
-    return 'ingest';
-  }
-  if (!existsSync(join(phoenixDir, 'graphs', 'canonical.json'))) {
-    return 'canonicalize';
-  }
-  if (!existsSync(join(phoenixDir, 'graphs', 'ius.json'))) {
-    return 'plan';
-  }
-  
-  return 'regen';
-}
+## Running the Pipeline
 
-const startPhase = determineStartingPhase(args);
-const phases = ['ingest', 'canonicalize', 'plan', 'regen'];
-const startIndex = phases.indexOf(startPhase);
-const phasesToRun = phases.slice(startIndex);
-```
+Since this is agent-skills only (no CLI), run phases manually:
 
-### Step 3: Execute Each Phase
+1. **Ingest**: Read specs and list clauses
+2. **Canonicalize**: Clean and normalize requirements
+3. **Plan**: Group into IUs and assign risk
+4. **Regen**: Generate code files with traceability
 
-```typescript
-console.log('🔥 Phoenix Pipeline');
-console.log(`Starting from: ${startPhase}`);
-console.log(`Phases to run: ${phasesToRun.join(' → ')}\n`);
-
-const results = {
-  ingest: null as IngestResult | null,
-  canonicalize: null as CanonicalizeResult | null,
-  plan: null as PlanResult | null,
-  regen: null as RegenResult | null
-};
-
-// Phase A: Ingest
-if (phasesToRun.includes('ingest')) {
-  console.log('┌─────────────────────────────────────────┐');
-  console.log('│  Phase A: Ingest                        │');
-  console.log('└─────────────────────────────────────────┘');
-  
-  results.ingest = await executeSkill('phoenix-ingest');
-  
-  if (!results.ingest.success) {
-    console.error('\n✖ Ingest failed. Stopping pipeline.');
-    return { success: false, phase: 'ingest', error: results.ingest.error };
-  }
-  
-  console.log(`\n✔ Ingest complete: ${results.ingest.clauseCount} clauses\n`);
-}
-
-// Phase B: Canonicalize
-if (phasesToRun.includes('canonicalize')) {
-  console.log('┌─────────────────────────────────────────┐');
-  console.log('│  Phase B: Canonicalize                  │');
-  console.log('└─────────────────────────────────────────┘');
-  
-  results.canonicalize = await executeSkill('phoenix-canonicalize');
-  
-  if (!results.canonicalize.success) {
-    console.error('\n✖ Canonicalize failed. Stopping pipeline.');
-    return { success: false, phase: 'canonicalize', error: results.canonicalize.error };
-  }
-  
-  console.log(`\n✔ Canonicalize complete: ${results.canonicalize.nodeCount} nodes\n`);
-}
-
-// Phase C: Plan
-if (phasesToRun.includes('plan')) {
-  console.log('┌─────────────────────────────────────────┐');
-  console.log('│  Phase C: Plan                          │');
-  console.log('└─────────────────────────────────────────┘');
-  
-  results.plan = await executeSkill('phoenix-plan');
-  
-  if (!results.plan.success) {
-    console.error('\n✖ Plan failed. Stopping pipeline.');
-    return { success: false, phase: 'plan', error: results.plan.error };
-  }
-  
-  console.log(`\n✔ Plan complete: ${results.plan.iuCount} IUs\n`);
-}
-
-// Phase C (continued): Regen
-if (phasesToRun.includes('regen')) {
-  console.log('┌─────────────────────────────────────────┐');
-  console.log('│  Phase C: Regenerate                    │');
-  console.log('└─────────────────────────────────────────┘');
-  
-  results.regen = await executeSkill('phoenix-regen');
-  
-  if (!results.regen.success) {
-    console.error('\n✖ Regenerate had errors.');
-    // Continue to show status even with errors
-  } else {
-    console.log(`\n✔ Regenerate complete: ${results.regen.fileCount} files\n`);
-  }
-}
-```
-
-### Step 4: Run Audit
-
-```typescript
-// Optional: Audit IUs before reporting
-console.log('┌─────────────────────────────────────────┐');
-console.log('│  Audit                                  │');
-console.log('└─────────────────────────────────────────┘');
-
-const audit = await executeSkill('phoenix-audit');
-
-if (audit.issues > 0) {
-  console.log(`\n⚠ ${audit.issues} audit warnings found`);
-  console.log('Run /skill:phoenix-audit for details\n');
-}
-```
-
-### Step 5: Run Tests
-
-```typescript
-console.log('┌─────────────────────────────────────────┐');
-console.log('│  Tests                                  │');
-console.log('└─────────────────────────────────────────┘');
-
-try {
-  const testResult = await $`bun test`.cwd(root);
-  const match = testResult.stdout.match(/(\d+) pass/);
-  const passed = parseInt(match?.[1] || '0');
-  
-  console.log(`\n✔ ${passed} tests passed\n`);
-} catch (e) {
-  console.log('\n⚠ Some tests failed');
-  console.log('Run bun test for details\n');
-}
-```
-
-### Step 6: Final Status
-
-```typescript
-console.log('┌─────────────────────────────────────────┐');
-console.log('│  Pipeline Complete                    │');
-console.log('└─────────────────────────────────────────┘\n');
-
-await executeSkill('phoenix-status');
-
-console.log('\n📋 Next Steps:');
-console.log('  • Edit spec/ and run /skill:phoenix-pipeline again');
-console.log('  • Run /skill:phoenix-inspect to visualize');
-console.log('  • Run /skill:phoenix-drift to check sync status');
-```
-
-## Error Handling
-
-Pipeline stops on first failure:
+## Example Session
 
 ```
-🔥 Phoenix Pipeline
-Starting from: ingest
-Phases to run: ingest → canonicalize → plan → regen
+User: Run pipeline on taskflow web dashboard
 
-┌─────────────────────────────────────────┐
-│  Phase A: Ingest                        │
-└─────────────────────────────────────────┘
-  spec/app.md → 24 clauses
+Agent:
+  [Phase A] Ingest
+    - Read spec/web-dashboard.md
+    - Found 20 clauses
+    - 12 REQUIREMENT, 3 CONSTRAINT, 5 DEFINITION
 
-✔ Ingest complete: 24 clauses
+  [Phase B] Canonicalize
+    - 18 canonical requirements extracted
+    - Assigned IDs: node-001 through node-018
 
-┌─────────────────────────────────────────┐
-│  Phase B: Canonicalize                  │
-└─────────────────────────────────────────┘
-  Error: No REQUIREMENT or CONSTRAINT clauses found
-  All clauses are CONTEXT type - add explicit markers
+  [Phase C] Plan
+    - IU-1: Dashboard Page (HIGH) - 11 requirements
+    - IU-2: Styles (MEDIUM) - 7 requirements
 
-✖ Canonicalize failed. Stopping pipeline.
+  [Phase D] Regen
+    - Generated dashboard-page.ts
+    - Generated styles.ts
+    - Added _phoenix exports
 
-Fix: Add REQUIREMENT: and CONSTRAINT: markers to spec/app.md
+  ✅ Pipeline complete. 2 files generated.
 ```
-
-## Dry Run Mode
-
-With `--dry-run`:
-
-```
-🔥 Phoenix Pipeline (Dry Run)
-
-Would execute:
-  1. /skill:phoenix-ingest
-     - Parse spec/app.md
-     - Extract ~24 clauses
-  
-  2. /skill:phoenix-canonicalize
-     - Extract ~18 canonical nodes
-     - Compute warm hashes
-  
-  3. /skill:phoenix-plan
-     - Plan ~6 IUs
-     - Risk assessment
-  
-  4. /skill:phoenix-regen
-     - Generate ~12 files
-     - Run tests
-
-No changes made. Remove --dry-run to execute.
-```
-
-## Fast Mode
-
-With `--fast`:
-- Skip syntax validation
-- Skip full test suite (just check tests exist)
-- Skip audit
-- For rapid iteration during development
-
-## Phase Dependencies
-
-| Phase | Requires | Produces |
-|-------|----------|----------|
-| Ingest | spec/*.md files | spec.json |
-| Canonicalize | spec.json | canonical.json, warm-hashes.json |
-| Plan | canonical.json | ius.json |
-| Regen | ius.json | src/generated/app/*, manifest.json |
-
-## Output Summary
-
-```
-🔥 Phoenix Pipeline Complete
-
-┌─────────────┬──────────┬────────────────┐
-│ Phase       │ Status   │ Output         │
-├─────────────┼──────────┼────────────────┤
-│ Ingest      │ ✔        │ 24 clauses     │
-│ Canonicalize│ ✔        │ 18 nodes       │
-│ Plan        │ ✔        │ 6 IUs          │
-│ Regen       │ ✔        │ 12 files       │
-└─────────────┴──────────┴────────────────┘
-
-Files: 12 in sync
-Tests: 37 passed, 0 failed
-
-Generated:
-  • src/generated/app/api.ts
-  • src/generated/app/board.ui.ts
-  • src/generated/app/cards.ui.ts
-  • src/generated/app/cards.client.ts
-  • src/generated/app/database.ts
-  • src/generated/app/design-system.ui.ts
-  • src/generated/app/ui.ui.ts
-  • src/generated/app/__tests__/api.test.ts
-  • src/generated/app/__tests__/board.test.ts
-  • src/generated/app/__tests__/cards.test.ts
-  • src/generated/app/__tests__/database.test.ts
-  • src/generated/app/__tests__/ui.test.ts
-
-Next: Run /skill:phoenix-inspect --serve to visualize
-```
-
-## Prerequisites
-
-- Phoenix project initialized (auto-runs init if needed)
-- Spec files in spec/ directory
-
-## See Also
-
-- /skill:phoenix-init - Just initialize
-- /skill:phoenix-ingest - Just parse specs
-- /skill:phoenix-status - Check state without running
