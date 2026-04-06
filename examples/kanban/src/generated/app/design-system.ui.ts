@@ -200,7 +200,7 @@ export const DesignSystem = {
   // Card styles
   card: {
     maxHeight: '200px',
-    background: Theme.colors.surface0,
+    background: Theme.colors.base,  // Use darker base color for cards
     borderRadius: '6px',
     shadow: '0 2px 4px rgba(0,0,0,0.2)',
     padding: '12px'
