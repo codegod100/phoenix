@@ -1,0 +1,1936 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06T04:38:53.178Z",
+  "nodes": {
+    "00f4f3f6791834a28ffac16944973f4a903a395a36c66c0096b3d5d0ea278e21": {
+      "canon_id": "00f4f3f6791834a28ffac16944973f4a903a395a36c66c0096b3d5d0ea278e21",
+      "type": "REQUIREMENT",
+      "statement": "system shall a board has multiple columns (e.g., todo, in progress, done)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c146e2fc8391fcc6de5eadf905ea24bbd674bc755158dc939743e4967a14732d"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "column"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "92a54ac47ed55aa0f039aaaf073d2a537ca30922eabb6c335b253aa34dcdb06c"
+    },
+    "42b74c2d10e0f4126633401e258bf510bc7774a9d4613fba45e98feebdd9ba2c": {
+      "canon_id": "42b74c2d10e0f4126633401e258bf510bc7774a9d4613fba45e98feebdd9ba2c",
+      "type": "REQUIREMENT",
+      "statement": "system shall columns are ordered left to right",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "aa4fb012eb62654c98cd6c2fe0fc267b6aef1393c7b31f588cdef3f5d62926c1"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "board"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "f459f2b5812fd4054efe058b57fbba6cb28743701e7723cab8d63c9cb360c38a"
+    },
+    "292cf4747e185c78b771b3afb66daf04f2d8f0563ce3af2541d37b5833b10395": {
+      "canon_id": "292cf4747e185c78b771b3afb66daf04f2d8f0563ce3af2541d37b5833b10395",
+      "type": "REQUIREMENT",
+      "statement": "system shall board persists state in sqlite database between sessions",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3ce4593123a625992f3ee9a1e4097909965e0faecd310667793fc09df5abfb40"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "aa651166776e817fab349037c0ce4f7b61f1bb0dd0763d28e161aa686682762a"
+    },
+    "a6fce96c2b7b0010407c23ee1854932641d363eccd1c00f79ff01c26437bb414": {
+      "canon_id": "a6fce96c2b7b0010407c23ee1854932641d363eccd1c00f79ff01c26437bb414",
+      "type": "CONSTRAINT",
+      "statement": "default columns: \"todo\", \"in progress\", \"done\"",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "79225eef83a2f1826bee54cc8950cd3e9c9d21cf2c6d43bbb7beaeab8623e9eb"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "board"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "c575e74c5a5120c82083535d45bd2b81afa790b2286ad5a43873dc801f16e5fd"
+    },
+    "78419c86f8b4105e66f66fc5fbc1c0042913d0f89b4467dabde703b89da8ff70": {
+      "canon_id": "78419c86f8b4105e66f66fc5fbc1c0042913d0f89b4467dabde703b89da8ff70",
+      "type": "CONSTRAINT",
+      "statement": "columns can be renamed but not deleted below 1 column",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "42f413020c25dda97ce1e22713973ae047b552f9065f343b2f5814e414e16dd8"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "board"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "575db5100db0646ca5d9abdb49aaf23a1110713655f54eb3745f650670d1c6bc"
+    },
+    "c2dc2832c643c41a07cced9b94d69f585c2629cbb848492c065fae0f2f66a0b4": {
+      "canon_id": "c2dc2832c643c41a07cced9b94d69f585c2629cbb848492c065fae0f2f66a0b4",
+      "type": "REQUIREMENT",
+      "statement": "system shall a card has a title (required, 1-200 chars) and optional description",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c7ef28d16203b6fd17003b65cc18b6c275c447915f3a14096709807c17a88bf3"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "ui",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "7b93cd478867310e3749813136a4d98134c12e95cf8fdd77301b612af776bf99"
+    },
+    "961613720dc35f0633412315c40a19619fbc9ee0ef7425e462b885a6804c2a56": {
+      "canon_id": "961613720dc35f0633412315c40a19619fbc9ee0ef7425e462b885a6804c2a56",
+      "type": "REQUIREMENT",
+      "statement": "system shall urls in card descriptions must be rendered as clickable links at all times, including after editing",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e7460884ead1dd3be4c063d0217d62591034d9eae0737e3d0e65a99ecd0b32e8"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "35e72c6c273447139efdc819d37221a732bd6af34379acd1e774ab469282ad59"
+    },
+    "bc6bd8062b494400ed7e0d75f7be50215300bbb97d8c20fdec0c9141f45d72a2": {
+      "canon_id": "bc6bd8062b494400ed7e0d75f7be50215300bbb97d8c20fdec0c9141f45d72a2",
+      "type": "CONSTRAINT",
+      "statement": "urls displayed as link text must show the original unescaped url (not html entities like &amp;)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "1aaabc074401614a1eb879edd6b9af3c323c621889fa6b183cb08791cdf24feb"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "f6ee94c7c1c4bfb54da50b4012c40f15e4535ef5f91b6d3deb5f6b2b82e87b91"
+    },
+    "54fd0e725bb330ba0c5dfeb8e042878ee98d1b4b355a551919a4aabb7cdb2024": {
+      "canon_id": "54fd0e725bb330ba0c5dfeb8e042878ee98d1b4b355a551919a4aabb7cdb2024",
+      "type": "CONSTRAINT",
+      "statement": "card description text must not be html-escaped when editing - textarea receives raw text",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "88f3147b182d1556b766545d32735a5650cab8104fda68f08b655ea7251b51bb"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "1f93a95960736326eb00312aa652165308dbcbec19583b32d19df0092e0cd521"
+    },
+    "fe560b68c079b75f815346b90705faf7ec568e85af1f79a3ba02f31907181c3c": {
+      "canon_id": "fe560b68c079b75f815346b90705faf7ec568e85af1f79a3ba02f31907181c3c",
+      "type": "CONSTRAINT",
+      "statement": "each url in a multi-line description must be independently linkified (urls separated by newlines must each be clickable)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "491afac16aacb17164f561de8263e5ffc9d268905777721ce4b4a2058a502f52"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "eed443375a8186866cf818b28e6df2ca167e6e2b5c7e8e232d798e25f739a58c"
+    },
+    "68acae13eb9950e42189ed4c542b4c2a5147dd5de0ed71afad967b201cca5f64": {
+      "canon_id": "68acae13eb9950e42189ed4c542b4c2a5147dd5de0ed71afad967b201cca5f64",
+      "type": "REQUIREMENT",
+      "statement": "system shall cards belong to exactly one column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "463af98be0102a4173add77cc216b4b603b73ca1d07650f67617570eafdaca88"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "30d64322f7e90e446a5a8932e25ee5cf53f71529e6fa377e012751a279cbdc1e"
+    },
+    "23046d5fa163a51bbb486a2b736eb139d2075d99ce13e58e776b80bb660c0fbf": {
+      "canon_id": "23046d5fa163a51bbb486a2b736eb139d2075d99ce13e58e776b80bb660c0fbf",
+      "type": "REQUIREMENT",
+      "statement": "system shall cards can be moved between columns via drag-and-drop",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "27c63127dcd1efda2524a2f08f0cc6e981490b1c4270cf789f386f21985ba4f4"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "drag",
+        "drop",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "538b0ce32f268da79bb0cfc81481e6775ac4d5ab8ce65c0dc735f191409ed25c"
+    },
+    "64673a9ad19f958d5c0012ec2411cf05d2b74b1d445631b6299243a1bde51ed2": {
+      "canon_id": "64673a9ad19f958d5c0012ec2411cf05d2b74b1d445631b6299243a1bde51ed2",
+      "type": "REQUIREMENT",
+      "statement": "system shall columns can be reordered via drag-and-drop left to right",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e96d4e560122a001da39668301d79542b2d4be7deb1d5f8a41984f4d201cd567"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "drag",
+        "drop",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "58569263b6dc53aa2eb5127ff26c33d37a91a2a1f152acfdf03621eff9157615"
+    },
+    "bd6227a5cb86e1e0b58ed8f1f516e940988e0635ea47c6725e18fecd8f61c97d": {
+      "canon_id": "bd6227a5cb86e1e0b58ed8f1f516e940988e0635ea47c6725e18fecd8f61c97d",
+      "type": "REQUIREMENT",
+      "statement": "system shall cards have a display order within each column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "efd46271464df988e75bb75568b1b6ecd24459de335dfd8226d6f1ed272380f8"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "787dd65a94064573c98ed0b3fd701019dc005219d874781aca8f96ed9e3f952e"
+    },
+    "27093b1ab81c1be945c94b66e22c553ec135e557dadd1e67d27c8a1c7a2fac84": {
+      "canon_id": "27093b1ab81c1be945c94b66e22c553ec135e557dadd1e67d27c8a1c7a2fac84",
+      "type": "CONSTRAINT",
+      "statement": "cards must have created_at timestamp",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "7d65de3a5c782657ff388d07224c0fb524784a9945e596a51bf21b4719920865"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "77c437c8e2240b6ce35f4f1c6b11146e777c6b2d7e011ec2e76cd2579781e7d0"
+    },
+    "3adba454175f1b277f0d7ad4ff94ecb7ffd2997322a533d74b5a63aefa29c506": {
+      "canon_id": "3adba454175f1b277f0d7ad4ff94ecb7ffd2997322a533d74b5a63aefa29c506",
+      "type": "CONSTRAINT",
+      "statement": "maximum 100 cards per board (performance guard)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "2ef681dd06a3a2b57481ed9fe6c9162a0615f5eaa8eae74d259457990d5a0f61"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "card",
+        "cards"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "7cb2a20b58a1816d50521d14d04db579b6bee92b198dc467d07f19c654485661"
+    },
+    "e06966e9dc485137bbe09f580e6f9ab60c6fb294050560e6ce11703631597d01": {
+      "canon_id": "e06966e9dc485137bbe09f580e6f9ab60c6fb294050560e6ce11703631597d01",
+      "type": "REQUIREMENT",
+      "statement": "system shall get /board returns full board state with columns and cards",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "22eb761ed33a1a3cd6c3bd3360519bed0690c91f7fb2603909b6ab53a12cb93a"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "column",
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "a897f6085ae19723cd8898b95d1d61c062957a33246887dd4e478bc5496f21d7"
+    },
+    "d7be033c88d9e038f49921fa27ccf39ad010b29bc0a12bb6e3412e50bb4e92fc": {
+      "canon_id": "d7be033c88d9e038f49921fa27ccf39ad010b29bc0a12bb6e3412e50bb4e92fc",
+      "type": "REQUIREMENT",
+      "statement": "system shall post /cards creates a new card with title and optional description",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b8f4f4c30458bdb8e21f9cdabe1cc5d008054f31925d92953bedbc6a82ec2324"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "15bcf883e0d839a57ff5537621054f5eaccf4c9ef3ec8aedc2545ee587c91f3e"
+    },
+    "7e965db4edd374c55364a2e63b2bfb2896615cea64f5021cc0898a746843cdca": {
+      "canon_id": "7e965db4edd374c55364a2e63b2bfb2896615cea64f5021cc0898a746843cdca",
+      "type": "REQUIREMENT",
+      "statement": "system shall patch /cards/:id updates card title/description",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "55135def43e4249c3cce50cf5413b9d5c417b5ff4184dcb4c1862331200e8001"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "dd673ca4c63b68ba346942ae31703d2e0330b41860a6314d0501817f11ad3f54"
+    },
+    "eba82fd7822e966aebbdbad157512105768e81aa5c802d731b8f05c50c4d0e73": {
+      "canon_id": "eba82fd7822e966aebbdbad157512105768e81aa5c802d731b8f05c50c4d0e73",
+      "type": "REQUIREMENT",
+      "statement": "system shall patch /cards/:id/move moves card to different column with new order",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "23722c61da93f87ecbe1e6c66a8917a561aeb3d02873da5937d6f029a2960cc0"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "c9004b83fe426fa8491f2d0d5d4509abc6eed9ca22081e1ffe97594bd74e6eb1"
+    },
+    "b888f8c4798a24361ea7c422f9c4f57f49107abf6eb480efff171a2594a8e18f": {
+      "canon_id": "b888f8c4798a24361ea7c422f9c4f57f49107abf6eb480efff171a2594a8e18f",
+      "type": "REQUIREMENT",
+      "statement": "system shall delete /cards/:id removes a card",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f944bc505f76ce1f8ef56ab5e911bb1f48d84dd67670ee5283e3f80966d58fc9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "3f06589c5705bb131dbcf058cf08ab0212211f72d7836095efb9dfe4634702b5"
+    },
+    "92b670184fdb4d6506419339920739cdc5bf9382d2ab7a051b999314900e61ed": {
+      "canon_id": "92b670184fdb4d6506419339920739cdc5bf9382d2ab7a051b999314900e61ed",
+      "type": "REQUIREMENT",
+      "statement": "system shall post /columns creates a new column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f89d9c0e49217b7378a659859afbdc5dfe2d6a0e2f7ba28d7c85b77e67a3762a"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "3bb7980c3e5a31d3b0e22ea831df42cd0c0d3f365154b4aeb717f0d467959ce8"
+    },
+    "6444da24fb56f188b613a576eac5f3566007dbbbdf0bea5df7e865eb1790ec8d": {
+      "canon_id": "6444da24fb56f188b613a576eac5f3566007dbbbdf0bea5df7e865eb1790ec8d",
+      "type": "REQUIREMENT",
+      "statement": "system shall delete /columns/:id removes a column and all its cards",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "87644a6c964ba1e7d7bcc44f0f2138daa808dab359894c5177da418e850e9b4c"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "dfb8d9b4a1374d9d2728c720c0252b01db477643541f82ff48bcd719a12cfb70"
+    },
+    "5edbd71e83c65a55a4ef62e699fb164a1759b3740abddeb2f32a5cc92f30c764": {
+      "canon_id": "5edbd71e83c65a55a4ef62e699fb164a1759b3740abddeb2f32a5cc92f30c764",
+      "type": "REQUIREMENT",
+      "statement": "system shall patch /columns/:id/move reorders column to new position",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "cb9aeb4c7e87169c15df4a7a825a8bbad5a89086ded485bbb7d24bb425801207"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ce1363b4a70b9957ddff094babd1f73671e2241359189a72b53a33cb6331eef6"
+    },
+    "285546e87f1a07970edfd4b7f7810b6d8a2e516027f577574ffe631ea25e6e12": {
+      "canon_id": "285546e87f1a07970edfd4b7f7810b6d8a2e516027f577574ffe631ea25e6e12",
+      "type": "REQUIREMENT",
+      "statement": "system shall patch /columns/:id renames a column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ac62d8f01aa284684a1f79d2393fb47ad3a118af8b314a4d9b890c8c0f2915e7"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "08aed6bb784f5681533c0850143ffd5fbfd2a2cfebc0efbcb341410a89bc7a11"
+    },
+    "390e57747e458ec5e477bab345cde462cb19e57b3118dae1108f3d4ab534d6fa": {
+      "canon_id": "390e57747e458ec5e477bab345cde462cb19e57b3118dae1108f3d4ab534d6fa",
+      "type": "CONSTRAINT",
+      "statement": "moving card validates column exists (400 if not)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "eada2062a38ae0afd98e4393b1c84a8d9f0abf21562a5f8b7ebd7f9f8ddc8c99"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "2888fd7b809a8c236c123e620b4a6daa78fe95d5ba1a945514517c5229630030"
+    },
+    "c5d29a3c1293ddc2a6ab367eb6e33e1f040f1aa81e66936ac7a02765c948bfc2": {
+      "canon_id": "c5d29a3c1293ddc2a6ab367eb6e33e1f040f1aa81e66936ac7a02765c948bfc2",
+      "type": "CONSTRAINT",
+      "statement": "card order is 0-indexed integer, automatically rebalanced on conflicts",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "d22e603067765a0069d2e1e8f3ff2dd607bcedc99b47cda27fdfddeb22003c85"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "66ab97ac184ca58e41f9840c1808901c4aeac9f49fa467089f3b5ba62868381e"
+    },
+    "03146d0b48ae71e367dcce3dbb88a2a691d0abeea68f902939b6ce09d95d644d": {
+      "canon_id": "03146d0b48ae71e367dcce3dbb88a2a691d0abeea68f902939b6ce09d95d644d",
+      "type": "CONSTRAINT",
+      "statement": "column order is 0-indexed integer, automatically rebalanced on conflicts",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "94763c7a3aa84591bca0e6c9f83d98c81364b3e57d3ac6a3e924e614d103a642"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "650ce2edc1a3ee52a2090fd464d6a722d7a71f6bb8e6cac88bd5cf0ddfaf7176"
+    },
+    "bd19cd9379262eee8e284a4ac2e995ffc6a1517f5e97f4285f921e1f2be0bb1b": {
+      "canon_id": "bd19cd9379262eee8e284a4ac2e995ffc6a1517f5e97f4285f921e1f2be0bb1b",
+      "type": "CONSTRAINT",
+      "statement": "deleting column requires at least 2 columns exist (minimum 1 must remain)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "e054a8ec4ccc6517bf92035ac77f1d09e78dedc644e16d86f3b619573a82be2a"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "ui",
+        "api"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "4cee99fe07cf092180b4c499b2799dede6bc8d899959dacd5f1db4c33d4f0961"
+    },
+    "6cca14019487117fbae1e77204a049dd4340a25152e70e3b3a77a27ded54b219": {
+      "canon_id": "6cca14019487117fbae1e77204a049dd4340a25152e70e3b3a77a27ded54b219",
+      "type": "REQUIREMENT",
+      "statement": "system shall display board as horizontal row of columns",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "43f8390edc5bafdc3e4e259a63b01b87605a740998322df8d092fa565d08c6c9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "column",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "201c77bae6731855c6187c1e79bb6329900fdde0d5d762e922dad22b0ac831ae"
+    },
+    "9b172a714b1d3110e7b441c63d5ed90c2d2c9f5d5c8b4cdd7725a382edc073ae": {
+      "canon_id": "9b172a714b1d3110e7b441c63d5ed90c2d2c9f5d5c8b4cdd7725a382edc073ae",
+      "type": "REQUIREMENT",
+      "statement": "system shall each column shows cards stacked vertically",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "842a49c46138207f075c7828a79cd6c704eb3d83c5e33ac8a816a55539368055"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "260f706788d9b333520055c5fcf39cf29a796a5d1d77d519cf8cb5cc92d35e54"
+    },
+    "fbb35586ef4b0e494b46e31a7ce9a7d40416abeeb3ffecab59d3513104510b8f": {
+      "canon_id": "fbb35586ef4b0e494b46e31a7ce9a7d40416abeeb3ffecab59d3513104510b8f",
+      "type": "REQUIREMENT",
+      "statement": "system shall each column header shows edit (✏️) and delete (🗑️) buttons on hover, positioned left of count badge",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "745f33b6abc01797cdd7d39c864f4c5d51e9914914a7f4667731d151c4f46de9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "count",
+        "badge",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ac7692242ca5d1b12604e6c0bf3c1a650b576a509e84f8053188d87eff6dd7fb"
+    },
+    "e5e7a35ca3d621e86d8035fba23c0cd1d47a10750125a80f6706eb43fff99ecd": {
+      "canon_id": "e5e7a35ca3d621e86d8035fba23c0cd1d47a10750125a80f6706eb43fff99ecd",
+      "type": "REQUIREMENT",
+      "statement": "system shall column header widget order from left to right: edit button, delete button, card count badge",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "eb6cfd5dcd05a08e249be218ebc32b2e6d6f5b159b506471a5a68a49154f2a14"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "count",
+        "badge",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ea2445053a5cb13fd1800fbfa1235f8d1959e2c6d60eda7bbc48ddc00fc8d229"
+    },
+    "1121cc404a47953719b4f17b0c06a92873b2af90ee59908d51ee6c729630ad6b": {
+      "canon_id": "1121cc404a47953719b4f17b0c06a92873b2af90ee59908d51ee6c729630ad6b",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking column edit button opens styled modal to rename column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7cf8ab5db1515e60f6ec796804da5e669bea0a3102ff36e2bae7ba4fa66b4e1b"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "modal",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "950e862801a65cbbf35e6a3a8eda7f7c132a577ba932704808e3915c064fe9ec"
+    },
+    "bdc21639889355aeac29bb06b4db82ff12710621cc047edd98910ddb4698c317": {
+      "canon_id": "bdc21639889355aeac29bb06b4db82ff12710621cc047edd98910ddb4698c317",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking column delete button opens confirmation modal (destructive action)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "83da3eb60ee16309f93e45d4bf92a936e90bf45ba48b958d3d412746468f7169"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "modal",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "5b6e9deb81fca88e21eca08d1e0c4a1fbdbfe1f5eeee71222e9cf12690c1015f"
+    },
+    "fa468b7317f4989ffcab59c86ea683235d8db39f0a33d1d833887d3d61228f19": {
+      "canon_id": "fa468b7317f4989ffcab59c86ea683235d8db39f0a33d1d833887d3d61228f19",
+      "type": "REQUIREMENT",
+      "statement": "system shall modal on confirm deletes column, removes all cards in it, updates ui dynamically",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "58784bd9ebb262c74aa73a705c8a324cc4a7b144d64d5e447aaf9557a4cb023d"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "ui",
+        "modal"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "fb35453eed8b4800d92e804ba3c976e3cab9122007589b8348560bb629e1e9f1"
+    },
+    "bf920ff58d2c06c0e81ee9cfc01b2cf3c91098a5c085a6f6efd047669960d209": {
+      "canon_id": "bf920ff58d2c06c0e81ee9cfc01b2cf3c91098a5c085a6f6efd047669960d209",
+      "type": "REQUIREMENT",
+      "statement": "system shall show add-card button at bottom of each column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "94e74a1810b39c99cd991b68a389f151a520106ab74a27976fbbe2012a196e7b"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "f63cdfdd1c70bbb9e25e3abe4913975a35de7a8b50bf626b08575b2d57105bb2"
+    },
+    "331324d468ba2d11d268b9a12917694ca7094473222280fdf626ab3a6f4679c8": {
+      "canon_id": "331324d468ba2d11d268b9a12917694ca7094473222280fdf626ab3a6f4679c8",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking add-card button opens styled modal for card creation",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8400c400b84ffa29cf9bad166bd15fd4cb106f0cc9f8d65c345da752ebddba1d"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "modal",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "3c65119119c57beb02079868f79b8d672edb4b02e32b0422a00ffeebc2346c81"
+    },
+    "895da868cb3482825edff0adda063e77e248c92dc2133330d2acf4a800f29b3d": {
+      "canon_id": "895da868cb3482825edff0adda063e77e248c92dc2133330d2acf4a800f29b3d",
+      "type": "REQUIREMENT",
+      "statement": "system shall show add-column button at right of board",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0031c1240e1463288ca2691d23dd14d262ef4c1767622d63e710fc859f0070f5"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "column",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "6dadbd230af4add1b668fd6fcd74c88ea9df0ced755c9863d91d899aa69fdbde"
+    },
+    "6386bf83944681d190e254fa16e6ac3edf1797df5e0814099ecf079c6f0667b3": {
+      "canon_id": "6386bf83944681d190e254fa16e6ac3edf1797df5e0814099ecf079c6f0667b3",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking add-column button opens styled modal for column creation",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "6e9ba89c20f20bbe4e71835852686311f2bb7d717819c874c31c3aaf9629efd0"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "modal",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "47148d80400bf7da98cb1e14649e790872e946eadadb61ccf9d9c0a3d82a6731"
+    },
+    "4c99b98e876d377a8dd3568315c7e75f25fa6c8ba6503fa82c37d3701240eccf": {
+      "canon_id": "4c99b98e876d377a8dd3568315c7e75f25fa6c8ba6503fa82c37d3701240eccf",
+      "type": "REQUIREMENT",
+      "statement": "system shall cards show edit (✏️) and delete (🗑️) buttons on hover, positioned top-right corner",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a503882bbc38e686df042a24a2d61063ba449887ec9f24bf6f5f7efef7adff91"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "0c82d04140facedcd36fbb43c5d582db6ec05f08f103c367e55e4fead154e608"
+    },
+    "d887da4b67b3e8e6654544221989b0efed344a227cfefb333da7a051ba2450db": {
+      "canon_id": "d887da4b67b3e8e6654544221989b0efed344a227cfefb333da7a051ba2450db",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking card body initiates drag-and-drop to move card",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "141991e258c23f586d86e48c79810fb8428c2e399783c8e61be4159bd716318e"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "drag",
+        "drop",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ff15518f3d24bf276b300967ecae8de14f0a5103736d1781a7e7c0e57908abbb"
+    },
+    "77d777db1f0752bcac9fd53656266d52da81237220ec52736c34fa18270343da": {
+      "canon_id": "77d777db1f0752bcac9fd53656266d52da81237220ec52736c34fa18270343da",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking card edit button opens styled modal to edit title and description",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "893ba9de6346fc325bccef7eb23992cbfe3b9c47826e5553b3fb5a7e8852c1cd"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "modal",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "5f00629d720f1761c94313442577959ed13b4c3b893757aad93290a712b034fa"
+    },
+    "618bbfe287fddf44f306be031cd026ba84cf613b45b687162deb89083bd472dd": {
+      "canon_id": "618bbfe287fddf44f306be031cd026ba84cf613b45b687162deb89083bd472dd",
+      "type": "REQUIREMENT",
+      "statement": "system shall clicking card delete button opens confirmation modal (destructive action)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3bb114f7e998cad644b8c4f6f2dce63cd67cf2df96402de8fb34eb743603a17c"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "modal",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "9d7f633ddce60455879fc7051bd3337b9e9c7b41401c024768109c77b4baab7e"
+    },
+    "85868fbd366d84edad79e3b05ef7abd209d50421b7dce6ff0bc01e2e3a6586c4": {
+      "canon_id": "85868fbd366d84edad79e3b05ef7abd209d50421b7dce6ff0bc01e2e3a6586c4",
+      "type": "REQUIREMENT",
+      "statement": "system shall drag-and-drop cards between columns with visual feedback",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "97bc9af90ac43ec8d80b540959677acd8446418c3b0af5deaa791fea9ed71453"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "drag",
+        "drop",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "613938f18a2d380089efc788d0363dcaf0b15bbf675c527c80bb768d04e11e19"
+    },
+    "6193c274e002ffdb66d7465794524f283ed45df2e616602f8eb4d1b3cc105739": {
+      "canon_id": "6193c274e002ffdb66d7465794524f283ed45df2e616602f8eb4d1b3cc105739",
+      "type": "REQUIREMENT",
+      "statement": "system shall styled modal dialogs have: title, input fields, confirm button, cancel button",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "6866e3a5d723e734870f6be7d4aecf8b2aaffe0b7279d5bfa5f900d00d16966c"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "button",
+        "input",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "8d94caa865394c5ca1a00f5044058ec3164de19166210cc01c2d966f111c9983"
+    },
+    "7ab075e6b5c7f524af345dd6575371f15c78d38ef34d46738ed6b49e4041b2e6": {
+      "canon_id": "7ab075e6b5c7f524af345dd6575371f15c78d38ef34d46738ed6b49e4041b2e6",
+      "type": "REQUIREMENT",
+      "statement": "system shall modal on confirm calls api and updates the board ui dynamically without page reload",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "93269f5259f9871be046f2d41ee3d9774126cf4a8295e505677ef0677c77d732"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "api",
+        "ui",
+        "modal"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "1505a7221baff8bba0293972320a1d0b80d1667f19c83737a9d5468df2d217ef"
+    },
+    "8af383bddb5b76b21b493a90da219b8935a10c190fdbef0b0ea2a6a82826bb11": {
+      "canon_id": "8af383bddb5b76b21b493a90da219b8935a10c190fdbef0b0ea2a6a82826bb11",
+      "type": "REQUIREMENT",
+      "statement": "system shall modal on cancel closes without api call",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "db230937447104ff0a68538d8505b4c3a32c1c346d2e63be272cbb2d4b1d7d5b"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "api",
+        "modal",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "1640f536ed34c7f84b20e978b8d9ca9ee4621e0bd0577f225f67d731586a8416"
+    },
+    "0f7f33e2ad6e4bd6b651a7e2558df642022488f50f9ff8cee88c5f44515fa46e": {
+      "canon_id": "0f7f33e2ad6e4bd6b651a7e2558df642022488f50f9ff8cee88c5f44515fa46e",
+      "type": "REQUIREMENT",
+      "statement": "system shall modal closes on backdrop click (cancel action)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0ffcba91437d3aaf09691fe8478295bf830ed04e4e9379644cd01a7228e65f07"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "drop",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "15ebc75b3c285f32cb19096af49bac54c2b4560d9e556194e2563cd5260f343b"
+    },
+    "014ca2063cf0776a287c913b43320f88f82d9bdd8b559d770ac80a98bd2c4562": {
+      "canon_id": "014ca2063cf0776a287c913b43320f88f82d9bdd8b559d770ac80a98bd2c4562",
+      "type": "REQUIREMENT",
+      "statement": "system shall modal closes on esc key (cancel action)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "12149cebcbfd9786759a26698c7b50daf265930f37622354c125c51fe02b8597"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "0ee7acdd61cac8a95f6ee4a71c864cc67d38fae96919c8437bb849ad39e88435"
+    },
+    "4730c7f6a644a5a5e1281b902ebfec715f24439b602b81c403c2a688dd3e6fd9": {
+      "canon_id": "4730c7f6a644a5a5e1281b902ebfec715f24439b602b81c403c2a688dd3e6fd9",
+      "type": "REQUIREMENT",
+      "statement": "system shall drag-and-drop cards between columns calls move api and updates ui dynamically without page reload",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "44fc5d6b1043322a3e3ed7c5e5a828b497719776b53a78a34b3ae899cbcb2b3c"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "api",
+        "ui",
+        "drag",
+        "drop"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "0d2a2ba44ff18921594e9817a1446e00f80aece4e40591bd126ef7c6811e41eb"
+    },
+    "8e2668e4fa9052ba9d8d2b72ebfab16b253f272b2861c00b3105aa1dbe4dedcf": {
+      "canon_id": "8e2668e4fa9052ba9d8d2b72ebfab16b253f272b2861c00b3105aa1dbe4dedcf",
+      "type": "REQUIREMENT",
+      "statement": "system shall ui updates must re-render the affected card/column in place",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e74386008c0568a1aa3117afc0a10048cf93160f20752f9e15fa682a4a603aff"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "4af43807e8a9aed5d979eb4711f59596eb7e7fdcfcef267b214b8c46e9bdda69"
+    },
+    "221d45f0df770d5cd768f339a5e248a7cdf2373c8e2e0f7fdd3bcd81d11bcffa": {
+      "canon_id": "221d45f0df770d5cd768f339a5e248a7cdf2373c8e2e0f7fdd3bcd81d11bcffa",
+      "type": "CONSTRAINT",
+      "statement": "card edit/delete buttons visible only on card hover, positioned absolute top-right",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "9add937c56ed6cc7976902260ccdcab356a918dc69d03b737f4de7bc7a574d78"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "471856bc4f50fd5181b3dc00f895e9e92e97186e1f7877500937bb7c2e011f34"
+    },
+    "c4abb84f03ca670297593854bb5f0fb2c37daae6b3730da4725ee4b629ea94d8": {
+      "canon_id": "c4abb84f03ca670297593854bb5f0fb2c37daae6b3730da4725ee4b629ea94d8",
+      "type": "CONSTRAINT",
+      "statement": "column edit/delete buttons visible only on column header hover, positioned absolute right",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "07a2ebbfdafe000ec83694b289b14c22609ea9dbe322785df8a5431ff9d4b795"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "632daad2c6bbf1022b2ca57b718508a26c2fd8b124cc30f373a6483d9f403512"
+    },
+    "401c4577e57c9486823d6be223ffd48d3db591377514087d23ed55ec3a2a3fef": {
+      "canon_id": "401c4577e57c9486823d6be223ffd48d3db591377514087d23ed55ec3a2a3fef",
+      "type": "CONSTRAINT",
+      "statement": "button icons use emoji: ✏️ for edit, 🗑️ for delete",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "fce98c238fa16f0f9006f483e007a80423c2dc2c3a10977b82a25b66b87a60a4"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "0a04769836138ada111fe1a6c68bbda024be832322d2c35a0701133877a5a457"
+    },
+    "f38c493daf185cf7be57e48bcedcedde201146b213a7b3c8bc9d43f2f025e089": {
+      "canon_id": "f38c493daf185cf7be57e48bcedcedde201146b213a7b3c8bc9d43f2f025e089",
+      "type": "CONSTRAINT",
+      "statement": "edit button hover color: #89b4fa (accent blue), delete button hover color: #f38ba8 (red)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "1d8705346e622abb4096e59f5445567ce8dd0ad1661716493180b9124ae85ff4"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "color",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "1857d8a43a3e9a9fdf9e181beccd4662721da6635835af138e89d455aa128957"
+    },
+    "0df9eb5bc1f69b627b1711f42773f5285e581c3df23e21dc8acc68544eed0367": {
+      "canon_id": "0df9eb5bc1f69b627b1711f42773f5285e581c3df23e21dc8acc68544eed0367",
+      "type": "CONSTRAINT",
+      "statement": "board fills viewport width, columns scroll horizontally if needed",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "b80fa8d81d1b325230b29e178d1fcc0fc1c38fb67d1b24dc500f596a2fa86c18"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "column",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "d1c1e1d1bd1f4c3629def6ec7ba1c173f5265c2f5291d369757e04da0af6ca8e"
+    },
+    "8f28f7e29f0498ddee2389a0f849741532a8b1321ace52303038c90718a27c57": {
+      "canon_id": "8f28f7e29f0498ddee2389a0f849741532a8b1321ace52303038c90718a27c57",
+      "type": "CONSTRAINT",
+      "statement": "board fills viewport height without vertical scroll - vertical space is managed by column internals",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "c604629df565a56eb3282d0ae67f1ee59fa9245ed61943aa4d818defb9028736"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "board",
+        "column",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ce5d8de64951c49f690814c6449290e26a86e90eabe844fd824e5dd804eeb1d7"
+    },
+    "3e07be903a5aca74ad365f80f0d87ed90c60bda3dea6a94bf8ba30ed2407c04e": {
+      "canon_id": "3e07be903a5aca74ad365f80f0d87ed90c60bda3dea6a94bf8ba30ed2407c04e",
+      "type": "CONSTRAINT",
+      "statement": "column height fixed with internal scroll for many cards",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "149747bdb3f99e1fc828c792c497db96ebfe9380282838315950e0782c9093ac"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "c0b5407b591df2cddfc7ec875e54c28596413b0da32e727b39583c97af3f9525"
+    },
+    "acf723b7d8225a2a5815e5cecf6957c8100073b8b6eda1b8f197b572c7782810": {
+      "canon_id": "acf723b7d8225a2a5815e5cecf6957c8100073b8b6eda1b8f197b572c7782810",
+      "type": "CONSTRAINT",
+      "statement": "card max-height 200px with scroll for long descriptions",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "4c77500d1e6e37d09dbb5b6aaa9299932a566d52c9f0c73ad998f7a4df13e1bb"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ae2b4e656c1b182f4e7fd5c2d9e4e05bffae77e58bf7053f1aa756959eb2672c"
+    },
+    "d5376d71f527cc569da4653da0a1a601302ab8b618e146197fc6998e436f6bdc": {
+      "canon_id": "d5376d71f527cc569da4653da0a1a601302ab8b618e146197fc6998e436f6bdc",
+      "type": "CONSTRAINT",
+      "statement": "newlines in card descriptions must be preserved and displayed in column view",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "0ae7868490a7ca8439489beba6586ca7f2dd7ac6d3dc90def70ef245838b2ff4"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "b26888547f4d507256ccb431e169c05e1b691418b4f03f6309202607d59b4cf3"
+    },
+    "90a5e7b6f195f4c1c9eab661fc8ae25e0771ee4795d6bae4aca181e83ede85e8": {
+      "canon_id": "90a5e7b6f195f4c1c9eab661fc8ae25e0771ee4795d6bae4aca181e83ede85e8",
+      "type": "CONSTRAINT",
+      "statement": "card count badge updates in real-time when cards are added/moved/deleted",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "4480cafa6ed0d5470ee3ce7048396c701c27be3c4c9feaa7e636d45b8ec1f5c7"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "count",
+        "badge",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "5d543ba3e459425e41d600dd4b734328dfb6c054f510e88737159f60ccb8535e"
+    },
+    "9dd941a51cc3d11a977cb0e2709af6da2178bcdb5eab2c844c511e6f85faf635": {
+      "canon_id": "9dd941a51cc3d11a977cb0e2709af6da2178bcdb5eab2c844c511e6f85faf635",
+      "type": "CONSTRAINT",
+      "statement": "when card moved between columns via drag-and-drop, source column count decrements by 1, destination column count increments by 1",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "f3e57212a1862166d6f0fa35f22fa617230b75f96ae26e2cc159697ff36170c2"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "drag",
+        "drop",
+        "count",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "13a5e57784bc44337c47a3a1f919df01476c580835bad7e8734c112c00d18163"
+    },
+    "696835726909876fafa88309aa5a26bba0502e8d4ccfc6190a493a50042b4efe": {
+      "canon_id": "696835726909876fafa88309aa5a26bba0502e8d4ccfc6190a493a50042b4efe",
+      "type": "CONSTRAINT",
+      "statement": "when card moved within same column (reordering), counts remain unchanged",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "83c6ac067a4945f14cdbb6f0be02c029a097353c4082e9969e5f965f7902cfc9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "count",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "6dd7f1c4156b17abfc833a92aa2af5a113871b8bd7f66d6a9657cfbda8accf88"
+    },
+    "2998c42a7bf45e2d57196f42c62d79d92b33feef1f44d0f3074cdaaa64da7475": {
+      "canon_id": "2998c42a7bf45e2d57196f42c62d79d92b33feef1f44d0f3074cdaaa64da7475",
+      "type": "CONSTRAINT",
+      "statement": "dragging a card must move only the card - column position must remain unchanged",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "a25952568ad9ea4cfb5106d3575bf41cd1b7e552d0cfef18b32a97f1cc7718f8"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "drag",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "a812ff939c719cb45cd5b19339bac28c811ed8ae301ddd36ffcb356c970b9528"
+    },
+    "6a4bb3d0858044c200f76a7c4a115924159b4c903a22d81129a377c3c4541c29": {
+      "canon_id": "6a4bb3d0858044c200f76a7c4a115924159b4c903a22d81129a377c3c4541c29",
+      "type": "CONSTRAINT",
+      "statement": "all cards (initial and dynamically created) must have identical drag behavior and event handlers",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "66f205797ad8a5f1246431b287dc993aa5dd5b27458558e873d964c426bee223"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "drag",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "902b34609b534e18280353585c840962a5925f616c7045241425785b65f7aae0"
+    },
+    "975d5dce3ea990ce00b13cf67738631b5deeec0b089cd68590ae807bf4fe6851": {
+      "canon_id": "975d5dce3ea990ce00b13cf67738631b5deeec0b089cd68590ae807bf4fe6851",
+      "type": "CONSTRAINT",
+      "statement": "card dragstart handler must set global draggedcard variable for proper detection by column handlers",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "7d48799ca983b732d51139a7cc1e9924f63032004c077bd50345eb361ba65abd"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "drag",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "84162a9814fc6e104c559aacdcd99cd01dc96c4b0ac88281e01e379a58f20ba8"
+    },
+    "cf76a55dcff15ca10090cb0365d1166d0cc42d3984fd281a880d8be6780dfba7": {
+      "canon_id": "cf76a55dcff15ca10090cb0365d1166d0cc42d3984fd281a880d8be6780dfba7",
+      "type": "CONSTRAINT",
+      "statement": "card count updates must not require page reload for drag-and-drop operations",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "6ff5cd0929ac8ac1465d25324bdec2eb843545b587be985f9b6f562f1f0d3930"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "ui",
+        "drag",
+        "drop",
+        "count"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "208cb74b1fb7e6a93b1e283772540952c3e156c0f7e7810b813a21c9002e1dc4"
+    },
+    "88e9fd5aae3133810d1f3f97312590d7e80c5173fe25965703b1050f806790f1": {
+      "canon_id": "88e9fd5aae3133810d1f3f97312590d7e80c5173fe25965703b1050f806790f1",
+      "type": "CONSTRAINT",
+      "statement": "column count badge dom element id format: \"count-{columnid}\"",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "9e676c7c92217ac38f774b1d5576a6f9abfc9e69a72d938a069fab3daf6921fe"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "count",
+        "badge",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "6bebe210d8ea003e511c920440595e43f12575e1cc7ba2d460d5a6b531f3f747"
+    },
+    "d5027a47f9a93664fe25098d0c578fa056dfce3f94df9869e8855e5b5c7e86f3": {
+      "canon_id": "d5027a47f9a93664fe25098d0c578fa056dfce3f94df9869e8855e5b5c7e86f3",
+      "type": "CONSTRAINT",
+      "statement": "do not use browser native alert(), prompt(), or confirm() - use dom-based modals only",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "f00b4a76966c24e9449d3f62d60557f95c9595ceefc37f9d0236dad638eb1459"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "08969455c1aa3aaedcb6217c10fab3fac7fc44387e50732c8df6b5b88a7fd2ae"
+    },
+    "ad25d418e2130b5869b8b358d8795e520fb30bfc91f6283ef920c36cd447954e": {
+      "canon_id": "ad25d418e2130b5869b8b358d8795e520fb30bfc91f6283ef920c36cd447954e",
+      "type": "CONSTRAINT",
+      "statement": "dark theme: bg #1e1e2e, cards #1e1e2e (uniform dark), accents #89b4fa",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "1a825636b0780aeb06add8f6dd38a473873e3cba4e7b0dd50a874a90470fc59c"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "theme",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "9b83ff659b43e7aea186db2dc15582a8a0615ac6da2952ef8a0e075189607011"
+    },
+    "9caea0625f86da7091266473d2058896345896a8f964469107e22c88b18b2c73": {
+      "canon_id": "9caea0625f86da7091266473d2058896345896a8f964469107e22c88b18b2c73",
+      "type": "CONSTRAINT",
+      "statement": "all cards (initial and dynamically created) must use identical background color",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "02c23a905a28ab75624dc4ddee65b638bbe5dd3bc51ea36a99edb178091d7ae9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "color",
+        "background",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "aedcd849e2cb21e19bc11753f1c8da9f579bc4419d817187c66766e873fd2616"
+    },
+    "6ab008c299c455b49dc51bcddb4ed10f4a4aa5ccbb3945366eefcf0e0c231e3a": {
+      "canon_id": "6ab008c299c455b49dc51bcddb4ed10f4a4aa5ccbb3945366eefcf0e0c231e3a",
+      "type": "CONSTRAINT",
+      "statement": "javascript event handlers must call fetch() to hit api endpoints",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "b1849a8ebe27bf8ee81c260b4b2ae961f74c77b4bfd813b399d6f7bd223fc719"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "api",
+        "ui"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "f17b1ccf266b740712ad78a3ea070bb29a4c7ec27fa847c9e85ddb1951800ba1"
+    },
+    "e7f7414e021854cde36a634bf469b128e177a680cdaf623e9dd643700cc228e3": {
+      "canon_id": "e7f7414e021854cde36a634bf469b128e177a680cdaf623e9dd643700cc228e3",
+      "type": "CONSTRAINT",
+      "statement": "theme must use only catppuccin mocha palette",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "2d7809cc9a9ae3b6021863e1e48777b6ea82c0455e1fa2c786628e0a6ee8f2a7"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "theme",
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "9c31b3ba8735203ea532b454afac841603a6d8bffb871c81725adabf1ae54a71"
+    },
+    "e16aeae889eaf21ac446e44c11a6dce94967fdc430fb3f562a3010636d230748": {
+      "canon_id": "e16aeae889eaf21ac446e44c11a6dce94967fdc430fb3f562a3010636d230748",
+      "type": "CONSTRAINT",
+      "statement": "background shall be #1e1e2e (base), #181825 (mantle) for headers",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "7aed56900f2c9c6f4181ad583f384c0c87522244a59794da03b3aa5a3ba58843"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "background",
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "b6127501ef5fe435a26d70f8828b0df1999edfefeaac1713f28876f355d678d2"
+    },
+    "7f89db91d932e3cfbb3b94b504d37a286d4ae006e16dcf027cf956fb43070330": {
+      "canon_id": "7f89db91d932e3cfbb3b94b504d37a286d4ae006e16dcf027cf956fb43070330",
+      "type": "CONSTRAINT",
+      "statement": "cards must use #1e1e2e (same as background for seamless look)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "c8a1e5be7303b78ac8043d1574806599e7e698f9b14a1e1586ed9a32ad514f5e"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "background",
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "615cbb54f07db6e3f497ded65b578aa8937b1990cbf86721e22cca13205d26b0"
+    },
+    "4b7ea5a02edb1091fb2447542111b8dd1f45dfb8ea9febb06cf8663560b0522b": {
+      "canon_id": "4b7ea5a02edb1091fb2447542111b8dd1f45dfb8ea9febb06cf8663560b0522b",
+      "type": "CONSTRAINT",
+      "statement": "card hover/edit buttons must use #1e1e2e background to match card",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "4abbce6f122e31d66564c42ccdf7ff70ab64829046592cf1a0524956afef8fa1"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "card",
+        "button",
+        "background",
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "8062e993035059cc9729eb9915397a3a1f479e2a230204308a6efffa8fcf1639"
+    },
+    "9744929c60602e8de0070ff40b43dabd00f08c2b300f86f8968c5764467579dd": {
+      "canon_id": "9744929c60602e8de0070ff40b43dabd00f08c2b300f86f8968c5764467579dd",
+      "type": "CONSTRAINT",
+      "statement": "primary accent must be #89b4fa (blue) for buttons and interactive elements",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "6ac93ce3e22fdb362ae3c25d5439237ff06e70819e9b755cd57a66ef5c5afeb0"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "f75b5043eb8f3bcbfb47c1cb49fdfb9d0faa23f560658eb6641347dd1b748d9d"
+    },
+    "6905ac0216ec0f60ca5bc037779011f63d4d32e0a879620e42e73ac322ce5cc2": {
+      "canon_id": "6905ac0216ec0f60ca5bc037779011f63d4d32e0a879620e42e73ac322ce5cc2",
+      "type": "CONSTRAINT",
+      "statement": "destructive actions must use #f38ba8 (pink) for delete/remove",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "949e19ebb167d89343ccf989f778f0f5cc17e710ba331fd65a0f7055a673cfcf"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "9341874508e09ceb37f2cbd655b931fd2da67ebbdebfcd5bc3be55b97804ee19"
+    },
+    "9f3d56020481f9d422d35dfc1aedfe0a488bfd8e33b4a911be96396762326b74": {
+      "canon_id": "9f3d56020481f9d422d35dfc1aedfe0a488bfd8e33b4a911be96396762326b74",
+      "type": "CONSTRAINT",
+      "statement": "text must use #cdd6f4 (primary), #a6adc8 (secondary)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "91f65e2cb5eb28d23a2b3126035e5bb917b7e583ae754317acdee92514144712"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "b5a62bbde66fc3400afc834e6f5cf0385f93833ed7bc6d2734e98d6d056439d2"
+    },
+    "d1f53086607d5e35b6a1d74d58f4ce1ff1e1fc185304461e3f31de085d420d09": {
+      "canon_id": "d1f53086607d5e35b6a1d74d58f4ce1ff1e1fc185304461e3f31de085d420d09",
+      "type": "CONSTRAINT",
+      "statement": "success states must use #a6e3a1 (green)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "d3c4c3604c49cb56ca2bfe5558ff2657fa388d9ee55d9ea547fe38cb1de1d8fa"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "1cb07c51bdb28719cbdda858a55b377578eafbc2094fd312e2a36e97f550d4c7"
+    },
+    "de8c84ed52e037eb701d30bc9ec47191d4af0beca76dfa1df97a6c58a26bab0f": {
+      "canon_id": "de8c84ed52e037eb701d30bc9ec47191d4af0beca76dfa1df97a6c58a26bab0f",
+      "type": "CONSTRAINT",
+      "statement": "warning states must use #f9e2af (yellow)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "08975a2137fd62014cb70f62449a3e2ef7ff27f4951906d614fa951b3ea23f3d"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "design-system"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "4f5565968b4a9ac09f22108df4ecbfa5d0ea36337ba4a1f67878c427abfaaae4"
+    },
+    "d0880f4cc78800f22a038e8e785e20fcf66062b04a13e72ecbeb7f18403ab185": {
+      "canon_id": "d0880f4cc78800f22a038e8e785e20fcf66062b04a13e72ecbeb7f18403ab185",
+      "type": "CONSTRAINT",
+      "statement": "modal backdrop must use rgba(0,0,0,0.7) with blur effect",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "98fc0aa3d09c9645124baeb22578a0cd88de2e84eb03ba33007f5209f973b0a9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "drop",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "eb241a6599936670b78b3180b367a3490a230bf091f3e642977251f367998c33"
+    },
+    "909c65af2eca95e1be0e7e861d2ca26194afe720ab1e013f776eb15ac5af4614": {
+      "canon_id": "909c65af2eca95e1be0e7e861d2ca26194afe720ab1e013f776eb15ac5af4614",
+      "type": "CONSTRAINT",
+      "statement": "modal container must use #181825 background, 8px border-radius",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "6cb2492b9d30dd331b0da1f5c0d0525f066270bb6e0904f7708ad2ff33215219"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "background",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "7b7571375a160753c21676c05c7d65c1fb2cdaddaeef444f9d10df35ffe24507"
+    },
+    "3c86f886297194dc7dfbccaef771f9d456999af80f0d29ab48f0f47ec2366161": {
+      "canon_id": "3c86f886297194dc7dfbccaef771f9d456999af80f0d29ab48f0f47ec2366161",
+      "type": "CONSTRAINT",
+      "statement": "modal header must have title with close button (x) top-right",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "1712233452237ff55b11d073e46f4ebeac9d819499dbac13496d98021951c8f7"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "button",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "1ccae49df52e1c0f3b77bdb2a4b5d757dcf99283800422d823cd6a98db463f95"
+    },
+    "4511047eb3545e54e371ec39ec0455a26a391c34c0dc88d521d4b54be48ee426": {
+      "canon_id": "4511047eb3545e54e371ec39ec0455a26a391c34c0dc88d521d4b54be48ee426",
+      "type": "CONSTRAINT",
+      "statement": "modal footer must have action buttons right-aligned",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "f7987e6676d962b021d48f23526f3fda6831430915e118189c3dbc5527967fa9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "button",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "cd2a20f7eeb228bcd4aec9b45070a35a7c3a330de19a9ecca4051039146673bc"
+    },
+    "6c3c6b61ed35f8da70606e9626e6188d9d378e55cf98f74647becf1e011b2939": {
+      "canon_id": "6c3c6b61ed35f8da70606e9626e6188d9d378e55cf98f74647becf1e011b2939",
+      "type": "CONSTRAINT",
+      "statement": "primary action button must use #89b4fa background, #1e1e2e text",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "6d699c2fb0ea33daf81883b28eb368f261f5e32131206c597e10f763ce356f6d"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "background",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "02947c10c758e6ef074f5b94a5cde8ca109699838d5566312ef5793ba72a19ab"
+    },
+    "1f0dd95c3cc5cd9fb568dfc156b2f6ca75105e6e96a31fd44947d3ad3cf94f50": {
+      "canon_id": "1f0dd95c3cc5cd9fb568dfc156b2f6ca75105e6e96a31fd44947d3ad3cf94f50",
+      "type": "CONSTRAINT",
+      "statement": "secondary/cancel button must use transparent background, #a6adc8 border",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "8100858eb200fd9f182ccdff59db5a442b7c64a240237af582b3b7cae719319c"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "background",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "abc8c538eeb68d86e05a81c8bfe5f7c556b8fa36f0dda68c8392e745d129349e"
+    },
+    "dc21efae1f14fabe1416bf9550b438074115ed240a9fe05f77dc463f647c5942": {
+      "canon_id": "dc21efae1f14fabe1416bf9550b438074115ed240a9fe05f77dc463f647c5942",
+      "type": "CONSTRAINT",
+      "statement": "input fields must have visible labels above (not just placeholders)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "83d9a26d9d8671e5660f321007cf2d89ff5799978768e9359f180fb1824660c9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "input",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "24ee9509df4921f565287a57f1927596045efdcf441374ccd2ceb574a7d82b1a"
+    },
+    "53b4c76446126cedef3c633c44b3d5cb0aef28b1364d03627b5af9b0a21c870f": {
+      "canon_id": "53b4c76446126cedef3c633c44b3d5cb0aef28b1364d03627b5af9b0a21c870f",
+      "type": "CONSTRAINT",
+      "statement": "backdrop click must close modal (cancel action)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "214d69bc614432687fac0ec3f2971bd3f1b9ec0632574162244e0710384f9d30"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "drop",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "7ea704808c3bd4b6278b5ed9c6cab55b29e2137c82ee18c705e2da37d8578f37"
+    },
+    "14a277f0913e91abb63b95dd242d06a6c9a6da76fe42eb963a01192d15bd1e19": {
+      "canon_id": "14a277f0913e91abb63b95dd242d06a6c9a6da76fe42eb963a01192d15bd1e19",
+      "type": "CONSTRAINT",
+      "statement": "esc key must close modal (cancel action)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "1a176ea18eeacc79fac74b9aa8c080965352c147da684e6d3235a578d5b0eaf3"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "df8b80076c9917de80dc9b2807416840c7e59655a20372c9fa5a7f9cbcba4c71"
+    },
+    "4e1bc14e3dfc66407a19c17b44c49cfe5361d55d02d3454a513afacf43e7b4fb": {
+      "canon_id": "4e1bc14e3dfc66407a19c17b44c49cfe5361d55d02d3454a513afacf43e7b4fb",
+      "type": "CONSTRAINT",
+      "statement": "enter key in input fields must submit modal (confirm action), except in textareas where it creates newline",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "acff89c4eb8aa504bb4bbd38e27ffabd492b9280d16bac421ff7c466e60cbd7a"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "input",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "2e4228af306a9d0a4606fc15b59bcdaa84c128cccc969179a8769b85e062ccb7"
+    },
+    "28386ec42e4c99362ffcf9a4a5c510ac621693cd2abac6ae4a0257b8bd3490df": {
+      "canon_id": "28386ec42e4c99362ffcf9a4a5c510ac621693cd2abac6ae4a0257b8bd3490df",
+      "type": "CONSTRAINT",
+      "statement": "first input field in modal must auto-focus when dialog opens",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "dd675e1a741a1277d0302967573a2625c2a46c9b9b2040e8952b600f0749be35"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "modal",
+        "input",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "18a55053e3742f6edb2fa865e038908938c487fd18f584be4031af64a66eb213"
+    },
+    "f88845772c9510c923969506d29f9129707ee5ca0fc06cb125d2c324a9341c09": {
+      "canon_id": "f88845772c9510c923969506d29f9129707ee5ca0fc06cb125d2c324a9341c09",
+      "type": "CONSTRAINT",
+      "statement": "when editing existing items, cursor must be positioned at end of input value",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "1490afad78182a788d39e1f0f45386588e9bbe5f8b7e7032ddbb33c9d68484eb"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "input",
+        "modal-dialog-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "fdb9a78d31adccb6a64144d777a6988504fec09478d5033e98c24c0ce238609c"
+    },
+    "dedcf27a0ec39cad30aac6247f5123412f3f5a281e4a0aefe4871bb175fc4669": {
+      "canon_id": "dedcf27a0ec39cad30aac6247f5123412f3f5a281e4a0aefe4871bb175fc4669",
+      "type": "CONSTRAINT",
+      "statement": "all form inputs must have visible labels (not placeholders only)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "272d9ec976f95a5df1792c28a193d9bb3f27ada597d1163c78371eb9e8306df0"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "input",
+        "input-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "d8c0438611c77c691437bc30adcb778e8332bd58e4e9cd2f33d3b06f4cc75d02"
+    },
+    "6436668684ab0b6a5f496851c78aae326efaeb98c8048718dd15c6ff8f9bf617": {
+      "canon_id": "6436668684ab0b6a5f496851c78aae326efaeb98c8048718dd15c6ff8f9bf617",
+      "type": "CONSTRAINT",
+      "statement": "input background must be #313244",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "d46056a68f94878f73a5e0f4c7541ef5171cd481890ab06e673daea0bea2c8bf"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "input",
+        "background",
+        "input-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "79d994a5a2b43c918ef8a5b1a370cad8945445a60a6292a56de3bd6b9cc37f39"
+    },
+    "aba4cdf8064c654e4222b50103aec3a0bd155ed123161b9627e6b9e7c592c11d": {
+      "canon_id": "aba4cdf8064c654e4222b50103aec3a0bd155ed123161b9627e6b9e7c592c11d",
+      "type": "CONSTRAINT",
+      "statement": "input border must be 1px solid #45475a, #89b4fa on focus",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "fa33377162d4c52152c45878502bd0175b613511e0aeb1b3eb6133dc0e6a83c6"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "input",
+        "input-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "ba2a153853d2e3d2dbd534945daf396c1b8dd66183bfee7d8cce76db7f98a351"
+    },
+    "9c60576e3232d3f2f1e089501b349dc4fcdfe34d95ce9818b4d7d0350cdafbcb": {
+      "canon_id": "9c60576e3232d3f2f1e089501b349dc4fcdfe34d95ce9818b4d7d0350cdafbcb",
+      "type": "CONSTRAINT",
+      "statement": "textarea must allow vertical resize only",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "74a42580585d9608ad272586db1136bcb3c027c594d595659f9f37994e113386"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "input-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "7e7d6de008446e6fb73de436abb2a584dc7f8ad1ae83c9908649d4d0492bf351"
+    },
+    "02c5986fab80dc3ab0e8b0f99b97d06cb5986f41dc73d1873ab20790976f62ef": {
+      "canon_id": "02c5986fab80dc3ab0e8b0f99b97d06cb5986f41dc73d1873ab20790976f62ef",
+      "type": "CONSTRAINT",
+      "statement": "primary button: #89b4fa bg, #1e1e2e text, 6px border-radius",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "f722d92dd792422772ac54ff2013b74602425dadfb5b8703fcf7b3a57ee2641f"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "button-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "6334a20295ab0087cc1b31d896f7c583f7c732fd964e3e4a84ec6ed388cb3d1e"
+    },
+    "2c1834ffe43ab0c70d53c8216947d3d4d381bcb4a2acd8aef2d3353140dcd14a": {
+      "canon_id": "2c1834ffe43ab0c70d53c8216947d3d4d381bcb4a2acd8aef2d3353140dcd14a",
+      "type": "CONSTRAINT",
+      "statement": "secondary button: transparent bg, #a6adc8 border, #cdd6f4 text",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "2350c89d93c24ceb93700b52f245ac79928916c3906eed602572432d1d43995b"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "button-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "78616d2fd7ea8ef9beb5428dfef75ab76223cf692c6aabd33c72796288029fd0"
+    },
+    "4fae2bebd4aab646f31f064f2f6384244c1f1d46a33d3094155c100ca0920e48": {
+      "canon_id": "4fae2bebd4aab646f31f064f2f6384244c1f1d46a33d3094155c100ca0920e48",
+      "type": "CONSTRAINT",
+      "statement": "destructive button: #f38ba8 bg, #1e1e2e text",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "aed2e3033a40a7531ba718293c00128fbb255923f378fdb2ee805816b8a60579"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "button-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "d673c959ce3f7faeb41ac055b1a32efb8b2116254076eeb1515688f12c65fe4e"
+    },
+    "210962ec7a05e75f8077ac7e2245c6467846fb3a67feda64988e04fc053ecbaa": {
+      "canon_id": "210962ec7a05e75f8077ac7e2245c6467846fb3a67feda64988e04fc053ecbaa",
+      "type": "CONSTRAINT",
+      "statement": "ghost button: transparent bg, #a6adc8 text (for cancel/close)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "b5e70dfbe07c435ff1bee8232879187482b5aa52b01fd01b13754fc1bea413d8"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "button",
+        "button-design"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "7259f14f4a841be5d9c7c1d627b15c108817746c8f11c337792495feaa7f57d6"
+    },
+    "64e53fa6875f7c1ca245d5be656659507c64ff93a9997d8f9b722151ceebd464": {
+      "canon_id": "64e53fa6875f7c1ca245d5be656659507c64ff93a9997d8f9b722151ceebd464",
+      "type": "REQUIREMENT",
+      "statement": "system shall use sqlite database for data persistence",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "acac5614e16466e2ed3bdfb991f81ed63aa7c412eea5512f10b8eb77e1f6857f"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "3b88701d3047851da97236461e84805e9e5d649500b71d7111ac17b6249d848e"
+    },
+    "dc1ec431380ad0a1bcc77f4423cd30769f732e0a4fe2cf8876e0152c5ca82cf1": {
+      "canon_id": "dc1ec431380ad0a1bcc77f4423cd30769f732e0a4fe2cf8876e0152c5ca82cf1",
+      "type": "REQUIREMENT",
+      "statement": "system shall database file path: `data/app.db`",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "fca0f5bfb13b07e7c09479b199d5c3efa5a935c91838b5db1e60d583e8fe391e"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "aae1cc4728dfb241c75dabfff8ae76060e27713f9caf63e6d05fad9e4218f217"
+    },
+    "d7f7506d2fa4d9b9ef345b36f1f23fc1bffe96c2ab7df51a92d6058513bae9a0": {
+      "canon_id": "d7f7506d2fa4d9b9ef345b36f1f23fc1bffe96c2ab7df51a92d6058513bae9a0",
+      "type": "REQUIREMENT",
+      "statement": "system shall store columns: id, name, order_index, created_at",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a6685eb85c057f2a174217cd0bb0c81dee60d4345ba82af7c7e7158503584b53"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "acbd956e0ffaf640644a7ed918e1b152ae3c32cf9611a6c1e415e56d3748f231"
+    },
+    "47d6ffa90d00c7ca70aafb4761f2fe020bc4e5b0ca93a9c293f217b97982c0d9": {
+      "canon_id": "47d6ffa90d00c7ca70aafb4761f2fe020bc4e5b0ca93a9c293f217b97982c0d9",
+      "type": "REQUIREMENT",
+      "statement": "system shall store cards: id, title, description, column_id, order_index, created_at",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0f1f8796937cb4e6b952ffc6cf59467a036f9266ac14cda7a96b589e2f39fde8"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "b79618c0fb9ac027ed816f0ee3652b820efdd6740addfb2d9c794da9a9ab4c85"
+    },
+    "d85910d7be47d31714f334ff6d4578a6f05a1addf33ce91336cec7b388f29af6": {
+      "canon_id": "d85910d7be47d31714f334ff6d4578a6f05a1addf33ce91336cec7b388f29af6",
+      "type": "CONSTRAINT",
+      "statement": "foreign key: cards.column_id → columns.id (on delete cascade)",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "2a07023fc1fa441c33f72f9ab89f82c53358dd315bdef642793e811c606bc454"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "f41b531f246ef36a2705fbc400e3e1f9a1e5b170a35297efdab1fdcf8d1f8ee5"
+    },
+    "404e2fea17b6c2a5f9fb80d4514c02ff128d83789d766c2f05409e541fe7eaf7": {
+      "canon_id": "404e2fea17b6c2a5f9fb80d4514c02ff128d83789d766c2f05409e541fe7eaf7",
+      "type": "CONSTRAINT",
+      "statement": "unique constraint: (column_id, order_index) for card ordering",
+      "confidence": 0.85,
+      "source_clause_ids": [
+        "da30a7ac016f46f0cfafa6f3b7e007eebdc0195e1f6b570d8d50b15b82fe0ab9"
+      ],
+      "linked_canon_ids": [],
+      "link_types": {},
+      "tags": [
+        "column",
+        "card",
+        "database"
+      ],
+      "extraction_method": "rule",
+      "canon_anchor": "fe08a22681f8fb5793c80704789c5cf1276103031ca5e0245465d6318ad365e2"
+    }
+  }
+}

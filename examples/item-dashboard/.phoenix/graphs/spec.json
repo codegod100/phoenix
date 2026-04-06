@@ -1,0 +1,20 @@
+{
+  "documents": {
+    "spec/app.md": {
+      "clause_ids": [
+        "84f3897a50407fe034b8153e47c8bc0a6edb4691cbb7f2de4a9f492d5889dfcc",
+        "e398e4de5646b51061cf484cbd66a927befa23533c47a303cdcf34537c7b20f5",
+        "52ef4113782f7508ed7a9c530d1cd8580e4684694f2b33649f683c3b4fa7339c",
+        "54e6d6d483e849b7e5825eeeb1129c301b2280ccf6412c60e4d27504ec4e48ab",
+        "1e79d4562cfdab26701a3fbf7537ba4fef1094afc668a0d64fe4c9437b13b0db",
+        "ba1e8b7c5215bcfd37001c4f9e6d78e8e350232afc07132662595adb5bb2b5bc",
+        "35e1a1bfd3f8dfb6e122f079270b2033a230a45b9ca48a5402e014b5b8566afc",
+        "a3d14238bdeaf8468e10780c6100df05a6874f70aa380749aa2be32c8cd51c7c",
+        "49dedc9421bdaf2cdbfd10e192b38476e891858efb48a3b92f4fb2efec30bb2d",
+        "fae20cc2f91c8e6b7f4e1ab12673b30ace18f79c86a38913b986179db4244e42",
+        "edff384edef21571b9eef75c8882cefdfa35507a8b867be0b580c65845c5bdb0"
+      ],
+      "last_ingested": "2026-04-06T00:57:32.263Z"
+    }
+  }
+}

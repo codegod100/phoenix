@@ -1,0 +1,777 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06T00:00:00Z",
+  "documents": {
+    "spec/game.md": {
+      "clauses": [
+        {
+          "id": "grid_size_400_cells",
+          "type": "CONSTRAINT",
+          "text": "grid is 20 columns by 20 rows 400 total cells",
+          "raw_text": "The grid is 20 columns × 20 rows (400 total cells)",
+          "section": "Grid",
+          "section_level": 2,
+          "line_start": 6,
+          "line_end": 6
+        },
+        {
+          "id": "grid_cell_states",
+          "type": "DEFINITION",
+          "text": "each cell is either empty or owned by a team color",
+          "raw_text": "Each cell is either empty (null) or owned by a team color",
+          "section": "Grid",
+          "section_level": 2,
+          "line_start": 7,
+          "line_end": 7
+        },
+        {
+          "id": "grid_initial_empty",
+          "type": "CONSTRAINT",
+          "text": "initial grid state must be all empty cells",
+          "raw_text": "Initial grid state must be all empty cells",
+          "section": "Grid",
+          "section_level": 2,
+          "line_start": 8,
+          "line_end": 8
+        },
+        {
+          "id": "grid_memory_only",
+          "type": "CONSTRAINT",
+          "text": "grid state must be stored in memory no persistence needed",
+          "raw_text": "Grid state must be stored in memory (no persistence needed)",
+          "section": "Grid",
+          "section_level": 2,
+          "line_start": 9,
+          "line_end": 9
+        },
+        {
+          "id": "teams_four_colors",
+          "type": "CONSTRAINT",
+          "text": "there are exactly 4 teams red blue green and yellow",
+          "raw_text": "There are exactly 4 teams: red, blue, green, and yellow",
+          "section": "Teams",
+          "section_level": 2,
+          "line_start": 12,
+          "line_end": 12
+        },
+        {
+          "id": "teams_round_robin_assignment",
+          "type": "REQUIREMENT",
+          "text": "player team assigned round robin on join to keep teams balanced",
+          "raw_text": "A player's team is assigned round-robin on join to keep teams balanced",
+          "section": "Teams",
+          "section_level": 2,
+          "line_start": 13,
+          "line_end": 13
+        },
+        {
+          "id": "teams_definition",
+          "type": "DEFINITION",
+          "text": "team is all players sharing the same team color",
+          "raw_text": "A \"team\" is defined as all players sharing the same team color",
+          "section": "Teams",
+          "section_level": 2,
+          "line_start": 14,
+          "line_end": 14
+        },
+        {
+          "id": "teams_score_calculation",
+          "type": "DEFINITION",
+          "text": "team scores are count of cells owned by that team color",
+          "raw_text": "Team scores are the count of cells owned by that team's color",
+          "section": "Teams",
+          "section_level": 2,
+          "line_start": 15,
+          "line_end": 15
+        },
+        {
+          "id": "paint_message_format",
+          "type": "REQUIREMENT",
+          "text": "player paints cell by sending message with x y coordinates",
+          "raw_text": "A player paints a cell by sending a message with {x, y} coordinates",
+          "section": "Painting",
+          "section_level": 2,
+          "line_start": 18,
+          "line_end": 18
+        },
+        {
+          "id": "paint_overwrite_allowed",
+          "type": "REQUIREMENT",
+          "text": "painting must overwrite any existing cell color stealing territory allowed",
+          "raw_text": "Painting must overwrite any existing cell color (stealing territory is allowed)",
+          "section": "Painting",
+          "section_level": 2,
+          "line_start": 19,
+          "line_end": 19
+        },
+        {
+          "id": "paint_cooldown_500ms",
+          "type": "CONSTRAINT",
+          "text": "players must wait at least 500ms between paints cooldown",
+          "raw_text": "Players must wait at least 500ms between paints (cooldown)",
+          "section": "Painting",
+          "section_level": 2,
+          "line_start": 20,
+          "line_end": 20
+        },
+        {
+          "id": "paint_cooldown_error",
+          "type": "REQUIREMENT",
+          "text": "paints that violate cooldown must be rejected with too fast error",
+          "raw_text": "Paints that violate the cooldown must be rejected with a \"too_fast\" error",
+          "section": "Painting",
+          "section_level": 2,
+          "line_start": 21,
+          "line_end": 21
+        },
+        {
+          "id": "paint_bounds_error",
+          "type": "REQUIREMENT",
+          "text": "out of bounds coordinates must be rejected with invalid cell error",
+          "raw_text": "Out-of-bounds coordinates must be rejected with an \"invalid_cell\" error",
+          "section": "Painting",
+          "section_level": 2,
+          "line_start": 22,
+          "line_end": 22
+        },
+        {
+          "id": "paint_broadcast_immediate",
+          "type": "REQUIREMENT",
+          "text": "every successful paint must be broadcast to all connected players immediately",
+          "raw_text": "Every successful paint must be broadcast to all connected players immediately",
+          "section": "Painting",
+          "section_level": 2,
+          "line_start": 23,
+          "line_end": 23
+        },
+        {
+          "id": "round_duration_120s",
+          "type": "CONSTRAINT",
+          "text": "round lasts 120 seconds",
+          "raw_text": "A round lasts 120 seconds",
+          "section": "Scoring and Rounds",
+          "section_level": 2,
+          "line_start": 26,
+          "line_end": 26
+        },
+        {
+          "id": "round_timer_broadcast",
+          "type": "REQUIREMENT",
+          "text": "server must broadcast remaining time every second",
+          "raw_text": "The server must broadcast the remaining time every second",
+          "section": "Scoring and Rounds",
+          "section_level": 2,
+          "line_start": 27,
+          "line_end": 27
+        },
+        {
+          "id": "round_winner_determination",
+          "type": "REQUIREMENT",
+          "text": "when timer reaches zero team with most cells wins",
+          "raw_text": "When the timer reaches zero, the team with the most cells wins",
+          "section": "Scoring and Rounds",
+          "section_level": 2,
+          "line_start": 28,
+          "line_end": 28
+        },
+        {
+          "id": "round_end_broadcast",
+          "type": "REQUIREMENT",
+          "text": "after round ends server must broadcast final scores and winning team",
+          "raw_text": "After a round ends, the server must broadcast the final scores and winning team",
+          "section": "Scoring and Rounds",
+          "section_level": 2,
+          "line_start": 29,
+          "line_end": 29
+        },
+        {
+          "id": "round_auto_restart_10s",
+          "type": "REQUIREMENT",
+          "text": "new round must start automatically 10 seconds after previous round ends",
+          "raw_text": "A new round must start automatically 10 seconds after the previous round ends",
+          "section": "Scoring and Rounds",
+          "section_level": 2,
+          "line_start": 30,
+          "line_end": 30
+        },
+        {
+          "id": "round_grid_reset",
+          "type": "REQUIREMENT",
+          "text": "grid must be reset to all empty cells at start of each new round",
+          "raw_text": "The grid must be reset to all empty cells at the start of each new round",
+          "section": "Scoring and Rounds",
+          "section_level": 2,
+          "line_start": 31,
+          "line_end": 31
+        }
+      ],
+      "metadata": {
+        "total_lines": 32
+      }
+    },
+    "spec/ui.md": {
+      "clauses": [
+        {
+          "id": "ui_inline_html",
+          "type": "CONSTRAINT",
+          "text": "entire game ui is single html page served inline by game server no build tools no external assets everything embedded",
+          "raw_text": "The entire game UI is a single HTML page served inline by the game server. No build tools, no external assets — everything is embedded.",
+          "section": "Game UI",
+          "section_level": 1,
+          "line_start": 3,
+          "line_end": 4
+        },
+        {
+          "id": "ui_dark_background",
+          "type": "CONSTRAINT",
+          "text": "page must have dark background 1a1a2e with grid centered",
+          "raw_text": "The page must have a dark background (#1a1a2e) with the grid centered",
+          "section": "Layout",
+          "section_level": 2,
+          "line_start": 7,
+          "line_end": 7
+        },
+        {
+          "id": "ui_header_elements",
+          "type": "REQUIREMENT",
+          "text": "above grid game title pixel wars and round timer showing mm ss countdown",
+          "raw_text": "Above the grid: game title \"⚔️ PIXEL WARS\" and a round timer showing MM:SS countdown",
+          "section": "Layout",
+          "section_level": 2,
+          "line_start": 8,
+          "line_end": 8
+        },
+        {
+          "id": "ui_scoreboard",
+          "type": "REQUIREMENT",
+          "text": "below grid scoreboard showing each team color cell count and player count",
+          "raw_text": "Below the grid: a scoreboard showing each team's color, cell count, and player count",
+          "section": "Layout",
+          "section_level": 2,
+          "line_start": 9,
+          "line_end": 9
+        },
+        {
+          "id": "ui_team_highlight",
+          "type": "REQUIREMENT",
+          "text": "player own team must be highlighted in scoreboard",
+          "raw_text": "The player's own team must be highlighted in the scoreboard",
+          "section": "Layout",
+          "section_level": 2,
+          "line_start": 10,
+          "line_end": 10
+        },
+        {
+          "id": "ui_canvas_specs",
+          "type": "CONSTRAINT",
+          "text": "grid must be rendered as html canvas element 500 by 500 pixels",
+          "raw_text": "The grid must be rendered as an HTML Canvas element, 500×500 pixels",
+          "section": "Grid Rendering",
+          "section_level": 2,
+          "line_start": 13,
+          "line_end": 13
+        },
+        {
+          "id": "ui_cell_specs",
+          "type": "CONSTRAINT",
+          "text": "each cell is 25 by 25 pixels with 1px gap between cells",
+          "raw_text": "Each cell is 25×25 pixels with a 1px gap between cells",
+          "section": "Grid Rendering",
+          "section_level": 2,
+          "line_start": 14,
+          "line_end": 14
+        },
+        {
+          "id": "ui_empty_cell_color",
+          "type": "CONSTRAINT",
+          "text": "empty cells must be rendered as dark gray 2a2a3e",
+          "raw_text": "Empty cells must be rendered as dark gray (#2a2a3e)",
+          "section": "Grid Rendering",
+          "section_level": 2,
+          "line_start": 15,
+          "line_end": 15
+        },
+        {
+          "id": "ui_owned_cell_style",
+          "type": "REQUIREMENT",
+          "text": "owned cells must be rendered in team color with subtle glow effect",
+          "raw_text": "Owned cells must be rendered in the team color with a subtle glow effect",
+          "section": "Grid Rendering",
+          "section_level": 2,
+          "line_start": 16,
+          "line_end": 16
+        },
+        {
+          "id": "ui_hover_highlight",
+          "type": "REQUIREMENT",
+          "text": "cell under mouse cursor must show hover highlight",
+          "raw_text": "The cell under the mouse cursor must show a hover highlight",
+          "section": "Grid Rendering",
+          "section_level": 2,
+          "line_start": 17,
+          "line_end": 17
+        },
+        {
+          "id": "ui_click_paint",
+          "type": "REQUIREMENT",
+          "text": "clicking cell must send paint command to server",
+          "raw_text": "Clicking a cell must send the paint command to the server",
+          "section": "Grid Rendering",
+          "section_level": 2,
+          "line_start": 18,
+          "line_end": 18
+        },
+        {
+          "id": "ui_team_color_red",
+          "type": "CONSTRAINT",
+          "text": "red team ff4757",
+          "raw_text": "Red team: #ff4757",
+          "section": "Team Colors",
+          "section_level": 2,
+          "line_start": 21,
+          "line_end": 21
+        },
+        {
+          "id": "ui_team_color_blue",
+          "type": "CONSTRAINT",
+          "text": "blue team 3742fa",
+          "raw_text": "Blue team: #3742fa",
+          "section": "Team Colors",
+          "section_level": 2,
+          "line_start": 22,
+          "line_end": 22
+        },
+        {
+          "id": "ui_team_color_green",
+          "type": "CONSTRAINT",
+          "text": "green team 2ed573",
+          "raw_text": "Green team: #2ed573",
+          "section": "Team Colors",
+          "section_level": 2,
+          "line_start": 23,
+          "line_end": 23
+        },
+        {
+          "id": "ui_team_color_yellow",
+          "type": "CONSTRAINT",
+          "text": "yellow team ffa502",
+          "raw_text": "Yellow team: #ffa502",
+          "section": "Team Colors",
+          "section_level": 2,
+          "line_start": 24,
+          "line_end": 24
+        },
+        {
+          "id": "ui_feedback_paint_flash",
+          "type": "REQUIREMENT",
+          "text": "when player successfully paints cell it must flash white briefly",
+          "raw_text": "When the player successfully paints a cell, it must flash white briefly",
+          "section": "Feedback",
+          "section_level": 2,
+          "line_start": 27,
+          "line_end": 27
+        },
+        {
+          "id": "ui_feedback_cooldown_toast",
+          "type": "REQUIREMENT",
+          "text": "when paint rejected cooldown small wait toast must appear for 1 second",
+          "raw_text": "When paint is rejected (cooldown), a small \"⏳ wait\" toast must appear for 1 second",
+          "section": "Feedback",
+          "section_level": 2,
+          "line_start": 28,
+          "line_end": 28
+        },
+        {
+          "id": "ui_feedback_win_overlay",
+          "type": "REQUIREMENT",
+          "text": "when round ends full screen overlay must show color wins for 5 seconds",
+          "raw_text": "When a round ends, a full-screen overlay must show \"🏆 [COLOR] WINS!\" for 5 seconds",
+          "section": "Feedback",
+          "section_level": 2,
+          "line_start": 29,
+          "line_end": 29
+        },
+        {
+          "id": "ui_cooldown_progress_bar",
+          "type": "REQUIREMENT",
+          "text": "player cooldown status must be shown as thin progress bar below grid",
+          "raw_text": "The player's cooldown status must be shown as a thin progress bar below the grid",
+          "section": "Feedback",
+          "section_level": 2,
+          "line_start": 30,
+          "line_end": 30
+        },
+        {
+          "id": "ui_responsive_canvas",
+          "type": "REQUIREMENT",
+          "text": "canvas must scale to fit viewport on mobile devices",
+          "raw_text": "The canvas must scale to fit the viewport on mobile devices",
+          "section": "Responsiveness",
+          "section_level": 2,
+          "line_start": 33,
+          "line_end": 33
+        },
+        {
+          "id": "ui_touch_support",
+          "type": "REQUIREMENT",
+          "text": "touch events must work same as mouse clicks for painting",
+          "raw_text": "Touch events must work the same as mouse clicks for painting",
+          "section": "Responsiveness",
+          "section_level": 2,
+          "line_start": 34,
+          "line_end": 34
+        }
+      ],
+      "metadata": {
+        "total_lines": 35
+      }
+    },
+    "spec/server.md": {
+      "clauses": [
+        {
+          "id": "ws_server_description",
+          "type": "CONTEXT",
+          "text": "real time multiplayer pixel territory game players connect via websocket pick team color and paint cells on shared 20 by 20 grid team with most cells wins",
+          "raw_text": "A real-time multiplayer pixel territory game. Players connect via WebSocket, pick a team color, and paint cells on a shared 20×20 grid. The team with the most cells wins.",
+          "section": "WebSocket Game Server",
+          "section_level": 1,
+          "line_start": 3,
+          "line_end": 4
+        },
+        {
+          "id": "ws_protocol_message_format",
+          "type": "CONSTRAINT",
+          "text": "all websocket messages use json format with type and payload fields",
+          "raw_text": "All WebSocket messages use JSON format with `type` and `payload` fields",
+          "section": "WebSocket Protocol",
+          "section_level": 2,
+          "line_start": 7,
+          "line_end": 7
+        },
+        {
+          "id": "ws_protocol_message_structure",
+          "type": "CONSTRAINT",
+          "text": "message structure is type string payload object",
+          "raw_text": "Message structure is `{type: string, payload: object}`",
+          "section": "WebSocket Protocol",
+          "section_level": 2,
+          "line_start": 8,
+          "line_end": 8
+        },
+        {
+          "id": "ws_protocol_message_types",
+          "type": "CONSTRAINT",
+          "text": "the type field identifies the message kind state paint error timer winner players",
+          "raw_text": "The `type` field identifies the message kind: \"state\", \"paint\", \"error\", \"timer\", \"winner\", \"players\"",
+          "section": "WebSocket Protocol",
+          "section_level": 2,
+          "line_start": 9,
+          "line_end": 9
+        },
+        {
+          "id": "ws_protocol_state_message",
+          "type": "CONSTRAINT",
+          "text": "on connection server sends type state message",
+          "raw_text": "On connection, server sends `type: \"state\"` message",
+          "section": "Initial State Message",
+          "section_level": 3,
+          "line_start": 12,
+          "line_end": 12
+        },
+        {
+          "id": "ws_protocol_state_payload",
+          "type": "CONSTRAINT",
+          "text": "state payload includes playerid team grid teams timeremaining phase",
+          "raw_text": "State payload includes: `playerId` (string), `team` (string), `grid` (array), `teams` (object), `timeRemaining` (number), `phase` (string)",
+          "section": "Initial State Message",
+          "section_level": 3,
+          "line_start": 13,
+          "line_end": 13
+        },
+        {
+          "id": "ws_protocol_grid_serialization",
+          "type": "CONSTRAINT",
+          "text": "grid is serialized as flat array of 400 elements 20 by 20 row major order values are null or team color strings",
+          "raw_text": "Grid is serialized as flat array of 400 elements (20×20 row-major order), values are null or team color strings",
+          "section": "Initial State Message",
+          "section_level": 3,
+          "line_start": 14,
+          "line_end": 14
+        },
+        {
+          "id": "ws_protocol_paint_client",
+          "type": "CONSTRAINT",
+          "text": "client sends paint command as type paint payload x y",
+          "raw_text": "Client sends paint command as `{type: \"paint\", payload: {x, y}}`",
+          "section": "Paint Messages",
+          "section_level": 3,
+          "line_start": 17,
+          "line_end": 17
+        },
+        {
+          "id": "ws_protocol_paint_broadcast",
+          "type": "CONSTRAINT",
+          "text": "server broadcasts successful paint as type paint with payload x y color playerid",
+          "raw_text": "Server broadcasts successful paint as `type: \"paint\"` with payload `{x, y, color, playerId}`",
+          "section": "Paint Messages",
+          "section_level": 3,
+          "line_start": 18,
+          "line_end": 18
+        },
+        {
+          "id": "ws_protocol_error_format",
+          "type": "CONSTRAINT",
+          "text": "server sends errors as type error with payload code message",
+          "raw_text": "Server sends errors as `type: \"error\"` with payload `{code, message}`",
+          "section": "Error Messages",
+          "section_level": 3,
+          "line_start": 21,
+          "line_end": 21
+        },
+        {
+          "id": "ws_protocol_error_codes",
+          "type": "CONSTRAINT",
+          "text": "error codes include room_full too_fast invalid_cell round_not_active",
+          "raw_text": "Error codes include: \"room_full\", \"too_fast\", \"invalid_cell\", \"round_not_active\"",
+          "section": "Error Messages",
+          "section_level": 3,
+          "line_start": 22,
+          "line_end": 22
+        },
+        {
+          "id": "ws_protocol_timer_broadcast",
+          "type": "CONSTRAINT",
+          "text": "server broadcasts type timer every second with payload timeremaining phase",
+          "raw_text": "Server broadcasts `type: \"timer\"` every second with payload `{timeRemaining, phase}`",
+          "section": "Timer Updates",
+          "section_level": 3,
+          "line_start": 25,
+          "line_end": 25
+        },
+        {
+          "id": "ws_protocol_winner_broadcast",
+          "type": "CONSTRAINT",
+          "text": "when round ends server broadcasts type winner with payload winner teams",
+          "raw_text": "When round ends, server broadcasts `type: \"winner\"` with payload `{winner, teams}`",
+          "section": "Winner Announcement",
+          "section_level": 3,
+          "line_start": 28,
+          "line_end": 28
+        },
+        {
+          "id": "ws_protocol_players_broadcast",
+          "type": "CONSTRAINT",
+          "text": "server broadcasts type players on join leave with payload total teams",
+          "raw_text": "Server broadcasts `type: \"players\"` on join/leave with payload `{total, teams}`",
+          "section": "Player Count Updates",
+          "section_level": 3,
+          "line_start": 31,
+          "line_end": 31
+        },
+        {
+          "id": "ws_impl_upgrade_in_handler",
+          "type": "CONSTRAINT",
+          "text": "server must handle websocket upgrade in http request handler not via upgrade event",
+          "raw_text": "Server must handle WebSocket upgrade in the HTTP request handler, not via 'upgrade' event",
+          "section": "Implementation Constraints",
+          "section_level": 2,
+          "line_start": 34,
+          "line_end": 34
+        },
+        {
+          "id": "ws_impl_raw_socket",
+          "type": "CONSTRAINT",
+          "text": "server must access raw socket from http request and write upgrade response directly",
+          "raw_text": "Server must access the raw socket from the HTTP request and write upgrade response directly",
+          "section": "Implementation Constraints",
+          "section_level": 2,
+          "line_start": 35,
+          "line_end": 35
+        },
+        {
+          "id": "ws_impl_detect_upgrade",
+          "type": "CONSTRAINT",
+          "text": "server must detect upgrade by checking req headers upgrade equals websocket in request handler",
+          "raw_text": "Server must detect upgrade by checking `req.headers['upgrade'] === 'websocket'` in request handler",
+          "section": "Implementation Constraints",
+          "section_level": 2,
+          "line_start": 36,
+          "line_end": 36
+        },
+        {
+          "id": "ws_impl_raw_tcp",
+          "type": "CONSTRAINT",
+          "text": "server must use raw tcp socket operations after upgrade not websocket library abstractions",
+          "raw_text": "Server must use raw TCP socket operations after upgrade, not WebSocket library abstractions",
+          "section": "Implementation Constraints",
+          "section_level": 2,
+          "line_start": 37,
+          "line_end": 37
+        },
+        {
+          "id": "ws_impl_frame_encoding",
+          "type": "CONSTRAINT",
+          "text": "server must implement raw websocket frame encoding without external libraries",
+          "raw_text": "Server must implement raw WebSocket frame encoding/decoding without external libraries",
+          "section": "WebSocket Frame Handling",
+          "section_level": 2,
+          "line_start": 40,
+          "line_end": 40
+        },
+        {
+          "id": "ws_impl_frame_format",
+          "type": "CONSTRAINT",
+          "text": "outgoing text frames use format 0x81 length payload for unmasked frames",
+          "raw_text": "Outgoing text frames use format: `[0x81, length, payload...]` for unmasked frames",
+          "section": "WebSocket Frame Handling",
+          "section_level": 2,
+          "line_start": 41,
+          "line_end": 41
+        },
+        {
+          "id": "ws_impl_frame_mask",
+          "type": "CONSTRAINT",
+          "text": "incoming frames must parse masked payload using xor with 4 byte mask key",
+          "raw_text": "Incoming frames must parse masked payload using XOR with 4-byte mask key",
+          "section": "WebSocket Frame Handling",
+          "section_level": 2,
+          "line_start": 42,
+          "line_end": 42
+        },
+        {
+          "id": "ws_impl_frame_length",
+          "type": "CONSTRAINT",
+          "text": "server must support frame length encoding 7 bit 16 bit 64 bit length prefixes",
+          "raw_text": "Server must support frame length encoding: 7-bit (<126), 16-bit (126 prefix), 64-bit (127 prefix)",
+          "section": "WebSocket Frame Handling",
+          "section_level": 2,
+          "line_start": 43,
+          "line_end": 43
+        },
+        {
+          "id": "ws_impl_zero_deps",
+          "type": "CONSTRAINT",
+          "text": "server must use only node js built in modules http crypto net",
+          "raw_text": "Server must use only Node.js built-in modules (http, crypto, net)",
+          "section": "Zero-Dependency Requirements",
+          "section_level": 2,
+          "line_start": 46,
+          "line_end": 46
+        },
+        {
+          "id": "ws_impl_no_ws_lib",
+          "type": "CONSTRAINT",
+          "text": "server must not use external websocket libraries like ws or websocket",
+          "raw_text": "Server must NOT use external WebSocket libraries like 'ws' or 'websocket'",
+          "section": "Zero-Dependency Requirements",
+          "section_level": 2,
+          "line_start": 47,
+          "line_end": 47
+        },
+        {
+          "id": "ws_impl_shared_port",
+          "type": "CONSTRAINT",
+          "text": "http server and websocket must share same port using raw socket handling",
+          "raw_text": "HTTP server and WebSocket must share the same port using raw socket handling",
+          "section": "Zero-Dependency Requirements",
+          "section_level": 2,
+          "line_start": 48,
+          "line_end": 48
+        },
+        {
+          "id": "ws_port_configurable",
+          "type": "CONSTRAINT",
+          "text": "server must accept websocket connections on configurable port default 3000",
+          "raw_text": "The server must accept WebSocket connections on a configurable port (default 3000)",
+          "section": "Connection Handling",
+          "section_level": 2,
+          "line_start": 7,
+          "line_end": 7
+        },
+        {
+          "id": "ws_http_server_same",
+          "type": "REQUIREMENT",
+          "text": "same http server must serve game ui as single html page at get",
+          "raw_text": "The same HTTP server must serve the game UI as a single HTML page at GET /",
+          "section": "Connection Handling",
+          "section_level": 2,
+          "line_start": 8,
+          "line_end": 8
+        },
+        {
+          "id": "ws_player_id_unique",
+          "type": "REQUIREMENT",
+          "text": "each connected player must be assigned unique player id random 6 character hex string",
+          "raw_text": "Each connected player must be assigned a unique player_id (random 6-character hex string)",
+          "section": "Connection Handling",
+          "section_level": 2,
+          "line_start": 9,
+          "line_end": 9
+        },
+        {
+          "id": "ws_initial_state_send",
+          "type": "REQUIREMENT",
+          "text": "on connect server must send full grid state player list and remaining game time",
+          "raw_text": "On connect, the server must send the full grid state, player list, and remaining game time",
+          "section": "Connection Handling",
+          "section_level": 2,
+          "line_start": 10,
+          "line_end": 10
+        },
+        {
+          "id": "ws_disconnect_cleanup",
+          "type": "REQUIREMENT",
+          "text": "disconnected players must be removed from player list within 5 seconds",
+          "raw_text": "Disconnected players must be removed from the player list within 5 seconds",
+          "section": "Connection Handling",
+          "section_level": 2,
+          "line_start": 11,
+          "line_end": 11
+        },
+        {
+          "id": "ws_player_count_broadcast",
+          "type": "REQUIREMENT",
+          "text": "server must broadcast updated player counts whenever someone joins or leaves",
+          "raw_text": "The server must broadcast updated player counts whenever someone joins or leaves",
+          "section": "Connection Handling",
+          "section_level": 2,
+          "line_start": 12,
+          "line_end": 12
+        },
+        {
+          "id": "ws_single_global_room",
+          "type": "CONSTRAINT",
+          "text": "server must support single global game room no room selection needed",
+          "raw_text": "The server must support a single global game room (no room selection needed)",
+          "section": "Rooms",
+          "section_level": 2,
+          "line_start": 15,
+          "line_start": 15
+        },
+        {
+          "id": "ws_max_players_20",
+          "type": "CONSTRAINT",
+          "text": "maximum 20 simultaneous players additional connections must receive room full error and be closed",
+          "raw_text": "Maximum 20 simultaneous players; additional connections must receive a \"room_full\" error and be closed",
+          "section": "Rooms",
+          "section_level": 2,
+          "line_start": 16,
+          "line_end": 16
+        },
+        {
+          "id": "ws_track_team_and_stats",
+          "type": "REQUIREMENT",
+          "text": "server must track each player team color and total cells painted",
+          "raw_text": "The server must track each player's team color and total cells painted",
+          "section": "Rooms",
+          "section_level": 2,
+          "line_start": 17,
+          "line_end": 17
+        }
+      ],
+      "metadata": {
+        "total_lines": 18
+      }
+    }
+  }
+}

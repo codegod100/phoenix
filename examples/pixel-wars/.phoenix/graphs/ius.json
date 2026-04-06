@@ -1,0 +1,275 @@
+[
+  {
+    "iu_id": "iu_game_state",
+    "name": "GameStateManager",
+    "risk_tier": "critical",
+    "kind": "service",
+    "source_canon_ids": [
+      "grid_dimensions_constraint",
+      "grid_memory_storage",
+      "cell_addressing_system",
+      "team_system_definition",
+      "score_calculation",
+      "round_timer_system",
+      "win_condition",
+      "round_reset_mechanism"
+    ],
+    "output_files": [
+      "src/generated/app/game-state.ts",
+      "src/generated/app/__tests__/game-state.test.ts"
+    ],
+    "contract": {
+      "invariants": [
+        "Grid always 20x20",
+        "Cell values are null or valid team color",
+        "Round timer between 0-120 seconds",
+        "Team scores sum to total painted cells"
+      ],
+      "inputs": [
+        "paint commands {x, y, player_id}",
+        "timer tick events"
+      ],
+      "outputs": [
+        "updated grid state",
+        "score updates",
+        "round state changes"
+      ]
+    },
+    "evidence_policy": {
+      "tier": "critical",
+      "required": ["unit_test", "typecheck", "boundary"],
+      "optional": ["property_test"]
+    },
+    "dependencies": {
+      "imports": [],
+      "services": [],
+      "ius": []
+    }
+  },
+  {
+    "iu_id": "iu_player_manager",
+    "name": "PlayerManager",
+    "risk_tier": "high",
+    "kind": "service",
+    "source_canon_ids": [
+      "team_assignment_logic",
+      "player_tracking",
+      "connection_limits",
+      "paint_cooldown"
+    ],
+    "output_files": [
+      "src/generated/app/players.ts",
+      "src/generated/app/__tests__/players.test.ts"
+    ],
+    "contract": {
+      "invariants": [
+        "player_id is unique 6-char hex",
+        "team assignment is round-robin balanced",
+        "cooldown enforced at 500ms minimum",
+        "max 20 players enforced"
+      ],
+      "inputs": [
+        "connect/disconnect events",
+        "paint attempts"
+      ],
+      "outputs": [
+        "player assignments",
+        "cooldown status",
+        "error responses"
+      ]
+    },
+    "evidence_policy": {
+      "tier": "high",
+      "required": ["unit_test", "typecheck"],
+      "optional": ["boundary"]
+    },
+    "dependencies": {
+      "imports": [],
+      "services": ["GameStateManager"],
+      "ius": ["iu_game_state"]
+    }
+  },
+  {
+    "iu_id": "iu_websocket_handler",
+    "name": "WebSocketHandler",
+    "risk_tier": "high",
+    "kind": "handler",
+    "source_canon_ids": [
+      "websocket_server",
+      "websocket_messaging",
+      "paint_broadcast",
+      "ws_initial_state_send"
+    ],
+    "output_files": [
+      "src/generated/app/websocket.ts",
+      "src/generated/app/__tests__/websocket.test.ts"
+    ],
+    "contract": {
+      "invariants": [
+        "All paints broadcast immediately",
+        "Initial state sent on connect",
+        "Player counts broadcast on join/leave",
+        "Room full error at 20 players"
+      ],
+      "inputs": [
+        "WebSocket connections",
+        "paint messages",
+        "state change events"
+      ],
+      "outputs": [
+        "broadcast messages",
+        "error messages",
+        "state sync"
+      ]
+    },
+    "evidence_policy": {
+      "tier": "high",
+      "required": ["unit_test", "typecheck"],
+      "optional": ["integration_test"]
+    },
+    "dependencies": {
+      "imports": ["ws"],
+      "services": ["GameStateManager", "PlayerManager"],
+      "ius": ["iu_game_state", "iu_player_manager"]
+    }
+  },
+  {
+    "iu_id": "iu_http_server",
+    "name": "HTTPServer",
+    "risk_tier": "medium",
+    "kind": "service",
+    "source_canon_ids": [
+      "websocket_server",
+      "http_server",
+      "ui_single_page"
+    ],
+    "output_files": [
+      "src/generated/app/server.ts",
+      "src/generated/app/__tests__/server.test.ts"
+    ],
+    "contract": {
+      "invariants": [
+        "HTTP and WebSocket share port",
+        "UI served at GET /",
+        "Port configurable (default 3000)"
+      ],
+      "inputs": [
+        "HTTP requests",
+        "port configuration"
+      ],
+      "outputs": [
+        "HTML page",
+        "WebSocket upgrade"
+      ]
+    },
+    "evidence_policy": {
+      "tier": "medium",
+      "required": ["unit_test"],
+      "optional": ["typecheck", "boundary"]
+    },
+    "dependencies": {
+      "imports": [],
+      "services": ["WebSocketHandler"],
+      "ius": ["iu_websocket_handler"]
+    }
+  },
+  {
+    "iu_id": "iu_game_ui",
+    "name": "GameUI",
+    "risk_tier": "medium",
+    "kind": "ui",
+    "source_canon_ids": [
+      "ui_single_page",
+      "ui_canvas_rendering",
+      "ui_click_handling",
+      "ui_layout",
+      "ui_feedback",
+      "ui_responsive"
+    ],
+    "output_files": [
+      "src/generated/app/ui.html.ts",
+      "src/generated/app/__tests__/ui.test.ts"
+    ],
+    "contract": {
+      "invariants": [
+        "Canvas 500x500px",
+        "25x25px cells with 1px gap",
+        "Dark theme #1a1a2e",
+        "Team colors: red #ff4757, blue #3742fa, green #2ed573, yellow #ffa502",
+        "Touch and mouse both work"
+      ],
+      "inputs": [
+        "grid state updates",
+        "player state",
+        "timer updates"
+      ],
+      "outputs": [
+        "canvas rendering",
+        "paint commands",
+        "feedback effects"
+      ]
+    },
+    "evidence_policy": {
+      "tier": "medium",
+      "required": ["unit_test"],
+      "optional": ["visual_test"]
+    },
+    "dependencies": {
+      "imports": [],
+      "services": [],
+      "ius": []
+    }
+  },
+  {
+    "iu_id": "iu_system_integration",
+    "name": "SystemIntegration",
+    "risk_tier": "critical",
+    "kind": "entry_point",
+    "source_canon_ids": [
+      "websocket_message_format",
+      "client_server_protocol",
+      "game_state_serialization",
+      "error_protocol",
+      "websocket_upgrade_method",
+      "raw_websocket_frames",
+      "zero_dependency_architecture"
+    ],
+    "output_files": [
+      "src/generated/app/index.ts",
+      "src/generated/app/message-protocol.ts",
+      "src/generated/app/__tests__/integration.test.ts"
+    ],
+    "contract": {
+      "invariants": [
+        "GameStateManager and PlayerManager are singleton instances",
+        "WebSocket messages follow {type, payload} format",
+        "Grid serialized as flat 400-element array",
+        "All paints broadcast with color and playerId",
+        "Error messages use {code, message} format",
+        "HTTP upgrade handled in request handler, not via 'upgrade' event",
+        "Raw WebSocket frame encoding without external libraries",
+        "Uses only Node.js built-in modules (http, crypto, net)"
+      ],
+      "inputs": [
+        "HTTP requests with upgrade headers",
+        "Raw WebSocket frame data",
+        "Game state change events"
+      ],
+      "outputs": [
+        "HTTP server listening on port",
+        "WebSocket broadcast messages with raw frame encoding",
+        "UI HTML page at GET /"
+      ]
+    },
+    "evidence_policy": {
+      "tier": "critical",
+      "required": ["integration_test", "typecheck"],
+      "optional": ["e2e_test"]
+    },
+    "dependencies": {
+      "imports": ["node:http", "node:crypto", "node:net"],
+      "services": ["GameStateManager", "PlayerManager"],
+      "ius": ["iu_game_state", "iu_player_manager", "iu_game_ui"]
+    }
+  }
+]

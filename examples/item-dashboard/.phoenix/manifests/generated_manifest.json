@@ -1,0 +1,432 @@
+{
+  "generated_at": "2026-04-06T00:43:47.670Z",
+  "phoenix_version": "1.0.0",
+  "total_files": 19,
+  "total_ius": 7,
+  "iu_manifests": {
+    "dd3222660bb7d7399123eb279f8ad9232528d242bed630b34080793be546e9b2": {
+      "iu_id": "dd3222660bb7d7399123eb279f8ad9232528d242bed630b34080793be546e9b2",
+      "iu_name": "Error Handling",
+      "files": {
+        "src/generated/app/__tests__/error-handling.test.ts": {
+          "content_hash": "a0ffe8a4d3e8e0d42f6e1ea393fc2274f4aa77332a194ebea9850bb9e82350b5",
+          "size_bytes": 1562,
+          "generated_at": "2026-04-06T00:43:47.671Z",
+          "canon_source_ids": [
+            "66f2e4cb8928ef5a45224c1434a4b00e9358743d0a993b1c0353bd15a0c1de20",
+            "7b511acbae224a28c0981c2fc0d10fdc8de3e1e7d99ff04e40f535169fb3860b",
+            "88c9d6ee9bc3109b6007910e4fc97248cc65ed61dfc6b8f65a7ea8dbc6fae0bf",
+            "8c60cd053f94a9f8534c4d43cd7af7c47d7ff8585b8bfcf28606f428fb80a250"
+          ]
+        }
+      }
+    },
+    "75c364243a8e224ad3919e8d3baa7e1871f9d5447221396d5f41d2e2a9f365f8": {
+      "iu_id": "75c364243a8e224ad3919e8d3baa7e1871f9d5447221396d5f41d2e2a9f365f8",
+      "iu_name": "API",
+      "files": {
+        "src/generated/app/api.ts": {
+          "content_hash": "5151f52b907b80dc89571f245044c33c5fb60050fd1d1b625692b2f8a1b86fc7",
+          "size_bytes": 1411,
+          "generated_at": "2026-04-06T00:43:47.671Z",
+          "canon_source_ids": [
+            "0e165858d45dfe969fa1350abc1a1f60e6b48ed90ac62b055bd45985e8462e5b",
+            "166fb9ae680acdb043c14e19841cffb937a885ecd0be1eabcce085288f7df375",
+            "1bb1b9d77cbf340ff25bcacc64ad055ebc5f66c28cad088ff34c7141f0bef8b4",
+            "829e773d271eb57ca8c5f69c16b940690e37deeb853ae85c72bd9e21d2916e87",
+            "8b3455d83a4e46306ba07c7b34e575a993068be236e299a526a0e399c397810d",
+            "aa938777da523879cf52b230daeea5ebcbaf5efc2aa0d00fd8910a58c1d3860b",
+            "bab41587001456b0cf513e3764b484e8fa85e9eb349cc61f951275fd82a36b7c",
+            "ddf9797b06f8e6a6cb291daa3a66dfe7b556dbcfdb8d91aac6409d776441981e",
+            "f9cf268ad6f784861c29fd939733ac5b57332a152bcb457da3effe0bc88ea412"
+          ]
+        },
+        "src/generated/app/__tests__/api.test.ts": {
+          "content_hash": "9964f43e668c0d9d20fd34c58f201b6cfa7e596b67e08882ee1f1592d962751b",
+          "size_bytes": 1491,
+          "generated_at": "2026-04-06T00:43:47.671Z",
+          "canon_source_ids": [
+            "0e165858d45dfe969fa1350abc1a1f60e6b48ed90ac62b055bd45985e8462e5b",
+            "166fb9ae680acdb043c14e19841cffb937a885ecd0be1eabcce085288f7df375",
+            "1bb1b9d77cbf340ff25bcacc64ad055ebc5f66c28cad088ff34c7141f0bef8b4",
+            "829e773d271eb57ca8c5f69c16b940690e37deeb853ae85c72bd9e21d2916e87",
+            "8b3455d83a4e46306ba07c7b34e575a993068be236e299a526a0e399c397810d",
+            "aa938777da523879cf52b230daeea5ebcbaf5efc2aa0d00fd8910a58c1d3860b",
+            "bab41587001456b0cf513e3764b484e8fa85e9eb349cc61f951275fd82a36b7c",
+            "ddf9797b06f8e6a6cb291daa3a66dfe7b556dbcfdb8d91aac6409d776441981e",
+            "f9cf268ad6f784861c29fd939733ac5b57332a152bcb457da3effe0bc88ea412"
+          ]
+        }
+      }
+    },
+    "1dfbf42e0da2b4943a372f3c542356d608e432655cc6b283a6b860eeac2de195": {
+      "iu_id": "1dfbf42e0da2b4943a372f3c542356d608e432655cc6b283a6b860eeac2de195",
+      "iu_name": "Categories",
+      "files": {
+        "src/generated/app/categories.ts": {
+          "content_hash": "86bd7e7c55bcabf8f0b9b961621e1795e7dcdc035dd5b7d34ef7455a824d28db",
+          "size_bytes": 3714,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "102a303db2501c717ca656618e31a26e919fe37c00d430f94c549a9f6570e5ae",
+            "1c2a963c9a0176ef904824a7ebaeea3e87827189b3f462f477156daa44c6e71c",
+            "2e0895fb4990d1f634927e21ec93713bae472db5fcd19737bacb8a3039af43c5",
+            "3774d14ee3f7690181853d6fcf7a41cd57d8788c24bf88da897208dbf0b10602",
+            "6e1b8b2e4e7e9ac2e287a722b1c0748115407dc68a8f0beea9d9b186fc6b4495",
+            "845d5ff9b301580c83a8dd1521f79f31f47c4def0340eda233b1c59c76a45b72",
+            "8e9f1ecb0f734a7fa11599d490052d3d0cf5521118d338b718181004eaa9b272",
+            "c8980a0d3457c10de1b5fc3c66a6e0eb926bb73a19aee5443a03a4f4081cc324",
+            "cfd3edf7d4a65a13130b714a062929e2f890b537a12dfc50ba8a40d37268fe90",
+            "df3d12c84ce1210cacea1c6bd030b9c0ca81f4cc36b07d9fed0b6a164da64508",
+            "e9e68603eda3e58ed201af747bed01877d8a25b91222661c04ff1b5ecd6cb0d5"
+          ]
+        },
+        "src/generated/app/categories.ui.ts": {
+          "content_hash": "20697237818ebb03e90d1f672a63422dcce7d6d19ae8712055a69e507b1ba469",
+          "size_bytes": 5359,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "102a303db2501c717ca656618e31a26e919fe37c00d430f94c549a9f6570e5ae",
+            "1c2a963c9a0176ef904824a7ebaeea3e87827189b3f462f477156daa44c6e71c",
+            "2e0895fb4990d1f634927e21ec93713bae472db5fcd19737bacb8a3039af43c5",
+            "3774d14ee3f7690181853d6fcf7a41cd57d8788c24bf88da897208dbf0b10602",
+            "6e1b8b2e4e7e9ac2e287a722b1c0748115407dc68a8f0beea9d9b186fc6b4495",
+            "845d5ff9b301580c83a8dd1521f79f31f47c4def0340eda233b1c59c76a45b72",
+            "8e9f1ecb0f734a7fa11599d490052d3d0cf5521118d338b718181004eaa9b272",
+            "c8980a0d3457c10de1b5fc3c66a6e0eb926bb73a19aee5443a03a4f4081cc324",
+            "cfd3edf7d4a65a13130b714a062929e2f890b537a12dfc50ba8a40d37268fe90",
+            "df3d12c84ce1210cacea1c6bd030b9c0ca81f4cc36b07d9fed0b6a164da64508",
+            "e9e68603eda3e58ed201af747bed01877d8a25b91222661c04ff1b5ecd6cb0d5"
+          ]
+        },
+        "src/generated/app/categories.client.ts": {
+          "content_hash": "7c1077b4b65f9c8d928376992cf4692672f70c57005095e5a27c17b671771e2c",
+          "size_bytes": 2644,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "102a303db2501c717ca656618e31a26e919fe37c00d430f94c549a9f6570e5ae",
+            "1c2a963c9a0176ef904824a7ebaeea3e87827189b3f462f477156daa44c6e71c",
+            "2e0895fb4990d1f634927e21ec93713bae472db5fcd19737bacb8a3039af43c5",
+            "3774d14ee3f7690181853d6fcf7a41cd57d8788c24bf88da897208dbf0b10602",
+            "6e1b8b2e4e7e9ac2e287a722b1c0748115407dc68a8f0beea9d9b186fc6b4495",
+            "845d5ff9b301580c83a8dd1521f79f31f47c4def0340eda233b1c59c76a45b72",
+            "8e9f1ecb0f734a7fa11599d490052d3d0cf5521118d338b718181004eaa9b272",
+            "c8980a0d3457c10de1b5fc3c66a6e0eb926bb73a19aee5443a03a4f4081cc324",
+            "cfd3edf7d4a65a13130b714a062929e2f890b537a12dfc50ba8a40d37268fe90",
+            "df3d12c84ce1210cacea1c6bd030b9c0ca81f4cc36b07d9fed0b6a164da64508",
+            "e9e68603eda3e58ed201af747bed01877d8a25b91222661c04ff1b5ecd6cb0d5"
+          ]
+        },
+        "src/generated/app/__tests__/categories.test.ts": {
+          "content_hash": "339c03867d01e9f7cda4adbbe2b02cdfd2e1c1d11795fe2eee24466ea2d3f0b1",
+          "size_bytes": 2068,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "102a303db2501c717ca656618e31a26e919fe37c00d430f94c549a9f6570e5ae",
+            "1c2a963c9a0176ef904824a7ebaeea3e87827189b3f462f477156daa44c6e71c",
+            "2e0895fb4990d1f634927e21ec93713bae472db5fcd19737bacb8a3039af43c5",
+            "3774d14ee3f7690181853d6fcf7a41cd57d8788c24bf88da897208dbf0b10602",
+            "6e1b8b2e4e7e9ac2e287a722b1c0748115407dc68a8f0beea9d9b186fc6b4495",
+            "845d5ff9b301580c83a8dd1521f79f31f47c4def0340eda233b1c59c76a45b72",
+            "8e9f1ecb0f734a7fa11599d490052d3d0cf5521118d338b718181004eaa9b272",
+            "c8980a0d3457c10de1b5fc3c66a6e0eb926bb73a19aee5443a03a4f4081cc324",
+            "cfd3edf7d4a65a13130b714a062929e2f890b537a12dfc50ba8a40d37268fe90",
+            "df3d12c84ce1210cacea1c6bd030b9c0ca81f4cc36b07d9fed0b6a164da64508",
+            "e9e68603eda3e58ed201af747bed01877d8a25b91222661c04ff1b5ecd6cb0d5"
+          ]
+        }
+      }
+    },
+    "be5f9784b72c885a54fdaa7f214f728a78447dc6a776af1c65b4c862bc55c82c": {
+      "iu_id": "be5f9784b72c885a54fdaa7f214f728a78447dc6a776af1c65b4c862bc55c82c",
+      "iu_name": "Design System",
+      "files": {
+        "src/generated/app/design-system.ui.ts": {
+          "content_hash": "f4feee6cdf0d7306e7b1dfa8e950ad356dbba5b45d03b60e857def7fb7eea2e7",
+          "size_bytes": 8701,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "0f2c4a9b67c58a13c0907a757e6d77260278dc8305e3afad7255790585b552a3",
+            "0ff2ad5ed7692db6600085c1ccc691aec6ddd6cef3a96867e74eab67fcb623b1",
+            "27efabcf1751f42f741db6104848e66a53f419a124c26ad2d3d64755282fb286",
+            "348ff6dc83c847cf7a44816dc7fde69e2a7e560f628569eaca28ca1458a363f4",
+            "395b1907d490767e4f3be19ad3ad3cd6ce79f646405c3cc36f410ef24000a400",
+            "4cd07b27f068f57f4b0609c210173fd498083d91776e098cbda98a1d72eaf56d",
+            "5d500af75a29e59a77d5754444e6ba7b845532d1af26a2dc83d32d41d9e4577b",
+            "61e817b55ac5a43f5a49e08602acfe86a81adc7e8971f65aa8fe1865fd86ce59",
+            "715c71199f6467d8f796a87aed56539b9979377fc914210ae3afc3f6770b41b5",
+            "8e97cf0b05a552c379191b810883b7c08e025f2065b296e4bb9aea5679b4f3ce",
+            "90f6f464ef29edc07e9ee4bb0e09c30875b263510a74da57514e495aee88eb92",
+            "a3096e1d1cac21c13e81424fa0501184d985a9674b1af9c7c870b763f6fbbbe2",
+            "a9a415865e6a3636dfe41a51a37c49a3ecb7370018107a1ebd7c7b7556f89d32",
+            "af1a9483204f6b9e740fb956da516f630250de26e95c9aae2448290e31ea9a43",
+            "d28957a7190323017083a57a915d1e8df5185a788fdb32784e4a937a3db008a6",
+            "f38fdf44bef331fffde73ab6fbcb04357b13747c7b2b8b68c92ea98eac0d60fb",
+            "fee028e48be5da21bcb4b40730b136d9d84490dc11f101c78541b92327fbfa71"
+          ]
+        },
+        "src/generated/app/design-system.client.ts": {
+          "content_hash": "1daeeb76daf5cf76645945b6b51d6eb735fbee8b4bcf1bc9e0bb05f2d7faf311",
+          "size_bytes": 2647,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "0f2c4a9b67c58a13c0907a757e6d77260278dc8305e3afad7255790585b552a3",
+            "0ff2ad5ed7692db6600085c1ccc691aec6ddd6cef3a96867e74eab67fcb623b1",
+            "27efabcf1751f42f741db6104848e66a53f419a124c26ad2d3d64755282fb286",
+            "348ff6dc83c847cf7a44816dc7fde69e2a7e560f628569eaca28ca1458a363f4",
+            "395b1907d490767e4f3be19ad3ad3cd6ce79f646405c3cc36f410ef24000a400",
+            "4cd07b27f068f57f4b0609c210173fd498083d91776e098cbda98a1d72eaf56d",
+            "5d500af75a29e59a77d5754444e6ba7b845532d1af26a2dc83d32d41d9e4577b",
+            "61e817b55ac5a43f5a49e08602acfe86a81adc7e8971f65aa8fe1865fd86ce59",
+            "715c71199f6467d8f796a87aed56539b9979377fc914210ae3afc3f6770b41b5",
+            "8e97cf0b05a552c379191b810883b7c08e025f2065b296e4bb9aea5679b4f3ce",
+            "90f6f464ef29edc07e9ee4bb0e09c30875b263510a74da57514e495aee88eb92",
+            "a3096e1d1cac21c13e81424fa0501184d985a9674b1af9c7c870b763f6fbbbe2",
+            "a9a415865e6a3636dfe41a51a37c49a3ecb7370018107a1ebd7c7b7556f89d32",
+            "af1a9483204f6b9e740fb956da516f630250de26e95c9aae2448290e31ea9a43",
+            "d28957a7190323017083a57a915d1e8df5185a788fdb32784e4a937a3db008a6",
+            "f38fdf44bef331fffde73ab6fbcb04357b13747c7b2b8b68c92ea98eac0d60fb",
+            "fee028e48be5da21bcb4b40730b136d9d84490dc11f101c78541b92327fbfa71"
+          ]
+        },
+        "src/generated/app/__tests__/design-system.test.ts": {
+          "content_hash": "848a0ae53252f2f99db76d13d53667fe5f7be6e66beda8a13e70784a02a61df7",
+          "size_bytes": 2843,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "0f2c4a9b67c58a13c0907a757e6d77260278dc8305e3afad7255790585b552a3",
+            "0ff2ad5ed7692db6600085c1ccc691aec6ddd6cef3a96867e74eab67fcb623b1",
+            "27efabcf1751f42f741db6104848e66a53f419a124c26ad2d3d64755282fb286",
+            "348ff6dc83c847cf7a44816dc7fde69e2a7e560f628569eaca28ca1458a363f4",
+            "395b1907d490767e4f3be19ad3ad3cd6ce79f646405c3cc36f410ef24000a400",
+            "4cd07b27f068f57f4b0609c210173fd498083d91776e098cbda98a1d72eaf56d",
+            "5d500af75a29e59a77d5754444e6ba7b845532d1af26a2dc83d32d41d9e4577b",
+            "61e817b55ac5a43f5a49e08602acfe86a81adc7e8971f65aa8fe1865fd86ce59",
+            "715c71199f6467d8f796a87aed56539b9979377fc914210ae3afc3f6770b41b5",
+            "8e97cf0b05a552c379191b810883b7c08e025f2065b296e4bb9aea5679b4f3ce",
+            "90f6f464ef29edc07e9ee4bb0e09c30875b263510a74da57514e495aee88eb92",
+            "a3096e1d1cac21c13e81424fa0501184d985a9674b1af9c7c870b763f6fbbbe2",
+            "a9a415865e6a3636dfe41a51a37c49a3ecb7370018107a1ebd7c7b7556f89d32",
+            "af1a9483204f6b9e740fb956da516f630250de26e95c9aae2448290e31ea9a43",
+            "d28957a7190323017083a57a915d1e8df5185a788fdb32784e4a937a3db008a6",
+            "f38fdf44bef331fffde73ab6fbcb04357b13747c7b2b8b68c92ea98eac0d60fb",
+            "fee028e48be5da21bcb4b40730b136d9d84490dc11f101c78541b92327fbfa71"
+          ]
+        }
+      }
+    },
+    "cf4dfb03e05c74de5a1bf5c3ea40aa2884a1a4d2c358585768dad41dba81c871": {
+      "iu_id": "cf4dfb03e05c74de5a1bf5c3ea40aa2884a1a4d2c358585768dad41dba81c871",
+      "iu_name": "Items Dashboard",
+      "files": {
+        "src/generated/app/items-dashboard.ts": {
+          "content_hash": "0e94711f85d9d921ddd5ac09a1048b05624ab07a7b4c1b0b3d3031b10ea4e5e1",
+          "size_bytes": 2031,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "015a4dd45f8f9db88cde3ab8504be6afbc0a7fd11663140328ae5a6defc23c76",
+            "246f196a265b0af00e8b3258365b5858e6597d697705317df51023567d7fb75e",
+            "265fae19870b09a11c79ec8a9720b6651379a36445cde2603d6cf470bbf57394",
+            "292a78ba6692cd7932c9f2c95ca7f5f75ff9f0267e9f92f885f3fbb58ecf2436",
+            "2f8328c4dbeeffe478906f09f78ab448db2a58b8885ca4ba638e038263248d0e",
+            "4ce0f2afabd0148630e555a6e67eed2db3f048337f0de3ac35c53b7b541fec7b",
+            "5333a851b0517cbe860f6e15c9a683c83aa8d40a3283b82d5b93955b6315934a",
+            "5592076b03fb14c17064ce51de6e7ef1a83cb8bed8a52bbcbbdceceae6b7dcd4",
+            "6946b31a4e3ed6646252335c7d604e7ea29c9ada995c3df9e1cca59ab6b0307c",
+            "6c132ab342afca0b0440870a63f94fd180a40e2c0f3fc23aff256c1c7719ee9a",
+            "718326cfcda3294e7380519e9070f0a297945e30e648f8357dcabe288cacda24",
+            "839dc2f483375ee89f9c558af78afc2ca6acd75f492e313f0529ca4198e6a548",
+            "8da8dd93cbf2b4d5fbc9de99d46774e84554228876fd9d3609576bcb31e31242",
+            "90d622c9c9d7f33714e086b7573f6663f84df153dc9395a5eaff7bd7fdfe0afc",
+            "aa9b8288f4aa57013497af9917cffcd2918e5a981b0ab666d130290b274daebc",
+            "ad4dbeecc120c020d03f3a561b3f93ff8d8a7033fce7d6545dae94bb454975e3",
+            "cce8feaf2281dbab38c3418ead58942f8f8c730c1e06e2935d555087f26aa184",
+            "cd19ae7d8e3e382ee9ae32cf9b5abefab7c102b4732e92125adb3fdaf58f8444",
+            "eba082c4dcac3f87e56cff2c9d3b911d04afe6e17d8b5be83b48b500ad81fd8b",
+            "efeb2dc360af2f3a95a2ea33731a2faab878741d9127f6b82f49e551d0d34d85",
+            "f0c7f73e6266d25a2d221d53f79996c64fb127b368831508536c0f1df4c4555b",
+            "fd521a218a2bae6e2eee62b68d1046204c685a21d64c2f421d00f193b39c9d3e"
+          ]
+        },
+        "src/generated/app/items-dashboard.ui.ts": {
+          "content_hash": "e3a950f18943f67e2fce4c7b51e0aa7d0553b2f2e9f1e1eb26226ed9cb48683f",
+          "size_bytes": 13607,
+          "generated_at": "2026-04-06T00:49:38.752Z",
+          "canon_source_ids": [
+            "015a4dd45f8f9db88cde3ab8504be6afbc0a7fd11663140328ae5a6defc23c76",
+            "246f196a265b0af00e8b3258365b5858e6597d697705317df51023567d7fb75e",
+            "265fae19870b09a11c79ec8a9720b6651379a36445cde2603d6cf470bbf57394",
+            "292a78ba6692cd7932c9f2c95ca7f5f75ff9f0267e9f92f885f3fbb58ecf2436",
+            "2f8328c4dbeeffe478906f09f78ab448db2a58b8885ca4ba638e038263248d0e",
+            "4ce0f2afabd0148630e555a6e67eed2db3f048337f0de3ac35c53b7b541fec7b",
+            "5333a851b0517cbe860f6e15c9a683c83aa8d40a3283b82d5b93955b6315934a",
+            "5592076b03fb14c17064ce51de6e7ef1a83cb8bed8a52bbcbbdceceae6b7dcd4",
+            "6946b31a4e3ed6646252335c7d604e7ea29c9ada995c3df9e1cca59ab6b0307c",
+            "6c132ab342afca0b0440870a63f94fd180a40e2c0f3fc23aff256c1c7719ee9a",
+            "718326cfcda3294e7380519e9070f0a297945e30e648f8357dcabe288cacda24",
+            "839dc2f483375ee89f9c558af78afc2ca6acd75f492e313f0529ca4198e6a548",
+            "8da8dd93cbf2b4d5fbc9de99d46774e84554228876fd9d3609576bcb31e31242",
+            "90d622c9c9d7f33714e086b7573f6663f84df153dc9395a5eaff7bd7fdfe0afc",
+            "aa9b8288f4aa57013497af9917cffcd2918e5a981b0ab666d130290b274daebc",
+            "ad4dbeecc120c020d03f3a561b3f93ff8d8a7033fce7d6545dae94bb454975e3",
+            "cce8feaf2281dbab38c3418ead58942f8f8c730c1e06e2935d555087f26aa184",
+            "cd19ae7d8e3e382ee9ae32cf9b5abefab7c102b4732e92125adb3fdaf58f8444",
+            "eba082c4dcac3f87e56cff2c9d3b911d04afe6e17d8b5be83b48b500ad81fd8b",
+            "efeb2dc360af2f3a95a2ea33731a2faab878741d9127f6b82f49e551d0d34d85",
+            "f0c7f73e6266d25a2d221d53f79996c64fb127b368831508536c0f1df4c4555b",
+            "fd521a218a2bae6e2eee62b68d1046204c685a21d64c2f421d00f193b39c9d3e"
+          ]
+        },
+        "src/generated/app/items-dashboard.client.ts": {
+          "content_hash": "a70bb01c458f2fc1be446b31b1bacba6b21886ee86cc506a837213c36485470c",
+          "size_bytes": 4004,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "015a4dd45f8f9db88cde3ab8504be6afbc0a7fd11663140328ae5a6defc23c76",
+            "246f196a265b0af00e8b3258365b5858e6597d697705317df51023567d7fb75e",
+            "265fae19870b09a11c79ec8a9720b6651379a36445cde2603d6cf470bbf57394",
+            "292a78ba6692cd7932c9f2c95ca7f5f75ff9f0267e9f92f885f3fbb58ecf2436",
+            "2f8328c4dbeeffe478906f09f78ab448db2a58b8885ca4ba638e038263248d0e",
+            "4ce0f2afabd0148630e555a6e67eed2db3f048337f0de3ac35c53b7b541fec7b",
+            "5333a851b0517cbe860f6e15c9a683c83aa8d40a3283b82d5b93955b6315934a",
+            "5592076b03fb14c17064ce51de6e7ef1a83cb8bed8a52bbcbbdceceae6b7dcd4",
+            "6946b31a4e3ed6646252335c7d604e7ea29c9ada995c3df9e1cca59ab6b0307c",
+            "6c132ab342afca0b0440870a63f94fd180a40e2c0f3fc23aff256c1c7719ee9a",
+            "718326cfcda3294e7380519e9070f0a297945e30e648f8357dcabe288cacda24",
+            "839dc2f483375ee89f9c558af78afc2ca6acd75f492e313f0529ca4198e6a548",
+            "8da8dd93cbf2b4d5fbc9de99d46774e84554228876fd9d3609576bcb31e31242",
+            "90d622c9c9d7f33714e086b7573f6663f84df153dc9395a5eaff7bd7fdfe0afc",
+            "aa9b8288f4aa57013497af9917cffcd2918e5a981b0ab666d130290b274daebc",
+            "ad4dbeecc120c020d03f3a561b3f93ff8d8a7033fce7d6545dae94bb454975e3",
+            "cce8feaf2281dbab38c3418ead58942f8f8c730c1e06e2935d555087f26aa184",
+            "cd19ae7d8e3e382ee9ae32cf9b5abefab7c102b4732e92125adb3fdaf58f8444",
+            "eba082c4dcac3f87e56cff2c9d3b911d04afe6e17d8b5be83b48b500ad81fd8b",
+            "efeb2dc360af2f3a95a2ea33731a2faab878741d9127f6b82f49e551d0d34d85",
+            "f0c7f73e6266d25a2d221d53f79996c64fb127b368831508536c0f1df4c4555b",
+            "fd521a218a2bae6e2eee62b68d1046204c685a21d64c2f421d00f193b39c9d3e"
+          ]
+        },
+        "src/generated/app/__tests__/items-dashboard.test.ts": {
+          "content_hash": "b31d31fe8a5fdfe14735b8982c8ea61d4784e2771ede34ab864c80eb8beb04bf",
+          "size_bytes": 2490,
+          "generated_at": "2026-04-06T00:43:47.672Z",
+          "canon_source_ids": [
+            "015a4dd45f8f9db88cde3ab8504be6afbc0a7fd11663140328ae5a6defc23c76",
+            "246f196a265b0af00e8b3258365b5858e6597d697705317df51023567d7fb75e",
+            "265fae19870b09a11c79ec8a9720b6651379a36445cde2603d6cf470bbf57394",
+            "292a78ba6692cd7932c9f2c95ca7f5f75ff9f0267e9f92f885f3fbb58ecf2436",
+            "2f8328c4dbeeffe478906f09f78ab448db2a58b8885ca4ba638e038263248d0e",
+            "4ce0f2afabd0148630e555a6e67eed2db3f048337f0de3ac35c53b7b541fec7b",
+            "5333a851b0517cbe860f6e15c9a683c83aa8d40a3283b82d5b93955b6315934a",
+            "5592076b03fb14c17064ce51de6e7ef1a83cb8bed8a52bbcbbdceceae6b7dcd4",
+            "6946b31a4e3ed6646252335c7d604e7ea29c9ada995c3df9e1cca59ab6b0307c",
+            "6c132ab342afca0b0440870a63f94fd180a40e2c0f3fc23aff256c1c7719ee9a",
+            "718326cfcda3294e7380519e9070f0a297945e30e648f8357dcabe288cacda24",
+            "839dc2f483375ee89f9c558af78afc2ca6acd75f492e313f0529ca4198e6a548",
+            "8da8dd93cbf2b4d5fbc9de99d46774e84554228876fd9d3609576bcb31e31242",
+            "90d622c9c9d7f33714e086b7573f6663f84df153dc9395a5eaff7bd7fdfe0afc",
+            "aa9b8288f4aa57013497af9917cffcd2918e5a981b0ab666d130290b274daebc",
+            "ad4dbeecc120c020d03f3a561b3f93ff8d8a7033fce7d6545dae94bb454975e3",
+            "cce8feaf2281dbab38c3418ead58942f8f8c730c1e06e2935d555087f26aa184",
+            "cd19ae7d8e3e382ee9ae32cf9b5abefab7c102b4732e92125adb3fdaf58f8444",
+            "eba082c4dcac3f87e56cff2c9d3b911d04afe6e17d8b5be83b48b500ad81fd8b",
+            "efeb2dc360af2f3a95a2ea33731a2faab878741d9127f6b82f49e551d0d34d85",
+            "f0c7f73e6266d25a2d221d53f79996c64fb127b368831508536c0f1df4c4555b",
+            "fd521a218a2bae6e2eee62b68d1046204c685a21d64c2f421d00f193b39c9d3e"
+          ]
+        }
+      }
+    },
+    "57733bf6a485e8f7aeac5ac3b78cc6711d81946c013146f3442266d60bacee94": {
+      "iu_id": "57733bf6a485e8f7aeac5ac3b78cc6711d81946c013146f3442266d60bacee94",
+      "iu_name": "Items",
+      "files": {
+        "src/generated/app/items.ts": {
+          "content_hash": "558c7c6732ce1e6894a6e39e81f6943d656e21059e556a169aec41981d88f774",
+          "size_bytes": 6397,
+          "generated_at": "2026-04-06T00:43:47.673Z",
+          "canon_source_ids": [
+            "0062bd68dca9a4ce0d7b0a7dcb7144d23ec1e3fe7537121208ca99d93b0a8877",
+            "331ec47537d7e32f06b636f745dbeea0eddbbd6ec77c3461fdf8b10344a90d3c",
+            "57a912b586bc882f11a55287b94014746b154b0a18b32ff84c3a11f314484bf6",
+            "6437a7aab539fc38ce9b7b52af573cc2576bf844c6e73329e37b5911b0f93a51",
+            "6f30e3e70d53fa9f421ef35cc2bacc656a451cc74f96fe647412a56fb3c9797c",
+            "75fc35a0b43d655b9fd2d5601e26241374fa606f55a5cab7edc62073f85969c5",
+            "83ca5584cc9635eb7e9c7e4df792dc9c02d614bef9961111feac04a84000ffa3",
+            "8af15bae6632394c4a86a6ba37ce6081bd2d339c38a4712fbe04dd3a427f75ad",
+            "92ce281fc4972afb17d31b737defd5f2e3dfdb27210a301e1ac75f0f21f6e526",
+            "96c41071f2d6c61697b3822f47e1e66ef26840a17b5bbfc28873e66a688007d3",
+            "97b8f36321fd9aed6712440fc7d577d3d9952136cc397ddc844849217d7e846b",
+            "c70826b99027f1acab614c1b4b6408c9f8647ed306262edfd3303e2069236057",
+            "d8f411374ea73f67049c9e1e3b1a8d3b26c5e037dd4b5bf5ac185c4ec3d48718"
+          ]
+        },
+        "src/generated/app/__tests__/items.test.ts": {
+          "content_hash": "6b2c463068e17d8761021177e5f30658f902557edff648de805072e3635c7a09",
+          "size_bytes": 2152,
+          "generated_at": "2026-04-06T00:43:47.673Z",
+          "canon_source_ids": [
+            "0062bd68dca9a4ce0d7b0a7dcb7144d23ec1e3fe7537121208ca99d93b0a8877",
+            "331ec47537d7e32f06b636f745dbeea0eddbbd6ec77c3461fdf8b10344a90d3c",
+            "57a912b586bc882f11a55287b94014746b154b0a18b32ff84c3a11f314484bf6",
+            "6437a7aab539fc38ce9b7b52af573cc2576bf844c6e73329e37b5911b0f93a51",
+            "6f30e3e70d53fa9f421ef35cc2bacc656a451cc74f96fe647412a56fb3c9797c",
+            "75fc35a0b43d655b9fd2d5601e26241374fa606f55a5cab7edc62073f85969c5",
+            "83ca5584cc9635eb7e9c7e4df792dc9c02d614bef9961111feac04a84000ffa3",
+            "8af15bae6632394c4a86a6ba37ce6081bd2d339c38a4712fbe04dd3a427f75ad",
+            "92ce281fc4972afb17d31b737defd5f2e3dfdb27210a301e1ac75f0f21f6e526",
+            "96c41071f2d6c61697b3822f47e1e66ef26840a17b5bbfc28873e66a688007d3",
+            "97b8f36321fd9aed6712440fc7d577d3d9952136cc397ddc844849217d7e846b",
+            "c70826b99027f1acab614c1b4b6408c9f8647ed306262edfd3303e2069236057",
+            "d8f411374ea73f67049c9e1e3b1a8d3b26c5e037dd4b5bf5ac185c4ec3d48718"
+          ]
+        }
+      }
+    },
+    "d1dd856a1749a5299a6ad0d98009fab4656c47f04f68159369b434efde3fb1cd": {
+      "iu_id": "d1dd856a1749a5299a6ad0d98009fab4656c47f04f68159369b434efde3fb1cd",
+      "iu_name": "Low Stock",
+      "files": {
+        "src/generated/app/low-stock.ui.ts": {
+          "content_hash": "e764f9ab8c4bcae9ca6f66e186def0923ea686893e61a7e43de48294f9639001",
+          "size_bytes": 2393,
+          "generated_at": "2026-04-06T00:43:47.673Z",
+          "canon_source_ids": [
+            "1931aeaafbc9cf7fa9ebce590e04a18538080e83ba3e696f4fa0b7b211dbf249",
+            "71708078b7571ca84796a9f157384ecdf886f116e9e88552517ef9f2d5d0e600",
+            "9372a12e1532de6fdfd6669e278969a496969c7020e38ac7a0638026f83932a9",
+            "b3f66fec1869f2b28a392499b0dd60654d3b01d1ea5e5c222b7f5fde419e6f7a",
+            "c3c8f19f4edfe2eef8f2fe3853d1d2a9f7af40e93224babec92e38ececf1726e",
+            "f63e10c644048b7793f30749a18f989d2f71fc585191b4e9e9149dd604c27b04"
+          ]
+        },
+        "src/generated/app/low-stock.client.ts": {
+          "content_hash": "0e38c3671307e91e2ddee2afc9f8ee3186e530f2420d007205f0ffb905098a7c",
+          "size_bytes": 1156,
+          "generated_at": "2026-04-06T00:43:47.673Z",
+          "canon_source_ids": [
+            "1931aeaafbc9cf7fa9ebce590e04a18538080e83ba3e696f4fa0b7b211dbf249",
+            "71708078b7571ca84796a9f157384ecdf886f116e9e88552517ef9f2d5d0e600",
+            "9372a12e1532de6fdfd6669e278969a496969c7020e38ac7a0638026f83932a9",
+            "b3f66fec1869f2b28a392499b0dd60654d3b01d1ea5e5c222b7f5fde419e6f7a",
+            "c3c8f19f4edfe2eef8f2fe3853d1d2a9f7af40e93224babec92e38ececf1726e",
+            "f63e10c644048b7793f30749a18f989d2f71fc585191b4e9e9149dd604c27b04"
+          ]
+        },
+        "src/generated/app/__tests__/low-stock.test.ts": {
+          "content_hash": "d0a30783755f32918641fd9b718e139a49ba3f304ac5a083b8a2dfee666944be",
+          "size_bytes": 1295,
+          "generated_at": "2026-04-06T00:43:47.673Z",
+          "canon_source_ids": [
+            "1931aeaafbc9cf7fa9ebce590e04a18538080e83ba3e696f4fa0b7b211dbf249",
+            "71708078b7571ca84796a9f157384ecdf886f116e9e88552517ef9f2d5d0e600",
+            "9372a12e1532de6fdfd6669e278969a496969c7020e38ac7a0638026f83932a9",
+            "b3f66fec1869f2b28a392499b0dd60654d3b01d1ea5e5c222b7f5fde419e6f7a",
+            "c3c8f19f4edfe2eef8f2fe3853d1d2a9f7af40e93224babec92e38ececf1726e",
+            "f63e10c644048b7793f30749a18f989d2f71fc585191b4e9e9149dd604c27b04"
+          ]
+        }
+      }
+    }
+  }
+}

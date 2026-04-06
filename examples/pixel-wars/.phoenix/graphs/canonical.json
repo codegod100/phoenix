@@ -1,0 +1,316 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06T00:00:00Z",
+  "nodes": [
+    {
+      "canon_id": "grid_dimensions_constraint",
+      "type": "CONSTRAINT",
+      "statement": "Grid is 20 columns × 20 rows (400 total cells)",
+      "source_clause_ids": ["grid_size_400_cells"],
+      "linked_canon_ids": ["grid_memory_storage", "cell_addressing_system"],
+      "link_types": {"grid_memory_storage": "depends_on", "cell_addressing_system": "enables"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "grid_memory_storage",
+      "type": "CONSTRAINT",
+      "statement": "Grid state stored in memory only, no persistence required",
+      "source_clause_ids": ["grid_memory_only", "grid_initial_empty"],
+      "linked_canon_ids": ["grid_dimensions_constraint", "round_reset_mechanism"],
+      "link_types": {"grid_dimensions_constraint": "depends_on", "round_reset_mechanism": "enables"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "cell_addressing_system",
+      "type": "DEFINITION",
+      "statement": "Cell addressing uses {x, y} coordinates where x is column (0-19) and y is row (0-19)",
+      "source_clause_ids": ["grid_cell_states", "paint_message_format"],
+      "linked_canon_ids": ["grid_dimensions_constraint", "paint_bounds_validation", "paint_broadcast"],
+      "link_types": {"grid_dimensions_constraint": "depends_on", "paint_bounds_validation": "enables", "paint_broadcast": "enables"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "team_system_definition",
+      "type": "DEFINITION",
+      "statement": "Exactly 4 teams: red (#ff4757), blue (#3742fa), green (#2ed573), yellow (#ffa502). Team = players sharing color.",
+      "source_clause_ids": ["teams_four_colors", "teams_definition", "ui_team_color_red", "ui_team_color_blue", "ui_team_color_green", "ui_team_color_yellow"],
+      "linked_canon_ids": ["team_assignment_logic", "score_calculation", "team_balancing"],
+      "link_types": {"team_assignment_logic": "enables", "score_calculation": "enables", "team_balancing": "requires"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "team_assignment_logic",
+      "type": "REQUIREMENT",
+      "statement": "Assign players to teams round-robin to maintain balance",
+      "source_clause_ids": ["teams_round_robin_assignment"],
+      "linked_canon_ids": ["team_system_definition", "player_tracking"],
+      "link_types": {"team_system_definition": "depends_on", "player_tracking": "updates"},
+      "confidence": 0.95,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "score_calculation",
+      "type": "DEFINITION",
+      "statement": "Team score = count of cells owned by that team's color",
+      "source_clause_ids": ["teams_score_calculation"],
+      "linked_canon_ids": ["team_system_definition", "win_condition", "ui_scoreboard"],
+      "link_types": {"team_system_definition": "depends_on", "win_condition": "feeds", "ui_scoreboard": "displays"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "paint_action",
+      "type": "REQUIREMENT",
+      "statement": "Players paint cells by sending {x, y} message. Overwrites allowed (territory stealing).",
+      "source_clause_ids": ["paint_message_format", "paint_overwrite_allowed"],
+      "linked_canon_ids": ["cell_addressing_system", "paint_cooldown", "paint_broadcast", "paint_validation"],
+      "link_types": {"cell_addressing_system": "uses", "paint_cooldown": "constrained_by", "paint_broadcast": "triggers", "paint_validation": "requires"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "paint_cooldown",
+      "type": "CONSTRAINT",
+      "statement": "500ms minimum between paints per player. Violations rejected with 'too_fast' error.",
+      "source_clause_ids": ["paint_cooldown_500ms", "paint_cooldown_error", "ui_cooldown_progress_bar"],
+      "linked_canon_ids": ["paint_action", "player_tracking", "ui_feedback"],
+      "link_types": {"paint_action": "constrains", "player_tracking": "tracks", "ui_feedback": "displays"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "paint_validation",
+      "type": "REQUIREMENT",
+      "statement": "Validate paint bounds: reject out-of-bounds with 'invalid_cell' error",
+      "source_clause_ids": ["paint_bounds_error"],
+      "linked_canon_ids": ["paint_action", "cell_addressing_system"],
+      "link_types": {"paint_action": "validates", "cell_addressing_system": "checks_against"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "paint_broadcast",
+      "type": "REQUIREMENT",
+      "statement": "Broadcast successful paints to all connected players immediately",
+      "source_clause_ids": ["paint_broadcast_immediate"],
+      "linked_canon_ids": ["paint_action", "websocket_messaging", "ui_update"],
+      "link_types": {"paint_action": "triggers", "websocket_messaging": "uses", "ui_update": "drives"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "round_timer_system",
+      "type": "CONSTRAINT",
+      "statement": "120 second rounds. Broadcast remaining time every second.",
+      "source_clause_ids": ["round_duration_120s", "round_timer_broadcast"],
+      "linked_canon_ids": ["win_condition", "round_state_management", "ui_timer"],
+      "link_types": {"win_condition": "triggers", "round_state_management": "drives", "ui_timer": "displays"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "win_condition",
+      "type": "REQUIREMENT",
+      "statement": "At timer=0: team with most cells wins. Broadcast final scores and winner.",
+      "source_clause_ids": ["round_winner_determination", "round_end_broadcast", "ui_feedback_win_overlay"],
+      "linked_canon_ids": ["score_calculation", "round_timer_system", "round_reset_mechanism"],
+      "link_types": {"score_calculation": "depends_on", "round_timer_system": "triggered_by", "round_reset_mechanism": "enables"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "round_reset_mechanism",
+      "type": "REQUIREMENT",
+      "statement": "Auto-start new round 10s after previous. Reset grid to empty.",
+      "source_clause_ids": ["round_auto_restart_10s", "round_grid_reset"],
+      "linked_canon_ids": ["win_condition", "grid_memory_storage"],
+      "link_types": {"win_condition": "triggered_by", "grid_memory_storage": "resets"},
+      "confidence": 0.95,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "ui_single_page",
+      "type": "CONSTRAINT",
+      "statement": "Single inline HTML page served by server. No build tools. All assets embedded.",
+      "source_clause_ids": ["ui_inline_html"],
+      "linked_canon_ids": ["ui_canvas_rendering", "ui_styling", "http_server"],
+      "link_types": {"ui_canvas_rendering": "contains", "ui_styling": "contains", "http_server": "serves"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "ui_canvas_rendering",
+      "type": "REQUIREMENT",
+      "statement": "500×500px canvas. 25×25px cells with 1px gap. Dark gray empty (#2a2a3e), team colors owned with glow. Hover highlight.",
+      "source_clause_ids": ["ui_canvas_specs", "ui_cell_specs", "ui_empty_cell_color", "ui_owned_cell_style", "ui_hover_highlight"],
+      "linked_canon_ids": ["ui_single_page", "cell_addressing_system", "ui_click_handling"],
+      "link_types": {"ui_single_page": "part_of", "cell_addressing_system": "renders", "ui_click_handling": "detects"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "ui_click_handling",
+      "type": "REQUIREMENT",
+      "statement": "Click/touch on canvas sends paint command to server via WebSocket",
+      "source_clause_ids": ["ui_click_paint", "ui_touch_support"],
+      "linked_canon_ids": ["ui_canvas_rendering", "websocket_messaging", "paint_action"],
+      "link_types": {"ui_canvas_rendering": "detects_on", "websocket_messaging": "uses", "paint_action": "triggers"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "ui_layout",
+      "type": "REQUIREMENT",
+      "statement": "Dark background (#1a1a2e). Title + timer above grid. Scoreboard below. Own team highlighted.",
+      "source_clause_ids": ["ui_dark_background", "ui_header_elements", "ui_scoreboard", "ui_team_highlight"],
+      "linked_canon_ids": ["ui_single_page", "score_calculation", "round_timer_system"],
+      "link_types": {"ui_single_page": "part_of", "score_calculation": "displays", "round_timer_system": "displays"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "ui_feedback",
+      "type": "REQUIREMENT",
+      "statement": "Paint flash white. Cooldown toast '⏳ wait' 1s. Win overlay 5s. Cooldown progress bar.",
+      "source_clause_ids": ["ui_feedback_paint_flash", "ui_feedback_cooldown_toast", "ui_feedback_win_overlay", "ui_cooldown_progress_bar"],
+      "linked_canon_ids": ["paint_cooldown", "win_condition", "ui_single_page"],
+      "link_types": {"paint_cooldown": "displays", "win_condition": "displays", "ui_single_page": "part_of"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "ui_responsive",
+      "type": "REQUIREMENT",
+      "statement": "Canvas scales to viewport on mobile. Touch events work for painting.",
+      "source_clause_ids": ["ui_responsive_canvas", "ui_touch_support"],
+      "linked_canon_ids": ["ui_canvas_rendering", "ui_click_handling"],
+      "link_types": {"ui_canvas_rendering": "adapts", "ui_click_handling": "supports"},
+      "confidence": 0.95,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "websocket_server",
+      "type": "CONSTRAINT",
+      "statement": "WebSocket + HTTP on same server. Port configurable (default 3000). Serves UI at GET /",
+      "source_clause_ids": ["ws_port_configurable", "ws_http_server_same"],
+      "linked_canon_ids": ["ui_single_page", "websocket_messaging", "http_server"],
+      "link_types": {"ui_single_page": "serves", "websocket_messaging": "enables", "http_server": "implements"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "websocket_messaging",
+      "type": "DEFINITION",
+      "statement": "WebSocket protocol for: paint commands, state updates, broadcasts. Message types: paint, state, error.",
+      "source_clause_ids": ["ws_server_description", "paint_broadcast", "ws_initial_state_send"],
+      "linked_canon_ids": ["websocket_server", "paint_action", "player_tracking"],
+      "link_types": {"websocket_server": "uses", "paint_action": "carries", "player_tracking": "syncs"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "player_tracking",
+      "type": "REQUIREMENT",
+      "statement": "Assign unique player_id (6-char hex). Track team color, cells painted. Remove disconnected within 5s. Broadcast count changes.",
+      "source_clause_ids": ["ws_player_id_unique", "ws_track_team_and_stats", "ws_disconnect_cleanup", "ws_player_count_broadcast"],
+      "linked_canon_ids": ["websocket_messaging", "team_assignment_logic", "paint_cooldown"],
+      "link_types": {"websocket_messaging": "uses", "team_assignment_logic": "sets", "paint_cooldown": "tracks"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "connection_limits",
+      "type": "CONSTRAINT",
+      "statement": "Single global room. Max 20 players. Reject additional with 'room_full' error.",
+      "source_clause_ids": ["ws_single_global_room", "ws_max_players_20"],
+      "linked_canon_ids": ["websocket_server", "player_tracking"],
+      "link_types": {"websocket_server": "enforces", "player_tracking": "checks"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "http_server",
+      "type": "REQUIREMENT",
+      "statement": "HTTP server serves UI at GET /. Same port as WebSocket.",
+      "source_clause_ids": ["ws_http_server_same"],
+      "linked_canon_ids": ["websocket_server", "ui_single_page"],
+      "link_types": {"websocket_server": "shares", "ui_single_page": "serves"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "websocket_message_format",
+      "type": "CONSTRAINT",
+      "statement": "All WebSocket messages use JSON format with type and payload fields: {type: string, payload: object}",
+      "source_clause_ids": ["ws_protocol_message_format", "ws_protocol_message_structure", "ws_protocol_message_types"],
+      "linked_canon_ids": ["websocket_messaging", "client_server_protocol", "ui_click_handling"],
+      "link_types": {"websocket_messaging": "uses", "client_server_protocol": "defines", "ui_click_handling": "produces"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "client_server_protocol",
+      "type": "DEFINITION",
+      "statement": "Client-server WebSocket protocol: state init, paint commands/broadcasts, error responses, timer updates, winner announcements, player count updates. All wrapped in {type, payload}.",
+      "source_clause_ids": ["ws_protocol_state_message", "ws_protocol_state_payload", "ws_protocol_paint_client", "ws_protocol_paint_broadcast", "ws_protocol_error_format", "ws_protocol_timer_broadcast", "ws_protocol_winner_broadcast", "ws_protocol_players_broadcast"],
+      "linked_canon_ids": ["websocket_message_format", "websocket_messaging", "game_state_serialization"],
+      "link_types": {"websocket_message_format": "uses", "websocket_messaging": "implements", "game_state_serialization": "transports"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "game_state_serialization",
+      "type": "CONSTRAINT",
+      "statement": "Grid serialized as flat array of 400 elements (20x20 row-major). Values are null or team color strings. Teams object maps color to {score, playerCount}.",
+      "source_clause_ids": ["ws_protocol_grid_serialization", "ws_protocol_state_payload", "score_calculation"],
+      "linked_canon_ids": ["grid_dimensions_constraint", "team_system_definition", "client_server_protocol"],
+      "link_types": {"grid_dimensions_constraint": "defines_size", "team_system_definition": "defines_values", "client_server_protocol": "uses"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "error_protocol",
+      "type": "CONSTRAINT",
+      "statement": "Error messages: {type: 'error', payload: {code, message}}. Codes: room_full, too_fast, invalid_cell, round_not_active.",
+      "source_clause_ids": ["ws_protocol_error_format", "ws_protocol_error_codes", "paint_cooldown", "paint_validation", "connection_limits"],
+      "linked_canon_ids": ["websocket_message_format", "paint_cooldown", "connection_limits"],
+      "link_types": {"websocket_message_format": "uses", "paint_cooldown": "triggers_too_fast", "connection_limits": "triggers_room_full"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "websocket_upgrade_method",
+      "type": "CONSTRAINT",
+      "statement": "WebSocket upgrade must be handled in HTTP request handler by checking req.headers['upgrade'] === 'websocket', not via server.on('upgrade') event",
+      "source_clause_ids": ["ws_impl_upgrade_in_handler", "ws_impl_detect_upgrade", "ws_impl_raw_socket"],
+      "linked_canon_ids": ["http_server", "websocket_server", "client_server_protocol"],
+      "link_types": {"http_server": "checks_upgrade_in", "websocket_server": "uses_raw_socket", "client_server_protocol": "enables"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "raw_websocket_frames",
+      "type": "CONSTRAINT",
+      "statement": "Server implements raw WebSocket frame encoding/decoding: unmasked outgoing frames [0x81, len, payload...], masked incoming with XOR mask key. No external ws library.",
+      "source_clause_ids": ["ws_impl_frame_encoding", "ws_impl_frame_format", "ws_impl_frame_mask", "ws_impl_frame_length", "ws_impl_no_ws_lib"],
+      "linked_canon_ids": ["websocket_server", "websocket_message_format", "websocket_upgrade_method"],
+      "link_types": {"websocket_server": "implements", "websocket_message_format": "carries", "websocket_upgrade_method": "requires"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    },
+    {
+      "canon_id": "zero_dependency_architecture",
+      "type": "CONSTRAINT",
+      "statement": "Server uses only Node.js built-in modules (http, crypto, net). No external WebSocket libraries. HTTP and WebSocket share port via raw socket handling.",
+      "source_clause_ids": ["ws_impl_zero_deps", "ws_impl_no_ws_lib", "ws_impl_shared_port"],
+      "linked_canon_ids": ["websocket_server", "http_server", "raw_websocket_frames"],
+      "link_types": {"websocket_server": "uses_builtins", "http_server": "uses_builtins", "raw_websocket_frames": "enables"},
+      "confidence": 1.0,
+      "extracted_at": "2026-04-06T00:00:00Z"
+    }
+  ]
+}

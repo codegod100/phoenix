@@ -1,0 +1,348 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06T04:38:53.182Z",
+  "ius": [
+    {
+      "iu_id": "2d4163c71d1a45c0576b4718c72bf457f20505a0fcd16658c97bb1f66b10c956",
+      "name": "Board",
+      "kind": "module",
+      "risk_tier": "medium",
+      "contract": {
+        "description": "Board implementation for Kanban board",
+        "inputs": [],
+        "outputs": [
+          "system shall get /board returns full board state with columns and cards",
+          "system shall display board as horizontal row of columns"
+        ],
+        "invariants": [
+          "Default columns: \"todo\", \"in progress\", \"done\"",
+          "Columns can be renamed but not deleted below 1 column",
+          "Maximum 100 cards per board (performance guard)",
+          "Board fills viewport width, columns scroll horizontally if needed",
+          "Board fills viewport height without vertical scroll - vertical space is managed by column internals"
+        ]
+      },
+      "source_canon_ids": [
+        "00f4f3f6791834a28ffac16944973f4a903a395a36c66c0096b3d5d0ea278e21",
+        "42b74c2d10e0f4126633401e258bf510bc7774a9d4613fba45e98feebdd9ba2c",
+        "292cf4747e185c78b771b3afb66daf04f2d8f0563ce3af2541d37b5833b10395",
+        "a6fce96c2b7b0010407c23ee1854932641d363eccd1c00f79ff01c26437bb414",
+        "78419c86f8b4105e66f66fc5fbc1c0042913d0f89b4467dabde703b89da8ff70",
+        "64673a9ad19f958d5c0012ec2411cf05d2b74b1d445631b6299243a1bde51ed2",
+        "3adba454175f1b277f0d7ad4ff94ecb7ffd2997322a533d74b5a63aefa29c506",
+        "e06966e9dc485137bbe09f580e6f9ab60c6fb294050560e6ce11703631597d01",
+        "6cca14019487117fbae1e77204a049dd4340a25152e70e3b3a77a27ded54b219",
+        "895da868cb3482825edff0adda063e77e248c92dc2133330d2acf4a800f29b3d",
+        "7ab075e6b5c7f524af345dd6575371f15c78d38ef34d46738ed6b49e4041b2e6",
+        "0df9eb5bc1f69b627b1711f42773f5285e581c3df23e21dc8acc68544eed0367",
+        "8f28f7e29f0498ddee2389a0f849741532a8b1321ace52303038c90718a27c57"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/board.ts",
+        "src/generated/app/__tests__/board.test.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    },
+    {
+      "iu_id": "819de3d34e3b2866fbbdb4bc0f0a38b5915813f4ba5220a345c77d113e63d985",
+      "name": "Card",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "contract": {
+        "description": "Card implementation for Kanban board",
+        "inputs": [],
+        "outputs": [],
+        "invariants": [
+          "Card description text must not be html-escaped when editing - textarea receives raw text",
+          "Cards must have created_at timestamp",
+          "Moving card validates column exists (400 if not)",
+          "Card order is 0-indexed integer, automatically rebalanced on conflicts",
+          "Card edit/delete buttons visible only on card hover, positioned absolute top-right",
+          "Column height fixed with internal scroll for many cards",
+          "Card max-height 200px with scroll for long descriptions",
+          "Newlines in card descriptions must be preserved and displayed in column view",
+          "Card count badge updates in real-time when cards are added/moved/deleted",
+          "When card moved between columns via drag-and-drop, source column count decrements by 1, destination column count increments by 1"
+        ]
+      },
+      "source_canon_ids": [
+        "c2dc2832c643c41a07cced9b94d69f585c2629cbb848492c065fae0f2f66a0b4",
+        "961613720dc35f0633412315c40a19619fbc9ee0ef7425e462b885a6804c2a56",
+        "54fd0e725bb330ba0c5dfeb8e042878ee98d1b4b355a551919a4aabb7cdb2024",
+        "68acae13eb9950e42189ed4c542b4c2a5147dd5de0ed71afad967b201cca5f64",
+        "23046d5fa163a51bbb486a2b736eb139d2075d99ce13e58e776b80bb660c0fbf",
+        "bd6227a5cb86e1e0b58ed8f1f516e940988e0635ea47c6725e18fecd8f61c97d",
+        "27093b1ab81c1be945c94b66e22c553ec135e557dadd1e67d27c8a1c7a2fac84",
+        "d7be033c88d9e038f49921fa27ccf39ad010b29bc0a12bb6e3412e50bb4e92fc",
+        "7e965db4edd374c55364a2e63b2bfb2896615cea64f5021cc0898a746843cdca",
+        "eba82fd7822e966aebbdbad157512105768e81aa5c802d731b8f05c50c4d0e73",
+        "b888f8c4798a24361ea7c422f9c4f57f49107abf6eb480efff171a2594a8e18f",
+        "6444da24fb56f188b613a576eac5f3566007dbbbdf0bea5df7e865eb1790ec8d",
+        "390e57747e458ec5e477bab345cde462cb19e57b3118dae1108f3d4ab534d6fa",
+        "c5d29a3c1293ddc2a6ab367eb6e33e1f040f1aa81e66936ac7a02765c948bfc2",
+        "9b172a714b1d3110e7b441c63d5ed90c2d2c9f5d5c8b4cdd7725a382edc073ae",
+        "e5e7a35ca3d621e86d8035fba23c0cd1d47a10750125a80f6706eb43fff99ecd",
+        "fa468b7317f4989ffcab59c86ea683235d8db39f0a33d1d833887d3d61228f19",
+        "bf920ff58d2c06c0e81ee9cfc01b2cf3c91098a5c085a6f6efd047669960d209",
+        "331324d468ba2d11d268b9a12917694ca7094473222280fdf626ab3a6f4679c8",
+        "4c99b98e876d377a8dd3568315c7e75f25fa6c8ba6503fa82c37d3701240eccf",
+        "d887da4b67b3e8e6654544221989b0efed344a227cfefb333da7a051ba2450db",
+        "77d777db1f0752bcac9fd53656266d52da81237220ec52736c34fa18270343da",
+        "618bbfe287fddf44f306be031cd026ba84cf613b45b687162deb89083bd472dd",
+        "85868fbd366d84edad79e3b05ef7abd209d50421b7dce6ff0bc01e2e3a6586c4",
+        "4730c7f6a644a5a5e1281b902ebfec715f24439b602b81c403c2a688dd3e6fd9",
+        "8e2668e4fa9052ba9d8d2b72ebfab16b253f272b2861c00b3105aa1dbe4dedcf",
+        "221d45f0df770d5cd768f339a5e248a7cdf2373c8e2e0f7fdd3bcd81d11bcffa",
+        "3e07be903a5aca74ad365f80f0d87ed90c60bda3dea6a94bf8ba30ed2407c04e",
+        "acf723b7d8225a2a5815e5cecf6957c8100073b8b6eda1b8f197b572c7782810",
+        "d5376d71f527cc569da4653da0a1a601302ab8b618e146197fc6998e436f6bdc",
+        "90a5e7b6f195f4c1c9eab661fc8ae25e0771ee4795d6bae4aca181e83ede85e8",
+        "9dd941a51cc3d11a977cb0e2709af6da2178bcdb5eab2c844c511e6f85faf635",
+        "696835726909876fafa88309aa5a26bba0502e8d4ccfc6190a493a50042b4efe",
+        "2998c42a7bf45e2d57196f42c62d79d92b33feef1f44d0f3074cdaaa64da7475",
+        "6a4bb3d0858044c200f76a7c4a115924159b4c903a22d81129a377c3c4541c29",
+        "975d5dce3ea990ce00b13cf67738631b5deeec0b089cd68590ae807bf4fe6851",
+        "cf76a55dcff15ca10090cb0365d1166d0cc42d3984fd281a880d8be6780dfba7",
+        "ad25d418e2130b5869b8b358d8795e520fb30bfc91f6283ef920c36cd447954e",
+        "9caea0625f86da7091266473d2058896345896a8f964469107e22c88b18b2c73",
+        "7f89db91d932e3cfbb3b94b504d37a286d4ae006e16dcf027cf956fb43070330",
+        "4b7ea5a02edb1091fb2447542111b8dd1f45dfb8ea9febb06cf8663560b0522b",
+        "47d6ffa90d00c7ca70aafb4761f2fe020bc4e5b0ca93a9c293f217b97982c0d9",
+        "d85910d7be47d31714f334ff6d4578a6f05a1addf33ce91336cec7b388f29af6",
+        "404e2fea17b6c2a5f9fb80d4514c02ff128d83789d766c2f05409e541fe7eaf7"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/card.ui.ts",
+        "src/generated/app/__tests__/card.test.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    },
+    {
+      "iu_id": "b93cc87ca8bb2d14d04702f654d818daf8cdcc066b7506f5611b9e38975f7300",
+      "name": "Ui",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "contract": {
+        "description": "Ui implementation for Kanban board",
+        "inputs": [],
+        "outputs": [],
+        "invariants": [
+          "Urls displayed as link text must show the original unescaped url (not html entities like &amp;)",
+          "Deleting column requires at least 2 columns exist (minimum 1 must remain)",
+          "Column edit/delete buttons visible only on column header hover, positioned absolute right",
+          "Button icons use emoji: ✏️ for edit, 🗑️ for delete",
+          "Edit button hover color: #89b4fa (accent blue), delete button hover color: #f38ba8 (red)",
+          "Column count badge dom element id format: \"count-{columnid}\"",
+          "Do not use browser native alert(), prompt(), or confirm() - use dom-based modals only",
+          "Modal backdrop must use rgba(0,0,0,0.7) with blur effect",
+          "Modal container must use #181825 background, 8px border-radius",
+          "Modal header must have title with close button (x) top-right"
+        ]
+      },
+      "source_canon_ids": [
+        "bc6bd8062b494400ed7e0d75f7be50215300bbb97d8c20fdec0c9141f45d72a2",
+        "bd19cd9379262eee8e284a4ac2e995ffc6a1517f5e97f4285f921e1f2be0bb1b",
+        "fbb35586ef4b0e494b46e31a7ce9a7d40416abeeb3ffecab59d3513104510b8f",
+        "1121cc404a47953719b4f17b0c06a92873b2af90ee59908d51ee6c729630ad6b",
+        "bdc21639889355aeac29bb06b4db82ff12710621cc047edd98910ddb4698c317",
+        "6386bf83944681d190e254fa16e6ac3edf1797df5e0814099ecf079c6f0667b3",
+        "6193c274e002ffdb66d7465794524f283ed45df2e616602f8eb4d1b3cc105739",
+        "0f7f33e2ad6e4bd6b651a7e2558df642022488f50f9ff8cee88c5f44515fa46e",
+        "014ca2063cf0776a287c913b43320f88f82d9bdd8b559d770ac80a98bd2c4562",
+        "c4abb84f03ca670297593854bb5f0fb2c37daae6b3730da4725ee4b629ea94d8",
+        "401c4577e57c9486823d6be223ffd48d3db591377514087d23ed55ec3a2a3fef",
+        "f38c493daf185cf7be57e48bcedcedde201146b213a7b3c8bc9d43f2f025e089",
+        "88e9fd5aae3133810d1f3f97312590d7e80c5173fe25965703b1050f806790f1",
+        "d5027a47f9a93664fe25098d0c578fa056dfce3f94df9869e8855e5b5c7e86f3",
+        "d0880f4cc78800f22a038e8e785e20fcf66062b04a13e72ecbeb7f18403ab185",
+        "909c65af2eca95e1be0e7e861d2ca26194afe720ab1e013f776eb15ac5af4614",
+        "3c86f886297194dc7dfbccaef771f9d456999af80f0d29ab48f0f47ec2366161",
+        "4511047eb3545e54e371ec39ec0455a26a391c34c0dc88d521d4b54be48ee426",
+        "53b4c76446126cedef3c633c44b3d5cb0aef28b1364d03627b5af9b0a21c870f",
+        "14a277f0913e91abb63b95dd242d06a6c9a6da76fe42eb963a01192d15bd1e19",
+        "4e1bc14e3dfc66407a19c17b44c49cfe5361d55d02d3454a513afacf43e7b4fb",
+        "28386ec42e4c99362ffcf9a4a5c510ac621693cd2abac6ae4a0257b8bd3490df"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/ui.ui.ts",
+        "src/generated/app/__tests__/ui.test.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    },
+    {
+      "iu_id": "3f9a3a84488fc41196eee7642c2b71893f5ef7d621c703fc83bc7e43b6edcdb4",
+      "name": "General",
+      "kind": "module",
+      "risk_tier": "medium",
+      "contract": {
+        "description": "General implementation for Kanban board",
+        "inputs": [],
+        "outputs": [],
+        "invariants": [
+          "Each url in a multi-line description must be independently linkified (urls separated by newlines must each be clickable)",
+          "Input fields must have visible labels above (not just placeholders)",
+          "When editing existing items, cursor must be positioned at end of input value",
+          "All form inputs must have visible labels (not placeholders only)",
+          "Input background must be #313244",
+          "Input border must be 1px solid #45475a, #89b4fa on focus",
+          "Textarea must allow vertical resize only"
+        ]
+      },
+      "source_canon_ids": [
+        "fe560b68c079b75f815346b90705faf7ec568e85af1f79a3ba02f31907181c3c",
+        "dc21efae1f14fabe1416bf9550b438074115ed240a9fe05f77dc463f647c5942",
+        "f88845772c9510c923969506d29f9129707ee5ca0fc06cb125d2c324a9341c09",
+        "dedcf27a0ec39cad30aac6247f5123412f3f5a281e4a0aefe4871bb175fc4669",
+        "6436668684ab0b6a5f496851c78aae326efaeb98c8048718dd15c6ff8f9bf617",
+        "aba4cdf8064c654e4222b50103aec3a0bd155ed123161b9627e6b9e7c592c11d",
+        "9c60576e3232d3f2f1e089501b349dc4fcdfe34d95ce9818b4d7d0350cdafbcb"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/general.ts",
+        "src/generated/app/__tests__/general.test.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    },
+    {
+      "iu_id": "eb3df126d59355d3739efc17fc2fbb7d91f5bde3c8b5a2c40eb7f629674314e2",
+      "name": "Api",
+      "kind": "api",
+      "risk_tier": "medium",
+      "contract": {
+        "description": "Api implementation for Kanban board",
+        "inputs": [],
+        "outputs": [],
+        "invariants": [
+          "Column order is 0-indexed integer, automatically rebalanced on conflicts",
+          "Javascript event handlers must call fetch() to hit api endpoints"
+        ]
+      },
+      "source_canon_ids": [
+        "92b670184fdb4d6506419339920739cdc5bf9382d2ab7a051b999314900e61ed",
+        "5edbd71e83c65a55a4ef62e699fb164a1759b3740abddeb2f32a5cc92f30c764",
+        "285546e87f1a07970edfd4b7f7810b6d8a2e516027f577574ffe631ea25e6e12",
+        "03146d0b48ae71e367dcce3dbb88a2a691d0abeea68f902939b6ce09d95d644d",
+        "8af383bddb5b76b21b493a90da219b8935a10c190fdbef0b0ea2a6a82826bb11",
+        "6ab008c299c455b49dc51bcddb4ed10f4a4aa5ccbb3945366eefcf0e0c231e3a"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/api.ts",
+        "src/generated/app/__tests__/api.test.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    },
+    {
+      "iu_id": "8d3ef5cc48c3b7630b398cbd74c0948f278a81b59dc569ddd3166378e62a22e5",
+      "name": "Designsystem",
+      "kind": "design-system",
+      "risk_tier": "medium",
+      "contract": {
+        "description": "Designsystem implementation for Kanban board",
+        "inputs": [],
+        "outputs": [],
+        "invariants": [
+          "Theme must use only catppuccin mocha palette",
+          "Background shall be #1e1e2e (base), #181825 (mantle) for headers",
+          "Primary accent must be #89b4fa (blue) for buttons and interactive elements",
+          "Destructive actions must use #f38ba8 (pink) for delete/remove",
+          "Text must use #cdd6f4 (primary), #a6adc8 (secondary)",
+          "Success states must use #a6e3a1 (green)",
+          "Warning states must use #f9e2af (yellow)",
+          "Primary action button must use #89b4fa background, #1e1e2e text",
+          "Secondary/cancel button must use transparent background, #a6adc8 border",
+          "Primary button: #89b4fa bg, #1e1e2e text, 6px border-radius"
+        ]
+      },
+      "source_canon_ids": [
+        "e7f7414e021854cde36a634bf469b128e177a680cdaf623e9dd643700cc228e3",
+        "e16aeae889eaf21ac446e44c11a6dce94967fdc430fb3f562a3010636d230748",
+        "9744929c60602e8de0070ff40b43dabd00f08c2b300f86f8968c5764467579dd",
+        "6905ac0216ec0f60ca5bc037779011f63d4d32e0a879620e42e73ac322ce5cc2",
+        "9f3d56020481f9d422d35dfc1aedfe0a488bfd8e33b4a911be96396762326b74",
+        "d1f53086607d5e35b6a1d74d58f4ce1ff1e1fc185304461e3f31de085d420d09",
+        "de8c84ed52e037eb701d30bc9ec47191d4af0beca76dfa1df97a6c58a26bab0f",
+        "6c3c6b61ed35f8da70606e9626e6188d9d378e55cf98f74647becf1e011b2939",
+        "1f0dd95c3cc5cd9fb568dfc156b2f6ca75105e6e96a31fd44947d3ad3cf94f50",
+        "02c5986fab80dc3ab0e8b0f99b97d06cb5986f41dc73d1873ab20790976f62ef",
+        "2c1834ffe43ab0c70d53c8216947d3d4d381bcb4a2acd8aef2d3353140dcd14a",
+        "4fae2bebd4aab646f31f064f2f6384244c1f1d46a33d3094155c100ca0920e48",
+        "210962ec7a05e75f8077ac7e2245c6467846fb3a67feda64988e04fc053ecbaa"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/designsystem.ui.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    },
+    {
+      "iu_id": "f69cd67ff7e9f792dfc275dcac583863d3d3a822c72870574256238b9f66d027",
+      "name": "Database",
+      "kind": "module",
+      "risk_tier": "medium",
+      "contract": {
+        "description": "Database implementation for Kanban board",
+        "inputs": [],
+        "outputs": [],
+        "invariants": []
+      },
+      "source_canon_ids": [
+        "64e53fa6875f7c1ca245d5be656659507c64ff93a9997d8f9b722151ceebd464",
+        "dc1ec431380ad0a1bcc77f4423cd30769f732e0a4fe2cf8876e0152c5ca82cf1",
+        "d7f7506d2fa4d9b9ef345b36f1f23fc1bffe96c2ab7df51a92d6058513bae9a0"
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/database.ts",
+        "src/generated/app/__tests__/database.test.ts"
+      ],
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "unit_tests"
+        ]
+      }
+    }
+  ]
+}

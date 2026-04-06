@@ -1,0 +1,88 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06T00:00:00Z",
+  "entries": [
+    {
+      "iu_id": "iu_game_state",
+      "file_path": "src/generated/app/game-state.ts",
+      "content_hash": "hash_game_state_v1",
+      "canon_ids": [
+        "grid_dimensions_constraint",
+        "grid_memory_storage",
+        "cell_addressing_system",
+        "team_system_definition",
+        "score_calculation",
+        "round_timer_system",
+        "win_condition",
+        "round_reset_mechanism"
+      ],
+      "status": "clean"
+    },
+    {
+      "iu_id": "iu_player_manager",
+      "file_path": "src/generated/app/players.ts",
+      "content_hash": "hash_players_v1",
+      "canon_ids": [
+        "team_assignment_logic",
+        "player_tracking",
+        "connection_limits",
+        "paint_cooldown"
+      ],
+      "status": "clean"
+    },
+    {
+      "iu_id": "iu_game_ui",
+      "file_path": "src/generated/app/ui.html.ts",
+      "content_hash": "hash_ui_v1",
+      "canon_ids": [
+        "ui_single_page",
+        "ui_canvas_rendering",
+        "ui_click_handling",
+        "ui_layout",
+        "ui_feedback",
+        "ui_responsive"
+      ],
+      "status": "clean"
+    },
+    {
+      "iu_id": "iu_system_integration",
+      "file_path": "src/generated/app/index.ts",
+      "content_hash": "hash_integration_v2",
+      "canon_ids": [
+        "websocket_message_format",
+        "client_server_protocol",
+        "game_state_serialization",
+        "error_protocol",
+        "websocket_upgrade_method",
+        "raw_websocket_frames",
+        "zero_dependency_architecture"
+      ],
+      "status": "clean",
+      "notes": "Includes Bun-compatible WebSocket upgrade handling via HTTP request handler"
+    },
+    {
+      "iu_id": "iu_system_integration",
+      "file_path": "src/generated/app/message-protocol.ts",
+      "content_hash": "hash_protocol_v1",
+      "canon_ids": [
+        "websocket_message_format",
+        "client_server_protocol",
+        "game_state_serialization",
+        "error_protocol"
+      ],
+      "status": "clean"
+    },
+    {
+      "iu_id": "iu_system_integration",
+      "file_path": "src/generated/app/__tests__/integration.test.ts",
+      "content_hash": "hash_integration_test_v1",
+      "canon_ids": [
+        "websocket_message_format",
+        "client_server_protocol",
+        "websocket_upgrade_method",
+        "raw_websocket_frames"
+      ],
+      "status": "clean"
+    }
+  ]
+}

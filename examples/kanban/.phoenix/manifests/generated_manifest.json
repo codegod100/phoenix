@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-06T02:44:57.564Z",
+  "files": {
+    "src/generated/app/database.ts": {
+      "iu_id": "3a7c98df84dab8dcc333d70c9d351e2aaa2cbda2093f4571f871179d1dfa7ed5",
+      "hash": "96bc65e6206fb3e810f88f3e87891b23ca8a461c90a63a8b5fb0a71f296fdabe",
+      "size": 3431,
+      "generated_at": "2026-04-06T02:44:57.564Z"
+    },
+    "src/generated/app/api.ts": {
+      "iu_id": "16d86aaf6719e3ba15e04be70b2d6898dd29e40513c3195f7422ca9fae3fa01a",
+      "hash": "506db94072a2571ace06917579d5b280127c23bc06b7a07460039f844c42b322",
+      "size": 3334,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/design-system.ui.ts": {
+      "iu_id": "bf83ac25db7a555eb990ae0055538ad1b8dcbe200de27c76ccf218bb1a607959",
+      "hash": "fa9abd2db2ccbea3f8e6e031566c73d1d0da430cd4be3931e6a93136a1040045",
+      "size": 2749,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/board.ui.ts": {
+      "iu_id": "d9277914d698b234552a62e6190900d4dcf69e2cdb32ea6add0b506313c5e438",
+      "hash": "23883797d2f9d96be2ae139fe490bdd15771f548346502ddb4040d13a1fd26af",
+      "size": 4902,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/cards.ui.ts": {
+      "iu_id": "2cb00b550896bb61245884733f1ca723dd1ffc5022166984d834a54f3258b506",
+      "hash": "0f1427a43c88e0c64c3ec3655b487a8fcdaa93cb1c8329e80e0be70f544996ed",
+      "size": 3299,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/cards.client.ts": {
+      "iu_id": "2cb00b550896bb61245884733f1ca723dd1ffc5022166984d834a54f3258b506",
+      "hash": "2bc37d69fc513bee9e2dba6146a9f00d5a40d4139d3208686ce2e29c03592f93",
+      "size": 4787,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/ui.ui.ts": {
+      "iu_id": "da1d8be46d7fb8ef67fd090f86bdba67e5264ebae258bea5b6380b706183bd6f",
+      "hash": "9648055a9993cec819ad2d2170cdf4c92a315e50ab9a57da4b0ad90c22f1b3d0",
+      "size": 11785,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/__tests__/database.test.ts": {
+      "iu_id": "3a7c98df84dab8dcc333d70c9d351e2aaa2cbda2093f4571f871179d1dfa7ed5",
+      "hash": "63ca749b48b222a98669f64a3ce1151a5dc62d5c9d16efefa5100c4488c2b33f",
+      "size": 4320,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/__tests__/api.test.ts": {
+      "iu_id": "16d86aaf6719e3ba15e04be70b2d6898dd29e40513c3195f7422ca9fae3fa01a",
+      "hash": "35c82e0b54228fede04a79abb160b0c458aa87e2bcfc9306776e6caeff761c6e",
+      "size": 5761,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/__tests__/board.test.ts": {
+      "iu_id": "d9277914d698b234552a62e6190900d4dcf69e2cdb32ea6add0b506313c5e438",
+      "hash": "d97ef497d049a486f5f111cfb8c4402c138083b7740e20d651d1c5cb8fd41f48",
+      "size": 2099,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/__tests__/cards.test.ts": {
+      "iu_id": "2cb00b550896bb61245884733f1ca723dd1ffc5022166984d834a54f3258b506",
+      "hash": "b7f05bd3331d111596b5566a1975bb801c65f4f258ea0cea1d2d48a03ad0f87e",
+      "size": 3217,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    },
+    "src/generated/app/__tests__/ui.test.ts": {
+      "iu_id": "da1d8be46d7fb8ef67fd090f86bdba67e5264ebae258bea5b6380b706183bd6f",
+      "hash": "e43f6e25e4c926952edefe99cb622d3ef4a2abb5da334f740177fd9e6328918b",
+      "size": 6055,
+      "generated_at": "2026-04-06T02:44:57.565Z"
+    }
+  }
+}
