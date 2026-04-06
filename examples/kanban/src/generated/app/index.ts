@@ -1,7 +1,7 @@
 // Generated index for Kanban Board app
 
 export { initDatabase, registerMigrations, seedDefaultColumns } from './database';
-export { getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn, deleteColumn } from './api';
+export { getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn, moveColumn, deleteColumn } from './api';
 export { BoardComponent } from './board';
 export { CardComponent, DragState } from './card.ui';
 export { renderPage } from './ui.ui';

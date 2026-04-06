@@ -16,6 +16,7 @@ A simple task management board with columns and cards.
 - REQUIREMENT: A card has a title (required, 1-200 chars) and optional description
 - REQUIREMENT: Cards belong to exactly one column
 - REQUIREMENT: Cards can be moved between columns via drag-and-drop
+- REQUIREMENT: Columns can be reordered via drag-and-drop left to right
 - REQUIREMENT: Cards have a display order within each column
 
 - CONSTRAINT: Cards must have created_at timestamp
@@ -30,10 +31,12 @@ A simple task management board with columns and cards.
 - REQUIREMENT: DELETE /cards/:id removes a card
 - REQUIREMENT: POST /columns creates a new column
 - REQUIREMENT: DELETE /columns/:id removes a column and all its cards
+- REQUIREMENT: PATCH /columns/:id/move reorders column to new position
 - REQUIREMENT: PATCH /columns/:id renames a column
 
 - CONSTRAINT: Moving card validates column exists (400 if not)
 - CONSTRAINT: Card order is 0-indexed integer, automatically rebalanced on conflicts
+- CONSTRAINT: Column order is 0-indexed integer, automatically rebalanced on conflicts
 - CONSTRAINT: Deleting column requires at least 2 columns exist (minimum 1 must remain)
 
 ## UI

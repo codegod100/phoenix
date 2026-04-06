@@ -103,7 +103,7 @@ export function getAllColumns(): Column[] {
   }));
 }
 
-export function updateColumn(id: string, updates: { name?: string }): Column | undefined {
+export function updateColumn(id: string, updates: { name?: string; order_index?: number }): Column | undefined {
   if (!db) return undefined;
   
   const column = getColumn(id);
@@ -112,6 +112,11 @@ export function updateColumn(id: string, updates: { name?: string }): Column | u
   if (updates.name !== undefined) {
     db.prepare('UPDATE columns SET name = ? WHERE id = ?').run(updates.name, id);
     column.name = updates.name;
+  }
+  
+  if (updates.order_index !== undefined) {
+    db.prepare('UPDATE columns SET order_index = ? WHERE id = ?').run(updates.order_index, id);
+    column.order_index = updates.order_index;
   }
   
   return column;

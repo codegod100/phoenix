@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import { initDatabase, seedDefaultColumns, getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn, deleteColumn } from './generated/app/index.js';
+import { initDatabase, seedDefaultColumns, getBoard, createCard, updateCard, moveCard, deleteCard, createColumn, renameColumn, moveColumn, deleteColumn } from './generated/app/index.js';
 import { renderPage } from './generated/app/ui.ui.js';
 
 const db = new Database('data/app.db');
@@ -69,12 +69,19 @@ const server = Bun.serve({
       }).catch(err => Response.json({ error: String(err) }, { status: 400 }));
     }
     
-    // Rename column
+    // Rename or move column
     if (path.startsWith('/api/columns/') && method === 'PATCH') {
       const id = path.split('/')[3];
+      const action = path.split('/')[4]; // 'move' or undefined
       return req.json().then(body => {
-        const col = renameColumn(db, id, body.name);
-        return Response.json(col);
+        console.log('PATCH columns, id:', id, 'action:', action, 'body:', body);
+        if (action === 'move') {
+          const col = moveColumn(db, id, body.order_index);
+          return Response.json(col);
+        } else {
+          const col = renameColumn(db, id, body.name);
+          return Response.json(col);
+        }
       }).catch(err => Response.json({ error: String(err) }, { status: 400 }));
     }
     

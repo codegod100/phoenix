@@ -110,6 +110,11 @@ export const API = {
     return Database.updateColumn(id, { name });
   },
 
+  // PATCH /columns/:id/move - reorders column
+  moveColumn(id: string, order_index: number): Column | undefined {
+    return Database.updateColumn(id, { order_index });
+  },
+
   // DELETE /columns/:id - removes column and all its cards
   deleteColumn(id: string): boolean {
     return Database.deleteColumn(id);
@@ -145,6 +150,10 @@ export function createColumn(_db: unknown, name: string): Column {
 
 export function renameColumn(_db: unknown, id: string | number, name: string): Column | undefined {
   return API.renameColumn(String(id), name);
+}
+
+export function moveColumn(_db: unknown, id: string | number, orderIndex: number): Column | undefined {
+  return API.moveColumn(String(id), orderIndex);
 }
 
 export function deleteColumn(_db: unknown, id: string | number): boolean {
