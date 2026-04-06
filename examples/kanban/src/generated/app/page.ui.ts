@@ -483,8 +483,10 @@ export function renderPage(board: Board): string {
 
     // ==========================================
     // IU-12: Column Reorder System (inline)
+    // Smart drop zones: only on edges NOT touching dragged column
     // ==========================================
     let draggedColumnId = null;
+    let draggedColumnIndex = -1;
 
     function initColumnReorder() {
       document.querySelectorAll('.column-header').forEach(header => {
@@ -502,35 +504,35 @@ export function renderPage(board: Board): string {
       if (!board) return;
 
       const columns = Array.from(board.querySelectorAll('.column'));
+      if (columns.length <= 1) return;
+
       const addBtn = document.getElementById('add-column-btn');
 
-      // Drop zone at beginning
-      if (columns.length > 0) {
-        const firstZone = document.createElement('div');
-        firstZone.className = 'column-drop-zone';
-        firstZone.dataset.position = '0';
-        firstZone.addEventListener('dragover', handleDropZoneDragOver);
-        firstZone.addEventListener('dragleave', handleDropZoneDragLeave);
-        firstZone.addEventListener('drop', handleDropZoneDrop);
-        board.insertBefore(firstZone, columns[0]);
-      }
+      // Zone 0: before first column
+      const zone0 = document.createElement('div');
+      zone0.className = 'column-drop-zone';
+      zone0.dataset.position = '0';
+      zone0.addEventListener('dragover', handleDropZoneDragOver);
+      zone0.addEventListener('dragleave', handleDropZoneDragLeave);
+      zone0.addEventListener('drop', handleDropZoneDrop);
+      board.insertBefore(zone0, columns[0]);
 
-      // Drop zones after each column
+      // Zones after each column
       columns.forEach((col, index) => {
-        const dropZone = document.createElement('div');
-        dropZone.className = 'column-drop-zone';
-        dropZone.dataset.position = String(index + 1);
-        dropZone.addEventListener('dragover', handleDropZoneDragOver);
-        dropZone.addEventListener('dragleave', handleDropZoneDragLeave);
-        dropZone.addEventListener('drop', handleDropZoneDrop);
+        const zone = document.createElement('div');
+        zone.className = 'column-drop-zone';
+        zone.dataset.position = String(index + 1);
+        zone.addEventListener('dragover', handleDropZoneDragOver);
+        zone.addEventListener('dragleave', handleDropZoneDragLeave);
+        zone.addEventListener('drop', handleDropZoneDrop);
 
         const nextEl = col.nextElementSibling;
-        if (nextEl && nextEl !== addBtn) {
-          board.insertBefore(dropZone, nextEl);
+        if (nextEl && nextEl.id !== 'add-column-btn') {
+          board.insertBefore(zone, nextEl);
         } else if (addBtn) {
-          board.insertBefore(dropZone, addBtn);
+          board.insertBefore(zone, addBtn);
         } else {
-          board.appendChild(dropZone);
+          board.appendChild(zone);
         }
       });
     }
@@ -541,18 +543,27 @@ export function renderPage(board: Board): string {
 
       draggedColumnId = column.dataset.columnId;
       column.classList.add('dragging');
+
+      const columns = Array.from(document.querySelectorAll('.column'));
+      draggedColumnIndex = columns.findIndex(col => col.dataset.columnId === draggedColumnId);
+
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('column-id', draggedColumnId);
 
+      // Activate zones NOT touching dragged column
       document.querySelectorAll('.column-drop-zone').forEach(zone => {
-        zone.classList.add('active');
+        const pos = parseInt(zone.dataset.position || '0', 10);
+        const touchesDragged = pos === draggedColumnIndex || pos === draggedColumnIndex + 1;
+        if (!touchesDragged) zone.classList.add('active');
       });
     }
 
     function handleColumnDragEnd(e) {
       const column = this.closest('.column');
       if (column) column.classList.remove('dragging');
+
       draggedColumnId = null;
+      draggedColumnIndex = -1;
 
       document.querySelectorAll('.column-drop-zone').forEach(zone => {
         zone.classList.remove('active', 'drag-over');
@@ -560,7 +571,7 @@ export function renderPage(board: Board): string {
     }
 
     function handleDropZoneDragOver(e) {
-      if (!draggedColumnId) return;
+      if (!draggedColumnId || !this.classList.contains('active')) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       this.classList.add('drag-over');
@@ -574,35 +585,34 @@ export function renderPage(board: Board): string {
       e.preventDefault();
       this.classList.remove('drag-over');
 
+      if (!this.classList.contains('active')) return;
+
       const columnId = e.dataTransfer.getData('column-id');
       if (!columnId) return;
 
       const column = document.querySelector('[data-column-id="' + columnId + '"]');
       if (!column) return;
 
-      const position = parseInt(this.dataset.position || '0', 10);
+      const insertPosition = parseInt(this.dataset.position || '0', 10);
+      const columns = Array.from(document.querySelectorAll('.column'));
 
-      // Move column in DOM
-      const board = document.getElementById('board');
-      const columns = Array.from(board.querySelectorAll('.column'));
-
-      if (position === 0) {
-        board.insertBefore(column, columns[0]);
-      } else if (position < columns.length) {
-        board.insertBefore(column, columns[position]);
+      if (insertPosition === 0) {
+        const board = document.getElementById('board');
+        const firstCol = board?.querySelector('.column');
+        if (firstCol && board) board.insertBefore(column, firstCol);
       } else {
-        const addBtn = document.getElementById('add-column-btn');
-        board.insertBefore(column, addBtn);
+        const targetCol = columns[insertPosition - 1];
+        if (targetCol && targetCol !== column && targetCol.nextSibling) {
+          targetCol.parentNode?.insertBefore(column, targetCol.nextSibling);
+        }
       }
 
-      // Recreate drop zones
       initDropZones();
 
-      // API call
       fetch('/api/columns/' + columnId + '/move', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_index: position })
+        body: JSON.stringify({ order_index: insertPosition })
       }).catch(err => console.error('Column reorder failed:', err));
     }
 
