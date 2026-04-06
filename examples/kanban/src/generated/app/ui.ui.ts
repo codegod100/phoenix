@@ -374,7 +374,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
         display: flex; justify-content: space-between; align-items: center;
         position: relative;
       ">
-        <h3 style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600;">${col.name}</h3>
+        <span class="column-name" data-column-id="${col.id}" style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600; cursor: pointer;" title="Click to edit">${col.name}</span>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="count-${col.id}" style="
             background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
@@ -427,6 +427,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     .column-cards.drag-over { background: rgba(137, 180, 250, 0.1) !important; }
     .column-header:hover .delete-column-btn { opacity: 1 !important; display: inline-block !important; }
     .delete-column-btn:hover { color: #f38ba8 !important; }
+    .column-name:hover { text-decoration: underline; color: #89b4fa !important; }
   </style>
 </head>
 <body>
@@ -592,7 +593,7 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
             // Create column element and insert before Add Column button
             var colHtml = '<div class="column" data-column-id="' + col.id + '" style="background:#313244;border-radius:8px;min-width:280px;max-width:280px;display:flex;flex-direction:column;max-height:calc(100vh - 32px);">' +
               '<div class="column-header" style="padding:12px 16px;border-bottom:1px solid #1e1e2e;display:flex;justify-content:space-between;align-items:center;position:relative;">' +
-                '<h3 style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;">' + col.name + '</h3>' +
+                '<span class="column-name" data-column-id="' + col.id + '" style="margin:0;color:#cdd6f4;font-size:14px;font-weight:600;cursor:pointer;" title="Click to edit">' + col.name + '</span>' +
                 '<div style="display:flex;align-items:center;gap:8px;">' +
                   '<span id="count-' + col.id + '" style="background:#313244;color:#89b4fa;border-radius:10px;padding:2px 8px;font-size:12px;">0</span>' +
                   '<button class="delete-column-btn" data-column-id="' + col.id + '" style="background:transparent;border:none;color:#f38ba8;cursor:pointer;font-size:16px;opacity:0;transition:opacity 0.2s;padding:0 4px;" title="Delete column">×</button>' +
@@ -690,11 +691,101 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                   .catch(function(err) { console.error('Error deleting column:', err); });
               }, 'Delete', 'Cancel');
             });
+            
+            // Wire up column name editing for new column
+            var nameEl = newCol.querySelector('.column-name');
+            nameEl.addEventListener('click', function() {
+              var currentName = nameEl.textContent;
+              var input = document.createElement('input');
+              input.type = 'text';
+              input.value = currentName;
+              input.style.cssText = 'background:#313244;border:1px solid #89b4fa;color:#cdd6f4;border-radius:4px;padding:2px 6px;font-size:14px;font-weight:600;width:150px;';
+              
+              nameEl.parentNode.replaceChild(input, nameEl);
+              input.focus();
+              input.select();
+              
+              function save() {
+                var newName = input.value.trim();
+                if (newName && newName !== currentName) {
+                  fetch('/api/columns/' + col.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                  }).then(function(res) {
+                    if (res.ok) {
+                      nameEl.textContent = newName;
+                    }
+                    input.parentNode.replaceChild(nameEl, input);
+                  }).catch(function(err) {
+                    console.error('Error renaming column:', err);
+                    input.parentNode.replaceChild(nameEl, input);
+                  });
+                } else {
+                  input.parentNode.replaceChild(nameEl, input);
+                }
+              }
+              
+              input.addEventListener('blur', save);
+              input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                  input.blur();
+                } else if (e.key === 'Escape') {
+                  input.parentNode.replaceChild(nameEl, input);
+                }
+              });
+            });
           }).catch(function(err) {
             console.error('Error creating column:', err);
           });
         }
       }, 'Create');
+    });
+    
+    // Column name editing
+    document.querySelectorAll('.column-name').forEach(function(nameEl) {
+      nameEl.addEventListener('click', function() {
+        var columnId = nameEl.dataset.columnId;
+        var currentName = nameEl.textContent;
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentName;
+        input.style.cssText = 'background:#313244;border:1px solid #89b4fa;color:#cdd6f4;border-radius:4px;padding:2px 6px;font-size:14px;font-weight:600;width:150px;';
+        
+        nameEl.parentNode.replaceChild(input, nameEl);
+        input.focus();
+        input.select();
+        
+        function save() {
+          var newName = input.value.trim();
+          if (newName && newName !== currentName) {
+            fetch('/api/columns/' + columnId, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: newName })
+            }).then(function(res) {
+              if (res.ok) {
+                nameEl.textContent = newName;
+              }
+              input.parentNode.replaceChild(nameEl, input);
+            }).catch(function(err) {
+              console.error('Error renaming column:', err);
+              input.parentNode.replaceChild(nameEl, input);
+            });
+          } else {
+            input.parentNode.replaceChild(nameEl, input);
+          }
+        }
+        
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            input.blur();
+          } else if (e.key === 'Escape') {
+            input.parentNode.replaceChild(nameEl, input);
+          }
+        });
+      });
     });
     
     // Delete column buttons
