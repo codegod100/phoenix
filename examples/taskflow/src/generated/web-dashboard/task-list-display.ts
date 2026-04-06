@@ -21,40 +21,187 @@ export interface TaskListDisplayOptions {
   onTaskClick?: (task: Task) => void;
 }
 
+/** Valid priority values */
+const VALID_PRIORITIES: Task['priority'][] = ['critical', 'high', 'medium', 'low'];
+
+/** Valid status values */
+const VALID_STATUSES: Task['status'][] = ['open', 'in_progress', 'review', 'done'];
+
+/** Validates that a value is a non-empty string */
+function validateString(value: unknown, fieldName: string): string {
+  if (typeof value !== 'string') {
+    throw new Error(`${fieldName} must be a string, got ${typeof value}`);
+  }
+  if (value.trim().length === 0) {
+    throw new Error(`${fieldName} cannot be empty`);
+  }
+  return value.trim();
+}
+
+/** Validates that a value is a valid Date */
+function validateDate(value: unknown, fieldName: string): Date {
+  if (!(value instanceof Date)) {
+    throw new Error(`${fieldName} must be a Date instance, got ${typeof value}`);
+  }
+  if (Number.isNaN(value.getTime())) {
+    throw new Error(`${fieldName} is an invalid date`);
+  }
+  return value;
+}
+
+/** Validates a single Task object */
+function validateTask(task: unknown): asserts task is Task {
+  if (!task || typeof task !== 'object') {
+    throw new Error('Task must be an object');
+  }
+
+  const t = task as Partial<Task>;
+
+  validateString(t.id, 'Task.id');
+  validateString(t.title, 'Task.title');
+  
+  // Validate priority
+  if (!VALID_PRIORITIES.includes(t.priority as Task['priority'])) {
+    throw new Error(`Task.priority must be one of: ${VALID_PRIORITIES.join(', ')}, got: ${t.priority}`);
+  }
+
+  // Validate status
+  if (!VALID_STATUSES.includes(t.status as Task['status'])) {
+    throw new Error(`Task.status must be one of: ${VALID_STATUSES.join(', ')}, got: ${t.status}`);
+  }
+
+  // Validate assignee (can be empty string but must be defined)
+  if (typeof t.assignee !== 'string') {
+    throw new Error(`Task.assignee must be a string, got: ${typeof t.assignee}`);
+  }
+
+  // Validate dates
+  validateDate(t.deadline, 'Task.deadline');
+  validateDate(t.createdAt, 'Task.createdAt');
+  validateDate(t.updatedAt, 'Task.updatedAt');
+
+  // Validate description (optional but if present must be string)
+  if (t.description !== undefined && typeof t.description !== 'string') {
+    throw new Error(`Task.description must be a string, got: ${typeof t.description}`);
+  }
+}
+
+/** Validates a TaskFilter object */
+function validateTaskFilter(filter: unknown): asserts filter is TaskFilter {
+  if (!filter || typeof filter !== 'object') {
+    throw new Error('Filter must be an object');
+  }
+
+  const f = filter as Partial<TaskFilter>;
+
+  // Validate status filter
+  if (f.status !== undefined) {
+    if (!Array.isArray(f.status)) {
+      throw new Error('Filter.status must be an array');
+    }
+    const invalidStatuses = f.status.filter(s => !VALID_STATUSES.includes(s as Task['status']));
+    if (invalidStatuses.length > 0) {
+      throw new Error(`Invalid status values in filter: ${invalidStatuses.join(', ')}`);
+    }
+  }
+
+  // Validate priority filter
+  if (f.priority !== undefined) {
+    if (!Array.isArray(f.priority)) {
+      throw new Error('Filter.priority must be an array');
+    }
+    const invalidPriorities = f.priority.filter(p => !VALID_PRIORITIES.includes(p as Task['priority']));
+    if (invalidPriorities.length > 0) {
+      throw new Error(`Invalid priority values in filter: ${invalidPriorities.join(', ')}`);
+    }
+  }
+
+  // Validate assignee filter
+  if (f.assignee !== undefined) {
+    if (!Array.isArray(f.assignee)) {
+      throw new Error('Filter.assignee must be an array');
+    }
+    const invalidAssignees = f.assignee.filter(a => typeof a !== 'string');
+    if (invalidAssignees.length > 0) {
+      throw new Error('All filter.assignee values must be strings');
+    }
+  }
+}
+
+/** Validates TaskListDisplayOptions */
+function validateOptions(options: unknown): asserts options is TaskListDisplayOptions {
+  if (options === undefined || options === null) {
+    return; // Options are optional
+  }
+
+  if (typeof options !== 'object') {
+    throw new Error('Options must be an object');
+  }
+
+  const o = options as Partial<TaskListDisplayOptions>;
+
+  if (o.onStatusChange !== undefined && typeof o.onStatusChange !== 'function') {
+    throw new Error('Options.onStatusChange must be a function');
+  }
+
+  if (o.onTaskClick !== undefined && typeof o.onTaskClick !== 'function') {
+    throw new Error('Options.onTaskClick must be a function');
+  }
+}
+
 export class TaskListDisplay {
   private tasks: Task[] = [];
   private filter: TaskFilter = {};
   private options: TaskListDisplayOptions;
 
   constructor(options: TaskListDisplayOptions = {}) {
+    validateOptions(options);
     this.options = options;
   }
 
-  setTasks(tasks: Task[]): void {
-    this.tasks = tasks;
+  setTasks(tasks: unknown[]): void {
+    if (!Array.isArray(tasks)) {
+      throw new Error('Tasks must be an array');
+    }
+    tasks.forEach((task, index) => {
+      try {
+        validateTask(task);
+      } catch (error) {
+        throw new Error(`Invalid task at index ${index}: ${(error as Error).message}`);
+      }
+    });
+    this.tasks = tasks as Task[];
   }
 
-  setFilter(filter: TaskFilter): void {
+  setFilter(filter: unknown): void {
+    validateTaskFilter(filter);
     this.filter = filter;
   }
 
   private getFilteredTasks(): Task[] {
     return this.tasks.filter(task => {
-      if (this.filter.status && !this.filter.status.includes(task.status)) {
-        return false;
+      if (this.filter.status && this.filter.status.length > 0) {
+        if (!this.filter.status.includes(task.status)) {
+          return false;
+        }
       }
-      if (this.filter.priority && !this.filter.priority.includes(task.priority)) {
-        return false;
+      if (this.filter.priority && this.filter.priority.length > 0) {
+        if (!this.filter.priority.includes(task.priority)) {
+          return false;
+        }
       }
-      if (this.filter.assignee && !this.filter.assignee.includes(task.assignee)) {
-        return false;
+      if (this.filter.assignee && this.filter.assignee.length > 0) {
+        if (!this.filter.assignee.includes(task.assignee)) {
+          return false;
+        }
       }
       return true;
     });
   }
 
   private isOverdue(task: Task): boolean {
-    return new Date() > task.deadline && task.status !== 'done';
+    const now = new Date();
+    return now > task.deadline && task.status !== 'done';
   }
 
   private getPriorityBadgeColor(priority: Task['priority']): string {
@@ -126,11 +273,11 @@ export class TaskListDisplay {
           </div>
         </div>
         <div class="task-description">
-          ${this.escapeHtml(task.description)}
+          ${this.escapeHtml(task.description || '')}
         </div>
         <div class="task-meta">
           <div class="task-assignee">
-            <strong>Assignee:</strong> ${this.escapeHtml(task.assignee)}
+            <strong>Assignee:</strong> ${this.escapeHtml(task.assignee || 'Unassigned')}
           </div>
           <div class="task-deadline">
             <strong>Deadline:</strong> ${this.formatDate(task.deadline)}
@@ -144,9 +291,10 @@ export class TaskListDisplay {
   }
 
   private escapeHtml(text: string): string {
-    const div = { innerHTML: '' } as any;
-    div.textContent = text;
-    return div.innerHTML || text.replace(/[&<>"']/g, (match: string) => {
+    if (text === null || text === undefined) {
+      return '';
+    }
+    return text.replace(/[&<>"']/g, (match: string) => {
       const escapeMap: Record<string, string> = {
         '&': '&amp;',
         '<': '&lt;',
@@ -309,6 +457,10 @@ export class TaskListDisplay {
   }
 
   attachEventListeners(container: HTMLElement): void {
+    if (!(container instanceof HTMLElement)) {
+      throw new Error('Container must be an HTMLElement');
+    }
+
     container.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       
@@ -316,15 +468,31 @@ export class TaskListDisplay {
         const taskId = target.getAttribute('data-task-id');
         const newStatus = target.getAttribute('data-new-status') as Task['status'];
         
-        if (taskId && newStatus && this.options.onStatusChange) {
+        if (!taskId || !newStatus) {
+          console.warn('Missing taskId or newStatus on status transition button');
+          return;
+        }
+        
+        if (this.options.onStatusChange) {
           this.options.onStatusChange(taskId, newStatus);
         }
       } else if (target.closest('.task-card')) {
         const taskCard = target.closest('.task-card') as HTMLElement;
         const taskId = taskCard.getAttribute('data-task-id');
+        
+        if (!taskId) {
+          console.warn('Missing taskId on task card');
+          return;
+        }
+        
         const task = this.tasks.find(t => t.id === taskId);
         
-        if (task && this.options.onTaskClick) {
+        if (!task) {
+          console.warn(`Task with id ${taskId} not found`);
+          return;
+        }
+        
+        if (this.options.onTaskClick) {
           this.options.onTaskClick(task);
         }
       }
