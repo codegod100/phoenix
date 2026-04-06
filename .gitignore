@@ -1,6 +1,5 @@
 node_modules/
 dist/
-.phoenix/
 *.tsbuildinfo
 .DS_Store
 examples/*/data/
