@@ -55,7 +55,9 @@
 - CONSTRAINT: Elevation: cards get 0 4px 6px -1px rgba(0,0,0,0.1) shadow, modals get 0 25px 50px -12px rgba(0,0,0,0.5) shadow
 - CONSTRAINT: Typography: system-ui sans-serif family, 14px base size (0.875rem), 1.5 line-height, 18px headings (1.125rem)
 - CONSTRAINT: Hover states: interactive elements lighten background 10% (use var(--surface1) instead of var(--surface0))
-- CONSTRAINT: Layout: max-width 1400px container, centered with 24px padding, flexible wrapping for responsive filters
+- CONSTRAINT: Layout: max-width 1400px container, centered with 24px padding
+- CONSTRAINT: Filter bar: search input, category select, sort field, sort order, and action buttons arranged horizontally in a single row with gap
+- CONSTRAINT: All form inputs and selects must have visible labels - use floating labels or inline label+input pairs where the label text is always visible
 - CONSTRAINT: Table: row height comfortable, cell padding 14px horizontal (0.875rem), 1px solid borders between rows
 - CONSTRAINT: Focus states: blue (#89b4fa) outline for accessibility on inputs and buttons
 - CONSTRAINT: Dialog/Modal: backdrop blur 4px with 60% black overlay, centered content, max-width 500px, max-height 90vh with scroll
@@ -76,6 +78,7 @@
 - REQUIREMENT: REST API endpoints for CRUD operations on items and categories
 - REQUIREMENT: Endpoints validate input using zod schemas
 - REQUIREMENT: GET /items supports: search, categoryid, lowstock, sort, order
+- REQUIREMENT: Sortable columns: name, quantity, created_at (ascending or descending)
 - REQUIREMENT: POST returns 201 with created object; PATCH returns updated object
 - REQUIREMENT: Include low_stock boolean and category_name in item responses
 - REQUIREMENT: Return 400 for validation errors, 404 for not found
