@@ -43,12 +43,49 @@ A simple task management board with columns and cards.
 - REQUIREMENT: Show add-column button at right of board
 - REQUIREMENT: Inline editing: click card title to edit
 - REQUIREMENT: Drag-and-drop cards between columns
+- REQUIREMENT: Use styled modal dialogs for card creation, editing, and deletion confirmation
+- REQUIREMENT: Modal dialogs have title, input fields, and action buttons (primary/secondary)
 
 - CONSTRAINT: Board fills viewport width, columns scroll horizontally if needed
 - CONSTRAINT: Column height fixed with internal scroll for many cards
 - CONSTRAINT: Card max-height 200px with scroll for long descriptions
 - CONSTRAINT: Card count badge updates in real-time when cards are added/moved/deleted
+- CONSTRAINT: Do not use browser native alert() or prompt() - use styled modals only
 - CONSTRAINT: Dark theme: bg #1e1e2e, cards #313244, accents #89b4fa
+
+## Design System
+
+- CONSTRAINT: Theme MUST use ONLY Catppuccin Mocha palette
+- CONSTRAINT: Background SHALL be #1e1e2e (base), #181825 (mantle) for headers
+- CONSTRAINT: Surface/cards MUST use #313244
+- CONSTRAINT: Primary accent MUST be #89b4fa (blue) for buttons and interactive elements
+- CONSTRAINT: Destructive actions MUST use #f38ba8 (pink) for delete/remove
+- CONSTRAINT: Text MUST use #cdd6f4 (primary), #a6adc8 (secondary)
+- CONSTRAINT: Success states MUST use #a6e3a1 (green)
+- CONSTRAINT: Warning states MUST use #f9e2af (yellow)
+
+### Modal Dialog Design
+- CONSTRAINT: Modal backdrop MUST use rgba(0,0,0,0.7) with blur effect
+- CONSTRAINT: Modal container MUST use #181825 background, 8px border-radius
+- CONSTRAINT: Modal header MUST have title with close button (X) top-right
+- CONSTRAINT: Modal footer MUST have action buttons right-aligned
+- CONSTRAINT: Primary action button MUST use #89b4fa background, #1e1e2e text
+- CONSTRAINT: Secondary/cancel button MUST use transparent background, #a6adc8 border
+- CONSTRAINT: Input fields MUST have visible labels above (not just placeholders)
+- CONSTRAINT: Backdrop click MUST close modal (cancel action)
+- CONSTRAINT: ESC key MUST close modal (cancel action)
+
+### Input Design
+- CONSTRAINT: All form inputs MUST have visible labels (not placeholders only)
+- CONSTRAINT: Input background MUST be #313244
+- CONSTRAINT: Input border MUST be 1px solid #45475a, #89b4fa on focus
+- CONSTRAINT: Textarea MUST allow vertical resize only
+
+### Button Design
+- CONSTRAINT: Primary button: #89b4fa bg, #1e1e2e text, 6px border-radius
+- CONSTRAINT: Secondary button: transparent bg, #a6adc8 border, #cdd6f4 text
+- CONSTRAINT: Destructive button: #f38ba8 bg, #1e1e2e text
+- CONSTRAINT: Ghost button: transparent bg, #a6adc8 text (for cancel/close)
 
 ## Database
 
