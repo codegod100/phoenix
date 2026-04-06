@@ -809,11 +809,16 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
               
               // Add drag handlers
               cardEl.addEventListener('dragstart', function(e) {
+                e.stopPropagation(); // Prevent column drag from triggering
+                draggedCard = cardEl;
                 cardEl.style.opacity = '0.5';
                 e.dataTransfer.setData('text/plain', card.id);
+                e.dataTransfer.effectAllowed = 'move';
               });
-              cardEl.addEventListener('dragend', function() {
+              cardEl.addEventListener('dragend', function(e) {
+                e.stopPropagation(); // Prevent column dragend from triggering
                 cardEl.style.opacity = '1';
+                draggedCard = null;
               });
               
               // Add edit/delete handlers for this card
@@ -970,8 +975,18 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
                     cardEl.innerHTML = '<button class="edit-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:8px;background:#1e1e2e;border:none;color:#6c7086;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Edit card"><span style=\"pointer-events:none;\">✏️</span></button>' +
                       '<button class="delete-card-btn" data-card-id="' + card.id + '" style="position:absolute;top:8px;right:32px;background:#1e1e2e;border:none;color:#f38ba8;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;opacity:0;transition:opacity 0.2s;z-index:10;pointer-events:auto;" title="Delete card"><span style=\"pointer-events:none;\">🗑️</span></button>' +
                       '<h4 style="margin:0 0 4px 0;color:#cdd6f4;font-size:14px;padding-right:48px;">' + card.title + '</h4>' + descHtml;
-                    cardEl.addEventListener('dragstart', function(e) { cardEl.style.opacity='0.5'; e.dataTransfer.setData('text/plain', card.id); });
-                    cardEl.addEventListener('dragend', function() { cardEl.style.opacity='1'; });
+                    cardEl.addEventListener('dragstart', function(e) {
+                      e.stopPropagation(); // Prevent column drag from triggering
+                      draggedCard = cardEl;
+                      cardEl.style.opacity='0.5';
+                      e.dataTransfer.setData('text/plain', card.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    });
+                    cardEl.addEventListener('dragend', function(e) {
+                      e.stopPropagation(); // Prevent column dragend from triggering
+                      cardEl.style.opacity='1';
+                      draggedCard = null;
+                    });
                     
                     // Explicit handlers for dynamic cards (event delegation backup)
                     cardEl.querySelector('.edit-card-btn').addEventListener('click', function(e) {
