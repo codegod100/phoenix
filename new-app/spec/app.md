@@ -38,6 +38,7 @@ A simple task management board with columns and cards.
 
 - REQUIREMENT: Display board as horizontal row of columns
 - REQUIREMENT: Each column shows cards stacked vertically
+- REQUIREMENT: Each column header displays card count badge
 - REQUIREMENT: Show add-card button at bottom of each column
 - REQUIREMENT: Show add-column button at right of board
 - REQUIREMENT: Inline editing: click card title to edit
@@ -46,6 +47,7 @@ A simple task management board with columns and cards.
 - CONSTRAINT: Board fills viewport width, columns scroll horizontally if needed
 - CONSTRAINT: Column height fixed with internal scroll for many cards
 - CONSTRAINT: Card max-height 200px with scroll for long descriptions
+- CONSTRAINT: Card count badge updates in real-time when cards are added/moved/deleted
 - CONSTRAINT: Dark theme: bg #1e1e2e, cards #313244, accents #89b4fa
 
 ## Database

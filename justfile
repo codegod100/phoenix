@@ -63,12 +63,6 @@ prep:
     @cd {{PROJECT_DIR}} && bun run {{JUSTFILE_DIR}}/src/cli.ts plan .
     @echo "✅ Prep complete at {{PROJECT_DIR}}/.phoenix/graphs/ius.json"
 
-# Regenerate code for current project (run from project directory)
-regen:
-    @echo "Regenerating code for: $(basename {{PROJECT_DIR}})"
-    @cd {{PROJECT_DIR}} && bun run {{JUSTFILE_DIR}}/src/cli.ts regen .
-    @echo "✅ Regen complete"
-
 # Health check for current project
 health:
     @cd {{PROJECT_DIR}} && bun test
