@@ -531,11 +531,14 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     var draggedCard = null;
     document.querySelectorAll('.card').forEach(function(card) {
       card.addEventListener('dragstart', function(e) {
+        e.stopPropagation(); // Prevent column drag from triggering
         draggedCard = card;
         card.style.opacity = '0.5';
         e.dataTransfer.setData('text/plain', card.dataset.cardId);
+        e.dataTransfer.effectAllowed = 'move';
       });
-      card.addEventListener('dragend', function() {
+      card.addEventListener('dragend', function(e) {
+        e.stopPropagation(); // Prevent column dragend from triggering
         card.style.opacity = '1';
         draggedCard = null;
       });
@@ -545,36 +548,55 @@ export function renderPage(board: { columns: Array<{ id: number | string; name: 
     var draggedColumn = null;
     document.querySelectorAll('.column').forEach(function(column) {
       column.addEventListener('dragstart', function(e) {
+        // Don't drag column if dragging a card inside it
+        if (e.target.classList && e.target.classList.contains('card')) return;
+        
         draggedColumn = column;
         column.classList.add('dragging');
         e.dataTransfer.setData('text/plain', column.dataset.columnId);
         e.dataTransfer.effectAllowed = 'move';
       });
-      column.addEventListener('dragend', function() {
-        column.classList.remove('dragging');
-        draggedColumn = null;
-        // Remove all drag-over indicators
-        document.querySelectorAll('.column').forEach(function(col) {
-          col.classList.remove('drag-over');
-        });
+      column.addEventListener('dragend', function(e) {
+        // Only clear if we were dragging this column (not a card)
+        if (draggedColumn === column) {
+          column.classList.remove('dragging');
+          draggedColumn = null;
+          // Remove all drag-over indicators
+          document.querySelectorAll('.column').forEach(function(col) {
+            col.classList.remove('drag-over');
+          });
+        }
       });
       
       // Drag enter/over/leave/drop for column reordering
       column.addEventListener('dragenter', function(e) {
+        // Skip if dragging a card (not a column)
+        if (draggedCard) return;
         if (draggedColumn && draggedColumn !== column) {
           column.classList.add('drag-over');
         }
       });
       column.addEventListener('dragleave', function(e) {
+        if (draggedCard) return;
         column.classList.remove('drag-over');
       });
       column.addEventListener('dragover', function(e) {
+        if (draggedCard) {
+          // Allow card drop but don't show column reorder UI
+          return;
+        }
         if (draggedColumn) {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
         }
       });
       column.addEventListener('drop', function(e) {
+        // If dropping a card, let card drop handler process it
+        if (draggedCard) {
+          // Card drop is handled separately
+          return;
+        }
+        
         if (draggedColumn && draggedColumn !== column) {
           e.preventDefault();
           column.classList.remove('drag-over');
