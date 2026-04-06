@@ -830,6 +830,18 @@ export class DashboardPage {
         </div>
     </div>
 
+    <!-- Bulk Delete Confirmation Modal -->
+    <div id="bulkDeleteModal" class="modal-overlay">
+        <div class="modal">
+            <h3>🗑️ Confirm Bulk Delete</h3>
+            <p>Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> selected tasks? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeBulkDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="executeBulkDelete()">Delete Selected</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const STORAGE_KEY = 'taskflow_tasks';
         const STORAGE_COUNTER_KEY = 'taskflow_counter';
@@ -890,14 +902,23 @@ export class DashboardPage {
         }
 
         function bulkDelete() {
-            if (confirm(\`Delete \${selectedIds.length} selected tasks?\`)) {
-                tasks = tasks.filter(t => !selectedIds.includes(t.id));
-                selectedIds = [];
-                updateBulkActions();
-                updateStats();
-                renderTaskList();
-                saveTasks();
-            }
+            if (selectedIds.length === 0) return;
+            document.getElementById('bulkDeleteCount').textContent = selectedIds.length;
+            document.getElementById('bulkDeleteModal').classList.add('active');
+        }
+
+        function closeBulkDeleteModal() {
+            document.getElementById('bulkDeleteModal').classList.remove('active');
+        }
+
+        function executeBulkDelete() {
+            tasks = tasks.filter(t => !selectedIds.includes(t.id));
+            selectedIds = [];
+            closeBulkDeleteModal();
+            updateBulkActions();
+            updateStats();
+            renderTaskList();
+            saveTasks();
         }
 
         function bulkArchive() {
@@ -1090,6 +1111,9 @@ export class DashboardPage {
         });
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteModal();
+        });
+        document.getElementById('bulkDeleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeBulkDeleteModal();
         });
 
         // Initialize

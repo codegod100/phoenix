@@ -20,10 +20,11 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 - Overdue tasks must have a red border and an "OVERDUE" indicator
 - Each card must have buttons for status transitions (based on current status)
 - Each task card must have an edit button that opens a modal to modify task properties
-- Each task card must have a delete button with a confirmation dialog before permanent removal
+- Each task card must have a delete button that opens a confirmation modal (not browser alert) before permanent removal
 - The delete button must use the danger color (red) and include a trash icon
 - Bulk selection checkboxes must appear on each task card for multi-select operations
 - The header must include a bulk action bar when tasks are selected: delete selected, archive selected
+- All confirmation dialogs must be custom modal overlays (not browser confirm()/alert() popups)
 - Archived tasks must be viewable via a separate "Archived" tab or filter
 - The edit modal must contain pre-populated form fields for all editable properties
 - The edit modal must have save and cancel buttons with clear visual distinction
@@ -31,9 +32,9 @@ A single-page web dashboard for managing tasks. Served as HTML from the server.
 ## Task Management
 
 - Users must be able to delete tasks by their unique ID
-- Deleting a task must require confirmation before permanent removal
+- Deleting a task must require confirmation via a custom modal dialog (not browser confirm/alert)
 - Deleted tasks must be removed from all filtered views and search results
-- The system must provide a function to bulk delete multiple tasks by ID list
+- The system must provide a function to bulk delete multiple tasks by ID list with confirmation modal
 - Users must be able to edit task properties: title, description, priority, deadline, and assignee
 - Editing a task must update the updated_at timestamp automatically
 - The system must maintain an edit history showing previous values for audit purposes
