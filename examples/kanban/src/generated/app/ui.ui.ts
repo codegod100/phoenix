@@ -2,7 +2,7 @@
 // Source: spec/app.md - UI section
 // Dependencies: Cards, Design System
 
-import { DesignSystem, Theme } from './design-system.ui';
+import { DesignSystem, Theme, designSystemStyles } from './design-system.ui';
 import { API, CreateCardRequest, UpdateCardRequest, MoveCardRequest } from './api';
 import { CardComponent, DragState } from './cards.ui';
 import { BoardComponent } from './board.ui';
@@ -358,3 +358,139 @@ export const UI = {
     document.body.style.margin = '0';
   }
 };
+
+// Server-side render page function (for server.ts compatibility)
+export function renderPage(board: { columns: Array<{ id: number | string; name: string; cards: Array<{ id: number | string; title: string; description: string | null; order_index: number }> }> }): string {
+  const columnsHtml = board.columns.map(col => `
+    <div class="column" data-column-id="${col.id}" style="
+      background: ${DesignSystem.layout.columnBackground};
+      border-radius: 8px; min-width: 280px; max-width: 280px;
+      display: flex; flex-direction: column; max-height: calc(100vh - 32px);
+    ">
+      <div style="
+        padding: 12px 16px;
+        border-bottom: 1px solid ${DesignSystem.layout.boardBackground};
+        display: flex; justify-content: space-between; align-items: center;
+      ">
+        <h3 style="margin: 0; color: ${DesignSystem.typography.primary}; font-size: 14px; font-weight: 600;">${col.name}</h3>
+        <span id="count-${col.id}" style="
+          background: ${DesignSystem.badge.background}; color: ${DesignSystem.badge.color};
+          border-radius: ${DesignSystem.badge.borderRadius}; padding: ${DesignSystem.badge.padding};
+          font-size: ${DesignSystem.badge.fontSize};
+        ">${col.cards.length}</span>
+      </div>
+      <div class="column-cards" style="
+        flex: 1; overflow-y: auto; padding: 12px;
+        display: flex; flex-direction: column; gap: 8px;
+      ">
+        ${col.cards.map(card => `
+          <div class="card" data-card-id="${card.id}" draggable="true" style="
+            background: ${DesignSystem.card.background}; border-radius: ${DesignSystem.card.borderRadius};
+            padding: ${DesignSystem.card.padding}; box-shadow: ${DesignSystem.card.shadow};
+            cursor: grab; max-height: ${DesignSystem.card.maxHeight}; overflow-y: auto;
+          ">
+            <h4 style="margin: 0 0 4px 0; color: ${DesignSystem.typography.primary}; font-size: 14px;">${card.title}</h4>
+            ${card.description ? `<p style="margin: 0; color: ${DesignSystem.typography.secondary}; font-size: 12px; overflow-wrap: break-word;">${card.description}</p>` : ''}
+          </div>
+        `).join('')}
+      </div>
+      <button class="add-card-btn" data-column-id="${col.id}" style="
+        background: transparent; border: none; color: ${DesignSystem.typography.secondary};
+        padding: 12px; cursor: pointer; font-size: 12px; text-align: left;
+      ">+ Add Card</button>
+    </div>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanban Board</title>
+  <style>${designSystemStyles}</style>
+  <style>
+    .kanban-board {
+      display: flex; flex-direction: row; gap: 16px;
+      padding: 16px; min-height: 100vh; overflow-x: auto; align-items: flex-start;
+    }
+    .card { transition: opacity 0.2s; }
+    .card[draggable="true"]:hover { opacity: 0.8; }
+    .column-cards.drag-over { background: rgba(137, 180, 250, 0.1) !important; }
+  </style>
+</head>
+<body>
+  <div class="kanban-board">
+    ${columnsHtml}
+    <button id="add-column" style="
+      background: transparent; border: 2px dashed ${Theme.colors.surface1};
+      color: ${DesignSystem.typography.secondary}; border-radius: 8px;
+      padding: 12px 24px; cursor: pointer; min-width: 280px; font-size: 14px;
+    ">+ Add Column</button>
+  </div>
+  <script>
+    // Client-side drag and drop
+    let draggedCard = null;
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        draggedCard = card;
+        card.style.opacity = '0.5';
+        e.dataTransfer.setData('text/plain', card.dataset.cardId);
+      });
+      card.addEventListener('dragend', () => {
+        card.style.opacity = '1';
+        draggedCard = null;
+      });
+    });
+    document.querySelectorAll('.column-cards').forEach(container => {
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        container.classList.add('drag-over');
+      });
+      container.addEventListener('dragleave', () => {
+        container.classList.remove('drag-over');
+      });
+      container.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        container.classList.remove('drag-over');
+        const cardId = e.dataTransfer.getData('text/plain');
+        const columnId = container.closest('.column').dataset.columnId;
+        // Call API to move card
+        await fetch(\`/api/cards/\${cardId}/move\`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ column_id: columnId, order_index: 0 })
+        });
+        location.reload();
+      });
+    });
+
+    // Add Card buttons
+    document.querySelectorAll('.add-card-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const columnId = btn.dataset.columnId;
+        const title = prompt('Enter card title:');
+        if (title && title.trim()) {
+          fetch('/api/cards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title.trim(), column_id: columnId })
+          }).then(() => location.reload());
+        }
+      });
+    });
+
+    // Add Column button
+    document.getElementById('add-column').addEventListener('click', () => {
+      const name = prompt('Enter column name:');
+      if (name && name.trim()) {
+        fetch('/api/columns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name.trim() })
+        }).then(() => location.reload());
+      }
+    });
+  </script>
+</body>
+</html>`;
+}

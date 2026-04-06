@@ -40,11 +40,16 @@ A simple task management board with columns and cards.
 - REQUIREMENT: Each column shows cards stacked vertically
 - REQUIREMENT: Each column header displays card count badge
 - REQUIREMENT: Show add-card button at bottom of each column
+- REQUIREMENT: Clicking add-card button opens styled modal for card creation
 - REQUIREMENT: Show add-column button at right of board
-- REQUIREMENT: Inline editing: click card title to edit
-- REQUIREMENT: Drag-and-drop cards between columns
-- REQUIREMENT: Use styled modal dialogs for card creation, editing, and deletion confirmation
-- REQUIREMENT: Modal dialogs have title, input fields, and action buttons (primary/secondary)
+- REQUIREMENT: Clicking add-column button opens styled modal for column creation
+- REQUIREMENT: Inline editing: click card title to edit (opens styled modal)
+- REQUIREMENT: Drag-and-drop cards between columns with visual feedback
+- REQUIREMENT: Styled modal dialogs have: title, input fields, confirm button, cancel button
+- REQUIREMENT: Modal on confirm calls API and reloads page to show updated board
+- REQUIREMENT: Modal on cancel closes without API call
+- REQUIREMENT: Modal closes on backdrop click (cancel action)
+- REQUIREMENT: Modal closes on ESC key (cancel action)
 
 - CONSTRAINT: Board fills viewport width, columns scroll horizontally if needed
 - CONSTRAINT: Column height fixed with internal scroll for many cards
@@ -54,8 +59,9 @@ A simple task management board with columns and cards.
 - CONSTRAINT: When card moved within same column (reordering), counts remain unchanged
 - CONSTRAINT: Card count updates must NOT require page reload for drag-and-drop operations
 - CONSTRAINT: Column count badge DOM element id format: "count-{columnId}"
-- CONSTRAINT: Do not use browser native alert() or prompt() - use styled modals only
+- CONSTRAINT: Do not use browser native alert(), prompt(), or confirm() - use DOM-based modals only
 - CONSTRAINT: Dark theme: bg #1e1e2e, cards #313244, accents #89b4fa
+- CONSTRAINT: JavaScript event handlers must call fetch() to hit API endpoints
 
 ## Design System
 

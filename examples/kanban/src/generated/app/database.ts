@@ -135,3 +135,17 @@ export const Database = {
     cards.clear();
   }
 };
+
+// Server-compatible exports (for bun:sqlite compatibility)
+export function initDatabase(_db?: unknown): void {
+  // In-memory database is already initialized
+  // This function exists for API compatibility with server.ts
+}
+
+export function registerMigrations(_db: unknown, _migrations: unknown[]): void {
+  // No-op for in-memory database
+}
+
+export function seedDefaultColumns(_db?: unknown): void {
+  Database.initDefaults();
+}

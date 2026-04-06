@@ -110,3 +110,34 @@ export const API = {
     return Database.updateColumn(id, { name });
   }
 };
+
+// Server-compatible function exports (for server.ts using bun:sqlite)
+// These wrap the in-memory Database for server-side usage
+
+export function getBoard(): BoardState {
+  return API.getBoard();
+}
+
+export function createCard(_db: unknown, title: string, description: string | null, columnId: string): Card {
+  return API.createCard({ title, description: description || undefined }, columnId);
+}
+
+export function updateCard(_db: unknown, id: string | number, title: string | undefined, description: string | null | undefined): Card | undefined {
+  return API.updateCard(String(id), { title, description });
+}
+
+export function moveCard(_db: unknown, id: string | number, columnId: string, orderIndex: number): Card | undefined {
+  return API.moveCard(String(id), { column_id: columnId, order_index: orderIndex });
+}
+
+export function deleteCard(_db: unknown, id: string | number): boolean {
+  return API.deleteCard(String(id));
+}
+
+export function createColumn(_db: unknown, name: string): Column {
+  return API.createColumn({ name });
+}
+
+export function renameColumn(_db: unknown, id: string | number, name: string): Column | undefined {
+  return API.renameColumn(String(id), name);
+}

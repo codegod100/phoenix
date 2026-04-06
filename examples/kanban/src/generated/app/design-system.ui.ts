@@ -37,6 +37,97 @@ export const Theme = {
   }
 } as const;
 
+// Server-side rendering helpers (for server.ts compatibility)
+export function renderModal(title: string, content: string, confirmText = 'Confirm', cancelText = 'Cancel', destructive = false): string {
+  const primaryBg = destructive ? Theme.colors.red : Theme.colors.blue;
+  const primaryColor = Theme.colors.base;
+  
+  return `
+    <div class="modal-backdrop" style="
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    ">
+      <div class="modal-container" style="
+        background: ${Theme.colors.mantle};
+        border-radius: 8px;
+        min-width: 400px;
+        max-width: 90vw;
+      ">
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 24px;
+          border-bottom: 1px solid ${Theme.colors.surface0};
+        ">
+          <h2 style="margin: 0; color: ${Theme.colors.text}; font-size: 18px;">${title}</h2>
+          <button onclick="this.closest('.modal-backdrop').remove()" style="
+            background: transparent; border: none;
+            color: ${Theme.colors.subtext0}; font-size: 24px; cursor: pointer;
+          ">×</button>
+        </div>
+        <div style="padding: 24px;">${content}</div>
+        <div style="
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          padding: 16px 24px;
+          border-top: 1px solid ${Theme.colors.surface0};
+        ">
+          <button onclick="this.closest('.modal-backdrop').remove()" style="
+            background: transparent; color: ${Theme.colors.text};
+            border: 1px solid ${Theme.colors.subtext0};
+            border-radius: 6px; padding: 8px 16px; cursor: pointer;
+          ">${cancelText}</button>
+          <button style="
+            background: ${primaryBg}; color: ${primaryColor};
+            border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;
+          ">${confirmText}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function renderInputField(label: string, name: string, type = 'text', value = '', placeholder = ''): string {
+  return `
+    <label style="color: ${Theme.colors.subtext0}; font-size: 12px; display: block; margin-bottom: 4px;">${label}</label>
+    <input type="${type}" name="${name}" value="${value}" placeholder="${placeholder}" style="
+      width: 100%; background: ${Theme.colors.surface0};
+      border: 1px solid ${Theme.colors.surface1}; color: ${Theme.colors.text};
+      border-radius: 6px; padding: 8px 12px; box-sizing: border-box;
+    ">
+  `;
+}
+
+export const designSystemStyles = `
+  :root {
+    --cat-base: ${Theme.colors.base};
+    --cat-mantle: ${Theme.colors.mantle};
+    --cat-crust: ${Theme.colors.crust};
+    --cat-surface0: ${Theme.colors.surface0};
+    --cat-surface1: ${Theme.colors.surface1};
+    --cat-text: ${Theme.colors.text};
+    --cat-subtext0: ${Theme.colors.subtext0};
+    --cat-blue: ${Theme.colors.blue};
+    --cat-red: ${Theme.colors.red};
+    --cat-green: ${Theme.colors.green};
+    --cat-yellow: ${Theme.colors.yellow};
+  }
+  body {
+    background: var(--cat-base);
+    color: var(--cat-text);
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+  }
+`;
+
 export const DesignSystem = {
   // Layout
   layout: {
