@@ -50,7 +50,7 @@
 - node-3a8b5c2f: `linkify(text)` converts raw urls to clickable anchor tags
 - node-7e2d9b4a: `linkify()` must handle multiple urls separated by newlines as separate links
 - node-1f4c7a8e: server-side uses regex literal: `/https?:\/\/[^\s<\n\r]+/gi`
-- node-6b9e3d7c: client-side (regexp constructor) uses: `new regexp('https?://[^\\s<\\n\\r]+', 'gi')`
+- node-6b9e3d7c: client-side (regexp constructor) uses: `new regexp('https?://[^\s<\n\r]+', 'gi')`
 - node-8a3e6c2b: url regex must stop at newline characters - pattern `[^\s<\n\r]+` not `[^\s<]+`
 - node-2d7b5f1e: client-side regexp string escaping must use `\\n` not `\n`
 - node-8c3a7f2b: urls displayed as link text must show the original unescaped url (not html entities like &amp;)
@@ -169,8 +169,6 @@
 **Requirements:**
 - node-5f3c8a1e: each column header shows edit (✏️) and delete (🗑️) buttons on hover, positioned left of count badge
 - node-9c6a4f3b: column header widget order from left to right: edit button, delete button, card count badge
-- node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
-- node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
 - node-4e8b2a7f: clicking column edit button opens styled modal to rename column
 - node-1f7c5e9a: clicking column delete button opens confirmation modal (destructive action)
 - node-8a3f6c2e: modal on confirm deletes column, removes all cards in it, updates ui dynamically
@@ -180,7 +178,6 @@
 - node-7e4b8f1c: column edit/delete buttons visible only on column header hover, positioned absolute right
 - node-4a7f9e3c: column count badge dom element id format: "count-{columnid}"
 - node-1b8f5c9e: card count badge updates in real-time when cards are added/moved/deleted
-- node-c3d6e4f5: dropping a column between two other columns reorders it to that position
 
 **Contract:**
 - Input: Column data, card count
@@ -215,12 +212,9 @@
 
 ---
 
-## IU-10: Drag and Drop System (HIGH RISK)
+## IU-10: Card Drag and Drop (HIGH RISK)
 **Requirements:**
 - node-7d3b8f2e: drag-and-drop cards between columns with visual feedback
-- node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
-- node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
-- node-c3d6e4f5: dropping a column between two other columns reorders it to that position
 - node-3e7b5f9a: drag-and-drop cards between columns calls move api and updates ui dynamically without page reload
 - node-5a3f9c7e: when card moved between columns via drag-and-drop, source column count decrements by 1, destination column count increments by 1
 - node-9c7f4e2b: when card moved within same column (reordering), counts remain unchanged
@@ -231,7 +225,7 @@
 - Output: API calls, DOM updates, count badge updates
 - Invariants: Visual feedback, real-time count updates
 
-**Output File:** `src/generated/app/dragdrop.ts`
+**Output File:** `src/generated/app/card-dragdrop.ts`
 
 ---
 
@@ -251,6 +245,22 @@
 
 ---
 
+## IU-12: Column Reorder System (HIGH RISK)
+**Requirements:**
+- node-a1b4c9d2: dragging column header (title bar) initiates drag-and-drop to reorder columns left-to-right
+- node-b2c5d3e4: while dragging a column, other columns show drop zones between them for reordering
+- node-c3d6e4f5: dropping a column between two other columns reorders it to that position
+- node-9a6c4e1f: columns can be reordered via drag-and-drop left to right
+
+**Contract:**
+- Input: Column drag events, board layout
+- Output: Reordered DOM, API calls to persist new order
+- Invariants: Visual feedback during drag, smooth reordering
+
+**Output File:** `src/generated/app/column-reorder.ts`
+
+---
+
 ## Summary
 
 | IU | Name | Risk | Requirements | Output File |
@@ -263,8 +273,9 @@
 | IU-6 | Modal System | HIGH | 22 | `src/generated/app/modal.ts` |
 | IU-7 | Board UI | HIGH | 7 | `src/generated/app/board.ui.ts` |
 | IU-8 | Column UI | HIGH | 11 | `src/generated/app/column.ui.ts` |
-| IU-9 | Card UI | HIGH | 11 | `src/generated/app/card.ui.ts` |
-| IU-10 | Drag and Drop | HIGH | 6 | `src/generated/app/dragdrop.ts` |
+| IU-9 | Card UI | HIGH | 12 | `src/generated/app/card.ui.ts` |
+| IU-10 | Card Drag and Drop | HIGH | 5 | `src/generated/app/card-dragdrop.ts` |
 | IU-11 | Main Page | HIGH | 4 | `src/generated/app/page.ui.ts` |
+| IU-12 | Column Reorder | HIGH | 4 | `src/generated/app/column-reorder.ts` |
 
-**Total: 11 IUs** (low: 0, medium: 2, high: 9)
+**Total: 12 IUs** (low: 0, medium: 2, high: 10)

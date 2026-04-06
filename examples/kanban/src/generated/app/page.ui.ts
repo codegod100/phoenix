@@ -1,5 +1,6 @@
 // IU-11: Main UI Page
 // Auto-generated from Phoenix plan
+// Delegates all functionality to specialized IUs
 
 import type { Board } from './models.js';
 import { renderBoard, BOARD_JS } from './board.ui.js';
@@ -29,7 +30,9 @@ export function renderPage(board: Board): string {
   ${boardHTML}
 
   <script>
-    // Modal system (inline for self-contained page)
+    // ==========================================
+    // IU-6: Modal System (inline for self-contained page)
+    // ==========================================
     let modalCleanup = null;
 
     function mountModal(config) {
@@ -92,8 +95,7 @@ export function renderPage(board: Board): string {
       if (firstInput) {
         firstInput.focus();
         if (firstInput.value) {
-          const len = firstInput.value.length;
-          firstInput.setSelectionRange(len, len);
+          firstInput.setSelectionRange(firstInput.value.length, firstInput.value.length);
         }
       }
 
@@ -156,8 +158,11 @@ export function renderPage(board: Board): string {
         .replace(/"/g, '&quot;');
     }
 
-    // Card handlers
-    let draggedCard = null;
+    // ==========================================
+    // IU-9: Card UI (inline functions)
+    // ==========================================
+    let draggedCardId = null;
+    let draggedSourceColumnId = null;
 
     function initCardHandlers() {
       document.querySelectorAll('.card').forEach(card => {
@@ -166,8 +171,9 @@ export function renderPage(board: Board): string {
     }
 
     function attachCardHandlers(card) {
-      card.addEventListener('dragstart', handleDragStart);
-      card.addEventListener('dragend', handleDragEnd);
+      card.draggable = true;
+      card.addEventListener('dragstart', handleCardDragStart);
+      card.addEventListener('dragend', handleCardDragEnd);
 
       const editBtn = card.querySelector('[data-action="edit"]');
       if (editBtn) {
@@ -186,19 +192,20 @@ export function renderPage(board: Board): string {
       }
     }
 
-    function handleDragStart(e) {
-      draggedCard = this;
+    function handleCardDragStart(e) {
+      draggedCardId = this.dataset.cardId;
+      draggedSourceColumnId = this.dataset.columnId;
       this.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', this.dataset.cardId);
+      e.dataTransfer.setData('text/plain', draggedCardId);
+      document.querySelectorAll('.column').forEach(col => col.classList.add('drop-ready'));
     }
 
-    function handleDragEnd(e) {
+    function handleCardDragEnd(e) {
       this.classList.remove('dragging');
-      draggedCard = null;
-      document.querySelectorAll('.column').forEach(col => {
-        col.classList.remove('drag-over');
-      });
+      document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-ready', 'drag-over'));
+      draggedCardId = null;
+      draggedSourceColumnId = null;
     }
 
     function openCardEditModal(cardId) {
@@ -239,7 +246,12 @@ export function renderPage(board: Board): string {
         onConfirm: () => {
           fetch('/api/cards/' + cardId, { method: 'DELETE' })
             .then(() => {
-              removeCardFromDOM(cardId);
+              const card = document.querySelector('[data-card-id="' + cardId + '"]');
+              if (card) {
+                const columnId = card.dataset.columnId;
+                card.remove();
+                updateColumnCount(columnId);
+              }
             });
         }
       });
@@ -251,6 +263,7 @@ export function renderPage(board: Board): string {
 
       const descHtml = card.description ? linkifyClient(card.description) : '';
       el.querySelector('.card-title').textContent = card.title;
+
       let descEl = el.querySelector('.card-description');
       if (descHtml) {
         if (descEl) {
@@ -266,18 +279,93 @@ export function renderPage(board: Board): string {
       }
     }
 
-    function removeCardFromDOM(cardId) {
-      const el = document.querySelector('[data-card-id="' + cardId + '"]');
-      if (el) {
-        const columnId = el.dataset.columnId;
-        el.remove();
-        updateColumnCount(columnId);
-      }
+    function linkifyClient(text) {
+      if (!text) return '';
+      const regex = new RegExp('https?://[^\\\\s<\\\\n\\\\r]+', 'gi');
+      return text.split('\\n').map(function(line) {
+        return line.replace(regex, function(url) {
+          const cleanUrl = url.replace(/&amp;/g, '&');
+          return '<a href="' + cleanUrl + '" target="_blank" rel="noopener">' + cleanUrl + '</a>';
+        });
+      }).join('\\n');
     }
 
-    // Column handlers
+    function updateColumnCount(columnId) {
+      const col = document.querySelector('[data-column-id="' + columnId + '"]');
+      if (!col) return;
+      const count = col.querySelectorAll('.card').length;
+      const badge = document.getElementById('count-' + columnId);
+      if (badge) badge.textContent = count;
+    }
+
+    // ==========================================
+    // IU-10: Card Drag and Drop (inline)
+    // ==========================================
+    function initCardDragAndDrop() {
+      document.querySelectorAll('.column').forEach(col => {
+        col.addEventListener('dragover', handleColumnCardDragOver);
+        col.addEventListener('dragleave', handleColumnCardDragLeave);
+        col.addEventListener('drop', handleColumnCardDrop);
+      });
+    }
+
+    function handleColumnCardDragOver(e) {
+      if (!draggedCardId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      this.classList.add('drag-over');
+    }
+
+    function handleColumnCardDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleColumnCardDrop(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+
+      const cardId = e.dataTransfer.getData('text/plain');
+      const targetColumnId = this.dataset.columnId;
+
+      if (!cardId || !targetColumnId) return;
+
+      const card = document.querySelector('[data-card-id="' + cardId + '"]');
+      if (!card) return;
+
+      const sourceColumnId = card.dataset.columnId;
+      if (sourceColumnId === targetColumnId) return;
+
+      const cardsContainer = this.querySelector('.column-cards');
+      const newOrder = cardsContainer.children.length;
+
+      cardsContainer.appendChild(card);
+      card.dataset.columnId = targetColumnId;
+      updateColumnCount(sourceColumnId);
+      updateColumnCount(targetColumnId);
+
+      fetch('/api/cards/' + cardId + '/move', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          column_id: targetColumnId,
+          order_index: newOrder
+        })
+      }).catch(err => {
+        console.error('Card move failed:', err);
+        const oldContainer = document.querySelector('.column-cards[data-column-id="' + sourceColumnId + '"]');
+        if (oldContainer) {
+          oldContainer.appendChild(card);
+          card.dataset.columnId = sourceColumnId;
+          updateColumnCount(sourceColumnId);
+          updateColumnCount(targetColumnId);
+        }
+      });
+    }
+
+    // ==========================================
+    // IU-8: Column UI (inline)
+    // ==========================================
     function initColumnHandlers() {
-      // Edit/delete/add buttons
       document.querySelectorAll('[data-action="edit-col"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -297,26 +385,6 @@ export function renderPage(board: Board): string {
           e.stopPropagation();
           openAddCardModal(btn.dataset.columnId);
         });
-      });
-
-      // Column drag handlers (header for reordering)
-      document.querySelectorAll('[data-column-drag-handle]').forEach(header => {
-        header.addEventListener('dragstart', handleColumnDragStart);
-        header.addEventListener('dragend', handleColumnDragEnd);
-      });
-
-      // Column drop zones (between columns)
-      document.querySelectorAll('.column-drop-zone').forEach(zone => {
-        zone.addEventListener('dragover', handleColumnDropOver);
-        zone.addEventListener('dragleave', handleColumnDropLeave);
-        zone.addEventListener('drop', handleColumnDrop);
-      });
-
-      // Card drop handlers on columns
-      document.querySelectorAll('.column').forEach(col => {
-        col.addEventListener('dragover', handleColumnDragOver);
-        col.addEventListener('dragleave', handleColumnDragLeave);
-        col.addEventListener('drop', handleColumnCardDrop);
       });
     }
 
@@ -339,7 +407,7 @@ export function renderPage(board: Board): string {
           })
           .then(r => r.json())
           .then(updated => {
-            updateColumnName(columnId, updated.name);
+            col.querySelector('.column-title').textContent = updated.name;
           });
         }
       });
@@ -355,7 +423,11 @@ export function renderPage(board: Board): string {
         onConfirm: () => {
           fetch('/api/columns/' + columnId, { method: 'DELETE' })
             .then(() => {
-              removeColumnFromDOM(columnId);
+              const col = document.querySelector('[data-column-id="' + columnId + '"]');
+              if (col) {
+                col.remove();
+                if (typeof initDropZones === 'function') initDropZones();
+              }
             });
         }
       });
@@ -382,39 +454,18 @@ export function renderPage(board: Board): string {
           })
           .then(r => r.json())
           .then(card => {
-            addCardToColumn(columnId, card);
+            addCardToColumnInline(columnId, card);
           });
         }
       });
     }
 
-    function updateColumnName(columnId, name) {
-      const col = document.querySelector('[data-column-id="' + columnId + '"]');
-      if (col) {
-        col.querySelector('.column-title').textContent = name;
-      }
-    }
-
-    function removeColumnFromDOM(columnId) {
-      const col = document.querySelector('[data-column-id="' + columnId + '"]');
-      if (col) col.remove();
-    }
-
-    function addCardToColumn(columnId, card) {
+    function addCardToColumnInline(columnId, card) {
       const cardsContainer = document.querySelector('.column-cards[data-column-id="' + columnId + '"]');
       if (!cardsContainer) return;
 
-      const cardHTML = createCardHTML(card);
-      cardsContainer.insertAdjacentHTML('beforeend', cardHTML);
-
-      const newCard = cardsContainer.lastElementChild;
-      attachCardHandlers(newCard);
-      updateColumnCount(columnId);
-    }
-
-    function createCardHTML(card) {
       const descHtml = card.description ? linkifyClient(card.description) : '';
-      return \`
+      const cardHTML = \`
         <div class="card" draggable="true" data-card-id="\${card.id}" data-column-id="\${card.column_id}">
           <div class="card-actions">
             <button class="btn btn-icon btn-edit" data-action="edit" data-card-id="\${card.id}" title="Edit">✏️</button>
@@ -424,81 +475,73 @@ export function renderPage(board: Board): string {
           \${descHtml ? \`<div class="card-description">\${descHtml}</div>\` : ''}
         </div>
       \`;
+
+      cardsContainer.insertAdjacentHTML('beforeend', cardHTML);
+      attachCardHandlers(cardsContainer.lastElementChild);
+      updateColumnCount(columnId);
     }
 
-    function updateColumnCount(columnId) {
-      const col = document.querySelector('[data-column-id="' + columnId + '"]');
-      if (!col) return;
-      const count = col.querySelectorAll('.card').length;
-      const badge = document.getElementById('count-' + columnId);
-      if (badge) badge.textContent = count;
+    // ==========================================
+    // IU-12: Column Reorder System (inline)
+    // ==========================================
+    let draggedColumnId = null;
+
+    function initColumnReorder() {
+      document.querySelectorAll('.column-header').forEach(header => {
+        header.draggable = true;
+        header.addEventListener('dragstart', handleColumnDragStart);
+        header.addEventListener('dragend', handleColumnDragEnd);
+      });
+      initDropZones();
     }
 
-    // Card drag-and-drop handlers (on columns)
-    function handleColumnDragOver(e) {
-      // Only for card drops, not column drops
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      this.classList.add('drag-over');
-    }
+    function initDropZones() {
+      document.querySelectorAll('.column-drop-zone').forEach(zone => zone.remove());
 
-    function handleColumnDragLeave(e) {
-      this.classList.remove('drag-over');
-    }
+      const board = document.getElementById('board');
+      if (!board) return;
 
-    function handleColumnCardDrop(e) {
-      e.preventDefault();
-      this.classList.remove('drag-over');
+      const columns = Array.from(board.querySelectorAll('.column'));
+      const addBtn = document.getElementById('add-column-btn');
 
-      const cardId = e.dataTransfer.getData('text/plain');
-      const newColumnId = this.dataset.columnId;
+      // Drop zone at beginning
+      if (columns.length > 0) {
+        const firstZone = document.createElement('div');
+        firstZone.className = 'column-drop-zone';
+        firstZone.dataset.position = '0';
+        firstZone.addEventListener('dragover', handleDropZoneDragOver);
+        firstZone.addEventListener('dragleave', handleDropZoneDragLeave);
+        firstZone.addEventListener('drop', handleDropZoneDrop);
+        board.insertBefore(firstZone, columns[0]);
+      }
 
-      if (!cardId || !newColumnId) return;
+      // Drop zones after each column
+      columns.forEach((col, index) => {
+        const dropZone = document.createElement('div');
+        dropZone.className = 'column-drop-zone';
+        dropZone.dataset.position = String(index + 1);
+        dropZone.addEventListener('dragover', handleDropZoneDragOver);
+        dropZone.addEventListener('dragleave', handleDropZoneDragLeave);
+        dropZone.addEventListener('drop', handleDropZoneDrop);
 
-      const card = document.querySelector('[data-card-id="' + cardId + '"]');
-      if (!card) return;
-
-      const oldColumnId = card.dataset.columnId;
-      if (oldColumnId === newColumnId) return;
-
-      const cardsContainer = this.querySelector('.column-cards');
-      const newOrder = cardsContainer.children.length;
-
-      cardsContainer.appendChild(card);
-      card.dataset.columnId = newColumnId;
-      updateColumnCount(oldColumnId);
-      updateColumnCount(newColumnId);
-
-      fetch('/api/cards/' + cardId + '/move', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ column_id: newColumnId, order_index: newOrder })
-      })
-      .then(r => {
-        if (!r.ok) throw new Error('Move failed');
-        return r.json();
-      })
-      .catch(err => {
-        console.error('Move failed:', err);
-        const oldContainer = document.querySelector('.column-cards[data-column-id="' + oldColumnId + '"]');
-        if (oldContainer) {
-          oldContainer.appendChild(card);
-          card.dataset.columnId = oldColumnId;
-          updateColumnCount(oldColumnId);
-          updateColumnCount(newColumnId);
+        const nextEl = col.nextElementSibling;
+        if (nextEl && nextEl !== addBtn) {
+          board.insertBefore(dropZone, nextEl);
+        } else if (addBtn) {
+          board.insertBefore(dropZone, addBtn);
+        } else {
+          board.appendChild(dropZone);
         }
       });
     }
 
-    // Column drag-and-drop handlers (reordering)
-    let draggedColumnId = null;
-
     function handleColumnDragStart(e) {
-      draggedColumnId = this.dataset.columnDragHandle;
-      const column = document.querySelector('[data-column-id="' + draggedColumnId + '"]');
-      if (column) column.classList.add('dragging');
+      const column = this.closest('.column');
+      if (!column) return;
+
+      draggedColumnId = column.dataset.columnId;
+      column.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('type', 'column');
       e.dataTransfer.setData('column-id', draggedColumnId);
 
       document.querySelectorAll('.column-drop-zone').forEach(zone => {
@@ -507,93 +550,65 @@ export function renderPage(board: Board): string {
     }
 
     function handleColumnDragEnd(e) {
-      const column = document.querySelector('[data-column-id="' + draggedColumnId + '"]');
+      const column = this.closest('.column');
       if (column) column.classList.remove('dragging');
       draggedColumnId = null;
+
       document.querySelectorAll('.column-drop-zone').forEach(zone => {
         zone.classList.remove('active', 'drag-over');
       });
     }
 
-    function handleColumnDropOver(e) {
+    function handleDropZoneDragOver(e) {
+      if (!draggedColumnId) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       this.classList.add('drag-over');
     }
 
-    function handleColumnDropLeave(e) {
+    function handleDropZoneDragLeave(e) {
       this.classList.remove('drag-over');
     }
 
-    function handleColumnDrop(e) {
+    function handleDropZoneDrop(e) {
       e.preventDefault();
       this.classList.remove('drag-over');
 
       const columnId = e.dataTransfer.getData('column-id');
-      const dropZoneId = this.dataset.dropZone;
-
-      if (!columnId || !dropZoneId || columnId === dropZoneId) return;
+      if (!columnId) return;
 
       const column = document.querySelector('[data-column-id="' + columnId + '"]');
       if (!column) return;
 
-      const allColumns = Array.from(document.querySelectorAll('.column'));
-      const targetIndex = allColumns.findIndex(col => col.dataset.columnId === dropZoneId);
-      const sourceIndex = allColumns.findIndex(col => col.dataset.columnId === columnId);
+      const position = parseInt(this.dataset.position || '0', 10);
 
-      if (targetIndex === -1 || sourceIndex === -1) return;
+      // Move column in DOM
+      const board = document.getElementById('board');
+      const columns = Array.from(board.querySelectorAll('.column'));
 
-      let newIndex = targetIndex;
-      if (sourceIndex < targetIndex) {
-        newIndex--;
-      }
-      newIndex = Math.max(0, newIndex);
-
-      const container = column.parentElement;
-      const columns = document.querySelectorAll('.column');
-      const targetColumn = columns[newIndex];
-
-      if (targetColumn && targetColumn !== column) {
-        container.insertBefore(column, targetColumn.nextSibling);
+      if (position === 0) {
+        board.insertBefore(column, columns[0]);
+      } else if (position < columns.length) {
+        board.insertBefore(column, columns[position]);
+      } else {
+        const addBtn = document.getElementById('add-column-btn');
+        board.insertBefore(column, addBtn);
       }
 
       // Recreate drop zones
-      recreateDropZones();
+      initDropZones();
 
-      document.querySelectorAll('.column').forEach((col, idx) => {
-        col.dataset.order = idx;
-      });
-
+      // API call
       fetch('/api/columns/' + columnId + '/move', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_index: newIndex })
-      }).catch(err => {
-        console.error('Column move failed:', err);
-      });
+        body: JSON.stringify({ order_index: position })
+      }).catch(err => console.error('Column reorder failed:', err));
     }
 
-    function recreateDropZones() {
-      const board = document.getElementById('board');
-      if (!board) return;
-
-      board.querySelectorAll('.column-drop-zone').forEach(zone => zone.remove());
-
-      const columns = Array.from(board.querySelectorAll('.column'));
-      const addBtn = document.getElementById('add-column-btn');
-
-      columns.forEach((col) => {
-        const dropZone = document.createElement('div');
-        dropZone.className = 'column-drop-zone';
-        dropZone.dataset.dropZone = col.dataset.columnId;
-        dropZone.addEventListener('dragover', handleColumnDropOver);
-        dropZone.addEventListener('dragleave', handleColumnDropLeave);
-        dropZone.addEventListener('drop', handleColumnDrop);
-        board.insertBefore(dropZone, addBtn);
-      });
-    }
-
-    // Board handlers
+    // ==========================================
+    // IU-7: Board UI (inline)
+    // ==========================================
     function initBoardHandlers() {
       const addColBtn = document.getElementById('add-column-btn');
       if (addColBtn) {
@@ -617,25 +632,17 @@ export function renderPage(board: Board): string {
           })
           .then(r => r.json())
           .then(column => {
-            addColumnToDOM(column);
+            addColumnToDOMInline(column);
           });
         }
       });
     }
 
-    function addColumnToDOM(column) {
+    function addColumnToDOMInline(column) {
       const board = document.getElementById('board');
       const addBtn = document.getElementById('add-column-btn');
 
-      const colHTML = createColumnHTML(column);
-      addBtn.insertAdjacentHTML('beforebegin', colHTML);
-
-      const newCol = addBtn.previousElementSibling;
-      initColumnHandlersForElement(newCol);
-    }
-
-    function createColumnHTML(column) {
-      return \`
+      const colHTML = \`
         <div class="column" data-column-id="\${column.id}" data-order="\${column.order_index}">
           <div class="column-header">
             <span class="column-title">\${escapeHtml(column.name)}</span>
@@ -651,54 +658,46 @@ export function renderPage(board: Board): string {
           </div>
         </div>
       \`;
+
+      addBtn.insertAdjacentHTML('beforebegin', colHTML);
+
+      const newCol = addBtn.previousElementSibling;
+      const header = newCol.querySelector('.column-header');
+      header.draggable = true;
+      header.addEventListener('dragstart', handleColumnDragStart);
+      header.addEventListener('dragend', handleColumnDragEnd);
+
+      // Attach button handlers
+      newCol.querySelector('[data-action="edit-col"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openColumnEditModal(column.id);
+      });
+      newCol.querySelector('[data-action="delete-col"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openColumnDeleteModal(column.id);
+      });
+      newCol.querySelector('[data-action="add-card"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openAddCardModal(column.id);
+      });
+
+      // Attach drop handlers
+      newCol.addEventListener('dragover', handleColumnCardDragOver);
+      newCol.addEventListener('dragleave', handleColumnCardDragLeave);
+      newCol.addEventListener('drop', handleColumnCardDrop);
+
+      // Recreate drop zones
+      initDropZones();
     }
 
-    function initColumnHandlersForElement(col) {
-      const editBtn = col.querySelector('[data-action="edit-col"]');
-      if (editBtn) {
-        editBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openColumnEditModal(editBtn.dataset.columnId);
-        });
-      }
-
-      const deleteBtn = col.querySelector('[data-action="delete-col"]');
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openColumnDeleteModal(deleteBtn.dataset.columnId);
-        });
-      }
-
-      const addBtn = col.querySelector('[data-action="add-card"]');
-      if (addBtn) {
-        addBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openAddCardModal(addBtn.dataset.columnId);
-        });
-      }
-
-      col.addEventListener('dragover', handleColumnDragOver);
-      col.addEventListener('dragleave', handleColumnDragLeave);
-      col.addEventListener('drop', handleColumnDrop);
-    }
-
-    // Linkify client
-    function linkifyClient(text) {
-      if (!text) return '';
-      const regex = new RegExp('https?://[^\\\\s<\\\\n\\\\r]+', 'gi');
-      return text.split('\\n').map(function(line) {
-        return line.replace(regex, function(url) {
-          const cleanUrl = url.replace(/&amp;/g, '&');
-          return '<a href="' + cleanUrl + '" target="_blank" rel="noopener">' + cleanUrl + '</a>';
-        });
-      }).join('\\n');
-    }
-
-    // Initialize
+    // ==========================================
+    // Initialize everything on DOM ready
+    // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
       initCardHandlers();
+      initCardDragAndDrop();
       initColumnHandlers();
+      initColumnReorder();
       initBoardHandlers();
     });
   </script>

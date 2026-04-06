@@ -10,5 +10,6 @@ export * from './modal.js';
 export * from './board.ui.js';
 export * from './column.ui.js';
 export * from './card.ui.js';
-export * from './dragdrop.js';
+export * from './card-dragdrop.js';
+export * from './column-reorder.js';
 export * from './page.ui.js';

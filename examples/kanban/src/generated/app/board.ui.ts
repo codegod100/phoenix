@@ -24,7 +24,6 @@ export function renderBoard(columns: Column[], cards: Card[]): string {
 // Client-side JavaScript for board-level interactions
 export const BOARD_JS = `
 function initBoardHandlers() {
-  // Add column button
   const addColBtn = document.getElementById('add-column-btn');
   if (addColBtn) {
     addColBtn.addEventListener('click', openAddColumnModal);
@@ -57,30 +56,17 @@ function addColumnToDOM(column) {
   const board = document.getElementById('board');
   const addBtn = document.getElementById('add-column-btn');
 
-  // Create column HTML
   const colHTML = createColumnHTML(column);
+  addBtn.insertAdjacentHTML('beforebegin', colHTML);
 
-  // Insert before add button
-  const container = board.querySelector('.columns-container');
-  if (container) {
-    container.insertAdjacentHTML('beforeend', colHTML);
-
-    const newCol = container.lastElementChild;
-    initColumnDragHandlers(newCol);
-  }
-
-  // Add drop zone after new column
-  const dropZone = document.createElement('div');
-  dropZone.className = 'column-drop-zone';
-  dropZone.dataset.dropZone = column.id;
-  initColumnDropZone(dropZone);
-  board.insertBefore(dropZone, addBtn);
+  const newCol = addBtn.previousElementSibling;
+  initNewColumn(newCol, column.id);
 }
 
 function createColumnHTML(column) {
   return \`
-    <div class="column" draggable="true" data-column-id="\${column.id}" data-order="\${column.order_index}">
-      <div class="column-header" draggable="true" data-column-drag-handle="\${column.id}">
+    <div class="column" data-column-id="\${column.id}" data-order="\${column.order_index}">
+      <div class="column-header">
         <span class="column-title">\${escapeHtml(column.name)}</span>
         <div class="column-actions">
           <button class="btn btn-icon btn-edit" data-action="edit-col" data-column-id="\${column.id}" title="Edit">✏️</button>
@@ -93,49 +79,43 @@ function createColumnHTML(column) {
         <button class="btn btn-secondary" style="width:100%" data-action="add-card" data-column-id="\${column.id}">+ Add Card</button>
       </div>
     </div>
-    <div class="column-drop-zone" data-drop-zone="\${column.id}"></div>
   \`;
 }
 
-function initColumnDragHandlers(col) {
-  // Header drag
-  const header = col.querySelector('[data-column-drag-handle]');
-  if (header) {
-    header.addEventListener('dragstart', handleColumnDragStart);
-    header.addEventListener('dragend', handleColumnDragEnd);
-  }
-
-  // Edit button
+function initNewColumn(col, columnId) {
+  // Attach button handlers
   const editBtn = col.querySelector('[data-action="edit-col"]');
+  const deleteBtn = col.querySelector('[data-action="delete-col"]');
+  const addBtn = col.querySelector('[data-action="add-card"]');
+
   if (editBtn) {
     editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      openColumnEditModal(editBtn.dataset.columnId);
+      openColumnEditModal(columnId);
     });
   }
 
-  // Delete button
-  const deleteBtn = col.querySelector('[data-action="delete-col"]');
   if (deleteBtn) {
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      openColumnDeleteModal(deleteBtn.dataset.columnId);
+      openColumnDeleteModal(columnId);
     });
   }
 
-  // Add card button
-  const addBtn = col.querySelector('[data-action="add-card"]');
   if (addBtn) {
     addBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      openAddCardModal(addBtn.dataset.columnId);
+      openAddCardModal(columnId);
     });
   }
 
-  // Card drop handlers
-  col.addEventListener('dragover', handleColumnDragOver);
-  col.addEventListener('dragleave', handleColumnDragLeave);
-  col.addEventListener('drop', handleColumnCardDrop);
+  // Initialize drag-and-drop systems for new column
+  if (typeof initColumnReorder === 'function') {
+    initColumnReorder();
+  }
+  if (typeof initCardDragAndDrop === 'function') {
+    initCardDragAndDrop();
+  }
 }
 
 function escapeHtml(text) {
