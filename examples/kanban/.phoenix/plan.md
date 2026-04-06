@@ -117,6 +117,7 @@
 - node-5e9a4c8f: styled modal dialogs have: title, input fields, confirm button, cancel button
 - node-9e4c8f2b: modal backdrop must use rgba(0,0,0,0.7) with blur effect
 - node-4a7f9c3e: modal container must use #181825 background, 8px border-radius
+- node-8d3e7f9b: modal container max-width must be 500px
 - node-8c5f2a7b: modal header must have title with close button (x) top-right
 - node-3e9b8f5a: modal footer must have action buttons right-aligned
 - node-7c4a9f2e: primary action button must use #89b4fa background, #1e1e2e text
@@ -131,6 +132,7 @@
 - node-7f4e9c3b: input background must be #313244
 - node-5b9f2c8e: input border must be 1px solid #45475a, #89b4fa on focus
 - node-1c8a6f4e: textarea must allow vertical resize only
+- node-2d8f7c5b: textarea min-height must be 200px
 - node-9e5c3f7b: primary button: #89b4fa bg, #1e1e2e text, 6px border-radius
 - node-4b9f8c2a: secondary button: transparent bg, #a6adc8 border, #cdd6f4 text
 - node-8f3c9e6b: destructive button: #f38ba8 bg, #1e1e2e text
@@ -271,7 +273,7 @@
 | IU-3 | URL Linkification | MEDIUM | 10 | `src/generated/app/linkify.ts` |
 | IU-4 | API Layer | HIGH | 10 | `src/generated/app/api.ts` |
 | IU-5 | Design System | MEDIUM | 11 | `src/generated/app/styles.css.ts` |
-| IU-6 | Modal System | HIGH | 22 | `src/generated/app/modal.ts` |
+| IU-6 | Modal System | HIGH | 24 | `src/generated/app/modal.ts` |
 | IU-7 | Board UI | HIGH | 7 | `src/generated/app/board.ui.ts` |
 | IU-8 | Column UI | HIGH | 11 | `src/generated/app/column.ui.ts` |
 | IU-9 | Card UI | HIGH | 12 | `src/generated/app/card.ui.ts` |

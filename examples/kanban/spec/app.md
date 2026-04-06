@@ -132,6 +132,7 @@ A simple task management board with columns and cards.
 ### Modal Dialog Design
 - CONSTRAINT: Modal backdrop MUST use rgba(0,0,0,0.7) with blur effect
 - CONSTRAINT: Modal container MUST use #181825 background, 8px border-radius
+- CONSTRAINT: Modal container max-width MUST be 500px
 - CONSTRAINT: Modal header MUST have title with close button (X) top-right
 - CONSTRAINT: Modal footer MUST have action buttons right-aligned
 - CONSTRAINT: Primary action button MUST use #89b4fa background, #1e1e2e text
@@ -148,6 +149,7 @@ A simple task management board with columns and cards.
 - CONSTRAINT: Input background MUST be #313244
 - CONSTRAINT: Input border MUST be 1px solid #45475a, #89b4fa on focus
 - CONSTRAINT: Textarea MUST allow vertical resize only
+- CONSTRAINT: Textarea min-height MUST be 200px
 
 ### Button Design
 - CONSTRAINT: Primary button: #89b4fa bg, #1e1e2e text, 6px border-radius
