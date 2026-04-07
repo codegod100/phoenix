@@ -1,55 +1,70 @@
 ---
 name: phoenix-testing
-description: Testing guidelines for Phoenix projects. Ensures proper test coverage by risk tier.
+description: Testing guidelines and verification for Phoenix projects. Provides test coverage validation by risk tier. Executable skill - runs testing.js directly.
 ---
 
 # Phoenix Testing
 
-Testing standards for generated code.
+Testing verification and validation for Phoenix projects.
 
-## Risk-Based Testing
+## When to Use
+
+- To validate test coverage by risk tier
+- Before committing to ensure tests pass
+- To check that all IUs have required tests
+
+## How to Run
+
+```bash
+# Run full testing verification
+node .pi/skills/phoenix-testing/testing.js [project-root]
+```
+
+## Risk-Based Testing Requirements
 
 | Risk | Tests Required |
 |------|----------------|
 | low | Optional unit tests |
 | medium | Unit tests |
 | high | Unit + integration tests |
-| critical | Full suite |
+| critical | Full suite + manual verification |
 
-## Test Structure
+## What It Checks
 
-```typescript
-// Unit test example
-describe('Task creation', () => {
-  it('creates task with valid title', () => {
-    const task = createTask({ title: 'Test' });
-    expect(task.title).toBe('Test');
-  });
-  
-  it('rejects empty title', () => {
-    expect(() => createTask({ title: '' })).toThrow();
-  });
-});
-```
+1. **Test file existence** - Each medium+ IU has corresponding test file
+2. **Test execution** - All tests pass
+3. **Traceability** - Tests reference IU via _phoenix export
+4. **Coverage** - Minimum coverage per risk tier
 
-## Principles
-
-1. **Test invariants** from IU contract
-2. **Test edge cases** (empty, null, max values)
-3. **Isolate** tests (no shared state)
-4. **Verify traceability** (exports, IDs)
-
-## File Location
+## Output
 
 ```
-src/generated/app/
-├── feature.ts
-└── __tests__/
-    └── feature.test.ts
+🧪 Phoenix Testing
+
+Checking 12 IUs...
+
+✅ IU-ec4737a7 (Dashboard Page) - HIGH
+   Test file: src/generated/app/__tests__/dashboard.test.ts
+   Status: 12/12 passed
+   Coverage: 87%
+
+⚠️  IU-d9277914 (Board UI) - MEDIUM
+   Test file: MISSING
+   Required for medium tier: unit_tests
+
+❌ IU-a1b2c3d4 (Task Model) - CRITICAL
+   Test file: src/generated/__tests__/task.test.ts
+   Status: 2/8 tests failed
+   Failed:
+     - should validate input
+     - should handle null
 ```
 
-## Coverage Check
+## Exit Codes
 
-- [ ] All IUs have tests (medium+)
-- [ ] Tests pass
-- [ ] Invariants verified
+- 0: All tests pass, coverage sufficient
+- 1: Tests failing or missing required coverage
+
+## Next Step
+
+Fix failing tests or add missing test files, then re-run.

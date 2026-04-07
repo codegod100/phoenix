@@ -99,13 +99,7 @@ npm run lint
 npm test
 ```
 
-The regen.js script inlines VCS evidence functions from `src/vcs/evidence.ts`:
-- `runTypecheck(projectRoot)` - TypeScript type checking
-- `runLint(projectRoot)` - Linting
-- `runUnitTests(projectRoot, iuId, pattern)` - Unit tests
-- `evaluatePolicy(iuId, tier, records)` - Policy evaluation
-
-Returns: `{ status: 'ACCEPTED' | 'REJECTED' | 'PENDING', score: number }`
+**Note:** Evidence collection is performed by `phoenix-evidence`, not during regen. Regen generates the code; evidence validates it.
 
 ### Step 6: Update manifest
 

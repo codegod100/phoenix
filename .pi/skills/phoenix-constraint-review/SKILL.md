@@ -10,7 +10,7 @@ Check specs for completeness using `constraint-review.js`.
 ## How to Run
 
 ```bash
-node .pi/skills/phoenix-constraint-review/constraint-review.js [spec-file.md]
+node .pi/skills/phoenix-constraint-review/constraint-review.js [project-root]
 ```
 
 ## What to Find

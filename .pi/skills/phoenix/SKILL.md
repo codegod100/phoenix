@@ -11,23 +11,24 @@ Universal entry point for Phoenix VCS operations.
 
 | Command | Skill | VCS Core Function | Direct Execution |
 |---------|-------|-------------------|------------------|
-| `init` | phoenix-init | Initialize project structure | `node .pi/skills/phoenix-init/init.js` |
-| `ingest` | phoenix-ingest | `canonId()`, `clauseSemhash()` | `node .pi/skills/phoenix-ingest/ingest.js` |
-| `canonicalize` | phoenix-canonicalize | `classifyChange()`, `DRateTracker` | `node .pi/skills/phoenix-canonicalize/canonicalize.js` |
-| `plan` | phoenix-plan | `iuId()`, risk tiers | `node .pi/skills/phoenix-plan/plan.js` |
-| `regen` | phoenix-regen | `fileHash()`, `runTypecheck()` | `node .pi/skills/phoenix-regen/regen.js` |
-| `evidence` | phoenix-evidence | `evaluatePolicy()`, `getRequiredEvidence()` | `node .pi/skills/phoenix-evidence/evidence.js` |
-| `audit` | phoenix-audit | `validateBoundary()`, boundary lint | `node .pi/skills/phoenix-audit/audit.js <file>` |
-| `drift` | phoenix-drift | `detectDrift()`, `createWaiver()` | `node .pi/skills/phoenix-drift/drift.js` |
-| `cascade` | phoenix-cascade | `computeCascade()`, `computeInvalidation()` | `node .pi/skills/phoenix-cascade/cascade.js` |
-| `shadow` | phoenix-shadow | `runShadowPipeline()`, upgrade safety | `node .pi/skills/phoenix-shadow/shadow.js` |
-| `pipeline` | phoenix-pipeline | Full flow with gates | `node .pi/skills/phoenix-pipeline/pipeline.js` |
-| `status` | phoenix-status | `getVCSStatus()`, unified diagnostics | `node .pi/skills/phoenix-status/status.js` |
-| `invalidate` | phoenix-cascade | Selective invalidation check | `node .pi/skills/phoenix-cascade/cascade.js invalidate` |
+| `init` | phoenix-init | Initialize project structure | `node .pi/skills/phoenix-init/init.js [project-root]` |
+| `ingest` | phoenix-ingest | `canonId()`, `clauseSemhash()` | `node .pi/skills/phoenix-ingest/ingest.js [project-root]` |
+| `canonicalize` | phoenix-canonicalize | `classifyChange()`, `DRateTracker` | `node .pi/skills/phoenix-canonicalize/canonicalize.js [project-root]` |
+| `plan` | phoenix-plan | `iuId()`, risk tiers | `node .pi/skills/phoenix-plan/plan.js [project-root]` |
+| `regen` | phoenix-regen | `fileHash()`, `runTypecheck()` | `node .pi/skills/phoenix-regen/regen.js [iu-id...]` |
+| `evidence` | phoenix-evidence | `evaluatePolicy()`, `getRequiredEvidence()` | `node .pi/skills/phoenix-evidence/evidence.js [project-root]` |
+| `audit` | phoenix-audit | `validateBoundary()`, boundary lint | `node .pi/skills/phoenix-audit/audit.js <file-path>` |
+| `drift` | phoenix-drift | `detectDrift()`, `createWaiver()` | `node .pi/skills/phoenix-drift/drift.js [project-root]` |
+| `cascade` | phoenix-cascade | `computeCascade()`, `computeInvalidation()` | `node .pi/skills/phoenix-cascade/cascade.js <command>` |
+| `shadow` | phoenix-shadow | `runShadowPipeline()`, upgrade safety | `node .pi/skills/phoenix-shadow/shadow.js [project-root] [old-ver] [new-ver]` |
+| `pipeline` | phoenix-pipeline | Full flow with gates | `node .pi/skills/phoenix-pipeline/pipeline.js [project-root]` |
+| `status` | phoenix-status | `getVCSStatus()`, unified diagnostics | `node .pi/skills/phoenix-status/status.js [project-root]` |
+| `testing` | phoenix-testing | Test verification by tier | `node .pi/skills/phoenix-testing/testing.js [project-root]` |
+| `invalidate` | phoenix-cascade | Selective invalidation check | `node .pi/skills/phoenix-cascade/cascade.js invalidate <canon-id...>` |
 | `purge` | phoenix-purge | Test regen determinism | `bash .pi/skills/phoenix-purge/purge.sh` |
-| `inspect` | phoenix-inspect | Visualize project traceability | `node .pi/skills/phoenix-inspect/inspect.js` |
-| `spec` | phoenix-spec | Validate spec files | `node .pi/skills/phoenix-spec/validate.js` |
-| `constraint-review` | phoenix-constraint-review | Check spec completeness | `node .pi/skills/phoenix-constraint-review/constraint-review.js` |
+| `inspect` | phoenix-inspect | Visualize project traceability | `node .pi/skills/phoenix-inspect/inspect.js [project-root]` |
+| `spec` | phoenix-spec | Validate spec files | `node .pi/skills/phoenix-spec/validate.js [spec-directory]` |
+| `constraint-review` | phoenix-constraint-review | Check spec completeness | `node .pi/skills/phoenix-constraint-review/constraint-review.js [project-root]` |
 
 ## Usage
 
@@ -47,12 +48,18 @@ Agent executes:
 ### CLI-Based (Direct Node Execution)
 
 ```bash
-# Individual skill scripts
-node .pi/skills/phoenix-status/status.js
-node .pi/skills/phoenix-drift/drift.js
-node .pi/skills/phoenix-audit/audit.js src/app.ts
-node .pi/skills/phoenix-cascade/cascade.js <iu-id>
+# Individual skill scripts (project-root optional, defaults to current directory)
+node .pi/skills/phoenix-status/status.js [project-root]
+node .pi/skills/phoenix-drift/drift.js [project-root]
+node .pi/skills/phoenix-audit/audit.js <file-path>
+node .pi/skills/phoenix-testing/testing.js [project-root]
+
+# With specific arguments
+node .pi/skills/phoenix-cascade/cascade.js cascade <iu-id>
 node .pi/skills/phoenix-cascade/cascade.js invalidate node-abc123...
+node .pi/skills/phoenix-regen/regen.js [iu-id...]
+node .pi/skills/phoenix-spec/validate.js [spec-directory]
+node .pi/skills/phoenix-constraint-review/constraint-review.js [project-root]
 ```
 
 ## Pipeline Flow
@@ -127,7 +134,12 @@ phoenix (router)
 ├── phoenix-shadow (upgrade safety)
 ├── phoenix-pipeline (orchestration)
 ├── phoenix-status (unified diagnostics)
-└── phoenix-utils (shared types)
+├── phoenix-testing (test verification)
+├── phoenix-inspect (traceability)
+├── phoenix-spec (spec validation)
+├── phoenix-constraint-review (spec linting)
+├── phoenix-purge (determinism testing)
+└── phoenix-utils (reference patterns - not executable)
 ```
 
 ## Quick Reference
@@ -135,23 +147,23 @@ phoenix (router)
 ```
 # Initialize
 /skill:phoenix init
-node .pi/skills/phoenix-init/init.js
+node .pi/skills/phoenix-init/init.js [project-root]
 
 # Full pipeline
 /skill:phoenix pipeline
-node .pi/skills/phoenix-pipeline/pipeline.js
+node .pi/skills/phoenix-pipeline/pipeline.js [project-root]
 
 # Check status
 /skill:phoenix status
-node .pi/skills/phoenix-status/status.js
+node .pi/skills/phoenix-status/status.js [project-root]
 
 # Check drift (defensive)
 /skill:phoenix drift
-node .pi/skills/phoenix-drift/drift.js
+node .pi/skills/phoenix-drift/drift.js [project-root]
 
 # Validate boundaries
 /skill:phoenix audit
-node .pi/skills/phoenix-audit/audit.js src/app.ts
+node .pi/skills/phoenix-audit/audit.js <file-path>
 
 # Compute cascade
 /skill:phoenix cascade <iu-id>
@@ -162,7 +174,15 @@ node .pi/skills/phoenix-cascade/cascade.js invalidate node-abc123...
 
 # Shadow pipeline (upgrades)
 /skill:phoenix shadow
-node .pi/skills/phoenix-shadow/shadow.js
+node .pi/skills/phoenix-shadow/shadow.js [project-root] [old-ver] [new-ver]
+
+# Test verification
+/skill:phoenix testing
+node .pi/skills/phoenix-testing/testing.js [project-root]
+
+# Visualize project
+/skill:phoenix inspect
+node .pi/skills/phoenix-inspect/inspect.js [project-root]
 ```
 
 ## VCS Core Source

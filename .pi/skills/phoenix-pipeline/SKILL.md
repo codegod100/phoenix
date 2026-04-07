@@ -121,17 +121,17 @@ node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4 node-b2c3d4e
 ## Running the Full Pipeline
 
 ```bash
-# Method 1: Individual phases
-node .pi/skills/phoenix-ingest/ingest.js
-node .pi/skills/phoenix-canonicalize/canonicalize.js
-node .pi/skills/phoenix-plan/plan.js
-node .pi/skills/phoenix-regen/regen.js
-node .pi/skills/phoenix-evidence/evidence.js
-node .pi/skills/phoenix-audit/audit.js src/generated/
-node .pi/skills/phoenix-drift/drift.js
+# Method 1: Individual phases (with optional project-root)
+node .pi/skills/phoenix-ingest/ingest.js [project-root]
+node .pi/skills/phoenix-canonicalize/canonicalize.js [project-root]
+node .pi/skills/phoenix-plan/plan.js [project-root]
+node .pi/skills/phoenix-regen/regen.js [project-root]
+node .pi/skills/phoenix-evidence/evidence.js [project-root]
+node .pi/skills/phoenix-audit/audit.js [project-root]
+node .pi/skills/phoenix-drift/drift.js [project-root]
 
 # Method 2: Full pipeline
-node .pi/skills/phoenix-pipeline/pipeline.js
+node .pi/skills/phoenix-pipeline/pipeline.js [project-root]
 ```
 
 ## Pipeline State Machine

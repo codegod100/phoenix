@@ -12,7 +12,7 @@ Guidelines and helpers for writing and editing Phoenix specification files.
 To check specs for IU references using the validator:
 
 ```bash
-node .pi/skills/phoenix-spec/validate.js [spec-file.md]
+node .pi/skills/phoenix-spec/validate.js [spec-directory]
 ```
 
 Or manually:

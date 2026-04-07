@@ -44,7 +44,7 @@ Risk-tiered evidence collection per PRD Section 10.
 Using evidence.js directly:
 
 ```bash
-node .pi/skills/phoenix-evidence/evidence.js <iu-id> [--tier=high]
+node .pi/skills/phoenix-evidence/evidence.js [project-root] [iu-id]
 ```
 
 Or programmatically, the skill inlines VCS evidence functions from `src/vcs/evidence.ts`:

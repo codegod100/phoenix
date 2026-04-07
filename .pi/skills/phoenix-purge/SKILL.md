@@ -158,7 +158,22 @@ Minor non-determinism in comments is acceptable.
 
 ## Running the Skill
 
-Since this is agent-skills only, execute manually:
+The purge skill uses shell scripts for deterministic testing:
+
+```bash
+# Step 1: Purge and backup
+bash .pi/skills/phoenix-purge/purge.sh [project-root]
+
+# Step 2: Manually regenerate code (intentionally manual for safety)
+node .pi/skills/phoenix-regen/regen.js
+
+# Step 3: Compare results
+bash .pi/skills/phoenix-purge/compare.sh [backup-path]
+```
+
+**Note:** Regeneration is intentionally manual (Step 2) so you can verify the purge before re-running the pipeline. The purge.sh script stops after backing up and purging, allowing you to confirm before regenerating.
+
+### Manual Steps (if not using scripts)
 
 1. **Backup current state**
    ```bash

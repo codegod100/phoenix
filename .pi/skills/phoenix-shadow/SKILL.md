@@ -26,7 +26,12 @@ Upgrading the pipeline that extracts requirements from specs is risky:
 ## How to Run
 
 ```bash
-node .pi/skills/phoenix-shadow/shadow.js [project-root]
+node .pi/skills/phoenix-shadow/shadow.js [project-root] [old-pipeline-id] [new-pipeline-id]
+```
+
+**Example:**
+```bash
+node .pi/skills/phoenix-shadow/shadow.js . v1.0 v1.1
 ```
 
 ## Process
@@ -133,15 +138,13 @@ Don't need shadow for:
 
 ```bash
 # Run shadow comparison
-node .pi/skills/phoenix-shadow/shadow.js
+node .pi/skills/phoenix-shadow/shadow.js [project-root] [old-version] [new-version]
 
-# Or programmatically
-node -e "
-  const { runShadowPipeline } = require('./.pi/skills/phoenix-shadow/shadow.js');
-  const result = runShadowPipeline(oldNodes, newNodes, 'v1.2', 'v1.3');
-  console.log(result.classification);
-"
+# Example: Compare pipeline v1.0 vs v1.1
+node .pi/skills/phoenix-shadow/shadow.js . v1.0 v1.1
 ```
+
+**Note:** The current implementation is a simulation/placeholder. In production, this would compare actual pipeline version outputs.
 
 ## Upgrade Safety Checklist
 

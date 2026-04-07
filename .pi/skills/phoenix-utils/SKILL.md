@@ -1,25 +1,32 @@
 ---
 name: phoenix-utils
-description: Shared patterns and types for Phoenix skills. Reference for implementing Phoenix operations.
+description: Shared patterns, types, and utilities for Phoenix skills. Reference-only library - not an executable skill.
 ---
 
 # Phoenix Utilities
 
-Reference patterns for Phoenix skill implementations.
+Reference patterns and shared utilities for Phoenix skill implementations.
 
-## Project Structure
+## Purpose
+
+This directory contains reusable code patterns and type definitions used by other Phoenix skills. It is **not an executable skill** - rather, it's a library that other skills can import or copy patterns from.
+
+## Contents
 
 ```
-project/
-├── spec/                      # Specification documents
-│   └── app.md
-└── src/
-    └── generated/            # Generated code
+phoenix-utils/
+├── SKILL.md        # This documentation
+└── lib/            # Shared utility code
+    └── (shared modules)
 ```
 
-## Data Types
+## Usage
 
-### Clause (from spec)
+Other skills should inline or reference these patterns rather than importing them directly (skills are self-contained).
+
+### Data Types Reference
+
+#### Clause (from spec)
 ```typescript
 interface Clause {
   id: string;           // SHA-256 hash of normalized text
@@ -31,7 +38,7 @@ interface Clause {
 }
 ```
 
-### Canonical Node (from canonicalize)
+#### Canonical Node (from canonicalize)
 ```typescript
 interface CanonicalNode {
   canon_id: string;     // Content-addressed hash (SHA-256 of statement)
@@ -41,7 +48,7 @@ interface CanonicalNode {
 }
 ```
 
-### Implementation Unit (from plan)
+#### Implementation Unit (from plan)
 ```typescript
 interface ImplementationUnit {
   iu_id: string;        // Hash of canonical nodes + config
@@ -78,7 +85,7 @@ export const _phoenix = {
 
 The IU (tracked separately) has `source_canon_ids` linking to requirements.
 
-## Common Operations
+## Common Operations Reference
 
 ### Read Spec Files
 ```typescript
@@ -104,3 +111,11 @@ const normalized = text
 ```typescript
 const hash = sha256(normalizedStatement).slice(0, 16);
 ```
+
+## Note for Skill Authors
+
+When creating new skills:
+1. Copy relevant type definitions from this reference
+2. Inline utility functions (skills are self-contained)
+3. Follow the patterns shown in existing skills
+4. Keep skills independent - no external imports from lib/

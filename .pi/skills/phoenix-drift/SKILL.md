@@ -17,8 +17,11 @@ Defensive drift detection per PRD Section 9.
 ## How to Run
 
 ```bash
-# Direct execution
+# Direct execution (current directory)
 node .pi/skills/phoenix-drift/drift.js
+
+# With specific project root
+node .pi/skills/phoenix-drift/drift.js [project-root]
 
 # Or from anywhere
 node /path/to/.pi/skills/phoenix-drift/drift.js [project-root]
