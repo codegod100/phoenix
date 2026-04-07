@@ -389,6 +389,19 @@ Cross-Origin-Embedder-Policy: require-corp</pre>
   }
 }
 
+/**
+ * Mounts the NotesApp to a DOM element.
+ * This is the main entry point for the application.
+ *
+ * @param selector - CSS selector for the container element (e.g., '#app')
+ * @returns Promise resolving to the app instance with destroy method
+ */
+export async function mountApp(selector: string): Promise<{ destroy: () => Promise<void> }> {
+  const app = new NotesApp();
+  await app.start(selector.replace('#', ''));
+  return app;
+}
+
 /** @internal Phoenix VCS traceability — do not remove. */
 export const _phoenix = {
   iu_id: '2e8f5a4b9c7d2e8f5a4b9c7d2e8f5a4b9c7d2e8f5a4b9c7d2e8f5a4b9c7d2e8f5',
