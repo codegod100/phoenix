@@ -2,34 +2,50 @@
 /**
  * Phoenix Ingest - Parse specs into content-addressed clauses
  * 
+ * Self-contained skill - no external dependencies except Node.js stdlib
+ * 
  * Usage: node .pi/skills/phoenix-ingest/ingest.js [project-root]
  */
 
-import { canonId, normalizeText, clauseSemhash, contextSemhash } from '../phoenix-vcs-core/lib/identity.js';
 import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
+import { createHash } from 'crypto';
 import { resolve, join } from 'path';
 
-const projectRoot = resolve(process.argv[2] || '.');
-const specDir = resolve(projectRoot, 'spec');
-const outputDir = resolve(projectRoot, '.phoenix/graphs');
+// === VCS IDENTITY FUNCTIONS (inlined) ===
 
-if (!existsSync(specDir)) {
-  console.error(`❌ No spec directory found at ${specDir}`);
-  process.exit(1);
+function canonId(text) {
+  return createHash('sha256').update(text).digest('hex');
 }
 
-console.log('📥 Phoenix Ingest');
-console.log(`   Project: ${projectRoot}`);
-console.log(`   Spec dir: ${specDir}\n`);
+function normalizeText(text) {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .trim();
+}
 
-try {
+function clauseSemhash(text) {
+  return canonId(`clause:${normalizeText(text)}`);
+}
+
+function contextSemhash(text, sectionContext = [], prevHash = '', nextHash = '') {
+  const normalized = normalizeText(text);
+  const context = [
+    `section:${sectionContext.join('|')}`,
+    `prev:${prevHash}`,
+    `next:${nextHash}`,
+    `text:${normalized}`
+  ].join(';');
+  return canonId(context);
+}
+
+// === VCS INGEST FUNCTIONS (inlined) ===
+
+function ingestSpecs(projectRoot) {
+  const specDir = resolve(projectRoot, 'spec');
   const specFiles = readdirSync(specDir).filter(f => f.endsWith('.md'));
   
-  if (specFiles.length === 0) {
-    console.error('❌ No .md files found in spec/');
-    process.exit(1);
-  }
-
   const clauses = [];
   let prevHash = '';
 
@@ -70,6 +86,32 @@ try {
         prevHash = clauseHash;
       }
     }
+  }
+  
+  return { clauses, specFiles };
+}
+
+// === MAIN EXECUTION ===
+
+const projectRoot = resolve(process.argv[2] || '.');
+const specDir = resolve(projectRoot, 'spec');
+const outputDir = resolve(projectRoot, '.phoenix/graphs');
+
+if (!existsSync(specDir)) {
+  console.error(`❌ No spec directory found at ${specDir}`);
+  process.exit(1);
+}
+
+console.log('📥 Phoenix Ingest');
+console.log(`   Project: ${projectRoot}`);
+console.log(`   Spec dir: ${specDir}\n`);
+
+try {
+  const { clauses, specFiles } = ingestSpecs(projectRoot);
+  
+  if (clauses.length === 0) {
+    console.error('❌ No clauses found in spec files');
+    process.exit(1);
   }
 
   if (!existsSync(outputDir)) {
