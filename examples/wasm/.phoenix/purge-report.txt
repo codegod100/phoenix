@@ -1,0 +1,24 @@
+Phoenix Purge Report - Mon Apr  6 04:36:59 PM PDT 2026
+================================
+
+Backup: .phoenix/purge-backup/20260406-163439
+Overall Score: 99%
+
+Files:
+File                             Original        New        Score
+------------------------------ ---------- ---------- ------------
+
+app.ts                                397        397        100%
+components/editor.ts                  317        317        100%
+components/sidebar.ts                 225        225        100%
+components/status.ts                  176        176        100%
+database.ts                           277        277        100%
+repository.ts                         263        263         99%
+schema.ts                             195        195        100%
+types.ts                              159        159        100%
+
+Summary:
+- Identical: 7
+- Minor: 1  
+- Major: 0
+- Total: 8
