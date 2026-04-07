@@ -1,6 +1,6 @@
 ---
 name: phoenix-audit
-description: Audit Implementation Units with boundary validation and architectural linting. Executable skill.
+description: Audit Implementation Units with boundary validation and architectural linting. Executable skill - runs audit.js directly.
 ---
 
 # Phoenix Audit

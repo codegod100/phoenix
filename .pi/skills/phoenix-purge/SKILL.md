@@ -1,11 +1,21 @@
 ---
 name: phoenix-purge
-description: Purge generated code to test REGEN step determinism. Deletes src/generated/* only, preserves canonicals and IUs, regenerates code, and reports diff scores.
+description: Purge generated code to test REGEN step determinism. Deletes src/generated/* only, preserves canonicals and IUs, regenerates code, and reports diff scores. Executable skill - runs purge.sh and compare.sh directly.
 ---
 
 # Phoenix Purge
 
-Test pipeline determinism by purging and regenerating code.
+Test pipeline determinism by purging and regenerating code using `purge.sh` and `compare.sh`.
+
+## How to Run
+
+```bash
+# Full purge and regenerate
+bash .pi/skills/phoenix-purge/purge.sh
+
+# Compare regenerated files with backup
+bash .pi/skills/phoenix-purge/compare.sh
+```
 
 ## Purpose
 

@@ -1,11 +1,17 @@
 ---
 name: phoenix-init
-description: Initialize a new Phoenix project. Creates spec directory and starter structure.
+description: Initialize a new Phoenix project. Creates spec directory and starter structure. Executable skill - runs init.js directly.
 ---
 
 # Phoenix Init
 
-Set up a new Phoenix project.
+Set up a new Phoenix project using `init.js`.
+
+## How to Run
+
+```bash
+node .pi/skills/phoenix-init/init.js [project-path]
+```
 
 ## When to Use
 

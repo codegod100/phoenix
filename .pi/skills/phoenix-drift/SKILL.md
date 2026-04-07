@@ -42,13 +42,7 @@ node /path/to/.pi/skills/phoenix-drift/drift.js [project-root]
 4. Reports drift with blocking/non-blocking status
 5. Exits with code 1 if blocking drift detected
 
-## Using VCS Core
-
-This skill imports from phoenix-vcs-core:
-
-```javascript
-import { loadManifest, detectDrift, formatDriftReport } from '../phoenix-vcs-core/lib/drift.js';
-```
+The skill is self-contained and does not require external VCS modules. It performs direct manifest and file system comparison.
 
 ## Per-PRD Behavior
 

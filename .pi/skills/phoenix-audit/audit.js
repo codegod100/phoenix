@@ -2,117 +2,215 @@
 /**
  * Phoenix Audit - Boundary validation and architectural linting
  * 
- * Self-contained skill - no external dependencies except Node.js stdlib
+ * Validates that generated code respects declared dependencies and side-channels.
+ * Per PRD Section 7 & 7.1: Boundary Policy Schema and Architectural Linter
  * 
  * Usage: node .pi/skills/phoenix-audit/audit.js <file-path>
  */
 
 import { readFileSync, existsSync } from 'fs';
-import { resolve, relative } from 'path';
+import { resolve, join, relative } from 'path';
 
-// === VCS BOUNDARY FUNCTIONS (inlined) ===
+// === VCS BOUNDARY VALIDATION (from src/vcs/boundary.ts) ===
 
-function extractImports(sourceCode) {
-  const imports = [];
-  
-  const es6Regex = /import\s+(?:.*?\s+from\s+)?['"]([^'"]+)['"];?/g;
-  let match;
-  while ((match = es6Regex.exec(sourceCode)) !== null) {
-    imports.push({ type: 'es6', source: match[1] });
-  }
-  
-  const cjsRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
-  while ((match = cjsRegex.exec(sourceCode)) !== null) {
-    imports.push({ type: 'cjs', source: match[1] });
-  }
-  
-  return imports;
+function defaultBoundaryPolicy() {
+  return {
+    dependencies: {
+      code: {
+        allowed_ius: [],
+        allowed_packages: [],
+        forbidden_ius: [],
+        forbidden_packages: [],
+        forbidden_paths: [],
+      },
+      side_channels: {
+        databases: [],
+        queues: [],
+        caches: [],
+        config: [],
+        external_apis: [],
+        files: [],
+      },
+    },
+  };
 }
 
-function detectSideChannels(sourceCode) {
-  const channels = [];
+function extractDependencies(sourceCode, filePath) {
+  const deps = [];
+  const lines = sourceCode.split('\n');
   
-  // Remove string literals and comments to avoid false positives
-  const codeWithoutStrings = sourceCode
-    .replace(/'[^']*'/g, "''")
-    .replace(/"[^"]*"/g, '""')
-    .replace(/`[^`]*`/g, '``')
-    .replace(/\/\/.*$/gm, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
-  
-  const patterns = [
-    { name: 'database', regex: /\b(db|database|pool|connection|prisma|mongoose|sequelize)\b/i },
-    { name: 'filesystem', regex: /\b(fs\.|readFile|writeFile|mkdir|readdir)\b/ },
-    { name: 'network', regex: /\b(fetch|axios|XMLHttpRequest|WebSocket|socket\.io)\b/i },
-    { name: 'process', regex: /\b(process\.env|child_process|spawn|exec)\b/ },
-    { name: 'crypto', regex: /\b(crypto\.randomBytes|crypto\.createHash|hash|encrypt|decrypt|sign|verify)\b/i },
-    { name: 'cache', regex: /\b(redis|cache|memcached|lru)\b/i }
+  // Match import statements
+  const importRegex = /import\s+(?:(?:{[^}]*}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"];?/g;
+  // Match require statements
+  const requireRegex = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  // Match side channel patterns
+  const sideChannelPatterns = [
+    { type: 'database', regex: /new\s+(?:Database|SQLite|better-sqlite3|pg|mysql|redis)/i },
+    { type: 'queue', regex: /new\s+(?:Queue|Bull|RabbitMQ|Kafka|SQS)/i },
+    { type: 'cache', regex: /new\s+(?:Cache|Redis|Memcached)/i },
+    { type: 'external_api', regex: /fetch\s*\(|axios|https?\.request/i },
+    { type: 'file', regex: /fs\.(?:read|write|append)|readFile|writeFile/i },
   ];
   
-  for (const { name, regex } of patterns) {
-    if (regex.test(codeWithoutStrings)) {
-      channels.push(name);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineNum = i + 1;
+    
+    // Check imports
+    let match;
+    while ((match = importRegex.exec(line)) !== null) {
+      const importPath = match[1];
+      
+      // Categorize the import
+      let type = 'package_import';
+      if (importPath.startsWith('./') || importPath.startsWith('../')) {
+        // Could be IU import - check if it points to generated directory
+        if (importPath.includes('generated')) {
+          type = 'iu_import';
+        }
+      }
+      
+      deps.push({
+        type,
+        source: filePath,
+        target: importPath,
+        line: lineNum,
+        column: match.index,
+      });
+    }
+    
+    // Check requires
+    while ((match = requireRegex.exec(line)) !== null) {
+      deps.push({
+        type: 'package_import',
+        source: filePath,
+        target: match[1],
+        line: lineNum,
+        column: match.index,
+      });
+    }
+    
+    // Check side channels
+    for (const pattern of sideChannelPatterns) {
+      if (pattern.regex.test(line)) {
+        deps.push({
+          type: 'side_channel',
+          source: filePath,
+          target: `${pattern.type}_usage`,
+          line: lineNum,
+        });
+      }
     }
   }
   
-  return [...new Set(channels)];
+  return deps;
 }
 
 function validateBoundary(iuId, filePath, sourceCode, policy, enforcement) {
-  const violations = [];
-  const imports = extractImports(sourceCode);
-  const sideChannels = detectSideChannels(sourceCode);
+  const deps = extractDependencies(sourceCode, filePath);
+  const diagnostics = [];
   
-  for (const forbidden of policy.forbidden_iu_imports || []) {
-    const importMatch = imports.find(imp => imp.source.includes(forbidden));
-    if (importMatch) {
-      violations.push({
-        type: 'dependency_violation',
-        severity: enforcement.dependency_violation?.severity || 'error',
-        message: `Forbidden import of IU ${forbidden}`,
-        location: importMatch.source
+  // Check forbidden IU imports
+  if (policy.dependencies?.code?.forbidden_ius) {
+    for (const forbidden of policy.dependencies.code.forbidden_ius) {
+      const violations = deps.filter(
+        d => d.type === 'iu_import' && d.target.includes(forbidden)
+      );
+      
+      for (const v of violations) {
+        const severity = enforcement?.dependency_violation?.severity || 'error';
+        diagnostics.push({
+          severity,
+          category: 'boundary',
+          subject: iuId,
+          message: `Forbidden IU import: ${forbidden} at line ${v.line}`,
+          recommendation: `Remove import or update boundary policy to allow ${forbidden}`,
+        });
+      }
+    }
+  }
+  
+  // Check forbidden packages
+  if (policy.dependencies?.code?.forbidden_packages) {
+    for (const forbidden of policy.dependencies.code.forbidden_packages) {
+      const violations = deps.filter(
+        d => d.type === 'package_import' && d.target === forbidden
+      );
+      
+      for (const v of violations) {
+        const severity = enforcement?.dependency_violation?.severity || 'error';
+        diagnostics.push({
+          severity,
+          category: 'dependency',
+          subject: iuId,
+          message: `Forbidden package: ${forbidden} at line ${v.line}`,
+          recommendation: `Remove ${forbidden} or add to allowed_packages`,
+        });
+      }
+    }
+  }
+  
+  // Check undeclared side channels
+  const declaredSideChannels = new Set([
+    ...(policy.dependencies?.side_channels?.databases || []),
+    ...(policy.dependencies?.side_channels?.queues || []),
+    ...(policy.dependencies?.side_channels?.caches || []),
+    ...(policy.dependencies?.side_channels?.external_apis || []),
+    ...(policy.dependencies?.side_channels?.files || []),
+  ]);
+  
+  const sideChannelDeps = deps.filter(d => d.type === 'side_channel');
+  
+  for (const sc of sideChannelDeps) {
+    // Extract side channel type from target
+    const channelType = sc.target.replace('_usage', '');
+    
+    // Check if this channel type is declared in policy
+    const isDeclared = declaredSideChannels.has(channelType) ||
+      declaredSideChannels.has(sc.target) ||
+      declaredSideChannels.has('*'); // Wildcard allows any
+    
+    if (!isDeclared) {
+      const severity = enforcement?.side_channel_violation?.severity || 'warning';
+      diagnostics.push({
+        severity,
+        category: 'side_channel',
+        subject: iuId,
+        message: `Undeclared side channel: ${channelType} at line ${sc.line}`,
+        recommendation: `Add ${channelType} to boundary policy or refactor to use dependency injection`,
       });
     }
   }
   
-  for (const forbidden of policy.forbidden_packages || []) {
-    const pkgMatch = imports.find(imp => imp.source === forbidden || imp.source.startsWith(`${forbidden}/`));
-    if (pkgMatch) {
-      violations.push({
-        type: 'dependency_violation',
-        severity: enforcement.dependency_violation?.severity || 'error',
-        message: `Forbidden package: ${forbidden}`,
-        location: pkgMatch.source
-      });
-    }
+  // Check for _phoenix export (traceability requirement)
+  const hasPhoenix = sourceCode.includes('_phoenix');
+  const hasIuId = sourceCode.includes('iu_id:');
+  
+  if (!hasPhoenix || !hasIuId) {
+    diagnostics.push({
+      severity: 'error',
+      category: 'traceability',
+      subject: iuId,
+      message: `Missing _phoenix traceability export`,
+      recommendation: `Add export const _phoenix = { iu_id: '...', name: '...', risk_tier: '...' }`,
+    });
   }
   
-  const required = new Set(policy.required_side_channels || []);
-  for (const channel of sideChannels) {
-    if (!required.has(channel)) {
-      violations.push({
-        type: 'side_channel_violation',
-        severity: enforcement.side_channel_violation?.severity || 'warning',
-        message: `Undeclared side channel: ${channel}`,
-        location: 'detected in source'
-      });
-    }
-  }
-  
-  const errors = violations.filter(v => v.severity === 'error');
-  const warnings = violations.filter(v => v.severity === 'warning');
+  const has_errors = diagnostics.some(d => d.severity === 'error');
+  const has_warnings = diagnostics.some(d => d.severity === 'warning');
   
   return {
     iu_id: iuId,
     file: filePath,
-    has_errors: errors.length > 0,
-    has_warnings: warnings.length > 0,
-    diagnostics: violations,
+    diagnostics,
+    has_errors,
+    has_warnings,
+    dependency_graph: deps,
     summary: {
-      errors: errors.length,
-      warnings: warnings.length,
-      imports_checked: imports.length,
-      side_channels_detected: sideChannels
+      errors: diagnostics.filter(d => d.severity === 'error').length,
+      warnings: diagnostics.filter(d => d.severity === 'warning').length,
+      imports_checked: deps.filter(d => d.type !== 'side_channel').length,
+      side_channels_detected: sideChannelDeps.map(d => d.target.replace('_usage', '')),
     }
   };
 }
@@ -124,35 +222,36 @@ function formatBoundaryReport(results) {
   lines.push('╚══════════════════════════════════════════════════════════════╝');
   lines.push('');
   
-  let totalErrors = 0;
-  let totalWarnings = 0;
+  const withIssues = results.filter(r => r.diagnostics.length > 0);
+  const clean = results.filter(r => r.diagnostics.length === 0);
   
-  for (const result of results) {
-    const icon = result.has_errors ? '❌' : result.has_warnings ? '⚠️' : '✅';
-    lines.push(`${icon} ${result.file}`);
+  if (withIssues.length > 0) {
+    lines.push('❌ VIOLATIONS DETECTED');
+    lines.push('');
     
-    if (result.diagnostics.length > 0) {
-      for (const d of result.diagnostics) {
-        const sevIcon = d.severity === 'error' ? '  ❌' : '  ⚠️';
-        lines.push(`${sevIcon} ${d.message}`);
-        if (d.location && d.location !== 'detected in source') {
-          lines.push(`     at: ${d.location}`);
-        }
+    for (const result of withIssues) {
+      lines.push(`IU: ${result.iu_id.slice(0, 8)}... (${result.file})`);
+      
+      for (const diag of result.diagnostics) {
+        const icon = diag.severity === 'error' ? '  ❌' : '  ⚠️';
+        lines.push(`${icon} [${diag.category.toUpperCase()}] ${diag.message}`);
+        lines.push(`      → ${diag.recommendation}`);
       }
       lines.push('');
     }
-    
-    totalErrors += result.summary.errors;
-    totalWarnings += result.summary.warnings;
   }
   
-  lines.push('─────────────────────────────────────────────────────────────');
-  if (totalErrors > 0) {
-    lines.push(`Status: ❌ REJECTED (${totalErrors} errors, ${totalWarnings} warnings)`);
-  } else if (totalWarnings > 0) {
-    lines.push(`Status: ⚠️ WARNING (${totalWarnings} warnings)`);
+  lines.push(`✅ Clean: ${clean.length} IUs`);
+  lines.push(`⚠️  With issues: ${withIssues.length} IUs`);
+  lines.push('');
+  
+  const hasErrors = results.some(r => r.has_errors);
+  if (hasErrors) {
+    lines.push('Status: 🔴 REJECTED - Boundary policy violations detected');
+  } else if (withIssues.length > 0) {
+    lines.push('Status: 🟡 WARNING - Non-blocking boundary issues');
   } else {
-    lines.push('Status: ✅ PASSED');
+    lines.push('Status: 🟢 ACCEPTED - All boundaries respected');
   }
   
   return lines.join('\n');
@@ -182,16 +281,11 @@ console.log(`   File: ${relative(projectRoot, fullPath)}\n`);
 try {
   const sourceCode = readFileSync(fullPath, 'utf-8');
   
+  // Extract IU ID from _phoenix export
   const iuIdMatch = sourceCode.match(/iu_id:\s*['"]([^'"]+)['"]/);
   const iuId = iuIdMatch?.[1] || 'unknown';
   
-  const policy = {
-    forbidden_iu_imports: [],
-    forbidden_packages: [],
-    required_side_channels: [],
-    allowed_imports: ['*']
-  };
-  
+  const policy = defaultBoundaryPolicy();
   const enforcement = {
     dependency_violation: { severity: 'error' },
     side_channel_violation: { severity: 'warning' }

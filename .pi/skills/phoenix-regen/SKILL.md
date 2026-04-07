@@ -1,6 +1,6 @@
 ---
 name: phoenix-regen
-description: Generate implementation code from Implementation Units with evidence collection and traceability exports. Creates TypeScript files with content-addressed identity.
+description: Generate implementation code from Implementation Units with evidence collection and traceability exports. Creates TypeScript files with content-addressed identity. Executable skill - runs regen.js directly.
 ---
 
 # Phoenix Regen
@@ -34,6 +34,16 @@ Implementation Unit:
 }
 ```
 
+## How to Run
+
+```bash
+# Regenerate all IUs
+node .pi/skills/phoenix-regen/regen.js
+
+# Regenerate specific IUs (selective invalidation)
+node .pi/skills/phoenix-regen/regen.js IU-ec4737a7 IU-d9277914
+```
+
 ## Process
 
 ### Step 1: Check for selective invalidation
@@ -42,7 +52,7 @@ If regenerating after spec changes:
 
 ```bash
 # Check which IUs need regeneration
-npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
+node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4 node-b2c3d4e5
 
 # Only regenerate affected IUs, not entire codebase
 ```
@@ -89,30 +99,19 @@ npm run lint
 npm test
 ```
 
-Using VCS core:
+The regen.js script inlines VCS evidence functions from `src/vcs/evidence.ts`:
+- `runTypecheck(projectRoot)` - TypeScript type checking
+- `runLint(projectRoot)` - Linting
+- `runUnitTests(projectRoot, iuId, pattern)` - Unit tests
+- `evaluatePolicy(iuId, tier, records)` - Policy evaluation
 
-```typescript
-import { runTypecheck, runLint, runUnitTests, evaluatePolicy } from 'phoenix-vcs/vcs';
-
-const typecheck = await runTypecheck(projectRoot);
-const lint = await runLint(projectRoot);
-const tests = await runUnitTests(projectRoot, iuId, testPattern);
-
-const evaluation = evaluatePolicy(iuId, 'high', [typecheck, lint, tests]);
-// → { status: 'ACCEPTED' | 'REJECTED' | 'PENDING', score: 85 }
-```
+Returns: `{ status: 'ACCEPTED' | 'REJECTED' | 'PENDING', score: number }`
 
 ### Step 6: Update manifest
 
-Record generated file hashes:
+Record generated file hashes using VCS identity functions inlined from `src/vcs/identity.ts`:
 
-```typescript
-import { fileHash } from 'phoenix-vcs/vcs';
-
-const content = readFileSync(outputFile, 'utf-8');
-const hash = fileHash(content);
-// → '96bc65e6206fb3e810f88f3e87891b23ca8a461c90a63a8b5fb0a71f296fdabe'
-```
+- `fileHash(content)` - SHA-256 of file content
 
 Write to `.phoenix/manifests/generated_manifest.json`:
 
@@ -188,4 +187,4 @@ Actions:
 
 ## Next Step
 
-Run `phoenix-audit` to validate completeness, or `phoenix-drift` to detect manual edits.
+Run `node .pi/skills/phoenix-audit/audit.js` to validate completeness, or `node .pi/skills/phoenix-drift/drift.js` to detect manual edits.

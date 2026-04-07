@@ -1,6 +1,6 @@
 ---
 name: phoenix-shadow
-description: Shadow pipeline for safe canonicalization upgrades. Run old and new pipelines in parallel, classify as SAFE/COMPACTION/REJECT.
+description: Shadow pipeline for safe canonicalization upgrades. Run old and new pipelines in parallel, classify as SAFE/COMPACTION/REJECT. Executable skill - runs shadow.js directly.
 ---
 
 # Phoenix Shadow
@@ -23,6 +23,12 @@ Upgrading the pipeline that extracts requirements from specs is risky:
 
 **Shadow pipeline = safety.**
 
+## How to Run
+
+```bash
+node .pi/skills/phoenix-shadow/shadow.js [project-root]
+```
+
 ## Process
 
 ### Step 1: Run both pipelines
@@ -37,14 +43,11 @@ Spec ─┬─→ Old Pipeline ─┐
 
 ### Step 2: Compute shadow diff metrics
 
-Using VCS core:
+The shadow.js script inlines VCS shadow functions from `src/vcs/shadow.ts`:
 
-```typescript
-import { computeShadowDiff, classifyShadowDiff, runShadowPipeline } from 'phoenix-vcs/vcs';
-
-const result = runShadowPipeline(oldNodes, newNodes, 'v1.2.3', 'v1.3.0');
-// → { classification, metrics, diff_report }
-```
+- `computeShadowDiff(oldNodes, newNodes)` - Calculates change metrics
+- `classifyShadowDiff(metrics)` - Classifies as SAFE/COMPACTION/REJECT
+- `runShadowPipeline(oldNodes, newNodes, oldVer, newVer)` - Full comparison
 
 Metrics computed:
 - `node_change_pct` - % of nodes changed
@@ -96,9 +99,9 @@ Recommendation:
 
 ## Recording Upgrade Decision
 
-```typescript
-import { createPipelineUpgradeEvent } from 'phoenix-vcs/vcs';
+The shadow.js script creates upgrade events:
 
+```javascript
 const event = createPipelineUpgradeEvent(shadowResult, accepted);
 // → { type: 'PipelineUpgrade', accepted: true, ... }
 ```
@@ -126,15 +129,15 @@ Don't need shadow for:
 - Minor bug fixes
 - UI-only changes
 
-## CLI Commands
+## CLI Usage
 
 ```bash
 # Run shadow comparison
-npx phoenix-vcs shadow
+node .pi/skills/phoenix-shadow/shadow.js
 
 # Or programmatically
 node -e "
-  import { runShadowPipeline } from 'phoenix-vcs/vcs';
+  const { runShadowPipeline } = require('./.pi/skills/phoenix-shadow/shadow.js');
   const result = runShadowPipeline(oldNodes, newNodes, 'v1.2', 'v1.3');
   console.log(result.classification);
 "

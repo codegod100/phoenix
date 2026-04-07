@@ -1,6 +1,6 @@
 ---
 name: phoenix-ingest
-description: Parse specification files into content-addressed clauses with SHA-256 hashing. Executable skill.
+description: Parse specification files into content-addressed clauses with SHA-256 hashing. Executable skill - runs ingest.js directly.
 ---
 
 # Phoenix Ingest
@@ -71,11 +71,9 @@ $ node .pi/skills/phoenix-ingest/ingest.js
    DEFINITION: 2
 ```
 
-## Using VCS Core
-
-```javascript
-import { canonId, normalizeText } from '../phoenix-vcs-core/lib/identity.js';
-```
+The skill is self-contained and inlines the necessary VCS identity functions from `src/vcs/identity.ts`:
+- `canonId(text)` - SHA-256 hash generator
+- `normalizeText(text)` - Text normalization for stable hashing
 
 ## Next Step
 

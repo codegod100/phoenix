@@ -1,11 +1,17 @@
 ---
 name: phoenix-inspect
-description: Visualize Phoenix project structure. Shows spec → requirements → code traceability.
+description: Visualize Phoenix project structure. Shows spec → requirements → code traceability. Executable skill - runs inspect.js directly.
 ---
 
 # Phoenix Inspect
 
-Visualize the project structure.
+Visualize the project structure using `inspect.js`.
+
+## How to Run
+
+```bash
+node .pi/skills/phoenix-inspect/inspect.js [project-root]
+```
 
 ## When to Use
 

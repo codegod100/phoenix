@@ -1,6 +1,6 @@
 ---
 name: phoenix-status
-description: Display complete Phoenix VCS state with diagnostics. Executable skill - run status.js directly.
+description: Display complete Phoenix VCS state with diagnostics. Executable skill - runs status.js directly.
 ---
 
 # Phoenix Status

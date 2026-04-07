@@ -1,6 +1,6 @@
 ---
 name: phoenix-cascade
-description: Compute cascade actions for failed IUs and selective invalidation. Graph-based failure propagation. Executable skill.
+description: Compute cascade actions for failed IUs and selective invalidation. Graph-based failure propagation. Executable skill - runs cascade.js directly.
 ---
 
 # Phoenix Cascade

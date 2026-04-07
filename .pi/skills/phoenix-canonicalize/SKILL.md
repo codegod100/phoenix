@@ -1,6 +1,6 @@
 ---
 name: phoenix-canonicalize
-description: Extract canonical requirements from clauses with semantic hashing and change classification. Normalizes statements, removes duplicates, and tracks D-rate.
+description: Extract canonical requirements from clauses with semantic hashing and change classification. Normalizes statements, removes duplicates, and tracks D-rate. Executable skill - runs canonicalize.js directly.
 ---
 
 # Phoenix Canonicalize
@@ -31,6 +31,22 @@ Clauses from Ingest phase:
 }
 ```
 
+## How to Run
+
+```bash
+node .pi/skills/phoenix-canonicalize/canonicalize.js [project-root]
+```
+
+## Implementation
+
+This skill is self-contained in `canonicalize.js`. It inlines VCS identity functions from the core implementation (`src/vcs/identity.ts`):
+
+- `canonId()` - SHA-256 hash for canonical node IDs
+- `normalizeText()` - Text normalization for stable comparison
+- `classifyChange()` - A/B/C/D change classification
+- `DRateTracker` - D-rate monitoring class
+- `BootstrapStateMachine` - Bootstrap state management
+
 ## Process
 
 ### Step 1: Load existing canonical graph (if any)
@@ -46,92 +62,6 @@ For each new/updated clause:
 2. **Compute canonical ID**: `node-<first-8-chars-of-SHA-256>`
 3. **Classify change** vs existing graph (A/B/C/D)
 4. **Record D-rate** for classifier quality
-
-### Using VCS Core
-
-```typescript
-import { 
-  canonId, normalizeText, classifyChange, 
-  DRateTracker, BootstrapStateMachine 
-} from 'phoenix-vcs/vcs';
-
-// Normalize for canonical form
-const normalized = normalizeText("The system shall render complete HTML page");
-// → "the system shall render complete html page"
-
-// Compute canonical node ID
-const canonId = canonId(normalized).slice(0, 8);
-// → 'node-a1b2c3d4'
-
-// Track bootstrap state
-const bootstrap = new BootstrapStateMachine();
-bootstrap.transitionColdToWarming();
-// State: BOOTSTRAP_COLD → BOOTSTRAP_WARMING
-
-// Classify changes
-const classification = classifyChange(
-  oldClauseSemhash, newClauseSemhash,
-  oldContextSemhash, newContextSemhash,
-  { normalizedDiffScore: 0.1, termReferenceDelta: 0, sectionStructureDelta: 0 }
-);
-// → { class: 'B', confidence: 0.85, signals: {...} }
-
-// Track D-rate
-const dRate = new DRateTracker();
-dRate.record(classification.class);
-const status = dRate.getStatus();
-// → { dRate: 0.05, level: 'TARGET', message: '...' }
-```
-
-### Step 3: Build canonical graph
-
-Write to `.phoenix/canonical.md` and `.phoenix/graphs/canonical.json`:
-
-```markdown
-# Canonical Requirements
-
-## Board
-node-a1b2c3d4: system shall render complete html page with inline css and javascript
-node-b2c3d4e5: page must display header with title taskflow and task count summary
-node-c3d4e5f6: no theme toggle allowed
-```
-
-```json
-{
-  "version": "1.0.0",
-  "generated_at": "2026-04-07T20:00:00Z",
-  "bootstrap_state": "BOOTSTRAP_WARMING",
-  "d_rate": 0.05,
-  "nodes": [
-    {
-      "canon_id": "a1b2c3d4e5f67890...",
-      "short_id": "node-a1b2c3d4",
-      "type": "REQUIREMENT",
-      "statement": "system shall render complete html page...",
-      "source_clause_ids": ["sha256-of-original-clause"],
-      "confidence": 0.95
-    }
-  ]
-}
-```
-
-## Quality Checks
-
-- [ ] No duplicate statements (same hash = same requirement)
-- [ ] All requirements are specific and testable
-- [ ] Constraints are measurable
-- [ ] Language is consistent
-- [ ] D-rate < 10% (classifier performing adequately)
-
-## Bootstrap States
-
-| State | Meaning | D-rate Alarms |
-|-------|---------|---------------|
-| BOOTSTRAP_COLD | Initial ingest | Suppressed |
-| BOOTSTRAP_WARMING | Stabilizing | Suppressed |
-| STEADY_STATE | Stable operation | Active (>15% = alarm) |
-
-## Two-Pass Hashing
 
 Pass 1 (Cold):
 - Compute `clause_semhash` (content only)

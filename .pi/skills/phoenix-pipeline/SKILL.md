@@ -1,6 +1,6 @@
 ---
 name: phoenix-pipeline
-description: Complete Phoenix VCS pipeline with selective invalidation, drift detection, and evidence collection.
+description: Complete Phoenix VCS pipeline with selective invalidation, drift detection, and evidence collection. Executable skill - runs pipeline.js directly.
 ---
 
 # Phoenix Pipeline
@@ -76,7 +76,7 @@ spec/*.md ──→ Ingest ──→ Canonicalize ──→ Plan ──→ Regen
 **Selective Invalidation**:
 ```bash
 # Only regenerate affected subtree
-npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
+node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4 node-b2c3d4e5
 # → 3 of 12 IUs need regeneration
 ```
 
@@ -122,16 +122,16 @@ npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
 
 ```bash
 # Method 1: Individual phases
-/skill:phoenix ingest
-/skill:phoenix canonicalize
-/skill:phoenix plan
-/skill:phoenix regen
-/skill:phoenix evidence
-/skill:phoenix audit
-/skill:phoenix drift
+node .pi/skills/phoenix-ingest/ingest.js
+node .pi/skills/phoenix-canonicalize/canonicalize.js
+node .pi/skills/phoenix-plan/plan.js
+node .pi/skills/phoenix-regen/regen.js
+node .pi/skills/phoenix-evidence/evidence.js
+node .pi/skills/phoenix-audit/audit.js src/generated/
+node .pi/skills/phoenix-drift/drift.js
 
 # Method 2: Full pipeline
-/skill:phoenix pipeline
+node .pi/skills/phoenix-pipeline/pipeline.js
 ```
 
 ## Pipeline State Machine
@@ -148,13 +148,13 @@ When specs change:
 
 ```bash
 # 1. Check what needs regeneration
-npx phoenix-vcs invalidate node-a1b2c3d4
+node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4
 
 # 2. Regenerate affected IUs only
-/skill:phoenix regen IU-ec4737a7 IU-d9277914
+node .pi/skills/phoenix-regen/regen.js IU-ec4737a7 IU-d9277914
 
 # 3. Verify cascade didn't break dependents
-npx phoenix-vcs cascade IU-ec4737a7
+node .pi/skills/phoenix-cascade/cascade.js cascade IU-ec4737a7
 ```
 
 ## Integration with Shadow
@@ -163,12 +163,12 @@ When upgrading pipeline:
 
 ```bash
 # Run shadow comparison first
-/skill:phoenix shadow
+node .pi/skills/phoenix-shadow/shadow.js
 
 # Classification: SAFE | COMPACTION_EVENT | REJECT
 
 # If SAFE or COMPACTION:
-/skill:phoenix pipeline
+node .pi/skills/phoenix-pipeline/pipeline.js
 ```
 
 ## Per-PRD Selective Invalidation
@@ -208,4 +208,4 @@ Each phase has gates:
 
 ## Next Step
 
-After pipeline: `phoenix-status` for full project health check.
+After pipeline: `node .pi/skills/phoenix-status/status.js` for full project health check.

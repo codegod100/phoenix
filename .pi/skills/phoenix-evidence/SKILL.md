@@ -1,6 +1,6 @@
 ---
 name: phoenix-evidence
-description: Collect and verify evidence for Implementation Units. Risk-tiered enforcement with automated quality gates.
+description: Collect and verify evidence for Implementation Units. Risk-tiered enforcement with automated quality gates. Executable skill - runs evidence.js directly.
 ---
 
 # Phoenix Evidence
@@ -41,56 +41,43 @@ Risk-tiered evidence collection per PRD Section 10.
 
 ### Step 1: Determine required evidence
 
-Using VCS core:
+Using evidence.js directly:
 
-```typescript
-import { getRequiredEvidence, evaluatePolicy } from 'phoenix-vcs/vcs';
-
-const required = getRequiredEvidence('high');
-// → ['typecheck', 'lint', 'boundary_validation', 'unit_tests', 
-//     'property_tests', 'threat_note']
+```bash
+node .pi/skills/phoenix-evidence/evidence.js <iu-id> [--tier=high]
 ```
+
+Or programmatically, the skill inlines VCS evidence functions from `src/vcs/evidence.ts`:
+- `getRequiredEvidence(tier)` - Returns required evidence kinds for risk tier
+- `evaluatePolicy(iuId, tier, records)` - Evaluates evidence against policy
+- `runTypecheck(projectRoot)` - Runs TypeScript type checking
+- `runLint(projectRoot)` - Runs linting
+- `runUnitTests(projectRoot, iuId, pattern)` - Runs unit tests
+- `createThreatNote(iuId, threats)` - Creates threat note record
+- `createHumanSignoff(iuId, signer, artifactHash)` - Creates signoff record
 
 ### Step 2: Collect evidence
 
-```typescript
-import { 
-  runTypecheck, 
-  runLint, 
-  runUnitTests,
-  createThreatNote,
-  createHumanSignoff 
-} from 'phoenix-vcs/vcs';
+The evidence.js script runs automated checks:
 
-// Automated evidence
-const typecheck = await runTypecheck(projectRoot);
-const lint = await runLint(projectRoot);
-const tests = await runUnitTests(projectRoot, iuId, testPattern);
+```bash
+# Typecheck
+npm run typecheck
 
-// Manual evidence
-const threatNote = createThreatNote(iuId, [
-  'XSS: User input is escaped in templates',
-  'CSRF: API uses same-site cookies'
-]);
+# Lint  
+npm run lint
 
-const signoff = createHumanSignoff(iuId, 'nandi', artifactHash);
+# Tests
+npm test
 ```
+
+For manual evidence (threat notes, signoffs), create JSON files in `.phoenix/evidence/`.
 
 ### Step 3: Evaluate policy
 
-```typescript
-const evaluation = evaluatePolicy(iuId, 'high', [
-  typecheck, lint, tests, threatNote
-]);
-
-// → {
-//   iu_id: 'ec4737a7...',
-//   tier: 'high',
-//   status: 'ACCEPTED' | 'REJECTED' | 'PENDING',
-//   score: 85,
-//   missing_evidence: [],
-//   failed_evidence: []
-// }
+```javascript
+const evaluation = evaluatePolicy(iuId, 'high', records);
+// Returns: { iu_id, tier, status, score, missing_evidence, failed_evidence }
 ```
 
 ### Step 4: Block or accept
@@ -212,7 +199,7 @@ Requires signoff for high/critical tiers.
     npm test
     
     # Verify all IUs have evidence
-    npx phoenix-vcs status
+    node .pi/skills/phoenix-evidence/evidence.js --check-all
 ```
 
 ## Per-PRD Risk Tiers

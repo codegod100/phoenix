@@ -1,6 +1,6 @@
 ---
 name: phoenix-plan
-description: Plan Implementation Units from canonical requirements with content-addressed IDs, risk tiers, and boundary policies. Groups related requirements into compilation boundaries.
+description: Plan Implementation Units from canonical requirements with content-addressed IDs, risk tiers, and boundary policies. Groups related requirements into compilation boundaries. Executable skill - runs plan.js directly.
 ---
 
 # Phoenix Plan
@@ -26,6 +26,12 @@ node-e5f67890: background color is #1e1e2e
 node-f6789012: card background is #313244
 ```
 
+## How to Run
+
+```bash
+node .pi/skills/phoenix-plan/plan.js [project-root]
+```
+
 ## Process
 
 ### Step 1: Group related requirements
@@ -37,18 +43,9 @@ Group by:
 
 ### Step 2: Compute content-addressed IU ID
 
-Use VCS core for stable IU identity:
+The plan.js script uses VCS identity functions inlined from `src/vcs/identity.ts`:
 
-```typescript
-import { iuId } from 'phoenix-vcs/vcs';
-
-const iuId = iuId(
-  "Dashboard Page",                                    // IU name
-  "Renders HTML dashboard with Catppuccin theme",      // Contract description
-  ["a1b2c3d4e5f67890...", "b2c3d4e5f6789012...", ...]   // Source canon IDs (sorted)
-);
-// → 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88'
-```
+- `iuId(name, contract, sourceCanonIds)` - SHA-256 of IU identity
 
 **Same contract + same requirements = same IU ID**
 
@@ -159,7 +156,7 @@ When specs change, only affected IUs need regeneration:
 
 ```bash
 # Check which IUs are invalidated by spec changes
-npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
+node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4 node-b2c3d4e5
 
 # Output:
 # Invalidated IUs: 3
@@ -173,4 +170,4 @@ Use the cascade engine to find transitive dependencies.
 
 ## Next Step
 
-Run `phoenix-regen` to generate code for planned IUs.
+Run `node .pi/skills/phoenix-regen/regen.js` to generate code for planned IUs.

@@ -1,6 +1,6 @@
 ---
 name: phoenix
-description: Universal Phoenix VCS command router. Maps commands to specific Phoenix skills with VCS core integration.
+description: Universal Phoenix VCS command router. Maps commands to specific Phoenix skills with VCS core integration. Executable via individual skill scripts.
 ---
 
 # Phoenix
@@ -9,21 +9,25 @@ Universal entry point for Phoenix VCS operations.
 
 ## Command Map
 
-| Command | Skill | VCS Core Function |
-|---------|-------|-------------------|
-| `init` | phoenix-init | Initialize project structure |
-| `ingest` | phoenix-ingest | `canonId()`, `clauseSemhash()` |
-| `canonicalize` | phoenix-canonicalize | `classifyChange()`, `DRateTracker` |
-| `plan` | phoenix-plan | `iuId()`, risk tiers |
-| `regen` | phoenix-regen | `fileHash()`, `runTypecheck()` |
-| `evidence` | phoenix-evidence | `evaluatePolicy()`, `getRequiredEvidence()` |
-| `audit` | phoenix-audit | `validateBoundary()`, boundary lint |
-| `drift` | phoenix-drift | `detectDrift()`, `createWaiver()` |
-| `cascade` | phoenix-cascade | `computeCascade()`, `computeInvalidation()` |
-| `shadow` | phoenix-shadow | `runShadowPipeline()`, upgrade safety |
-| `pipeline` | phoenix-pipeline | Full flow with gates |
-| `status` | phoenix-status | `getVCSStatus()`, unified diagnostics |
-| `invalidate` | phoenix-cascade | Selective invalidation check |
+| Command | Skill | VCS Core Function | Direct Execution |
+|---------|-------|-------------------|------------------|
+| `init` | phoenix-init | Initialize project structure | `node .pi/skills/phoenix-init/init.js` |
+| `ingest` | phoenix-ingest | `canonId()`, `clauseSemhash()` | `node .pi/skills/phoenix-ingest/ingest.js` |
+| `canonicalize` | phoenix-canonicalize | `classifyChange()`, `DRateTracker` | `node .pi/skills/phoenix-canonicalize/canonicalize.js` |
+| `plan` | phoenix-plan | `iuId()`, risk tiers | `node .pi/skills/phoenix-plan/plan.js` |
+| `regen` | phoenix-regen | `fileHash()`, `runTypecheck()` | `node .pi/skills/phoenix-regen/regen.js` |
+| `evidence` | phoenix-evidence | `evaluatePolicy()`, `getRequiredEvidence()` | `node .pi/skills/phoenix-evidence/evidence.js` |
+| `audit` | phoenix-audit | `validateBoundary()`, boundary lint | `node .pi/skills/phoenix-audit/audit.js <file>` |
+| `drift` | phoenix-drift | `detectDrift()`, `createWaiver()` | `node .pi/skills/phoenix-drift/drift.js` |
+| `cascade` | phoenix-cascade | `computeCascade()`, `computeInvalidation()` | `node .pi/skills/phoenix-cascade/cascade.js` |
+| `shadow` | phoenix-shadow | `runShadowPipeline()`, upgrade safety | `node .pi/skills/phoenix-shadow/shadow.js` |
+| `pipeline` | phoenix-pipeline | Full flow with gates | `node .pi/skills/phoenix-pipeline/pipeline.js` |
+| `status` | phoenix-status | `getVCSStatus()`, unified diagnostics | `node .pi/skills/phoenix-status/status.js` |
+| `invalidate` | phoenix-cascade | Selective invalidation check | `node .pi/skills/phoenix-cascade/cascade.js invalidate` |
+| `purge` | phoenix-purge | Test regen determinism | `bash .pi/skills/phoenix-purge/purge.sh` |
+| `inspect` | phoenix-inspect | Visualize project traceability | `node .pi/skills/phoenix-inspect/inspect.js` |
+| `spec` | phoenix-spec | Validate spec files | `node .pi/skills/phoenix-spec/validate.js` |
+| `constraint-review` | phoenix-constraint-review | Check spec completeness | `node .pi/skills/phoenix-constraint-review/constraint-review.js` |
 
 ## Usage
 
@@ -40,15 +44,15 @@ Agent executes:
   4. Write .phoenix/graphs/spec.json
 ```
 
-### CLI-Based (Direct)
+### CLI-Based (Direct Node Execution)
 
 ```bash
-# Using VCS core CLI
-npx phoenix-vcs status
-npx phoenix-vcs drift
-npx phoenix-vcs boundary src/app.ts
-npx phoenix-vcs cascade <iu-id>
-npx phoenix-vcs invalidate node-abc123...
+# Individual skill scripts
+node .pi/skills/phoenix-status/status.js
+node .pi/skills/phoenix-drift/drift.js
+node .pi/skills/phoenix-audit/audit.js src/app.ts
+node .pi/skills/phoenix-cascade/cascade.js <iu-id>
+node .pi/skills/phoenix-cascade/cascade.js invalidate node-abc123...
 ```
 
 ## Pipeline Flow
@@ -62,33 +66,35 @@ spec/*.md ──→ [Ingest] ──→ [Canonicalize] ──→ [Plan] ──→
 
 ## Integration Points
 
-### 1. Content-Addressed Identity (VCS Core)
+Each skill inlines VCS core functions from `src/vcs/`:
 
-```typescript
-import { canonId, iuId, fileHash } from 'phoenix-vcs/vcs';
+### 1. Content-Addressed Identity
 
-// Every entity has stable SHA-256 identity
+Skills use SHA-256 for all IDs (from `src/vcs/identity.ts`):
+
+```javascript
+// Inlined in skill scripts
 const requirementId = canonId(normalizedText);
 const unitId = iuId(name, contract, canonIds);
 const contentHash = fileHash(sourceCode);
 ```
 
-### 2. D-rate Tracking (VCS Core)
+### 2. D-rate Tracking
 
-```typescript
-import { DRateTracker } from 'phoenix-vcs/vcs';
+From `src/vcs/identity.ts`:
 
+```javascript
 const tracker = new DRateTracker();
 tracker.record(changeClassification); // A, B, C, or D
 const status = tracker.getStatus();
 // Block if status.level === 'ALARM'
 ```
 
-### 3. Defensive Drift (VCS Core)
+### 3. Defensive Drift
 
-```typescript
-import { detectDrift } from 'phoenix-vcs/vcs';
+From `src/vcs/drift.ts`:
 
+```javascript
 const report = detectDrift(projectRoot, manifest);
 if (report.has_blocking_drift) {
   // Block acceptance
@@ -96,11 +102,11 @@ if (report.has_blocking_drift) {
 }
 ```
 
-### 4. Graph Cascade (VCS Core)
+### 4. Graph Cascade
 
-```typescript
-import { computeCascade, computeInvalidation } from 'phoenix-vcs/vcs';
+From `src/vcs/cascade.ts`:
 
+```javascript
 const event = computeCascade(graph, failedIuId, 'unit_tests', reason);
 const invalidated = computeInvalidation(graph, changedCanonIds, iuToCanonMap);
 ```
@@ -129,45 +135,57 @@ phoenix (router)
 ```
 # Initialize
 /skill:phoenix init
+node .pi/skills/phoenix-init/init.js
 
 # Full pipeline
 /skill:phoenix pipeline
+node .pi/skills/phoenix-pipeline/pipeline.js
 
 # Check status
 /skill:phoenix status
-npx phoenix-vcs status
+node .pi/skills/phoenix-status/status.js
 
 # Check drift (defensive)
 /skill:phoenix drift
-npx phoenix-vcs drift
+node .pi/skills/phoenix-drift/drift.js
 
 # Validate boundaries
 /skill:phoenix audit
-npx phoenix-vcs boundary src/app.ts
+node .pi/skills/phoenix-audit/audit.js src/app.ts
 
 # Compute cascade
 /skill:phoenix cascade <iu-id>
-npx phoenix-vcs cascade <iu-id>
+node .pi/skills/phoenix-cascade/cascade.js cascade <iu-id>
 
 # Selective invalidation
-npx phoenix-vcs invalidate node-abc123...
+node .pi/skills/phoenix-cascade/cascade.js invalidate node-abc123...
 
 # Shadow pipeline (upgrades)
 /skill:phoenix shadow
+node .pi/skills/phoenix-shadow/shadow.js
 ```
 
-## VCS Core Integration
+## VCS Core Source
 
-The skills use the VCS core for principled operations:
+The canonical VCS implementation is in `src/vcs/`:
 
-1. **Identity**: SHA-256 for all IDs (content-addressed)
-2. **Classification**: A/B/C/D with D-rate tracking
-3. **Bootstrap**: State machine (COLD → WARMING → STEADY)
-4. **Drift**: Defensive manifest comparison
-5. **Cascade**: Graph-based invalidation
-6. **Shadow**: Upgrade safety (SAFE/COMPACTION/REJECT)
-7. **Evidence**: Risk-tiered enforcement
-8. **Boundary**: Architectural linting
+- `src/vcs/identity.ts` - SHA-256 hashing, D-rate tracking, bootstrap state
+- `src/vcs/drift.ts` - Defensive manifest comparison
+- `src/vcs/cascade.ts` - Graph-based invalidation
+- `src/vcs/shadow.ts` - Upgrade safety (SAFE/COMPACTION/REJECT)
+- `src/vcs/evidence.ts` - Risk-tiered enforcement
+- `src/vcs/boundary.ts` - Architectural linting
+- `src/vcs/status.ts` - Unified diagnostics
+
+Skills inline these functions for self-contained operation:
+- **Identity**: SHA-256 for all IDs (content-addressed)
+- **Classification**: A/B/C/D with D-rate tracking
+- **Bootstrap**: State machine (COLD → WARMING → STEADY)
+- **Drift**: Defensive manifest comparison
+- **Cascade**: Graph-based invalidation
+- **Shadow**: Upgrade safety (SAFE/COMPACTION/REJECT)
+- **Evidence**: Risk-tiered enforcement
+- **Boundary**: Architectural linting
 
 ## Trust Surface
 

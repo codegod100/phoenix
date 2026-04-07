@@ -1,11 +1,26 @@
 ---
 name: phoenix-spec
-description: Guidelines and helpers for writing and editing Phoenix specification files. Ensures no IU references and proper spec structure.
+description: Guidelines and helpers for writing and editing Phoenix specification files. Ensures no IU references and proper spec structure. Executable skill - runs validate.js directly.
 ---
 
 # Phoenix Spec Editor
 
 Guidelines and helpers for writing and editing Phoenix specification files.
+
+## Validation
+
+To check specs for IU references using the validator:
+
+```bash
+node .pi/skills/phoenix-spec/validate.js [spec-file.md]
+```
+
+Or manually:
+
+```bash
+grep -r "IU-" spec/
+# Should return nothing (or only in comments marked as examples of what NOT to do)
+```
 
 ## When Using This Skill
 
@@ -158,15 +173,6 @@ Defines how components work together. References components by **feature name**,
 ```markdown
 # Bad - describes planning, not behavior
 - REQUIREMENT: All HIGH risk IUs shall have test files
-```
-
-## Validation
-
-To check specs for IU references:
-
-```bash
-grep -r "IU-" spec/
-# Should return nothing (or only in comments marked as examples of what NOT to do)
 ```
 
 ## Pipeline Flow Reminder

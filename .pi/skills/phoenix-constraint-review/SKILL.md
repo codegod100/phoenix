@@ -1,11 +1,17 @@
 ---
 name: phoenix-constraint-review
-description: Review specifications for missing constraints and anti-patterns.
+description: Review specifications for missing constraints and anti-patterns. Executable skill - runs constraint-review.js directly.
 ---
 
 # Phoenix Constraint Review
 
-Check specs for completeness.
+Check specs for completeness using `constraint-review.js`.
+
+## How to Run
+
+```bash
+node .pi/skills/phoenix-constraint-review/constraint-review.js [spec-file.md]
+```
 
 ## What to Find
 
