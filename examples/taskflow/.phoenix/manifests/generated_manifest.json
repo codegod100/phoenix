@@ -1,0 +1,198 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-07T20:31:33.628Z",
+  "files": {
+    "src/generated/analytics/__tests__/analytics.test.ts": {
+      "iu_id": null,
+      "hash": "5775e389842ebd98fc252d8a77a221f570e9d82d97e6383a18a03ecfb720d66d",
+      "size": 3171,
+      "generated_at": "2026-04-07T20:31:33.629Z"
+    },
+    "src/generated/analytics/index.ts": {
+      "iu_id": null,
+      "hash": "1374a2191ea07b7c61cbad585b4e5420d039a86e02c604bac24e016e188bb648",
+      "size": 263,
+      "generated_at": "2026-04-07T20:31:33.630Z"
+    },
+    "src/generated/analytics/metrics.ts": {
+      "iu_id": "91cdb7e04a917c132c5de2e90731694b755d911d82ab03eb8b67e2232d3aa0b4",
+      "hash": "922122f0a58046d63dd58d3997835864d59fdcc70fb33cd93e98ec72b0c217c6",
+      "size": 3687,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/analytics/priority-breakdown.ts": {
+      "iu_id": "0e8c6fd7f3c15acb3e984fe7b4acac3476c2cb0abade85705720eaf362f1cca9",
+      "hash": "2ea2b12471ec00ca6fcb5fb4e30de3b762f8a7157b04ba5603a29a86a21bf59e",
+      "size": 3807,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/analytics/server.ts": {
+      "iu_id": null,
+      "hash": "eeac32f9110d5e9d5adacbb11d412dec667b7a3aa0073642d97347c217896e10",
+      "size": 4459,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/analytics/team-performance.ts": {
+      "iu_id": "1a341b16d06c4b94fd080e8175eac6e46413420cc871dc0b1183196ced852b25",
+      "hash": "5f1498e09d22bff5825ce79d7f74652b286f154ac66a2dc8f58feaab452260d9",
+      "size": 3192,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/index.ts": {
+      "iu_id": null,
+      "hash": "66679ca63b5c871b5db98884ad9cfa2f2a1cd99b5ab3b9ca0b1b94d687fa9364",
+      "size": 483,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/taskflow/analytics.ts": {
+      "iu_id": "a1b2c3d4e5f6789012345678abcdef9012345678",
+      "hash": "fb4414523609153547334906235ff246ffe26e3b3ce3e7e2d12d490d04b784e4",
+      "size": 3849,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/taskflow/dashboard-analytics-bar.ts": {
+      "iu_id": "6789012345678abcdef9012345678901234567890",
+      "hash": "2c71e1e1ef37ad31fbb907281eb998e96cc23b659f3ed838f4e23947253fb0bf",
+      "size": 2225,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/taskflow/dashboard-archive.ts": {
+      "iu_id": "e5f6789012345678abcdef901234567890123456",
+      "hash": "ff160208d101ff8073fa85cb7fa76c961435d69879130b14ce5eadc6bf5a0943",
+      "size": 3312,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/taskflow/dashboard-bulk.ts": {
+      "iu_id": "f6789012345678abcdef90123456789012345678",
+      "hash": "5935e9e50c111f3aa6186d60337d363d12cc5129dfa84f2bdaaf80fa2a616c19",
+      "size": 5670,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/taskflow/dashboard-edit.ts": {
+      "iu_id": "d4e5f6789012345678abcdef9012345678901234",
+      "hash": "4e9b3be24b0de0ea2d446990dbda3487db8c9d08766f3498e656a71dad563c66",
+      "size": 7145,
+      "generated_at": "2026-04-07T20:31:33.631Z"
+    },
+    "src/generated/taskflow/dashboard-integration.ts": {
+      "iu_id": "iu-9-dashboard-integration-39-reqs",
+      "hash": "563ee1fb70142598e0c5189a77ed3939081da11b8f59a06b9df287a092b75e75",
+      "size": 47325,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/taskflow/dashboard-page.ts": {
+      "iu_id": "b2c3d4e5f6789012345678abcdef901234567890",
+      "hash": "89e41852e592042c4d62bf2f44146dc16817bef085bb0b2a501025944a35a130",
+      "size": 3716,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/taskflow/dashboard-tasklist.ts": {
+      "iu_id": "c3d4e5f6789012345678abcdef90123456789012",
+      "hash": "1c95217d26f5e35a1ad033ad069633a2430af3b8cb921be600722c63f70bf9f9",
+      "size": 6384,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/taskflow/index.ts": {
+      "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+      "hash": "497dc87d8080bb66d658af48137c13cb8ad91a8b3c8990a88b1e787ea948d14e",
+      "size": 2863,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/taskflow/task-model.ts": {
+      "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+      "hash": "98773b660627e79e215c5572a4a17aa052cfbf350450df8a206bd8d2b2b76abe",
+      "size": 6761,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/tasks/__tests__/tasks.test.ts": {
+      "iu_id": null,
+      "hash": "1d5d4a6cfecbc59de46ded7e0dff03e02e772cc9f08b799e720f56106deec27f",
+      "size": 3735,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/tasks/assignment.ts": {
+      "iu_id": "c59272a317e39a8c65f755776338d447a62410fdfab6bef99784dfb7985e6788",
+      "hash": "66d35e4ca1a8b306c6821795f29b5625a43473fc1c89ddf2bdbf67a905e3edff",
+      "size": 4699,
+      "generated_at": "2026-04-07T20:31:33.632Z"
+    },
+    "src/generated/tasks/deadline-management.ts": {
+      "iu_id": "8e0191994ba2a364acf2753ba76a9c63e725dd7b9a4993792ccf1d62806eb460",
+      "hash": "7acb864ce30180d5e1ae280721fb5a71dd83320f8fa27d289917f4d2ce1dcde7",
+      "size": 6231,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/tasks/index.ts": {
+      "iu_id": null,
+      "hash": "0dab3a0114ffa14af61a75ccc32ffbe919303de421b0cc52b9c858f73caee2c2",
+      "size": 324,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/tasks/search-and-filtering.ts": {
+      "iu_id": "c5a64a4b957874299fc6c649df80efbce9816db7de3a14d681c952f1345c8802",
+      "hash": "5b8a3538d5528de66de3d91cd657091ed28f18d51031d1f5a22074876d204a1c",
+      "size": 3967,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/tasks/server.ts": {
+      "iu_id": null,
+      "hash": "4f21fd83d8e0b6b148e56cee73b035d91c8d4043b1871c12633838142b6ffd64",
+      "size": 4554,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/tasks/task-lifecycle.ts": {
+      "iu_id": "aa5572d4c3285803b48ca24b2d436cc3f2ad7489a5bf1e933067932d6d7c8264",
+      "hash": "02147723cdc323bfd974ef716cfb47784f1cb6260bf367d89d03dbe4789a6b76",
+      "size": 5558,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/web-dashboard/__tests__/web-dashboard.test.ts": {
+      "iu_id": null,
+      "hash": "b321e972d38866835fba6b416720637387074f5ab9bed11a6ef6b5922f43a13c",
+      "size": 4093,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/web-dashboard/analytics-panel.ts": {
+      "iu_id": "59d32939d50083b6ecf70e500f215a179f42a5ea99a186cb8af2720e3aaa1d74",
+      "hash": "5907f7f21e0bc790a786324745d14cc9fb348ad854b0626d07f0f907af6b1340",
+      "size": 5302,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/web-dashboard/dashboard-page.ts": {
+      "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+      "hash": "ecfe296d5783e1ab773d5c91f28a4ec3850e97ed23d64d5ed37a94db1aa3f32d",
+      "size": 43395,
+      "generated_at": "2026-04-07T20:31:33.633Z"
+    },
+    "src/generated/web-dashboard/index.ts": {
+      "iu_id": null,
+      "hash": "c712320f2d2424da9e55bbe26fd5df419e16090da8578f4e77a5bfa21a5b4864",
+      "size": 318,
+      "generated_at": "2026-04-07T20:31:33.634Z"
+    },
+    "src/generated/web-dashboard/server.ts": {
+      "iu_id": "iu-9-dashboard-integration-32-reqs",
+      "hash": "8d23d8004e463fc464e0af110770c5e4f3487508f09e535156c4f74e7e2c8173",
+      "size": 5624,
+      "generated_at": "2026-04-07T20:31:33.634Z"
+    },
+    "src/generated/web-dashboard/styles.ts": {
+      "iu_id": "8d072032308810bce8136ef5a0a51f8e99a35d83edfa38f4d69cdca300d1c6af",
+      "hash": "3a48966544f8bfa4f0f9ed07b0757156fae8d8cc095ca664c47eb8a7455c5202",
+      "size": 7814,
+      "generated_at": "2026-04-07T20:31:33.634Z"
+    },
+    "src/generated/web-dashboard/task-list-display.ts": {
+      "iu_id": "a6550cdc3ef254c13571c1134a3f1ad230c942e0325c50f89ae97502a302fd01",
+      "hash": "38febf9b8fcba82d4352b37f918664da5d2f5f68bb576e1a31b58bdbdbb33e3d",
+      "size": 14985,
+      "generated_at": "2026-04-07T20:31:33.634Z"
+    },
+    "src/generated/web-dashboard/taskflow-dashboard.ts": {
+      "iu_id": "taskflow-dashboard-complete-working-v1",
+      "hash": "5ddbb60a3854a5d0e8369dc231ad2baba86a7fa54376e2a37bee5f32d9067e7b",
+      "size": 28075,
+      "generated_at": "2026-04-07T20:31:33.634Z"
+    }
+  }
+}

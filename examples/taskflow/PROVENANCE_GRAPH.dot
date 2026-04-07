@@ -1,0 +1,91 @@
+digraph PhoenixProvenance {
+  rankdir=TB;
+  node [shape=box, style="rounded,filled", fontname="monospace", fontsize=10];
+  edge [fontname="monospace", fontsize=9];
+
+  // Spec Layer
+  subgraph cluster_specs {
+    label="Spec Layer (Source Documents)";
+    style=filled;
+    color=lightblue;
+    
+    spec_tasks [label="spec/tasks.md\n9 clauses", fillcolor=white];
+    spec_analytics [label="spec/analytics.md\n11 clauses", fillcolor=white];
+    spec_dashboard [label="spec/web-dashboard-*.md\n27 clauses", fillcolor=white];
+  }
+
+  // Canonical Layer
+  subgraph cluster_canonical {
+    label="Canonical Layer (Requirements)";
+    style=filled;
+    color=lightyellow;
+    
+    c_a3f7 [label="a3f7c8d9...\nREQUIREMENT\nDashboard render HTML", fillcolor=white, shape=note];
+    c_b4e8 [label="b4e8d9f0...\nREQUIREMENT\nCompact header", fillcolor=white, shape=note];
+    c_c5f9 [label="c5f9e0a1...\nREQUIREMENT\nCreate task form", fillcolor=white, shape=note];
+    c_d60a [label="d60af1b2...\nCONSTRAINT\nTitle validation", fillcolor=white, shape=note];
+    // ... more canonical nodes
+    c_etc [label="... 43 more\ncanonical nodes", fillcolor=gray95, shape=note];
+  }
+
+  // IU Layer
+  subgraph cluster_ius {
+    label="Implementation Unit Layer";
+    style=filled;
+    color=lightgreen;
+    
+    iu_dashboard [label="Dashboard Page\nec4737a7...\nHIGH RISK\n34 requirements", fillcolor=palegreen, shape=component];
+    iu_analytics [label="Analytics Panel\n59d32939...\nLOW RISK\n5 requirements", fillcolor=palegreen, shape=component];
+    iu_tasklist [label="Task List Display\na6550cdc...\nMEDIUM RISK\n5 requirements", fillcolor=palegreen, shape=component];
+    iu_metrics [label="Analytics Metrics\n91cdb7e0...\nMEDIUM RISK", fillcolor=palegreen, shape=component];
+  }
+
+  // Code Layer
+  subgraph cluster_code {
+    label="Generated Code Layer";
+    style=filled;
+    color=lightpink;
+    
+    code_dashboard [label="dashboard-page.ts\na1b2c3d4...\n12,453 bytes", fillcolor=mistyrose, shape=folder];
+    code_analytics [label="analytics-panel.ts\ne5f67890...\n3,192 bytes", fillcolor=mistyrose, shape=folder];
+    code_tasklist [label="task-list-display.ts\n...", fillcolor=mistyrose, shape=folder];
+    code_metrics [label="metrics.ts\n...", fillcolor=mistyrose, shape=folder];
+    code_tests [label="__tests__/\n*.test.ts", fillcolor=mistyrose, shape=folder];
+  }
+
+  // Edges: Spec → Canonical
+  spec_tasks -> c_a3f7 [color=blue, style=dashed, label=""];
+  spec_tasks -> c_b4e8 [color=blue, style=dashed];
+  spec_dashboard -> c_c5f9 [color=blue, style=dashed];
+  spec_dashboard -> c_d60a [color=blue, style=dashed];
+  spec_dashboard -> c_etc [color=blue, style=dashed, label="47 total"];
+
+  // Edges: Canonical → IU (many-to-one)
+  c_a3f7 -> iu_dashboard [color=darkgreen, label=""];
+  c_b4e8 -> iu_dashboard [color=darkgreen];
+  c_c5f9 -> iu_dashboard [color=darkgreen];
+  c_d60a -> iu_dashboard [color=darkgreen];
+  c_etc -> iu_dashboard [color=darkgreen, label="34 reqs"];
+  
+  c_etc -> iu_analytics [color=darkgreen, label="5 reqs"];
+  c_etc -> iu_tasklist [color=darkgreen, label="5 reqs"];
+  c_etc -> iu_metrics [color=darkgreen];
+
+  // Edges: IU → Code (one-to-one or one-to-many)
+  iu_dashboard -> code_dashboard [color=red, penwidth=2, label="generates"];
+  iu_dashboard -> code_tests [color=red, style=dotted, label="tests"];
+  iu_analytics -> code_analytics [color=red, penwidth=2];
+  iu_tasklist -> code_tasklist [color=red, penwidth=2];
+  iu_metrics -> code_metrics [color=red, penwidth=2];
+
+  // Evidence (metadata)
+  evidence [label="Evidence\n(typecheck, tests)", fillcolor=lightgoldenrod1, shape=ellipse];
+  iu_dashboard -> evidence [color=purple, style=dotted, label="validates"];
+  evidence -> code_dashboard [color=purple, style=dotted, label="ACCEPTED"];
+
+  // Legend
+  label="Phoenix VCS Provenance Graph: examples/taskflow\nContent-addressed transformations with traceability edges";
+  labelloc="t";
+  fontsize=14;
+  fontname="monospace";
+}
