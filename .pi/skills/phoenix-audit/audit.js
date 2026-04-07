@@ -32,17 +32,25 @@ function extractImports(sourceCode) {
 function detectSideChannels(sourceCode) {
   const channels = [];
   
+  // Remove string literals and comments to avoid false positives
+  const codeWithoutStrings = sourceCode
+    .replace(/'[^']*'/g, "''")
+    .replace(/"[^"]*"/g, '""')
+    .replace(/`[^`]*`/g, '``')
+    .replace(/\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  
   const patterns = [
     { name: 'database', regex: /\b(db|database|pool|connection|prisma|mongoose|sequelize)\b/i },
     { name: 'filesystem', regex: /\b(fs\.|readFile|writeFile|mkdir|readdir)\b/ },
-    { name: 'network', regex: /\b(fetch|axios|http|request|WebSocket|socket)\b/i },
+    { name: 'network', regex: /\b(fetch|axios|XMLHttpRequest|WebSocket|socket\.io)\b/i },
     { name: 'process', regex: /\b(process\.env|child_process|spawn|exec)\b/ },
-    { name: 'crypto', regex: /\b(crypto|hash|encrypt|decrypt|sign|verify)\b/i },
+    { name: 'crypto', regex: /\b(crypto\.randomBytes|crypto\.createHash|hash|encrypt|decrypt|sign|verify)\b/i },
     { name: 'cache', regex: /\b(redis|cache|memcached|lru)\b/i }
   ];
   
   for (const { name, regex } of patterns) {
-    if (regex.test(sourceCode)) {
+    if (regex.test(codeWithoutStrings)) {
       channels.push(name);
     }
   }
