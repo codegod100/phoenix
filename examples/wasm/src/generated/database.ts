@@ -69,8 +69,14 @@ const MEMORY_FILENAME = ':memory:';
 async function createPromiser(): Promise<SqlitePromiser> {
   try {
     // Dynamic import to avoid Vite bundling issues with sqlite-wasm
-    const sqlite3 = await import('@sqlite.org/sqlite-wasm');
-    const promiser = await sqlite3.default();
+    const sqlite3Module = await import('@sqlite.org/sqlite-wasm');
+    
+    // First initialize the sqlite3 module (required for Worker1 to work)
+    await sqlite3Module.default();
+    
+    // Now create the Worker1 promiser - it creates a worker internally
+    const promiser = await sqlite3Module.sqlite3Worker1Promiser();
+    
     return promiser;
   } catch (error) {
     console.error('[notes-app] Failed to create SQLite promiser:', error);
