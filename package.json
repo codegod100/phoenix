@@ -1,21 +1,36 @@
 {
   "name": "phoenix-vcs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Regenerative version control system — causal compiler for intent",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "phoenix": "dist/phoenix"
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./vcs": {
+      "import": "./dist/vcs/index.js",
+      "types": "./dist/vcs/index.d.ts"
+    }
   },
+  "bin": {
+    "phoenix": "dist/cli.js",
+    "phoenix-vcs": "dist/vcs/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "build": "bun build ./src/index.ts ./src/cli.ts --outdir=dist --target=bun",
+    "build": "bun build ./src/vcs/index.ts ./src/vcs/cli.ts --outdir=dist/vcs --target=bun",
     "build:types": "tsc --declaration --emitDeclarationOnly",
     "test": "bunx vitest run",
     "test:watch": "bunx vitest",
-    "phoenix": "bun dist/cli.js",
-    "dev": "bun run src/cli.ts",
-    "typecheck": "tsc --noEmit"
+    "vcs": "bun dist/vcs/cli.js",
+    "dev:vcs": "bun run src/vcs/cli.ts",
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@mariozechner/pi-ai": "^0.64.0",
