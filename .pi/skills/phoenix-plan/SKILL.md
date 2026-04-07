@@ -1,22 +1,23 @@
 ---
 name: phoenix-plan
-description: Plan Implementation Units from canonical requirements. Groups related requirements and assigns risk tiers.
+description: Plan Implementation Units from canonical requirements with content-addressed IDs, risk tiers, and boundary policies. Groups related requirements into compilation boundaries.
 ---
 
 # Phoenix Plan
 
-Organize requirements into Implementation Units (IUs).
+Organize requirements into Implementation Units (IUs) with full VCS tracking.
 
 ## When to Use
 
 - After canonicalization
 - Before code generation
 - To organize complex features
+- When requirements change (re-plan affected IUs)
 
 ## Input
 
 Canonical requirements:
-```
+```markdown
 node-a1b2c3d4: system shall render complete html page
 node-b2c3d4e5: page must display taskflow header
 node-c3d4e5f6: no theme toggle allowed
@@ -27,48 +28,149 @@ node-f6789012: card background is #313244
 
 ## Process
 
-1. **Group related requirements**
-   - By feature area (UI, API, Database)
-   - By user flow (Create Task, Edit Task)
-   - By technical concern (Styles, Logic)
+### Step 1: Group related requirements
 
-2. **Assign risk tier**
+Group by:
+- Feature area (UI, API, Database)
+- User flow (Create Task, Edit Task)
+- Technical concern (Styles, Logic, Validation)
 
-| Tier | Criteria |
-|------|----------|
-| low | <5 requirements, simple logic |
-| medium | 5-10 requirements, some complexity |
-| high | 10+ requirements, user-facing UI |
-| critical | Security, data integrity |
+### Step 2: Compute content-addressed IU ID
 
-3. **Define contract**
-   - Description: What this IU does
-   - Inputs: What it needs
-   - Outputs: What it produces
-   - Invariants: Must always be true
+Use VCS core for stable IU identity:
 
-4. **Assign output files**
-   - Where to put generated code
-   - Test files (for medium+ risk)
+```typescript
+import { iuId } from 'phoenix-vcs/vcs';
+
+const iuId = iuId(
+  "Dashboard Page",                                    // IU name
+  "Renders HTML dashboard with Catppuccin theme",      // Contract description
+  ["a1b2c3d4e5f67890...", "b2c3d4e5f6789012...", ...]   // Source canon IDs (sorted)
+);
+// → 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88'
+```
+
+**Same contract + same requirements = same IU ID**
+
+### Step 3: Assign risk tier
+
+| Tier | Criteria | Evidence Required |
+|------|----------|-------------------|
+| low | <5 requirements, simple logic | typecheck, lint, boundary |
+| medium | 5-10 requirements | + unit_tests |
+| high | 10+ requirements, user-facing UI | + property_tests, threat_note |
+| critical | Security, data integrity | + static_analysis, human_signoff |
+
+### Step 4: Define contract and boundaries
+
+```typescript
+interface Contract {
+  description: string;
+  inputs: string[];
+  outputs: string[];
+  invariants: string[];
+}
+
+interface BoundaryPolicy {
+  dependencies: {
+    code: {
+      allowed_ius?: string[];
+      forbidden_packages?: string[];
+    };
+    side_channels: {
+      databases?: string[];
+      external_apis?: string[];
+    };
+  };
+}
+```
+
+### Step 5: Assign output files
+
+Map IU to generated files:
+```
+IU-ec4737a7 → src/generated/app/dashboard.ts
+IU-ec4737a7 → src/generated/app/__tests__/dashboard.test.ts
+```
 
 ## Output
 
-Implementation Units (IU ID = SHA-256 of IU name + first canon ID):
-```
-IU-ec4737a7: Dashboard Page (HIGH)
-  Description: Renders HTML dashboard with Catppuccin theme
-  Requirements: node-a1b2c3d4, node-b2c3d4e5, node-d4e5f678, node-e5f67890, node-f6789012
-  Risk: HIGH (11 requirements, user-facing)
-  Output: src/generated/web-dashboard/dashboard-page.ts
-  Tests: src/generated/web-dashboard/__tests__/dashboard-page.test.ts
+Write to `.phoenix/plan.md` and `.phoenix/graphs/ius.json`:
 
-IU-a1b2c3d4: Styles (MEDIUM)
-  Description: CSS custom properties for Catppuccin Mocha
-  Requirements: node-d4e5f678, node-e5f67890, node-f6789012
-  Risk: MEDIUM (7 requirements)
-  Output: src/generated/web-dashboard/styles.ts
+```json
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-07T20:00:00Z",
+  "ius": [
+    {
+      "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+      "short_id": "IU-ec4737a7",
+      "name": "Dashboard Page",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "contract": {
+        "description": "Renders HTML dashboard with Catppuccin theme",
+        "inputs": [],
+        "outputs": ["complete HTML page"],
+        "invariants": [
+          "Uses only Catppuccin Mocha colors",
+          "No theme toggle"
+        ]
+      },
+      "source_canon_ids": [
+        "a1b2c3d4e5f67890...",
+        "b2c3d4e5f6789012..."
+      ],
+      "dependencies": [],
+      "output_files": [
+        "src/generated/app/dashboard.ts",
+        "src/generated/app/__tests__/dashboard.test.ts"
+      ],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "forbidden_packages": ["external-ui-lib"]
+          },
+          "side_channels": {
+            "databases": ["app.db"]
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": ["typecheck", "lint", "boundary_validation", "unit_tests"]
+      }
+    }
+  ]
+}
 ```
+
+## Quality Checks
+
+- [ ] IU ID is SHA-256 of contract + requirements
+- [ ] Risk tier appropriate for requirement count
+- [ ] No IU has >20 requirements (split if needed)
+- [ ] UI/API/DB concerns separated
+- [ ] Boundary policy declares side-channels
+- [ ] Evidence policy matches risk tier
+
+## Selective Invalidation
+
+When specs change, only affected IUs need regeneration:
+
+```bash
+# Check which IUs are invalidated by spec changes
+npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
+
+# Output:
+# Invalidated IUs: 3
+#   IU-ec4737a7 (Dashboard Page)
+#   IU-d9277914 (Board UI)
+#   IU-2cb00b55 (Card UI)
+# Selective rate: 25% (3 of 12 IUs)
+```
+
+Use the cascade engine to find transitive dependencies.
 
 ## Next Step
 
-Pass IUs to Regen phase for code generation.
+Run `phoenix-regen` to generate code for planned IUs.

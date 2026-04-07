@@ -1,54 +1,67 @@
 ---
 name: phoenix-regen
-description: Generate implementation code from Implementation Units. Creates TypeScript files with traceability exports.
+description: Generate implementation code from Implementation Units with evidence collection and traceability exports. Creates TypeScript files with content-addressed identity.
 ---
 
 # Phoenix Regen
 
-Generate code from Implementation Units.
+Generate code from Implementation Units with full VCS tracking.
 
 ## When to Use
 
 - After planning IUs
 - To implement a specific feature
-- When requirements change
+- When requirements change (selective regeneration)
+- After spec edits invalidate IUs
 
 ## Input
 
 Implementation Unit:
-```
-IU: Dashboard Page (HIGH)
-IU ID: ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88
-Description: Renders HTML dashboard with Catppuccin theme
-Source Canon IDs: a1b2c3d4e5f67890, b2c3d4e5f6789012, ...
-Output: src/generated/web-dashboard/dashboard-page.ts
+```json
+{
+  "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+  "name": "Dashboard Page",
+  "risk_tier": "high",
+  "contract": {
+    "description": "Renders HTML dashboard with Catppuccin theme",
+    "invariants": ["Uses only Catppuccin Mocha colors"]
+  },
+  "source_canon_ids": ["a1b2c3d4...", "b2c3d4e5..."],
+  "output_files": [
+    "src/generated/app/dashboard.ts",
+    "src/generated/app/__tests__/dashboard.test.ts"
+  ]
+}
 ```
 
 ## Process
 
-1. **Read IU contract**
-   - Understand what the IU must do
-   - Note constraints and invariants
-   - The IU's `source_canon_ids` link to requirements
+### Step 1: Check for selective invalidation
 
-2. **Generate code**
-   - Write TypeScript implementation
-   - Include all required functionality
-   - Follow project conventions
+If regenerating after spec changes:
 
-3. **Add traceability**
-   - Include `_phoenix` export at end of file
-   - Reference IU ID only (the IU tracks canon_ids)
+```bash
+# Check which IUs need regeneration
+npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
 
-4. **Write files**
-   - Save to output path
-   - Create directories if needed
+# Only regenerate affected IUs, not entire codebase
+```
 
-5. **Add tests** (if medium+ risk)
-   - Test critical functionality
-   - Verify invariants
+### Step 2: Read IU contract and requirements
 
-## Traceability Export
+1. Load IU from `.phoenix/graphs/ius.json`
+2. Load canonical requirements from `.phoenix/graphs/canonical.json`
+3. Understand invariants and boundary policies
+
+### Step 3: Generate code
+
+Write TypeScript implementation:
+- Implement all requirements
+- Respect invariants
+- Follow boundary policy (no forbidden imports)
+- Add error handling
+
+### Step 4: Add traceability export
 
 Every generated file MUST include:
 
@@ -61,54 +74,118 @@ export const _phoenix = {
 } as const;
 ```
 
-**Traceability Chain:**
+### Step 5: Collect evidence
+
+Run required evidence based on risk tier:
+
+```bash
+# Low: typecheck, lint, boundary
+# Medium: + unit_tests
+# High: + property_tests, threat_note
+# Critical: + static_analysis, human_signoff
+
+npm run typecheck
+npm run lint
+npm test
 ```
-CODE (iu_id) → IU (source_canon_ids) → CANON → SPEC
-```
 
-The code references only the IU. The IU tracks which canonical requirements it implements.
+Using VCS core:
 
-## Output
-
-Generated files with:
-- Full implementation
-- Traceability export (iu_id only)
-- Tests (for medium+ risk)
-
-## Example
-
-Input IU → Output code:
 ```typescript
-// Generated dashboard page
-export function renderDashboard(): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    :root {
-      --ctp-base: #1e1e2e;
-      --ctp-surface0: #313244;
-    }
-    body { background: var(--ctp-base); }
-  </style>
-</head>
-<body>
-  <h1>TaskFlow</h1>
-</body>
-</html>`;
-}
+import { runTypecheck, runLint, runUnitTests, evaluatePolicy } from 'phoenix-vcs/vcs';
 
+const typecheck = await runTypecheck(projectRoot);
+const lint = await runLint(projectRoot);
+const tests = await runUnitTests(projectRoot, iuId, testPattern);
+
+const evaluation = evaluatePolicy(iuId, 'high', [typecheck, lint, tests]);
+// → { status: 'ACCEPTED' | 'REJECTED' | 'PENDING', score: 85 }
+```
+
+### Step 6: Update manifest
+
+Record generated file hashes:
+
+```typescript
+import { fileHash } from 'phoenix-vcs/vcs';
+
+const content = readFileSync(outputFile, 'utf-8');
+const hash = fileHash(content);
+// → '96bc65e6206fb3e810f88f3e87891b23ca8a461c90a63a8b5fb0a71f296fdabe'
+```
+
+Write to `.phoenix/manifests/generated_manifest.json`:
+
+```json
+{
+  "version": "1.0.0",
+  "generated_at": "2026-04-07T20:00:00Z",
+  "files": {
+    "src/generated/app/dashboard.ts": {
+      "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+      "hash": "96bc65e6206fb3e810f88f3e87891b23ca8a461c90a63a8b5fb0a71f296fdabe",
+      "size": 3431,
+      "generated_at": "2026-04-07T20:00:00Z"
+    }
+  }
+}
+```
+
+## Quality Gates
+
+| Tier | Required Evidence | Block on Fail |
+|------|-------------------|---------------|
+| low | typecheck, lint | yes |
+| medium | + unit_tests | yes |
+| high | + property_tests | yes |
+| critical | + static_analysis, human_signoff | yes |
+
+## Traceability Chain
+
+```
+CODE (iu_id) → IU (source_canon_ids) → CANON (canon_id) → CLAUSE (id) → SPEC
+```
+
+**In generated code:**
+```typescript
 export const _phoenix = {
-  iu_id: 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88',
+  iu_id: 'ec4737a7...',  // Links to IU
   name: 'Dashboard Page',
   risk_tier: 'high',
 } as const;
 ```
 
-## Quality Checks
+**In IU:**
+```json
+{
+  "iu_id": "ec4737a7...",
+  "source_canon_ids": ["a1b2c3d4...", "b2c3d4e5..."]
+}
+```
 
-- [ ] All requirements implemented
-- [ ] No placeholder code
-- [ ] Error handling present
-- [ ] Tests exist (medium+ risk)
-- [ ] `_phoenix` export with `iu_id` only (IU tracks canon_ids)
+## Output
+
+Generated files:
+- `src/generated/app/dashboard.ts` (with _phoenix export)
+- `src/generated/app/__tests__/dashboard.test.ts` (medium+ risk)
+- Updated `.phoenix/manifests/generated_manifest.json`
+
+## Rejection Handling
+
+If evidence fails:
+
+```
+❌ REJECTED - Policy evaluation failed
+
+Failed Evidence:
+  - unit_tests: 3 of 12 tests failed
+
+Actions:
+  1. Fix code to pass tests
+  2. Re-run phoenix-regen
+  3. Evidence must pass before acceptance
+```
+
+## Next Step
+
+Run `phoenix-audit` to validate completeness, or `phoenix-drift` to detect manual edits.

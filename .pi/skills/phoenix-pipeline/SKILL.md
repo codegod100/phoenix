@@ -1,182 +1,211 @@
 ---
 name: phoenix-pipeline
-description: Phoenix pipeline - step by step guide for spec → code transformation
+description: Complete Phoenix VCS pipeline with selective invalidation, drift detection, and evidence collection.
 ---
 
 # Phoenix Pipeline
 
-Transform specification files into implementation code.
+Complete spec → code pipeline with VCS integrity.
 
 ## Pipeline Flow
 
 ```
-spec/*.md → Canonical Requirements → Implementation Units → Code
-    (Ingest)      (Canonicalize)         (Plan)         (Regen)
+spec/*.md ──→ Ingest ──→ Canonicalize ──→ Plan ──→ Regen ──→ Evidence
+   (sha256)    (sha256)     (sha256)    (sha256)   (hash)    (verify)
+     │            │            │           │         │         │
+     └────────────┴────────────┴───────────┴─────────┴─────────┘
+                    Phoenix VCS Graph
 ```
 
-## Phase A: Ingest - Read Specs
+## Phase A: Ingest
 
-Read all `.md` files in `spec/` directory and extract clauses.
+**Purpose**: Parse specs into content-addressed clauses
 
-**Input:** `spec/*.md`
+**Skill**: `phoenix-ingest`
 
-**Process:**
-1. Read each markdown file
-2. Extract lines starting with `- ` or `* `
-3. Look for markers: `REQUIREMENT:`, `CONSTRAINT:`, `DEFINITION:`, `ASSUMPTION:`, `SCENARIO:`
-4. Build clause list with:
-   - id: SHA-256 hash of text
-   - type: REQUIREMENT | CONSTRAINT | DEFINITION | ASSUMPTION | SCENARIO
-   - text: normalized content
-   - section: parent heading
+**Output**: `.phoenix/graphs/spec.json`
 
-**Output:** List of clauses
+**Key Operations**:
+- Normalize text
+- Compute `clause_semhash` (SHA-256)
+- Compute `context_semhash` (with neighbors)
+- Classify changes (A/B/C/D)
 
-```
-Example output:
-- [REQ-001] system shall render dashboard (from web-dashboard.md)
-- [REQ-002] background color is #1e1e2e (from web-dashboard.md)
-- [CON-001] no theme toggle allowed (from web-dashboard.md)
-```
+## Phase B: Canonicalize
 
-## Phase B: Canonicalize - Clean Requirements
+**Purpose**: Extract clean requirements with D-rate tracking
 
-Transform clauses into canonical requirements.
+**Skill**: `phoenix-canonicalize`
 
-**Input:** Clauses from Phase A
+**Output**: `.phoenix/canonical.md`, `.phoenix/graphs/canonical.json`
 
-**Process:**
-1. Group related clauses by section
-2. Remove duplicates
-3. Normalize language (lowercase, standardize)
-4. Assign node IDs (`node-<hash>` first 8 chars of SHA-256 of normalized text)
+**Key Operations**:
+- Remove duplicates (same hash = same requirement)
+- Assign `node-<hash>` IDs
+- Track bootstrap state (COLD → WARMING → STEADY)
+- Record D-rate (target <5%)
 
-**Output:** Canonical requirements
+## Phase C: Plan
 
-```
-Example output:
-node-a1b2c3d4: dashboard renders complete html page
-node-b2c3d4e5: dashboard uses catppuccin mocha colors
-node-c3d4e5f6: no theme toggle allowed
-```
+**Purpose**: Group requirements into Implementation Units
 
-## Phase C: Plan - Group Into IUs
+**Skill**: `phoenix-plan`
 
-Organize requirements into Implementation Units.
+**Output**: `.phoenix/plan.md`, `.phoenix/graphs/ius.json`
 
-**Input:** Canonical requirements
+**Key Operations**:
+- Compute `iu_id` (SHA-256 of contract + requirements)
+- Assign risk tier (low/medium/high/critical)
+- Define boundary policy
+- Set evidence requirements
 
-**Process:**
-1. Group by logical unit (e.g., all dashboard UI requirements)
-2. Assign risk tier:
-   - low: <5 requirements, simple
-   - medium: 5-10 requirements
-   - high: >10 requirements or user-facing
-3. Define contract (description, inputs, outputs, invariants)
-4. Assign output files
+## Phase D: Regen
 
-**Output:** Implementation Units
+**Purpose**: Generate code with traceability
 
-```
-Example output:
-IU-ec4737a7: Dashboard Page (HIGH)
-  Requirements: node-a1b2c3d4, node-b2c3d4e5, node-c3d4e5f6, ...
-  Contract: Renders HTML dashboard with Catppuccin theme
-  Output: src/generated/web-dashboard/dashboard-page.ts
+**Skill**: `phoenix-regen`
 
-IU-a1b2c3d4: Styles (MEDIUM)
-  Requirements: node-b2c3d4e5, node-d4e5f678
-  Contract: CSS custom properties
-  Output: src/generated/web-dashboard/styles.ts
+**Output**: `src/generated/`, `.phoenix/manifests/generated_manifest.json`
+
+**Key Operations**:
+- Generate TypeScript from IU contract
+- Add `_phoenix` export with `iu_id`
+- Compute file hash for manifest
+- Collect evidence (typecheck, tests, etc.)
+
+**Selective Invalidation**:
+```bash
+# Only regenerate affected subtree
+npx phoenix-vcs invalidate node-a1b2c3d4 node-b2c3d4e5
+# → 3 of 12 IUs need regeneration
 ```
 
-## Phase D: Regen - Generate Code
+## Phase E: Evidence
 
-Implement each IU as code.
+**Purpose**: Verify risk-tiered quality gates
 
-**Input:** Implementation Units
+**Skill**: `phoenix-evidence`
 
-**Process:**
-For each IU:
-1. Read its requirements
-2. Generate TypeScript implementation
-3. Add `_phoenix` traceability export
-4. Write to output file
-5. Add tests (if medium+ risk)
+**Key Operations**:
+- Run typecheck (all tiers)
+- Run unit tests (medium+)
+- Run property tests (high+)
+- Create threat notes (high+)
+- Human signoff (critical)
 
-**Traceability Export:**
-```typescript
-export const _phoenix = {
-  iu_id: 'ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88',
-  name: 'Dashboard Page',
-  risk_tier: 'high',
-} as const;
+**Blocking**:
+```
+❌ REJECTED - Evidence failed
+   unit_tests: 9/12 failed
+   → Must pass before acceptance
 ```
 
-**Output:** Generated files
+## Phase F: Audit & Drift
 
-## Running the Pipeline
+**Purpose**: Validate and establish baseline
 
-**IMPORTANT:** The pipeline must run inline (direct tool execution), NOT in a subprocess or background process. Each phase uses standard tools (read, edit, write, bash) directly.
+**Skills**: `phoenix-audit`, `phoenix-drift`
 
-### Execution Model
-- ✅ **CORRECT:** Run phases sequentially using direct tool calls
-- ❌ **WRONG:** Delegate to subprocess, interactive_shell, or background job
+**Key Operations**:
+- Boundary validation (no forbidden imports)
+- Drift detection (working tree vs manifest)
+- Over-implementation check
 
-### Phase Execution
-
-**Phase A: Ingest**
+**Defensive**:
 ```
-1. Use bash to: ls spec/*.md
-2. Use read to: read each spec file
-3. Extract clauses (lines starting with "- " or bullet markers)
-4. Report: "Found X clauses from Y specs"
+❌ BLOCKING DRIFT
+   src/app.ts: modified without waiver
+   → Label with waiver or revert
 ```
 
-**Phase B: Canonicalize**
-```
-1. Normalize each clause (lowercase, remove fluff)
-2. Generate node-<hash> IDs (SHA-256, first 8 chars)
-3. Use write to: create/update .phoenix/canonical.md
-4. Report: "Canonicalized: X requirements"
-```
+## Running the Full Pipeline
 
-**Phase C: Plan**
-```
-1. Read canonical.md
-2. Group requirements into Implementation Units
-3. Assign risk tiers (low/medium/high)
-4. Use write to: create/update .phoenix/plan.md
-5. Report: "Planned: X IUs (low: A, medium: B, high: C)"
-```
+```bash
+# Method 1: Individual phases
+/skill:phoenix ingest
+/skill:phoenix canonicalize
+/skill:phoenix plan
+/skill:phoenix regen
+/skill:phoenix evidence
+/skill:phoenix audit
+/skill:phoenix drift
 
-**Phase D: Regen**
-```
-1. Read plan.md
-2. For each IU:
-   - Use write to: generate TypeScript file
-   - Include _phoenix export with iu_id
-3. Use bash to: npm run build (verify)
-4. Report: "Generated: X files"
+# Method 2: Full pipeline
+/skill:phoenix pipeline
 ```
 
-### Example Session (Inline)
+## Pipeline State Machine
+
+| State | Meaning | Drift Detection | D-rate Alarms |
+|-------|---------|-----------------|---------------|
+| BOOTSTRAP_COLD | Initial run | Off | Suppressed |
+| BOOTSTRAP_WARMING | Stabilizing | Off | Suppressed |
+| STEADY_STATE | Normal | On | Active |
+
+## Integration with Cascade
+
+When specs change:
+
+```bash
+# 1. Check what needs regeneration
+npx phoenix-vcs invalidate node-a1b2c3d4
+
+# 2. Regenerate affected IUs only
+/skill:phoenix regen IU-ec4737a7 IU-d9277914
+
+# 3. Verify cascade didn't break dependents
+npx phoenix-vcs cascade IU-ec4737a7
+```
+
+## Integration with Shadow
+
+When upgrading pipeline:
+
+```bash
+# Run shadow comparison first
+/skill:phoenix shadow
+
+# Classification: SAFE | COMPACTION_EVENT | REJECT
+
+# If SAFE or COMPACTION:
+/skill:phoenix pipeline
+```
+
+## Per-PRD Selective Invalidation
+
+From PRD Section 0:
+> "Changing one spec line invalidates only the dependent subtree"
+
+Not full regeneration - just the affected IUs.
+
+## Pipeline Artifacts
 
 ```
-User: Run pipeline
-
-Agent: [Phase A] Ingesting specs...
-  Found 67 clauses from 9 spec files
-
-Agent: [Phase B] Canonicalizing...
-  75 canonical requirements → .phoenix/canonical.md
-
-Agent: [Phase C] Planning...
-  9 IUs: low=2, medium=3, high=4 → .phoenix/plan.md
-
-Agent: [Phase D] Regenerating...
-  Generated 9 TypeScript files → src/generated/taskflow/
-  Build: ✅ passed
-
-✅ Pipeline complete
+.phoenix/
+├── canonical.md              # Human-readable requirements
+├── plan.md                   # Human-readable IUs
+├── graphs/
+│   ├── spec.json            # Clauses with hashes
+│   ├── canonical.json       # Canonical nodes
+│   └── ius.json             # IU graph
+├── manifests/
+│   └── generated_manifest.json  # File hashes for drift
+└── state.json               # Bootstrap state, timestamps
 ```
+
+## Quality Gates
+
+Each phase has gates:
+
+| Phase | Gate | Block on Fail |
+|-------|------|---------------|
+| Ingest | D-rate < 15% | Yes |
+| Canonicalize | No orphans | Yes |
+| Plan | Valid IU IDs | Yes |
+| Regen | Evidence passes tier | Yes |
+| Audit | Boundary clean | Yes |
+| Drift | No blocking drift | Yes |
+
+## Next Step
+
+After pipeline: `phoenix-status` for full project health check.
