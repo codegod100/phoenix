@@ -1,8 +1,26 @@
-// 🔄 MIGRATED: Deadline Domain (IU-fa4e979e)
+// 🔴 RED: Deadline Domain (IU-fa4e979e)
 // Description: Implements deadline functionality with 4 requirements
 // Risk Tier: LOW
-// Migrated from: fa4e979e652ff753...
-// Canonical overlap: 100%
+
+// @phoenix-iu: fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e
+// @phoenix-name: Deadline Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-fa4e979e
+
+// === IMPLEMENTED REQUIREMENTS ===
+
+// @phoenix-canon: 23a499c17f6d8b81...
+// REQUIREMENT: the system must provide a function to list all overdue tasks
+
+// @phoenix-canon: 3306386ed3c6c0b5...
+// REQUIREMENT: overdue tasks past deadline and not done must be flagged automatically
+
+// @phoenix-canon: 45db43506cd234df...
+// REQUIREMENT: tasks must support optional deadline dates
+
+// @phoenix-canon: b085dd428dc562f0...
+// CONSTRAINT: setting a deadline in the past must produce a warning but still be allowed
+
 
 // TDD CYCLE:
 // 1. Tests are designed to FAIL with current code
@@ -11,13 +29,8 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
-// @phoenix-iu: fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e
-// @phoenix-name: Deadline Domain
-// @phoenix-risk: low
-// @phoenix-short: IU-fa4e979e
-// @phoenix-migrated: fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e
-
 // === TYPES ===
+// @phoenix-gen: types
 
 export interface Deadline {
   id: string;
@@ -26,15 +39,16 @@ export interface Deadline {
 
 // === RED IMPLEMENTATIONS (fix to make tests pass) ===
 
+// @phoenix-canon: 23a499c17f6d8b81...
+// REQUIREMENT: the system must provide a function to list all overdue tasks
 /**
  * 🔴 RED: process
  *
  * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
 export function process(item: Deadline): Deadline {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
   return item; // ← No transformation!
 }
-
-

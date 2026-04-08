@@ -17,20 +17,22 @@ import {
   updatePhoenixComments 
 } from '../lib/traceability.js';
 
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+
 /**
  * Load canonical data for embedding requirements in code
  */
 function loadCanonicalData(projectRoot) {
   try {
-    const fs = require('fs');
-    const path = require('path');
-    const canonPath = path.join(projectRoot, '.phoenix', 'graphs', 'canonical.json');
-    if (fs.existsSync(canonPath)) {
-      const data = JSON.parse(fs.readFileSync(canonPath, 'utf-8'));
+    const canonPath = join(projectRoot, '.phoenix', 'graphs', 'canonical.json');
+    if (existsSync(canonPath)) {
+      const data = JSON.parse(readFileSync(canonPath, 'utf-8'));
       return new Map((data.nodes || []).map(n => [n.canon_id, n]));
     }
   } catch (e) {
     // Silent fail - canonical embedding is optional
+    console.log(`      ⚠️  Could not load canonical data: ${e.message}`);
   }
   return new Map();
 }

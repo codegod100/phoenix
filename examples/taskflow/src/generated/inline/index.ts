@@ -1,8 +1,29 @@
-// 🔄 MIGRATED: Inline Domain (IU-1b10421c)
+// 🔴 RED: Inline Domain (IU-1b10421c)
 // Description: Implements inline functionality with 5 requirements
 // Risk Tier: HIGH
-// Migrated from: 1b10421cf0b4c927...
-// Canonical overlap: 100%
+
+// @phoenix-iu: 1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7
+// @phoenix-name: Inline Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-1b10421c
+
+// === IMPLEMENTED REQUIREMENTS ===
+
+// @phoenix-canon: 11d42093d9e4ad83...
+// REQUIREMENT: the edit form must appear in place of the task card content and contain prepo...
+
+// @phoenix-canon: 56c320fc44633797...
+// REQUIREMENT: each task card must have an edit button that replaces the card content with a...
+
+// @phoenix-canon: 9b1a910870349540...
+// REQUIREMENT: clicking edit must hide the cardcontent div and show the editform div using i...
+
+// @phoenix-canon: dad35101507fbcfc...
+// REQUIREMENT: the card content must be wrapped in a cardcontent div that can be hidden via ...
+
+// @phoenix-canon: ed55103ac8f56cde...
+// REQUIREMENT: the edit form must be a sibling element to the cardcontent div not nested ins...
+
 
 // TDD CYCLE:
 // 1. Tests are designed to FAIL with current code
@@ -11,13 +32,8 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
-// @phoenix-iu: 1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7
-// @phoenix-name: Inline Domain
-// @phoenix-risk: high
-// @phoenix-short: IU-1b10421c
-// @phoenix-migrated: 1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7
-
 // === TYPES ===
+// @phoenix-gen: types
 
 export interface Inline {
   id: string;
@@ -26,15 +42,16 @@ export interface Inline {
 
 // === RED IMPLEMENTATIONS (fix to make tests pass) ===
 
+// @phoenix-canon: 11d42093d9e4ad83...
+// REQUIREMENT: the edit form must appear in place of the task card content and contain prepo...
 /**
  * 🔴 RED: process
  *
  * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
 export function process(item: Inline): Inline {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
   return item; // ← No transformation!
 }
-
-
