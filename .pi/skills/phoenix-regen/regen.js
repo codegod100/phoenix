@@ -179,6 +179,18 @@ async function regenerate(projectRoot, options = {}) {
     throw new Error('No IU graph found. Run phoenix-plan first.');
   }
 
+  // Check for selective regeneration (from panproto protolens)
+  let affectedIUs = null;
+  const envAffected = process.env.PHOENIX_AFFECTED_IUS;
+  if (envAffected) {
+    try {
+      affectedIUs = JSON.parse(envAffected);
+      console.log(`   🎯 Selective mode: ${affectedIUs.length} IUs from protolens`);
+    } catch (e) {
+      console.log(`   ⚠️  Could not parse affected IUs: ${e.message}`);
+    }
+  }
+
   const manifest = loadManifest(projectRoot);
   const generated = [];
   const errors = [];
@@ -190,6 +202,11 @@ async function regenerate(projectRoot, options = {}) {
   for (const iu of iuGraph.ius) {
     // Skip if filter specified and doesn't match
     if (iuFilter && !iu.id.includes(iuFilter) && iu.short_id !== iuFilter) {
+      continue;
+    }
+    
+    // Skip if selective regeneration and IU not affected
+    if (affectedIUs && !affectedIUs.includes(iu.id)) {
       continue;
     }
 

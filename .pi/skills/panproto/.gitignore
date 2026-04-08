@@ -1,6 +1,5 @@
 node_modules/
 *.log
-wasm/
 dist/
 .DS_Store
 vendor/

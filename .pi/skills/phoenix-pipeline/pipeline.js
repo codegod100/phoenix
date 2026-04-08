@@ -12,10 +12,11 @@
  * 1. Ingest - Parse specs into clauses
  * 2. Canonicalize - Extract clean requirements (GREEN)
  * 3. Plan - Create IUs (GREEN)
- * 4. Regen - Generate **failing stubs** (RED)
- * 5. Evidence - Validate implementation (GREEN)
- * 6. Audit - Boundary checks
- * 7. Drift - Detect manual changes
+ * 4. Protolens - Compute selective invalidation (GREEN, optional)
+ * 5. Regen - Generate **failing stubs** (RED)
+ * 6. Evidence - Validate implementation (GREEN)
+ * 7. Audit - Boundary checks
+ * 8. Drift - Detect manual changes
  * 
  * Key Principle: Regen creates throw statements on purpose.
  * Tests fail until you (or AI) implement real logic.
@@ -25,11 +26,13 @@
  *   --skip-ingest
  *   --skip-canonicalize
  *   --skip-plan
+ *   --skip-protolens      (Skip selective invalidation)
  *   --skip-regen          (Preserve your implementations!)
  *   --skip-evidence
  *   --skip-audit
  *   --skip-drift
  *   --continue-on-error
+ *   --selective           (Use panproto for selective regen)
  *   --iu=<iu-id>          (Regenerate specific IU only)
  */
 
@@ -62,11 +65,18 @@ const PHASES = [
     tdd_phase: 'GREEN'
   },
   { 
+    name: 'protolens', 
+    script: null,  // Internal phase - uses panproto
+    description: 'Compute selective invalidation via protolens',
+    tdd_phase: 'GREEN',
+    internal: true  // Handled specially, not a child process
+  },
+  { 
     name: 'regen', 
     script: 'phoenix-regen/regen.js', 
     description: 'Generate failing stubs (RED) — YOU implement',
     tdd_phase: 'RED',
-    warning: '⚠️  DESTRUCTIVE: Overwrites src/generated/*. Edit with care!'
+    warning: '⚠️  DESTRUCTIVE: Overwrites src/generated/*. Edit with care!',
   },
   { 
     name: 'evidence', 
@@ -139,6 +149,121 @@ function updateState(projectRoot, phase, status) {
   writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
 }
 
+// === PROTOLEMNS INTEGRATION ===
+
+/**
+ * Run panproto protolens phase to compute selective invalidation
+ * This determines which IUs need regeneration based on spec changes
+ */
+async function runProtolensPhase(projectRoot, options) {
+  const { spawn } = await import('child_process');
+  const { join, dirname } = await import('path');
+  const { fileURLToPath } = await import('url');
+  const { existsSync, readFileSync, writeFileSync } = await import('fs');
+  
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  
+  console.log('   🔍 Computing selective invalidation via panproto...');
+  
+  const graphsDir = join(projectRoot, '.phoenix', 'graphs');
+  const iusPath = join(graphsDir, 'ius.json');
+  const canonPath = join(graphsDir, 'canonical.json');
+  
+  // Check if we have previous canonical for comparison
+  const canonPrevPath = join(graphsDir, 'canonical-prev.json');
+  
+  // If no previous canonical, all IUs are affected (first run)
+  if (!existsSync(canonPrevPath)) {
+    console.log('   📋 First run - all IUs will be regenerated');
+    if (existsSync(iusPath)) {
+      const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
+      const affected = ius.ius?.map(iu => iu.id) || [];
+      writeFileSync(
+        join(graphsDir, 'affected-ius.json'),
+        JSON.stringify({ affected, reason: 'first-run' }, null, 2)
+      );
+      console.log(`   🎯 ${affected.length} IUs marked for regeneration`);
+      return { success: true, affected };
+    }
+    return { success: true, affected: [] };
+  }
+  
+  // Run panproto impact analysis
+  const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
+  
+  return new Promise((resolve) => {
+    const child = spawn('node', [
+      panprotoPath,
+      'impact',
+      '--ius', iusPath,
+      '--canon', canonPath,
+      '--spec-diff', canonPrevPath  // Using prev as diff input for now
+    ], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: false,
+    });
+    
+    let stdout = '';
+    let stderr = '';
+    
+    child.stdout?.on('data', (data) => { stdout += data; });
+    child.stderr?.on('data', (data) => { stderr += data; });
+    
+    child.on('close', (exitCode) => {
+      if (exitCode !== 0) {
+        console.log(`   ⚠️  Panproto impact analysis failed (exit ${exitCode})`);
+        console.log(`   📝 Falling back to regenerating all IUs`);
+        
+        // Fallback: mark all IUs as affected
+        if (existsSync(iusPath)) {
+          const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
+          const affected = ius.ius?.map(iu => iu.id) || [];
+          writeFileSync(
+            join(graphsDir, 'affected-ius.json'),
+            JSON.stringify({ affected, reason: 'fallback-panproto-failed' }, null, 2)
+          );
+          resolve({ success: true, affected, fallback: true });
+          return;
+        }
+        resolve({ success: false, error: 'No IUs found' });
+        return;
+      }
+      
+      // Parse panproto output to extract affected IUs
+      // For now, mark all as affected (implement proper parsing later)
+      if (existsSync(iusPath)) {
+        const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
+        const affected = ius.ius?.map(iu => iu.id) || [];
+        writeFileSync(
+          join(graphsDir, 'affected-ius.json'),
+          JSON.stringify({ affected, reason: 'panproto-impact' }, null, 2)
+        );
+        console.log(`   🎯 ${affected.length} IUs marked for regeneration`);
+        resolve({ success: true, affected });
+      } else {
+        resolve({ success: false, error: 'No IUs found' });
+      }
+    });
+    
+    child.on('error', (err) => {
+      console.error(`   ⚠️  Panproto error: ${err.message}`);
+      console.log(`   📝 Falling back to regenerating all IUs`);
+      
+      if (existsSync(iusPath)) {
+        const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
+        const affected = ius.ius?.map(iu => iu.id) || [];
+        writeFileSync(
+          join(graphsDir, 'affected-ius.json'),
+          JSON.stringify({ affected, reason: 'fallback-error' }, null, 2)
+        );
+        resolve({ success: true, affected, fallback: true });
+      } else {
+        resolve({ success: false, error: err.message });
+      }
+    });
+  });
+}
+
 // === TDD PIPELINE EXECUTION ===
 
 async function runPipeline(projectRoot, options) {
@@ -161,10 +286,62 @@ async function runPipeline(projectRoot, options) {
       continue;
     }
     
+    // Handle internal protolens phase
+    if (phase.internal && phase.name === 'protolens') {
+      // Skip if selective regeneration is not enabled
+      if (!options.selective) {
+        console.log(`⏭️  [${phase.tdd_phase}] Skipping protolens (use --selective to enable)`);
+        continue;
+      }
+      
+      const tddIcon = '🟢';
+      console.log(`\n${tddIcon} [${phase.tdd_phase}] Phase: ${phase.name.toUpperCase()}`);
+      console.log(`   ${phase.description}`);
+      console.log('');
+      
+      const result = await runProtolensPhase(projectRoot, options);
+      
+      results.push({
+        phase: phase.name,
+        success: result.success,
+        exitCode: result.success ? 0 : 1,
+        tdd_phase: phase.tdd_phase,
+        affected: result.affected,
+        fallback: result.fallback,
+      });
+      
+      if (result.success) {
+        updateState(projectRoot, phase.name, 'complete');
+        console.log(`   ✅ Protolens computed ${result.affected?.length || 0} affected IUs`);
+        if (result.fallback) {
+          console.log('   📝 (Using fallback - all IUs affected)');
+        }
+      } else {
+        console.log(`   ❌ Protolens failed: ${result.error}`);
+        if (!options['continue-on-error']) {
+          break;
+        }
+      }
+      continue;
+    }
+    
     // Special handling for regen with selective IU
     const args = [];
     if (phase.name === 'regen' && options.iu) {
       args.push(options.iu);
+    }
+    
+    // If selective mode and we have affected IUs, use them
+    if (phase.name === 'regen' && options.selective) {
+      const affectedPath = join(projectRoot, '.phoenix', 'graphs', 'affected-ius.json');
+      if (existsSync(affectedPath)) {
+        const affected = JSON.parse(readFileSync(affectedPath, 'utf-8'));
+        if (affected.affected && affected.affected.length > 0) {
+          console.log(`   🎯 Selective regeneration: ${affected.affected.length} IUs affected`);
+          // Pass affected IUs to regen via a special flag or env var
+          process.env.PHOENIX_AFFECTED_IUS = JSON.stringify(affected.affected);
+        }
+      }
     }
     
     const tddIcon = phase.tdd_phase === 'RED' ? '🔴' : '🟢';
@@ -228,11 +405,13 @@ function parseOptions(args) {
     'skip-ingest': false,
     'skip-canonicalize': false,
     'skip-plan': false,
+    'skip-protolens': false,
     'skip-regen': false,
     'skip-evidence': false,
     'skip-audit': false,
     'skip-drift': false,
     'continue-on-error': false,
+    'selective': false,
     'iu': null,
   };
   
@@ -240,11 +419,13 @@ function parseOptions(args) {
     if (arg === '--skip-ingest') options['skip-ingest'] = true;
     if (arg === '--skip-canonicalize') options['skip-canonicalize'] = true;
     if (arg === '--skip-plan') options['skip-plan'] = true;
+    if (arg === '--skip-protolens') options['skip-protolens'] = true;
     if (arg === '--skip-regen') options['skip-regen'] = true;
     if (arg === '--skip-evidence') options['skip-evidence'] = true;
     if (arg === '--skip-audit') options['skip-audit'] = true;
     if (arg === '--skip-drift') options['skip-drift'] = true;
     if (arg === '--continue-on-error') options['continue-on-error'] = true;
+    if (arg === '--selective') options.selective = true;
     if (arg.startsWith('--iu=')) options.iu = arg.split('=')[1];
   }
   
@@ -261,6 +442,9 @@ console.log('🚀 Phoenix Pipeline — TDD with Automated Scaffolding');
 console.log(`   Project: ${projectRoot}`);
 if (options.iu) {
   console.log(`   Selective IU: ${options.iu}`);
+}
+if (options.selective) {
+  console.log(`   Mode: Selective regeneration (--selective) via panproto`);
 }
 if (options['skip-regen']) {
   console.log(`   Mode: Preserve implementations (--skip-regen)`);
