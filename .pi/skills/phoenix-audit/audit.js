@@ -8,8 +8,33 @@
  * Usage: node .pi/skills/phoenix-audit/audit.js <file-path>
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { resolve, join, relative } from 'path';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { resolve, join, relative, basename } from 'path';
+
+// === FILE WALKER ===
+
+function findFiles(dir, extension = '.ts') {
+  const files = [];
+  
+  function walk(currentDir) {
+    const entries = readdirSync(currentDir);
+    for (const entry of entries) {
+      const fullPath = join(currentDir, entry);
+      const stat = statSync(fullPath);
+      if (stat.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.endsWith(extension) && !entry.endsWith('.test.ts')) {
+        files.push(fullPath);
+      }
+    }
+  }
+  
+  if (existsSync(dir)) {
+    walk(dir);
+  }
+  
+  return files;
+}
 
 // === VCS BOUNDARY VALIDATION (from src/vcs/boundary.ts) ===
 
@@ -259,42 +284,69 @@ function formatBoundaryReport(results) {
 
 // === MAIN EXECUTION ===
 
-const filePath = process.argv[2];
+const inputPath = process.argv[2];
 
-if (!filePath) {
-  console.error('Usage: node audit.js <file-path>');
+if (!inputPath) {
+  console.error('Usage: node audit.js <project-root|file-path>');
+  console.error('Example: node audit.js examples/taskflow');
   console.error('Example: node audit.js src/generated/app/dashboard.ts');
   process.exit(1);
 }
 
-const projectRoot = resolve('.');
-const fullPath = resolve(projectRoot, filePath);
+const projectRoot = resolve(inputPath);
 
-if (!existsSync(fullPath)) {
-  console.error(`❌ File not found: ${filePath}`);
+if (!existsSync(projectRoot)) {
+  console.error(`❌ Path not found: ${inputPath}`);
   process.exit(1);
 }
 
 console.log('🔍 Phoenix Audit');
-console.log(`   File: ${relative(projectRoot, fullPath)}\n`);
+
+const stat = statSync(projectRoot);
+let filesToAudit = [];
+
+if (stat.isDirectory()) {
+  // Project root - find all generated files
+  const generatedDir = join(projectRoot, 'src', 'generated');
+  filesToAudit = findFiles(generatedDir, '.ts');
+  console.log(`   Project: ${relative(resolve('.'), projectRoot)}`);
+  console.log(`   Files: ${filesToAudit.length}\n`);
+} else {
+  // Single file
+  filesToAudit = [projectRoot];
+  console.log(`   File: ${relative(resolve('.'), projectRoot)}\n`);
+}
+
+if (filesToAudit.length === 0) {
+  console.log('⚠️  No generated files to audit');
+  process.exit(0);
+}
 
 try {
-  const sourceCode = readFileSync(fullPath, 'utf-8');
+  const results = [];
   
-  // Extract IU ID from _phoenix export
-  const iuIdMatch = sourceCode.match(/iu_id:\s*['"]([^'"]+)['"]/);
-  const iuId = iuIdMatch?.[1] || 'unknown';
+  for (const filePath of filesToAudit) {
+    const sourceCode = readFileSync(filePath, 'utf-8');
+    
+    // Extract IU ID from _phoenix export
+    const iuIdMatch = sourceCode.match(/iu_id:\s*['"]([^'"]+)['"]/);
+    const iuId = iuIdMatch?.[1] || basename(filePath);
+    
+    const policy = defaultBoundaryPolicy();
+    const enforcement = {
+      dependency_violation: { severity: 'error' },
+      side_channel_violation: { severity: 'warning' }
+    };
+
+    const result = validateBoundary(iuId, filePath, sourceCode, policy, enforcement);
+    results.push(result);
+  }
   
-  const policy = defaultBoundaryPolicy();
-  const enforcement = {
-    dependency_violation: { severity: 'error' },
-    side_channel_violation: { severity: 'warning' }
-  };
+  console.log(formatBoundaryReport(results));
 
-  const result = validateBoundary(iuId, filePath, sourceCode, policy, enforcement);
-  console.log(formatBoundaryReport([result]));
+  const hasErrors = results.some(r => r.has_errors);
+  process.exit(hasErrors ? 1 : 0);
 
-  process.exit(result.has_errors ? 1 : 0);
 } catch (error) {
   console.error(`❌ Error: ${error.message}`);
   process.exit(1);

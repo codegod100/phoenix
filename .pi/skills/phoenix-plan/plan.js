@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * Phoenix Plan - Organize requirements into Implementation Units
- * 
+ *
  * Groups canonical requirements into IUs with:
  * - Content-addressed IU IDs (SHA-256 of contract + requirements)
  * - Risk tier assignment (low/medium/high/critical)
  * - Contract definition (inputs, outputs, invariants)
  * - Boundary policies
  * - Evidence requirements
- * 
+ *
  * Usage: node .pi/skills/phoenix-plan/plan.js [project-root]
  */
 
@@ -88,7 +88,7 @@ function groupRequirementsIntoIUs(nodes) {
   for (const node of nodes) {
     const section = node.section || 'General';
     const baseName = section.split(' ')[0]; // e.g., "Task Domain" -> "Task"
-    
+
     if (!groups.has(baseName)) {
       groups.set(baseName, {
         name: baseName,
@@ -104,9 +104,9 @@ function groupRequirementsIntoIUs(nodes) {
 
 function createIU(group, index) {
   const reqCount = group.requirements.length;
-  const hasUI = group.requirements.some(r => 
-    r.statement.includes('html') || 
-    r.statement.includes('css') || 
+  const hasUI = group.requirements.some(r =>
+    r.statement.includes('html') ||
+    r.statement.includes('css') ||
     r.statement.includes('display') ||
     r.statement.includes('render')
   );
@@ -118,10 +118,10 @@ function createIU(group, index) {
 
   const riskTier = determineRiskTier(reqCount, hasUI, hasSecurity);
   const sourceCanonIds = group.requirements.map(r => r.canon_id);
-  
+
   const name = `${group.name} Domain`;
   const contract = `Implements ${group.name.toLowerCase()} functionality with ${reqCount} requirements`;
-  
+
   const id = iuId(name, contract, sourceCanonIds);
   const shortId = `IU-${shortHash(id)}`;
 
@@ -132,7 +132,7 @@ function createIU(group, index) {
   // Extract inputs/outputs/invariants from requirements
   for (const req of group.requirements) {
     const text = req.statement;
-    
+
     if (text.includes('input') || text.includes('parameter')) {
       inputs.push(text);
     }
@@ -242,7 +242,7 @@ function writePlanMarkdown(projectRoot, plan) {
     lines.push('');
     lines.push(`**Risk Tier:** ${iu.risk_tier} (${iu.source_canon_ids.length} requirements)`);
     lines.push('');
-    
+
     lines.push('**Canonical Requirements:**');
     for (const canonId of iu.source_canon_ids.slice(0, 10)) {
       lines.push(`- ${canonId.slice(0, 12)}...`);
@@ -307,7 +307,7 @@ try {
   }
 
   // Run planning
-  const plan = plan(projectRoot);
+  const planResult = plan(projectRoot);
 
   // Ensure output directory exists
   const outputDir = join(projectRoot, '.phoenix', 'graphs');
@@ -317,20 +317,20 @@ try {
 
   // Write JSON output
   const jsonPath = join(outputDir, 'ius.json');
-  writeFileSync(jsonPath, JSON.stringify(plan, null, 2), 'utf-8');
+  writeFileSync(jsonPath, JSON.stringify(planResult, null, 2), 'utf-8');
 
   // Write Markdown output
-  const mdPath = writePlanMarkdown(projectRoot, plan);
+  const mdPath = writePlanMarkdown(projectRoot, planResult);
 
   // Print results
-  console.log(`✅ Planned ${plan.iu_count} Implementation Units`);
-  console.log(`   Coverage: ${plan.coverage.covered_canon_nodes}/${plan.coverage.total_canon_nodes} requirements`);
-  console.log(`   Orphans: ${plan.coverage.orphan_canon_ids.length}`);
+  console.log(`✅ Planned ${planResult.iu_count} Implementation Units`);
+  console.log(`   Coverage: ${planResult.coverage.covered_canon_nodes}/${planResult.coverage.total_canon_nodes} requirements`);
+  console.log(`   Orphans: ${planResult.coverage.orphan_canon_ids.length}`);
   console.log('');
 
   // Show IU summary
   console.log('Implementation Units:');
-  for (const iu of plan.ius) {
+  for (const iu of planResult.ius) {
     const icon = iu.risk_tier === 'critical' ? '🔴' :
                  iu.risk_tier === 'high' ? '🟠' :
                  iu.risk_tier === 'medium' ? '🟡' : '🔵';
@@ -342,7 +342,7 @@ try {
   console.log(`   Markdown: ${mdPath}`);
   console.log('');
 
-  if (plan.coverage.orphan_canon_ids.length > 0) {
+  if (planResult.coverage.orphan_canon_ids.length > 0) {
     console.log('⚠️  WARNING: Some requirements not assigned to IUs');
     console.log('   Review orphan nodes and assign to appropriate IUs');
   }

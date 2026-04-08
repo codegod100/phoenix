@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-04-08T00:45:28.089Z",
+  "evaluations": [
+    {
+      "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+      "tier": "medium",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-08T00:45:27.867Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 1140,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T00:45:28.089Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 222,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "failed",
+          "timestamp": "2026-04-08T00:45:28.089Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "details": "Error validating src/generated/metrics/index.ts: ENOENT: no such file or directory, open '/home/nandi/code/phoenix/examples/taskflow/src/generated/metrics/index.ts'"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [
+        "unit_tests"
+      ],
+      "failed_evidence": [
+        "boundary_validation"
+      ],
+      "score": 50
+    }
+  ]
+}

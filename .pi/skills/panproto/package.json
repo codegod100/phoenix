@@ -1,0 +1,16 @@
+{
+  "name": "@phoenix/panproto-skill",
+  "version": "1.0.0",
+  "description": "Panproto integration for Phoenix VCS - schema morphisms and protolenses",
+  "type": "module",
+  "main": "./panproto.js",
+  "scripts": {
+    "build:wasm": "cd vendor && cargo build --release -p panproto-wasm --target wasm32-unknown-unknown && wasm-bindgen --target web --out-dir ../wasm target/wasm32-unknown-unknown/release/panproto_wasm.wasm"
+  },
+  "dependencies": {
+    "@panproto/core": "^0.27.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

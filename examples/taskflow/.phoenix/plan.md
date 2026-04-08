@@ -4,325 +4,780 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-1: Task Domain Model (MEDIUM)
+## IU-29eaf566: Metrics Domain (MEDIUM)
 
-**Description:** Core task entity with lifecycle, assignment, deadline management, and archive support.
+**Description:** Implements metrics functionality with 5 requirements
 
-**Risk Tier:** MEDIUM (21 requirements, business logic complexity)
+**Risk Tier:** medium (5 requirements)
 
 **Canonical Requirements:**
-- node-a1b2c3d4: create tasks with title description priority
-- node-b2c3d4e5: generate unique task id as uuid v4
-- node-c3d4e5f6: status transitions open to in_progress to review to done and done to open for reopening
-- node-d4e5f678: reject invalid status transitions
-- node-e5f67890: track created_at and updated_at timestamps
-- node-f6789012: record completion timestamp and duration
-- node-67890123: support archiving tasks
-- node-78901234: support restoring archived tasks
-- node-89012345: list archived tasks separately
-- node-90123456: assign task to single user
-- node-01234567: log previous assignee in audit trail
-- node-12345678: query unassigned tasks
-- node-23456789: validate user id non-empty
-- node-34567890: search by title substring case-insensitive
-- node-45678901: filter by status priority assignee and archived state
-- node-56789012: sort by priority then created_at
-- node-67890123a: empty query returns all tasks
-- node-78901234a: support optional deadline dates
-- node-89012345a: flag overdue tasks automatically
-- node-90123456a: list all overdue tasks
-- node-01234567a: allow past deadline with warning
+- 41e8bd3b9765...
+- 6fd3cccffb26...
+- d069da158b6c...
+- e25f9b8a3fb3...
+- eb443327a877...
 
 **Contract:**
-- Inputs: Task creation/updates, search/filter criteria (including archived state)
-- Outputs: Task records, filtered lists, overdue flags, archived task lists
-- Invariants: Valid status transitions only, UUID uniqueness, archived tasks retain data
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/task-model.ts`
-- `src/generated/taskflow/__tests__/task-model.test.ts`
+- `src/generated/metrics/index.ts`
+- `src/generated/metrics/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
 
 ---
 
-## IU-2: Analytics Engine (MEDIUM)
+## IU-7cce149b: Priority Domain (LOW)
 
-**Description:** Metrics calculation and reporting functions.
+**Description:** Implements priority functionality with 4 requirements
 
-**Risk Tier:** MEDIUM (10 requirements, calculation complexity)
+**Risk Tier:** low (4 requirements)
 
 **Canonical Requirements:**
-- node-12345678a: track total created completed overdue
-- node-23456789a: calculate average completion time
-- node-34567890a: compute throughput 7-day rolling
-- node-45678901a: compute from array no database
-- node-56789012a: report count by priority
-- node-67890123b: report count by status
-- node-78901234b: include percentage in breakdowns
-- node-89012345b: calculate per-assignee completion rate
-- node-90123456b: identify top performer
-- node-01234567b: exclude unassigned from team metrics
+- 1e36aa90a520...
+- c302c6dc31cb...
+- dbd7a98a77dd...
+- ef282c4f5888...
 
 **Contract:**
-- Inputs: Array of task records (including archived)
-- Outputs: Metrics objects, breakdowns, performance stats
-- Invariants: No external dependencies
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/analytics.ts`
-- `src/generated/taskflow/__tests__/analytics.test.ts`
+- `src/generated/priority/index.ts`
+- `src/generated/priority/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
 
 ---
 
-## IU-3: Dashboard Page & Theme (HIGH)
+## IU-169b3c51: Team Domain (LOW)
 
-**Description:** HTML page structure, Catppuccin theme, responsive layout.
+**Description:** Implements team functionality with 3 requirements
 
-**Risk Tier:** HIGH (15 requirements, user-facing UI)
+**Risk Tier:** low (3 requirements)
 
 **Canonical Requirements:**
-- node-12345678b: render complete html page inline css js
-- node-23456789b: compact header taskflow title 32px
-- node-34567890b: css custom properties catppuccin colors
-- node-45678901b: responsive layout mobile desktop
-- def-1a2b3c4d: catppuccin mocha exclusive no toggle
-- def-2b3c4d5e: background 1e1e2e card 313244
-- def-3c4d5e6f: text cdd6f4 secondary a6adc8
-- def-4d5e6f78: accent blue success green warning yellow danger red
-- def-5e6f7890: priority colors
-- def-6f789012: status colors including archived surface1 dimmed
-- node-56789012b: css custom properties theming
-- node-67890123c: cards subtle shadows rounded 8px hover
-- node-78901234c: system-ui font hierarchy
-- node-89012345c: buttons rounded padding cursor
+- 21a8432fc76f...
+- 7b890674e3dd...
+- c384544cc226...
 
 **Contract:**
-- Inputs: None (generates static HTML/CSS structure)
-- Outputs: HTML page string with inline styles
-- Invariants: Catppuccin Mocha only, no external CSS
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-page.ts`
-- `src/generated/taskflow/__tests__/dashboard-page.test.ts`
+- `src/generated/team/index.ts`
+- `src/generated/team/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
 
 ---
 
-## IU-4: Dashboard Task List (HIGH)
+## IU-e4caab5e: Task Domain (HIGH)
 
-**Description:** Task grid display, cards, badges, localStorage persistence.
+**Description:** Implements task functionality with 14 requirements
 
-**Risk Tier:** HIGH (8 requirements, user-facing UI)
+**Risk Tier:** high (14 requirements)
 
 **Canonical Requirements:**
-- node-90123456c: render tasks styled cards responsive grid
-- node-01234567c: card shows title description priority status assignee deadline
-- node-12345678c: priority badges color-coded
-- node-23456789c: status badges color-coded including archived overlay0 dim
-- node-34567890c: overdue tasks red border indicator
-- node-45678901c: card status transition buttons
-- node-56789012c: persist in localstorage survive refresh
-- node-67890123d: immediate display on page load
+- 0c8fd64b342a...
+- 0ec58c72f695...
+- 22c19be38ec4...
+- 26e1ab361fa6...
+- 27291946d9c1...
+- 3dee3bcd6fc7...
+- 400ee183fafc...
+- 6741feb08b69...
+- 950b321591c4...
+- a16f8174b5e5...
+- ... and 4 more
 
 **Contract:**
-- Inputs: Task data from localStorage
-- Outputs: Rendered card HTML, event handlers
-- Invariants: localStorage schema versioned
+- Inputs: Configuration, Data inputs
+- Outputs: the dashboard must render all tasks as styled cards in a responsive grid layout
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-tasklist.ts`
-- `src/generated/taskflow/__tests__/dashboard-tasklist.test.ts`
+- `src/generated/task/index.ts`
+- `src/generated/task/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
 
 ---
 
-## IU-5: Dashboard Edit UI (HIGH)
+## IU-013287c8: Assignment Domain (LOW)
 
-**Description:** Create form and inline editing for tasks.
+**Description:** Implements assignment functionality with 4 requirements
 
-**Risk Tier:** HIGH (11 requirements, user-facing UI, form complexity)
+**Risk Tier:** low (4 requirements)
 
 **Canonical Requirements:**
-- node-78901234d: create form title description priority deadline
-- node-89012345d: validate title non-empty
-- node-90123456d: edit button replaces content not modal
-- node-01234567d: edit form in place pre-populated
-- node-12345678d: card-content div hideable
-- node-23456789d: edit form sibling not nested
-- node-34567890d: toggle display via inline style
-- node-45678901d: save cancel buttons visual distinction
-- node-56789012d: cancel/save restore card view
-- node-67890123e: edit title description priority deadline assignee
-- node-78901234e: update updated_at automatically
+- 3d832f261b6d...
+- 5e0a0179854a...
+- b604c9dae64a...
+- f8cbfa7d6c88...
 
 **Contract:**
-- Inputs: Task data, DOM elements
-- Outputs: Updated task data, DOM mutations
-- Invariants: No nested forms, timestamp auto-updated
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-edit.ts`
-- `src/generated/taskflow/__tests__/dashboard-edit.test.ts`
+- `src/generated/assignment/index.ts`
+- `src/generated/assignment/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
 
 ---
 
-## IU-6: Dashboard Archive UI (HIGH)
+## IU-5d746ac1: Search Domain (LOW)
 
-**Description:** Archive tab switching, archived task display with status badges, restore functionality.
+**Description:** Implements search functionality with 4 requirements
 
-**Risk Tier:** HIGH (9 requirements, user-facing UI, visual state management)
+**Risk Tier:** low (4 requirements)
 
 **Canonical Requirements:**
-- node-89012345e: archived view via archived tasks tab
-- node-90123456e: switch active archived no reload
-- node-01234567e: archived queryable restorable
-- node-12345678e: archive completed tasks
-- node-23456789e: archived status visually indicated muted dim
-- node-34567890e: archived badge in active tab dimmed strikethrough
-- node-45678901e: archived tab shows original status with indicator
-- node-56789012e: archived display in same grid
-- node-67890123f: archived cards have restore button
+- 49a95edd719e...
+- d162133ca6cb...
+- d87a8adb9fea...
+- fa9e6c9a18b3...
 
 **Contract:**
-- Inputs: Archive status, task data, original status for archived tasks
-- Outputs: Filtered view, restore actions, visual status indicators
-- Invariants: Archived tasks retained not deleted, visual state consistent
+- Inputs: Configuration, Data inputs
+- Outputs: an empty search query must return all tasks
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-archive.ts`
-- `src/generated/taskflow/__tests__/dashboard-archive.test.ts`
+- `src/generated/search/index.ts`
+- `src/generated/search/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
 
 ---
 
-## IU-7: Dashboard Bulk Operations (HIGH)
+## IU-fa4e979e: Deadline Domain (LOW)
 
-**Description:** Multi-select, bulk actions including archive, confirmation modals.
+**Description:** Implements deadline functionality with 4 requirements
 
-**Risk Tier:** HIGH (10 requirements, user-facing UI, destructive operations)
+**Risk Tier:** low (4 requirements)
 
 **Canonical Requirements:**
-- node-78901234f: bulk checkboxes multi-select
-- node-89012345f: bulk action bar delete archive selected
-- node-90123456f: bulk delete archive reassign
-- node-01234567f: bulk delete by id with confirmation
-- node-12345678f: delete by unique id
-- node-23456789f: delete button opens confirmation modal
-- node-34567890f: delete button danger color trash icon
-- node-45678901f: deleted removed from all views
-- node-56789012f: custom modal overlays not browser confirm alert
-- node-67890123g: delete requires confirmation modal
+- 23a499c17f6d...
+- 3306386ed3c6...
+- 45db43506cd2...
+- b085dd428dc5...
 
 **Contract:**
-- Inputs: Selected task IDs, action type (delete/archive/reassign)
-- Outputs: Bulk operation results, modal UI
-- Invariants: Confirmation before delete, modal not alert
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-bulk.ts`
-- `src/generated/taskflow/__tests__/dashboard-bulk.test.ts`
+- `src/generated/deadline/index.ts`
+- `src/generated/deadline/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
 
 ---
 
-## IU-8: Dashboard Analytics Bar (MEDIUM)
+## IU-92d0c760: Status Domain (HIGH)
 
-**Description:** Compact status bar with key metrics display.
+**Description:** Implements status functionality with 12 requirements
 
-**Risk Tier:** MEDIUM (9 requirements, UI display)
+**Risk Tier:** high (12 requirements)
 
 **Canonical Requirements:**
-- node-78901234g: compact status bar key metrics inline
-- node-89012345g: status bar horizontal below header
-- node-90123456g: max 48px height minimal padding
-- node-01234567g: centered width as content not full
-- node-12345678g: no vertical space consumption
-- node-23456789g: display total completed overdue archived rate
-- node-34567890g: inline metrics with separators
-- node-45678901g: subtle text colors
-- node-56789012g: no large emoji no backgrounds no hover
+- 04863c16775d...
+- 06236ca2480f...
+- 1d9ff4151b5a...
+- 23d13da966e4...
+- 3fbf0135a960...
+- 5e9d6248b4c4...
+- 8394b9997e08...
+- 8f060feffe64...
+- dc96fbc84d80...
+- e5d2dfbce7cc...
+- ... and 2 more
 
 **Contract:**
-- Inputs: Task metrics from analytics engine
-- Outputs: Status bar HTML
-- Invariants: Compact inline display only
+- Inputs: Configuration, Data inputs
+- Outputs: the status bar must render as a single horizontal bar below the header
+- Invariants: the status bar must be centered horizontally and only as wide as its content not fullwidth, the status bar must not consume vertical space like the previous metric cards design
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-analytics-bar.ts`
-- `src/generated/taskflow/__tests__/dashboard-analytics-bar.test.ts`
+- `src/generated/status/index.ts`
+- `src/generated/status/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
 
 ---
 
-## IU-9: Dashboard Integration (HIGH)
+## IU-fc178077: Archive Domain (HIGH)
 
-**Description:** Integration layer that wires all dashboard components into a complete working single-page application. Manages component composition, event flow, state synchronization, and UI coordination.
+**Description:** Implements archive functionality with 9 requirements
 
-**Risk Tier:** HIGH (39 requirements, complex integration, all user-facing UI components must work together)
+**Risk Tier:** high (9 requirements)
 
 **Canonical Requirements:**
-- node-integ001: dashboard shall compose page theme task list edit form archive tabs bulk selection and analytics bar into single working page
-- node-integ002: create form shall append new tasks to localStorage and trigger task grid re-render
-- node-integ003: task grid shall display tasks from localStorage and pass click events to edit handlers
-- node-integ004: inline edit form shall update localStorage and trigger task grid re-render on save
-- node-integ005: archive tabs shall filter task grid display without page reload
-- node-integ006: bulk selection shall update task grid checkbox states and show hide bulk action bar
-- node-integ007: analytics bar shall recalculate on every localStorage change
-- node-integ007a: analytics bar shall display inline on same line as page title in header with no visual separator line below
-- node-integ008: form submit events shall validate input write to localStorage then call render functions
-- node-integ008a: date inputs shall use Catppuccin Mocha theme colors with matching border background and focus states
-- node-integ008b: date picker component shall be styled with Catppuccin Mocha theme colors
-- node-integ008c: date picker shall display calendar grid with month year navigation and themed day selection
-- node-integ009: status transition buttons shall update task status update updated_at timestamp write to localStorage then re-render
-- node-integ00a: edit button clicks shall hide card content div and show edit form sibling
-- node-integ00b: cancel save buttons shall toggle display none on edit form and restore card view
-- node-integ00c: archive restore actions shall set archived flag with timestamp write to localStorage then re-render current view
-- node-integ00d: delete actions shall show confirmation modal then on confirm remove from localStorage and re-render
-- node-integ00e: tab clicks shall switch view state active archived clear bulk selection re-render task grid
-- node-integ00f: localStorage key taskflow_tasks shall be single source of truth for all components
-- node-integ010: all components shall read from localStorage on every render no in-memory caching
-- node-integ011: write operations shall complete before triggering re-render synchronous flow
-- node-integ012: state mutations shall include updated_at timestamp automatically
-- node-integ013: archived tasks shall retain all original data plus archived boolean and archived_at timestamp
-- node-integ013a: create form and task grid shall render side by side in two-column layout on desktop create form on left task grid on right
-- node-integ013b: on mobile create form shall stack above task grid in single column
-- node-integ013c: create form and task grid shall align at same top height for visual symmetry
-- node-integ014: active tab shall show task cards with status badges archived tasks shown with dimmed strikethrough badge overlay
-- node-integ014a: active tab shall display done tasks in separate section below active tasks with completed heading using same grid layout as active tasks
-- node-integ015: archived tab shall show archived tasks with original status badge plus archived indicator
-- node-integ016: bulk action bar shall only appear when selectedIds length greater than 0
-- node-integ017: bulk bar shall disable archive button when viewing archived tab disable restore when viewing active tab
-- node-integ018: confirmation modal shall overlay entire page with semi-transparent background
-- node-integ019: modal confirm action shall execute callback then close modal
-- node-integ01a: escape key shall cancel modal click outside modal shall cancel
-- node-integ01b: no component shall read localStorage state
-- node-integ01c: no state change shall occur without updating localStorage first
-- node-integ01d: re-renders shall be synchronous following state updates
-- node-integ01e: all event handlers shall be attached on initial page load
-- node-integ01f: components shall not have external dependencies all data from localStorage
+- 0bbf6f693cec...
+- 0bfbf4eb8ef7...
+- 0dfbaefa54a5...
+- 1cedce764142...
+- 78f83d3cedc0...
+- 79afe2985ea4...
+- 81f910f80ba0...
+- 9cc63176bbc9...
+- dfcddaf1235e...
 
 **Contract:**
-- Inputs: None (self-contained; reads from localStorage)
-- Outputs: Complete working HTML page with all components wired together
-- Invariants: localStorage is single source of truth; all renders read fresh state; writes complete before re-render; no external dependencies
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
-- `src/generated/taskflow/dashboard-integration.ts`
-- `src/generated/taskflow/__tests__/dashboard-integration.test.ts`
+- `src/generated/archive/index.ts`
+- `src/generated/archive/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
 
 ---
 
-## Summary
+## IU-8f7a7e1c: Page Domain (HIGH)
 
-| IU | Name | Risk | Requirements | Test File |
-|----|------|------|--------------|-----------|
-| 1 | Task Domain Model | MEDIUM | 21 | ✅ |
-| 2 | Analytics Engine | MEDIUM | 10 | ✅ |
-| 3 | Dashboard Page & Theme | HIGH | 15 | ✅ |
-| 4 | Dashboard Task List | HIGH | 8 | ✅ |
-| 5 | Dashboard Edit UI | HIGH | 11 | ✅ |
-| 6 | Dashboard Archive UI | HIGH | 9 | ✅ |
-| 7 | Dashboard Bulk Operations | HIGH | 10 | ✅ |
-| 8 | Dashboard Analytics Bar | MEDIUM | 9 | ✅ |
-| 9 | Dashboard Integration | HIGH | 32 | ✅ |
+**Description:** Implements page functionality with 4 requirements
 
-**Total: 9 IUs, 125 canonical requirements mapped**
+**Risk Tier:** high (4 requirements)
 
-**Changes from previous run:**
-- Added IU-9: Dashboard Integration (32 requirements, wires all components into working app)
-- IU-9 covers component wiring, event flow, state management, UI coordination
-- Updated requirement count from 93 to 125
+**Canonical Requirements:**
+- 3b90fe0067a3...
+- aab62f839329...
+- d36869b76eb6...
+- e5812b6a5847...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: the dashboard must render a complete html page with inline css and javascript
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/page/index.ts`
+- `src/generated/page/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-f56c1390: Catppuccin Domain (MEDIUM)
+
+**Description:** Implements catppuccin functionality with 7 requirements
+
+**Risk Tier:** medium (7 requirements)
+
+**Canonical Requirements:**
+- 023acc45de37...
+- 5897f7d83429...
+- 894211f4ec8a...
+- a7e9866bf870...
+- b90a45d9d761...
+- e2ea22fa125c...
+- ed4b8264171a...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: no theme toggle or system preference detection catppuccin mocha is the only theme
+
+**Output Files:**
+- `src/generated/catppuccin/index.ts`
+- `src/generated/catppuccin/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+
+---
+
+## IU-e9b69935: Base Domain (HIGH)
+
+**Description:** Implements base functionality with 8 requirements
+
+**Risk Tier:** high (8 requirements)
+
+**Canonical Requirements:**
+- 0e495d1ee4c2...
+- 1d98cea9ca41...
+- 2333b8650b4e...
+- 39f5873bbfd3...
+- 58b80bc522aa...
+- 71c8e6f5c3ef...
+- 9d6580bab657...
+- c90f58ebacff...
+
+**Contract:**
+- Inputs: date inputs must use a custom date picker component styled with catppuccin mocha theme
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/base/index.ts`
+- `src/generated/base/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-eb7c109e: Bulk Domain (LOW)
+
+**Description:** Implements bulk functionality with 4 requirements
+
+**Risk Tier:** low (4 requirements)
+
+**Canonical Requirements:**
+- 47e0a64ce995...
+- 5ba9c276d405...
+- 7580079c9863...
+- dd47204341c3...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/bulk/index.ts`
+- `src/generated/bulk/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+
+---
+
+## IU-12c44af6: Delete Domain (LOW)
+
+**Description:** Implements delete functionality with 4 requirements
+
+**Risk Tier:** low (4 requirements)
+
+**Canonical Requirements:**
+- 0ca3fa4b0879...
+- 4c4897891d89...
+- c37ac43e5c7f...
+- d612bbc65b30...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/delete/index.ts`
+- `src/generated/delete/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+
+---
+
+## IU-7bde30d9: Confirmation Domain (LOW)
+
+**Description:** Implements confirmation functionality with 2 requirements
+
+**Risk Tier:** low (2 requirements)
+
+**Canonical Requirements:**
+- 12fb0edc1287...
+- 796b4e363127...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/confirmation/index.ts`
+- `src/generated/confirmation/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+
+---
+
+## IU-8ae5c45f: Create Domain (LOW)
+
+**Description:** Implements create functionality with 2 requirements
+
+**Risk Tier:** low (2 requirements)
+
+**Canonical Requirements:**
+- 2e6138167683...
+- 65cf841d09b2...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/create/index.ts`
+- `src/generated/create/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+
+---
+
+## IU-1b10421c: Inline Domain (HIGH)
+
+**Description:** Implements inline functionality with 5 requirements
+
+**Risk Tier:** high (5 requirements)
+
+**Canonical Requirements:**
+- 11d42093d9e4...
+- 56c320fc4463...
+- 9b1a91087034...
+- dad35101507f...
+- ed55103ac8f5...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/inline/index.ts`
+- `src/generated/inline/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-b0512ab0: Edit Domain (LOW)
+
+**Description:** Implements edit functionality with 4 requirements
+
+**Risk Tier:** low (4 requirements)
+
+**Canonical Requirements:**
+- 0b7df6f4e1fe...
+- 8ecb82202835...
+- a536745291c2...
+- c3ae3e10e08b...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/edit/index.ts`
+- `src/generated/edit/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+
+---
+
+## IU-a2326ea1: Component Domain (HIGH)
+
+**Description:** Implements component functionality with 8 requirements
+
+**Risk Tier:** high (8 requirements)
+
+**Canonical Requirements:**
+- 09a6c7528b63...
+- 3b3b6ce2da6d...
+- 72c4a2c45dc1...
+- 8a0f621ecff2...
+- 93e388ff1c8a...
+- a731f6b43208...
+- a9bd9ecc8c5b...
+- f20e473ea249...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: the create form shall append new tasks to localstorage and trigger task grid rerender, the inline edit form shall update localstorage and trigger task grid rerender on save
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/component/index.ts`
+- `src/generated/component/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-c73fdbc4: Event Domain (HIGH)
+
+**Description:** Implements event functionality with 7 requirements
+
+**Risk Tier:** high (7 requirements)
+
+**Canonical Requirements:**
+- 2623171ed714...
+- 3cabdbbabcf6...
+- 493bf4f1ea33...
+- 4c22b2bde5ba...
+- 62e720747aa3...
+- befecd912aa1...
+- e6ea15b2c95d...
+
+**Contract:**
+- Inputs: form submit events shall validate input write to localstorage then call render functions
+- Outputs: form submit events shall validate input write to localstorage then call render functions, status transition buttons shall update task status update updatedat timestamp write to localstorage then rerender, archive and restore actions shall set archived flag with timestamp write to localstorage then rerender current view, delete actions shall show confirmation modal then on confirm remove from localstorage and rerender, tab clicks shall switch view state between active and archived clear bulk selection and rerender task grid
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/event/index.ts`
+- `src/generated/event/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-b25d3806: State Domain (HIGH)
+
+**Description:** Implements state functionality with 5 requirements
+
+**Risk Tier:** high (5 requirements)
+
+**Canonical Requirements:**
+- 01e92e240085...
+- 0afc29d57dce...
+- 4a49ae7c4ceb...
+- bb1e6cc7b2c8...
+- f937d4a27dd9...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: all components shall read from localstorage on every render with no inmemory caching, write operations shall complete before triggering rerender using synchronous flow
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/state/index.ts`
+- `src/generated/state/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-fa4c8303: UI Domain (HIGH)
+
+**Description:** Implements ui functionality with 13 requirements
+
+**Risk Tier:** high (13 requirements)
+
+**Canonical Requirements:**
+- 01e9f448f073...
+- 024c1a2b29b1...
+- 06083503e786...
+- 10753d83edf2...
+- 1551cfef5a8e...
+- 7ad31f6c3116...
+- 7f65243582ee...
+- 93833e524931...
+- 93e81a349be5...
+- a57321f9ffae...
+- ... and 3 more
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: the create form and task grid shall render side by side in a twocolumn layout on desktop with create form on left and task grid on right, done tasks must render in the same grid layout as active tasks with same column widths gaps and responsive behavior
+- Invariants: bulk action bar shall only appear when selectedids length is greater than 0
+
+**Output Files:**
+- `src/generated/ui/index.ts`
+- `src/generated/ui/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-379356eb: Integration Domain (HIGH)
+
+**Description:** Implements integration functionality with 5 requirements
+
+**Risk Tier:** high (5 requirements)
+
+**Canonical Requirements:**
+- 1195e2f9dc63...
+- 4d3caa9e1a34...
+- 5a52732aa411...
+- 6bb5fa7fddac...
+- 8a0318be0732...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: no component shall render without reading current localstorage state, rerenders shall be synchronous following state updates
+- Invariants: components shall not have external dependencies with all data from localstorage
+
+**Output Files:**
+- `src/generated/integration/index.ts`
+- `src/generated/integration/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## IU-2ff32cc9: Overdue Domain (LOW)
+
+**Description:** Implements overdue functionality with 1 requirements
+
+**Risk Tier:** low (1 requirements)
+
+**Canonical Requirements:**
+- a38b11267825...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/overdue/index.ts`
+- `src/generated/overdue/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+
+---
+
+## IU-f5ffe871: Data Domain (HIGH)
+
+**Description:** Implements data functionality with 2 requirements
+
+**Risk Tier:** high (2 requirements)
+
+**Canonical Requirements:**
+- 900da6bbb6ab...
+- b5ce30f01710...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: Valid state transitions only, Type safety maintained
+
+**Output Files:**
+- `src/generated/data/index.ts`
+- `src/generated/data/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+- property_tests
+- threat_note
+
+---
+
+## Coverage Summary
+
+- Total canonical nodes: 140
+- Covered: 140
+- Orphans: 0

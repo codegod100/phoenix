@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 /**
- * Phoenix Regen - Generate implementation code from Implementation Units
- * 
- * Generates TypeScript code with:
- * - Traceability exports (_phoenix object with iu_id)
- * - Contract implementation (inputs, outputs, invariants)
- * - Evidence collection hooks
- * - File hash recording in manifest
- * 
- * Usage: node .pi/skills/phoenix-regen/regen.js [project-root]
+ * Phoenix Regen - Language-Agnostic RED (failing) Code Generator
+ *
+ * TDD Philosophy:
+ * 1. Generate code with WRONG implementations (RED — tests fail)
+ * 2. Human or LLM fixes implementations (GREEN — tests pass)
+ * 3. Evidence validates the GREEN state
+ *
+ * Language Agnostic:
+ * - Pluggable generators for any language (TypeScript, Python, Nix, Rust, etc.)
+ * - Auto-detects target language from IU config, project config, or file extension
+ * - Falls back to TypeScript by default
+ *
+ * Usage: node .pi/skills/phoenix-regen/regen.js [project-root] [iu-id] [--lang=python]
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { createHash } from 'crypto';
-import { resolve, join, dirname, relative } from 'path';
+import { resolve, join, dirname, relative, extname } from 'path';
+import { loadGenerator, detectTargetLanguage, getTestFilePattern } from './generator-loader.js';
 
 // === VCS IDENTITY FUNCTIONS ===
 
@@ -25,117 +30,243 @@ function fileHash(content) {
   return sha256(content);
 }
 
-function shortHash(fullHash) {
-  return fullHash.slice(0, 8);
+// === PATH RESOLUTION ===
+
+/**
+ * Resolve output paths for an IU, considering language and project structure
+ */
+function resolveOutputPaths(iu, projectRoot, generator, options = {}) {
+  const { forceLang = null } = options;
+  const targetLang = forceLang || iu.target_language || 'typescript';
+
+  // If IU has explicit paths AND no language override, use them
+  if (!forceLang && iu.output_path && iu.test_path) {
+    return {
+      impl: join(projectRoot, iu.output_path),
+      test: join(projectRoot, iu.test_path),
+    };
+  }
+
+  // Special case: nix-flake generator outputs flake.nix directly
+  if (targetLang === 'nix-flake') {
+    return {
+      impl: join(projectRoot, 'flake.nix'),
+      test: join(projectRoot, 'test-flake.nix'),
+    };
+  }
+
+  // Generate paths based on language conventions
+  const baseName = toKebabCase(iu.name);
+
+  // Get extensions from generator
+  const implExt = generator.getFileExtension ? generator.getFileExtension() : getDefaultExtension(targetLang);
+  const testPattern = generator.getTestFilePattern ? generator.getTestFilePattern() : getTestFilePattern(targetLang);
+
+  // Determine output directory
+  const outputDir = resolveOutputDir(projectRoot, targetLang, iu);
+
+  // Build paths
+  const implPath = join(outputDir, `${baseName}${implExt}`);
+
+  let testPath;
+  if (typeof testPattern === 'object' && testPattern.subdir) {
+    // Language with test subdirectory (like TypeScript's __tests__)
+    const testDir = join(dirname(implPath), testPattern.subdir);
+    const testExt = testPattern.suffix || implExt;
+    testPath = join(testDir, `${baseName}${testExt}`);
+  } else if (typeof testPattern === 'object' && testPattern.prefix) {
+    // Language with test prefix (like Python's test_*.py)
+    const testExt = testPattern.suffix || implExt;
+    testPath = join(dirname(implPath), `${testPattern.prefix}${baseName}${testExt}`);
+  } else if (typeof testPattern === 'object' && testPattern.suffix) {
+    // Object pattern with just suffix (like Nix's .test.nix)
+    testPath = join(dirname(implPath), `${baseName}${testPattern.suffix}`);
+  } else {
+    // Simple suffix pattern (string)
+    const testExt = typeof testPattern === 'string' ? testPattern : `${implExt}`;
+    testPath = join(dirname(implPath), `${baseName}${testExt}`);
+  }
+
+  return { impl: implPath, test: testPath };
 }
 
-// === CODE GENERATION ===
+function resolveOutputDir(projectRoot, lang, iu) {
+  // Check for project-specific overrides
+  const config = loadProjectConfig(projectRoot);
+  if (config?.outputDir) {
+    return join(projectRoot, config.outputDir);
+  }
 
-function generateTypeScriptCode(iu) {
-  const lines = [];
-  
-  // Header comment
-  lines.push(`// Generated: ${iu.name} (${iu.short_id})`);
-  lines.push(`// Description: ${iu.description}`);
-  lines.push(`// Risk Tier: ${iu.risk_tier.toUpperCase()}`);
-  lines.push('');
+  // Language-specific defaults
+  const defaults = {
+    typescript: 'src/generated',
+    javascript: 'src/generated',
+    python: 'src',
+    nix: '.',
+    rust: 'src',
+    go: '.',
+    java: 'src/main/java/generated',
+    ruby: 'lib',
+    elixir: 'lib',
+    haskell: 'src',
+  };
 
-  // Types based on contract
-  if (iu.contract.inputs.length > 0 || iu.contract.outputs.length > 0) {
-    lines.push('// === TYPES ===');
-    lines.push('');
-    lines.push('export interface Config {');
-    lines.push('  // Configuration options');
-    for (const input of iu.contract.inputs.slice(0, 3)) {
-      const cleanInput = input.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20);
-      lines.push(`  ${cleanInput}?: string;`);
+  const defaultDir = defaults[lang] || 'generated';
+
+  // For domain-based grouping (if name contains domain hint)
+  if (iu.name.includes('Domain')) {
+    const domain = toKebabCase(iu.name.replace(/Domain/, ''));
+    return join(projectRoot, defaultDir, domain);
+  }
+
+  return join(projectRoot, defaultDir);
+}
+
+function getDefaultExtension(lang) {
+  const extensions = {
+    typescript: '.ts',
+    javascript: '.js',
+    python: '.py',
+    nix: '.nix',
+    rust: '.rs',
+    go: '.go',
+    java: '.java',
+    kotlin: '.kt',
+    swift: '.swift',
+    ruby: '.rb',
+    elixir: '.ex',
+    haskell: '.hs',
+  };
+  return extensions[lang] || '.txt';
+}
+
+function loadProjectConfig(projectRoot) {
+  const configPaths = [
+    join(projectRoot, '.phoenix', 'config.json'),
+    join(projectRoot, 'phoenix.json'),
+  ];
+
+  for (const path of configPaths) {
+    if (existsSync(path)) {
+      try {
+        return JSON.parse(readFileSync(path, 'utf-8'));
+      } catch (e) {
+        // Continue
+      }
     }
-    lines.push('}');
-    lines.push('');
+  }
+  return null;
+}
+
+// === STRING UTILS ===
+
+function toKebabCase(str) {
+  return str
+    .replace(/[^a-zA-Z0-9]/g, ' ')
+    .split(' ')
+    .map(w => w.toLowerCase())
+    .join('-')
+    .replace(/-+$/, '');
+}
+
+// === REGENERATION ===
+
+async function regenerate(projectRoot, options = {}) {
+  const { iuFilter = null, forceLang = null } = options;
+
+  const iuGraph = loadIUGraph(projectRoot);
+  if (!iuGraph) {
+    throw new Error('No IU graph found. Run phoenix-plan first.');
   }
 
-  // Main implementation
-  lines.push('// === IMPLEMENTATION ===');
-  lines.push('');
+  const manifest = loadManifest(projectRoot);
+  const generated = [];
+  const errors = [];
 
-  // Generate functions based on outputs
-  for (const output of iu.contract.outputs.slice(0, 3)) {
-    const funcName = output
-      .replace(/system shall /, '')
-      .replace(/the /, '')
-      .replace(/[^a-zA-Z0-9]/g, '_')
-      .slice(0, 30)
-      .replace(/_+$/, '');
-    
-    lines.push(`/**`);
-    lines.push(` * ${output}`);
-    lines.push(` * Invariant: ${iu.contract.invariants[0] || 'Maintains valid state'}`);
-    lines.push(` */`);
-    lines.push(`export function ${funcName}(config?: Config): string {`);
-    lines.push(`  // TODO: Implement based on requirements:`);
-    for (const canonId of iu.source_canon_ids.slice(0, 3)) {
-      lines.push(`  //   - ${canonId.slice(0, 12)}...`);
+  // Track loaded generators and template generation status
+  const generators = new Map();
+  const templateGenerated = new Set();
+
+  for (const iu of iuGraph.ius) {
+    // Skip if filter specified and doesn't match
+    if (iuFilter && !iu.id.includes(iuFilter) && iu.short_id !== iuFilter) {
+      continue;
     }
-    lines.push(`  throw new Error('Not implemented: ${funcName}');`);
-    lines.push('}');
-    lines.push('');
+
+    try {
+      // Detect or force target language
+      const targetLang = forceLang || detectTargetLanguage(iu, projectRoot);
+      iu.target_language = targetLang;
+
+      // Load generator (cached per language)
+      let generator;
+      if (generators.has(targetLang)) {
+        generator = generators.get(targetLang);
+      } else {
+        generator = await loadGenerator(targetLang);
+        generators.set(targetLang, generator);
+      }
+
+      // For template-style generators (like nix-flake), only generate once
+      if (generator.isTemplateGenerator || targetLang === 'nix-flake') {
+        if (templateGenerated.has(targetLang)) {
+          // Skip this IU - already generated the combined template
+          continue;
+        }
+        templateGenerated.add(targetLang);
+      }
+
+      // Resolve output paths
+      const { impl: implPath, test: testPath } = resolveOutputPaths(iu, projectRoot, generator, { forceLang });
+
+      // Generate implementation
+      const implCode = generator.generateImpl(iu, { projectRoot, implPath, testPath, allIUs: iuGraph.ius });
+      mkdirSync(dirname(implPath), { recursive: true });
+      writeFileSync(implPath, implCode, 'utf-8');
+
+      // Generate test file with failing tests
+      const testCode = generator.generateTests(iu, implPath);
+      mkdirSync(dirname(testPath), { recursive: true });
+      writeFileSync(testPath, testCode, 'utf-8');
+
+      // Update manifest
+      manifest.files[iu.id] = {
+        impl: {
+          path: implPath,
+          hash: fileHash(implCode),
+          generated_at: new Date().toISOString(),
+          language: targetLang,
+        },
+        test: {
+          path: testPath,
+          hash: fileHash(testCode),
+          generated_at: new Date().toISOString(),
+          language: targetLang,
+        },
+      };
+
+      generated.push({
+        iu: iu.name,
+        short_id: iu.short_id,
+        language: targetLang,
+        impl: implPath,
+        test: testPath,
+      });
+    } catch (err) {
+      errors.push({
+        iu: iu.name,
+        short_id: iu.short_id,
+        error: err.message,
+      });
+    }
   }
 
-  // Default export if no functions generated
-  if (iu.contract.outputs.length === 0) {
-    lines.push(`/**`);
-    lines.push(` * Main implementation for ${iu.name}`);
-    lines.push(` */`);
-    lines.push(`export function implement(config?: Config): void {`);
-    lines.push(`  // TODO: Implement ${iu.source_canon_ids.length} requirements`);
-    lines.push(`  console.log('Implementing ${iu.name}...');`);
-    lines.push('}');
-    lines.push('');
-  }
+  const manifestPath = saveManifest(projectRoot, manifest);
 
-  // Traceability export (REQUIRED)
-  lines.push('// === PHOENIX VCS TRACEABILITY ===');
-  lines.push('');
-  lines.push('/** @internal Phoenix VCS traceability — do not remove. */');
-  lines.push('export const _phoenix = {');
-  lines.push(`  iu_id: '${iu.id}',`);
-  lines.push(`  name: '${iu.name}',`);
-  lines.push(`  risk_tier: '${iu.risk_tier}',`);
-  lines.push('} as const;');
-  lines.push('');
-
-  return lines.join('\n');
+  return { generated, errors, manifestPath, languages: [...generators.keys()] };
 }
 
-function generateTestFile(iu, implPath) {
-  const lines = [];
-  
-  lines.push(`// Generated tests for ${iu.name} (${iu.short_id})`);
-  lines.push(`// Risk Tier: ${iu.risk_tier.toUpperCase()}`);
-  lines.push('');
-  lines.push(`import { _phoenix } from '../${relative(dirname(iu.test_path), implPath).replace(/\\/g, '/')}';`);
-  lines.push('');
-  lines.push('describe(`${_phoenix.name}', () => {');
-  lines.push('  it(' + "'" + 'has traceability export' + "'" + ', () => {');
-  lines.push('    expect(_phoenix).toBeDefined();');
-  lines.push(`    expect(_phoenix.iu_id).toBe('${iu.id}');`);
-  lines.push(`    expect(_phoenix.risk_tier).toBe('${iu.risk_tier}');`);
-  lines.push('  });');
-  lines.push('');
-  lines.push('  it(' + "'" + 'implements all requirements' + "'" + ', () => {');
-  lines.push(`    const requirements = ${iu.source_canon_ids.length};`);
-  lines.push('    expect(requirements).toBeGreaterThan(0);');
-  lines.push('  });');
-  lines.push('');
-  lines.push('  // TODO: Add tests for:');
-  for (const invariant of iu.contract.invariants.slice(0, 3)) {
-    lines.push(`  // - ${invariant.slice(0, 60)}...`);
-  }
-  lines.push('});');
-  lines.push('');
-
-  return lines.join('\n');
-}
+// === MANIFEST & STATE ===
 
 function loadIUGraph(projectRoot) {
   const iusPath = join(projectRoot, '.phoenix', 'graphs', 'ius.json');
@@ -163,166 +294,172 @@ function saveManifest(projectRoot, manifest) {
   return manifestPath;
 }
 
-function regenerate(projectRoot, iuIdFilter = null) {
-  const iuGraph = loadIUGraph(projectRoot);
-  if (!iuGraph) {
-    throw new Error('No IU graph found. Run phoenix-plan first.');
-  }
+// === CLI ===
 
-  const manifest = loadManifest(projectRoot);
-  const generated = [];
-  const errors = [];
+function parseArgs(args) {
+  const options = {
+    projectRoot: '.',
+    iuFilter: null,
+    forceLang: null,
+  };
 
-  for (const iu of iuGraph.ius) {
-    // Filter if specified
-    if (iuIdFilter && !iu.id.includes(iuIdFilter) && iu.short_id !== iuIdFilter) {
-      continue;
-    }
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
 
-    try {
-      // Generate implementation
-      const implContent = generateTypeScriptCode(iu);
-      const implPath = join(projectRoot, iu.output_path);
-      
-      // Ensure directory exists
-      const implDir = dirname(implPath);
-      if (!existsSync(implDir)) {
-        mkdirSync(implDir, { recursive: true });
-      }
-
-      // Write implementation file
-      writeFileSync(implPath, implContent, 'utf-8');
-
-      // Generate test file
-      const testContent = generateTestFile(iu, iu.output_path);
-      const testPath = join(projectRoot, iu.test_path);
-      const testDir = dirname(testPath);
-      if (!existsSync(testDir)) {
-        mkdirSync(testDir, { recursive: true });
-      }
-      writeFileSync(testPath, testContent, 'utf-8');
-
-      // Update manifest
-      const relativeImpl = relative(projectRoot, implPath);
-      const relativeTest = relative(projectRoot, testPath);
-      
-      manifest.files[relativeImpl] = {
-        iu_id: iu.id,
-        hash: fileHash(implContent),
-        size: implContent.length,
-        generated_at: new Date().toISOString(),
-      };
-      
-      manifest.files[relativeTest] = {
-        iu_id: iu.id,
-        hash: fileHash(testContent),
-        size: testContent.length,
-        generated_at: new Date().toISOString(),
-      };
-
-      generated.push({
-        iu_id: iu.id,
-        short_id: iu.short_id,
-        name: iu.name,
-        files: [relativeImpl, relativeTest],
-      });
-
-    } catch (err) {
-      errors.push({
-        iu_id: iu.id,
-        error: err.message,
-      });
+    if (arg.startsWith('--lang=')) {
+      options.forceLang = arg.split('=')[1];
+    } else if (arg.startsWith('--language=')) {
+      options.forceLang = arg.split('=')[1];
+    } else if (arg === '-l' || arg === '--lang' || arg === '--language') {
+      options.forceLang = args[++i];
+    } else if (arg === '--help' || arg === '-h') {
+      showHelp();
+      process.exit(0);
+    } else if (arg === '--list-languages') {
+      options.listLanguages = true;
+    } else if (!options.projectRoot || options.projectRoot === '.') {
+      // First positional arg is project root
+      options.projectRoot = arg;
+    } else if (!options.iuFilter) {
+      // Second positional arg is IU filter
+      options.iuFilter = arg;
     }
   }
 
-  // Save updated manifest
-  manifest.generated_at = new Date().toISOString();
-  const manifestPath = saveManifest(projectRoot, manifest);
-
-  return { generated, errors, manifestPath, manifest };
+  return options;
 }
 
-// === MAIN EXECUTION ===
+function showHelp() {
+  console.log(`
+🚀 Phoenix Regen — Language-Agnostic TDD Code Generator
 
-const projectRoot = resolve(process.argv[2] || '.');
-const iuFilter = process.argv[3] || null; // Optional: specific IU to regenerate
+Usage:
+  node .pi/skills/phoenix-regen/regen.js [project-root] [iu-id] [options]
 
-console.log('🚀 Phoenix Regen');
-console.log(`   Project: ${projectRoot}`);
-if (iuFilter) {
-  console.log(`   Filter: ${iuFilter}`);
+Arguments:
+  project-root    Path to Phoenix project (default: .)
+  iu-id           Filter: regenerate only matching IU (optional)
+
+Options:
+  --lang=LANG     Force output language (typescript, python, nix, ...)
+  --list-languages  Show all available generators
+  --help, -h      Show this help
+
+Examples:
+  # Regenerate all IUs with auto-detected language
+  node .pi/skills/phoenix-regen/regen.js ./my-project
+
+  # Regenerate specific IU
+  node .pi/skills/phoenix-regen/regen.js ./my-project IU-a1b2c3d4
+
+  # Force Python output for all IUs
+  node .pi/skills/phoenix-regen/regen.js ./my-project --lang=python
+
+Language Detection:
+  1. IU's target_language field
+  2. Project's .phoenix/config.json targetLanguage
+  3. Existing file extensions
+  4. Default: typescript
+`);
 }
-console.log('');
 
-try {
-  // Check for IU graph
-  const iusPath = join(projectRoot, '.phoenix', 'graphs', 'ius.json');
-  if (!existsSync(iusPath)) {
-    console.error(`❌ No IU graph found at ${iusPath}`);
-    console.error('   Run phoenix-plan first to create Implementation Units.');
-    process.exit(1);
+async function listLanguages() {
+  const { listAvailableGenerators } = await import('./generator-loader.js');
+  const { builtIn, custom } = listAvailableGenerators();
+
+  console.log('\n📦 Available Generators\n');
+
+  console.log('Built-in:');
+  for (const lang of builtIn) {
+    console.log(`  • ${lang}`);
   }
 
-  // Run regeneration
-  const result = regenerate(projectRoot, iuFilter);
-
-  // Print results
-  console.log(`✅ Generated ${result.generated.length} IUs`);
-  console.log(`   Errors: ${result.errors.length}`);
-  console.log(`   Manifest: ${result.manifestPath}`);
-  console.log('');
-
-  for (const gen of result.generated) {
-    const icon = gen.files.some(f => f.includes('__tests__')) ? '🧪' : '📄';
-    console.log(`   ${icon} ${gen.short_id}: ${gen.name}`);
-    for (const file of gen.files) {
-      console.log(`      - ${file}`);
+  if (custom.length > 0) {
+    console.log('\nCustom:');
+    for (const lang of custom) {
+      console.log(`  • ${lang}`);
     }
+  }
+
+  console.log('\nCreate custom generators at:');
+  console.log('  ./.phoenix/generators/<name>.js  (project-local)');
+  console.log('  ~/.phoenix/generators/<name>.js  (user-global)');
+  console.log('');
+}
+
+// === MAIN ===
+
+async function main() {
+  const args = process.argv.slice(2);
+  const options = parseArgs(args);
+
+  // Handle list-languages early (before requiring project)
+  if (options.listLanguages) {
+    await listLanguages();
+    process.exit(0);
+  }
+
+  const projectRoot = resolve(options.projectRoot);
+
+  console.log('🚀 Phoenix Regen — Language-Agnostic TDD');
+  console.log(`   Project: ${projectRoot}`);
+
+  if (options.iuFilter) {
+    console.log(`   Filter: ${options.iuFilter}`);
+  }
+  if (options.forceLang) {
+    console.log(`   Language: ${options.forceLang} (forced)`);
+  } else {
+    console.log(`   Language: auto-detect`);
   }
   console.log('');
 
-  if (result.errors.length > 0) {
-    console.log('❌ Errors:');
-    for (const err of result.errors) {
-      console.log(`   ${err.iu_id}: ${err.error}`);
+  try {
+    const result = await regenerate(projectRoot, options);
+
+    // Group by language for display
+    const byLang = {};
+    for (const gen of result.generated) {
+      if (!byLang[gen.language]) byLang[gen.language] = [];
+      byLang[gen.language].push(gen);
     }
+
+    console.log('🔴 Generated RED code (tests will fail):');
     console.log('');
-  }
 
-  // Show evidence requirements
-  const iuGraph = loadIUGraph(projectRoot);
-  const totalTests = result.generated.filter(g => 
-    g.files.some(f => f.includes('__tests__'))
-  ).length;
-  
-  console.log('📋 Evidence Summary:');
-  console.log(`   Files generated: ${result.manifest.files.length}`);
-  console.log(`   Test files: ${totalTests}`);
-  console.log('');
-
-  // Risk breakdown
-  const riskCounts = { low: 0, medium: 0, high: 0, critical: 0 };
-  for (const iu of iuGraph.ius) {
-    riskCounts[iu.risk_tier]++;
-  }
-  console.log('   Risk distribution:');
-  for (const [tier, count] of Object.entries(riskCounts)) {
-    if (count > 0) {
-      const icon = tier === 'critical' ? '🔴' :
-                   tier === 'high' ? '🟠' :
-                   tier === 'medium' ? '🟡' : '🔵';
-      console.log(`      ${icon} ${tier}: ${count}`);
+    for (const [lang, items] of Object.entries(byLang)) {
+      console.log(`   [${lang.toUpperCase()}]`);
+      for (const gen of items) {
+        console.log(`   🔴 ${gen.short_id}: ${gen.iu}`);
+        console.log(`      Impl: ${gen.impl}`);
+        console.log(`      Test: ${gen.test}`);
+        console.log('');
+      }
     }
-  }
-  console.log('');
 
-  console.log('🧪 Next step: Run phoenix-evidence to collect quality evidence');
+    if (result.errors.length > 0) {
+      console.log('❌ Errors:');
+      for (const err of result.errors) {
+        console.log(`   ${err.short_id}: ${err.error}`);
+      }
+      console.log('');
+    }
 
-  if (result.errors.length > 0) {
+    console.log('📋 TDD Next Steps:');
+    console.log('   1. Run tests — See 🔴 RED (tests fail)');
+    console.log('   2. Fix implementations in generated files');
+    console.log('   3. Re-run tests — See 🟢 GREEN (tests pass)');
+    console.log('   4. Run: node .pi/skills/phoenix-evidence/evidence.js .');
+    console.log('');
+    console.log(`✅ Manifest: ${result.manifestPath}`);
+    console.log(`   Generated: ${result.generated.length}`);
+    console.log(`   Languages: ${result.languages.join(', ')}`);
+    console.log(`   Errors: ${result.errors.length}`);
+
+  } catch (error) {
+    console.error(`\n❌ Regeneration failed: ${error.message}`);
     process.exit(1);
   }
-
-} catch (error) {
-  console.error(`❌ Error: ${error.message}`);
-  process.exit(1);
 }
+
+main();

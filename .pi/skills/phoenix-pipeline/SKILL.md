@@ -1,211 +1,232 @@
 ---
 name: phoenix-pipeline
-description: Complete Phoenix VCS pipeline with selective invalidation, drift detection, and evidence collection. Executable skill - runs pipeline.js directly.
+description: TDD pipeline with automated scaffolding — supports both manual implementation AND LLM auto-implementation. Validated via evidence tiers.
 ---
 
-# Phoenix Pipeline
+# Phoenix Pipeline — TDD with Optional Auto-Implementation
 
-Complete spec → code pipeline with VCS integrity.
+**Phoenix generates failing stubs (RED) → You OR an LLM implement → Evidence validates (GREEN).**
 
-## Pipeline Flow
+The pipeline doesn't care **who** implements — human or AI — it only cares that **evidence passes**.
+
+## Two Valid Workflows
+
+### Workflow A: Manual TDD (You Implement)
 
 ```
-spec/*.md ──→ Ingest ──→ Canonicalize ──→ Plan ──→ Regen ──→ Evidence
-   (sha256)    (sha256)     (sha256)    (sha256)   (hash)    (verify)
-     │            │            │           │         │         │
-     └────────────┴────────────┴───────────┴─────────┴─────────┘
-                    Phoenix VCS Graph
+SPEC → STUB (RED) → YOU CODE → EVIDENCE (GREEN)
 ```
 
-## Phase A: Ingest
+Traditional TDD. You edit the stub, write tests, make it pass.
 
-**Purpose**: Parse specs into content-addressed clauses
+### Workflow B: Auto-Implementation (LLM Implements)
 
-**Skill**: `phoenix-ingest`
+```
+SPEC → STUB (RED) → LLM GENERATES → EVIDENCE (GREEN)
+```
 
-**Output**: `.phoenix/graphs/spec.json`
+Same pipeline, but an LLM reads the spec + stub and generates the implementation.
 
-**Key Operations**:
-- Normalize text
-- Compute `clause_semhash` (SHA-256)
-- Compute `context_semhash` (with neighbors)
-- Classify changes (A/B/C/D)
+**Both workflows produce the same output**: Code with traceability that passes evidence.
 
-## Phase B: Canonicalize
+## Pipeline Phases as TDD
 
-**Purpose**: Extract clean requirements with D-rate tracking
+### Phase 1-3: Setup (GREEN)
+- **Ingest**: Parse specs into clauses
+- **Canonicalize**: Extract clean requirements  
+- **Plan**: Group into Implementation Units (IUs)
 
-**Skill**: `phoenix-canonicalize`
+**Result**: Requirements locked, traceability established.
 
-**Output**: `.phoenix/canonical.md`, `.phoenix/graphs/canonical.json`
+### Phase 4: Regen — **Failing Stubs (RED)**
 
-**Key Operations**:
-- Remove duplicates (same hash = same requirement)
-- Assign `node-<hash>` IDs
-- Track bootstrap state (COLD → WARMING → STEADY)
-- Record D-rate (target <5%)
-
-## Phase C: Plan
-
-**Purpose**: Group requirements into Implementation Units
-
-**Skill**: `phoenix-plan`
-
-**Output**: `.phoenix/plan.md`, `.phoenix/graphs/ius.json`
-
-**Key Operations**:
-- Compute `iu_id` (SHA-256 of contract + requirements)
-- Assign risk tier (low/medium/high/critical)
-- Define boundary policy
-- Set evidence requirements
-
-## Phase D: Regen
-
-**Purpose**: Generate code with traceability
+**Purpose**: Generate intentionally-failing code stubs
 
 **Skill**: `phoenix-regen`
 
-**Output**: `src/generated/`, `.phoenix/manifests/generated_manifest.json`
+**Output**: `src/generated/IU-*/index.ts` + `__tests__/index.test.ts`
 
-**Key Operations**:
-- Generate TypeScript from IU contract
-- Add `_phoenix` export with `iu_id`
-- Compute file hash for manifest
-- Collect evidence (typecheck, tests, etc.)
+**What Gets Generated**:
+```typescript
+// Types derived from spec
+export interface Task { ... }
 
-**Selective Invalidation**:
-```bash
-# Only regenerate affected subtree
-node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4 node-b2c3d4e5
-# → 3 of 12 IUs need regeneration
+// 🔴 RED: Function signature from contract  
+export function calculateMetrics(tasks: Task[]): Metrics {
+  // TODO: Implement logic to make this GREEN
+  throw new Error('🔴 RED: Not implemented: calculateMetrics');
+}
+
+// Traceability (REQUIRED)
+export const _phoenix = {
+  iu_id: '29eaf566...',
+  name: 'Metrics Domain',
+  risk_tier: 'medium',
+} as const;
 ```
 
-## Phase E: Evidence
+**Why throw?** 
+- Forces implementation (can't ship stubs)
+- Tests will fail until logic added
+- **Human OR LLM must replace with real code**
 
-**Purpose**: Verify risk-tiered quality gates
+### Phase 5: Evidence — **Validation (GREEN)**
+
+**Purpose**: Verify implementation meets tier requirements
 
 **Skill**: `phoenix-evidence`
 
-**Key Operations**:
-- Run typecheck (all tiers)
-- Run unit tests (medium+)
-- Run property tests (high+)
-- Create threat notes (high+)
-- Human signoff (critical)
+**Who implemented doesn't matter — only that evidence passes:**
 
-**Blocking**:
+| Tier | Required Evidence | Passes? |
+|------|-------------------|---------|
+| **LOW** | typecheck, lint, boundary | ✅ Auto-accept if valid TS |
+| **MEDIUM** | + unit_tests | ✅ Auto-accept if tests pass |
+| **HIGH** | + property_tests, threat_note | ✅ Accept if all present |
+| **CRITICAL** | + static_analysis, **human_signoff** | 🔴 Must have human approval |
+
+**Blocking Behavior**:
 ```
 ❌ REJECTED - Evidence failed
-   unit_tests: 9/12 failed
-   → Must pass before acceptance
+   unit_tests: 0/12 passed
+   → Must implement before acceptance (you OR LLM)
+   
+✅ ACCEPTED - All evidence passed
+   → IU enters manifest (regardless of who wrote code)
 ```
 
-## Phase F: Audit & Drift
+## Implementation Options
 
-**Purpose**: Validate and establish baseline
-
-**Skills**: `phoenix-audit`, `phoenix-drift`
-
-**Key Operations**:
-- Boundary validation (no forbidden imports)
-- Drift detection (working tree vs manifest)
-- Over-implementation check
-
-**Defensive**:
-```
-❌ BLOCKING DRIFT
-   src/app.ts: modified without waiver
-   → Label with waiver or revert
-```
-
-## Running the Full Pipeline
+### Option 1: Manual Implementation (Traditional TDD)
 
 ```bash
-# Method 1: Individual phases (with optional project-root)
-node .pi/skills/phoenix-ingest/ingest.js [project-root]
-node .pi/skills/phoenix-canonicalize/canonicalize.js [project-root]
-node .pi/skills/phoenix-plan/plan.js [project-root]
-node .pi/skills/phoenix-regen/regen.js [project-root]
-node .pi/skills/phoenix-evidence/evidence.js [project-root]
-node .pi/skills/phoenix-audit/audit.js [project-root]
-node .pi/skills/phoenix-drift/drift.js [project-root]
+# 1. Run pipeline to generate stubs
+node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow
 
-# Method 2: Full pipeline
-node .pi/skills/phoenix-pipeline/pipeline.js [project-root]
+# 2. Edit the stub manually
+vim src/generated/metrics/index.ts
+# Replace throw with your logic
+
+# 3. Write your tests
+vim src/generated/metrics/__tests__/index.test.ts
+# Replace trivial tests with real assertions
+
+# 4. Verify
+npm test
+npm run typecheck
+```
+
+### Option 2: LLM Auto-Implementation
+
+```bash
+# 1. Run pipeline to generate stubs
+node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow
+
+# 2. Use LLM to implement (example with pi-interactive-shell)
+# Prompt: "Read examples/taskflow/src/generated/metrics/index.ts 
+#          and the canonical requirements in .phoenix/canonical.md
+#          Implement the functions to make tests pass"
+
+# 3. Verify (same as manual)
+npm test
+npm run typecheck
+
+# 4. If evidence passes → ACCEPTED
+node .pi/skills/phoenix-evidence/evidence.js examples/taskflow
+```
+
+### Option 3: Hybrid (LLM Draft + Human Review)
+
+```bash
+# 1. Generate stubs
+node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow
+
+# 2. LLM implements all LOW tier IUs (auto-accept, safe)
+# 3. Human implements HIGH tier IUs (needs review)
+
+# 4. Verify all
+node .pi/skills/phoenix-evidence/evidence.js examples/taskflow
+```
+
+## Selective Invalidation (Preserves Your Work)
+
+When specs change, Phoenix **only regenerates affected IUs**:
+
+```bash
+# Change one requirement
+edit spec/tasks.md
+
+# Pipeline regenerates ONLY dependent IUs:
+node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow
+# → "Regenerating 3 of 25 IUs..."
+# → Other 22 IUs preserve implementations (human OR AI)
+```
+
+**Why this matters**: You don't lose work when specs evolve, regardless of who implemented.
+
+## Key Principle: Evidence is the Gate
+
+> **Phoenix doesn't judge WHO wrote the code.**
+> 
+> Phoenix validates:
+> - Type safety ✅
+> - Test passage ✅
+> - Boundary policies ✅
+> - Traceability preservation ✅
+> 
+> Implementation can be:
+> - Human-written 🔧
+> - LLM-generated 🤖
+> - Hybrid approach 🔧🤖
+
+## Running Individual Phases
+
+```bash
+# Just setup (no codegen)
+node .pi/skills/phoenix-ingest/ingest.js examples/taskflow
+node .pi/skills/phoenix-canonicalize/canonicalize.js examples/taskflow
+node .pi/skills/phoenix-plan/plan.js examples/taskflow
+
+# Regenerate stubs (DESTRUCTIVE - overwrites implementations!)
+node .pi/skills/phoenix-regen/regen.js examples/taskflow
+
+# Just evidence (safe, validates current code)
+node .pi/skills/phoenix-evidence/evidence.js examples/taskflow
+
+# Full pipeline with options
+node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow --skip-regen
+node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow --continue-on-error
 ```
 
 ## Pipeline State Machine
 
-| State | Meaning | Drift Detection | D-rate Alarms |
-|-------|---------|-----------------|---------------|
-| BOOTSTRAP_COLD | Initial run | Off | Suppressed |
-| BOOTSTRAP_WARMING | Stabilizing | Off | Suppressed |
-| STEADY_STATE | Normal | On | Active |
+| State | TDD Phase | Behavior |
+|-------|-----------|----------|
+| **BOOTSTRAP_COLD** | Initial spec ingest | Drift detection OFF |
+| **BOOTSTRAP_WARMING** | First implementation | D-rate alarms suppressed |
+| **STEADY_STATE** | Normal operation | Full validation active |
 
-## Integration with Cascade
+## Quality Gates (All Must Pass)
 
-When specs change:
+| Phase | Gate | Fail Action |
+|-------|------|-------------|
+| Ingest | D-rate < 15% | Block, spec needs cleanup |
+| Canonicalize | No orphan clauses | Block, missing requirements |
+| Plan | Valid IU IDs | Block, planning error |
+| Regen | Files created | Block, generation error |
+| Evidence | Tier requirements met | **REJECTED** — implement (you or LLM) and retry |
+| Audit | Boundary respected | Block, architectural violation |
+| Drift | No unlabeled drift | Block, label changes or revert |
 
-```bash
-# 1. Check what needs regeneration
-node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4
-
-# 2. Regenerate affected IUs only
-node .pi/skills/phoenix-regen/regen.js IU-ec4737a7 IU-d9277914
-
-# 3. Verify cascade didn't break dependents
-node .pi/skills/phoenix-cascade/cascade.js cascade IU-ec4737a7
-```
-
-## Integration with Shadow
-
-When upgrading pipeline:
+## Next Steps
 
 ```bash
-# Run shadow comparison first
-node .pi/skills/phoenix-shadow/shadow.js
+# Check health
+node .pi/skills/phoenix-status/status.js examples/taskflow
 
-# Classification: SAFE | COMPACTION_EVENT | REJECT
+# See what's implemented vs stub
+node .pi/skills/phoenix-inspect/inspect.js examples/taskflow
 
-# If SAFE or COMPACTION:
-node .pi/skills/phoenix-pipeline/pipeline.js
+# Implement specific IU (skip regen to preserve work!)
+node .pi/skills/phoenix-evidence/evidence.js examples/taskflow IU-29eaf566
 ```
-
-## Per-PRD Selective Invalidation
-
-From PRD Section 0:
-> "Changing one spec line invalidates only the dependent subtree"
-
-Not full regeneration - just the affected IUs.
-
-## Pipeline Artifacts
-
-```
-.phoenix/
-├── canonical.md              # Human-readable requirements
-├── plan.md                   # Human-readable IUs
-├── graphs/
-│   ├── spec.json            # Clauses with hashes
-│   ├── canonical.json       # Canonical nodes
-│   └── ius.json             # IU graph
-├── manifests/
-│   └── generated_manifest.json  # File hashes for drift
-└── state.json               # Bootstrap state, timestamps
-```
-
-## Quality Gates
-
-Each phase has gates:
-
-| Phase | Gate | Block on Fail |
-|-------|------|---------------|
-| Ingest | D-rate < 15% | Yes |
-| Canonicalize | No orphans | Yes |
-| Plan | Valid IU IDs | Yes |
-| Regen | Evidence passes tier | Yes |
-| Audit | Boundary clean | Yes |
-| Drift | No blocking drift | Yes |
-
-## Next Step
-
-After pipeline: `node .pi/skills/phoenix-status/status.js` for full project health check.

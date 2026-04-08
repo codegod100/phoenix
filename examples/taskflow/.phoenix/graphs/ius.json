@@ -1,233 +1,1759 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-06",
+  "generated_at": "2026-04-08T00:27:27.183Z",
+  "iu_count": 25,
+  "coverage": {
+    "total_canon_nodes": 140,
+    "covered_canon_nodes": 140,
+    "orphan_canon_ids": []
+  },
   "ius": [
     {
-      "id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
-      "name": "Dashboard Page",
-      "description": "A single-page web dashboard for managing tasks with Catppuccin Mocha styling. Includes localStorage persistence, inline edit panels, task creation, deletion, bulk operations, and compact status bar.",
-      "risk_tier": "high",
+      "id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+      "short_id": "IU-29eaf566",
+      "name": "Metrics Domain",
+      "kind": "module",
+      "risk_tier": "medium",
+      "description": "Implements metrics functionality with 5 requirements",
       "source_canon_ids": [
-        "a3f7c8d9e1b2",
-        "b4e8d9f0a2c3",
-        "c5f9e0a1b3d4",
-        "d60af1b2c4e5",
-        "e71b02c3d5f7",
-        "f82c13d4d6f8",
-        "e71b02c3d5f6",
-        "f82c13d4e6a7",
-        "093d24e5f7b8",
-        "1a4e35f6a8c9",
-        "2b5f46a7b9d0",
-        "3c6057b8c0e1",
-        "4d7168c9d1f2",
-        "5e8279d0e2a3",
-        "5f938ae1f4b5",
-        "6a049bf3a4c6",
-        "6f938ae1f3b4",
-        "70a49bf2a4c5",
-        "81b5a0c3b5d6",
-        "92c6b1d4c6e7",
-        "a3d7c2e5d7f8",
-        "b4e8d4f7e9b0",
-        "b4e8d3f6e8a9",
-        "c5f9e4a7f9b0",
-        "d60af5b8a0c1",
-        "e71b06c9b1d2",
-        "f82c17d0c2e3",
-        "093d28e1d3f4",
-        "1a4e39f2e4a5",
-        "2b5f4aa3f5b6",
-        "3c605bb4a6c7",
-        "3d615cb5b7d9",
-        "4d716cc5b7d8",
-        "4e817dd6c8e1"
+        "41e8bd3b97654fa7ed32b4b9b4b3f2c2b85ff61b3054cef2d0283d250a38d0c8",
+        "6fd3cccffb2620775ce5c7a8dd4f5956d9288e863ec9850fc119e8ba2e799299",
+        "d069da158b6cd930e997377f90a2f96b40747e292b7480319cda3bfdae743933",
+        "e25f9b8a3fb3c23808eccf3c5b8afbe7b53363ea50dce2a666694018c89f73cb",
+        "eb443327a877b7e3a462059e94fdd85254b3bdd24e47614888e33a5872bceae2"
       ],
       "contract": {
-        "description": "Complete HTML dashboard with inline CSS and JavaScript for task management",
+        "description": "Implements metrics functionality with 5 requirements",
         "inputs": [
-          {
-            "name": "tasks",
-            "type": "Task[]",
-            "description": "Array of tasks to display"
-          },
-          {
-            "name": "view",
-            "type": "'active' | 'archived'",
-            "description": "Current view filter"
-          }
+          "Configuration",
+          "Data inputs"
         ],
         "outputs": [
-          {
-            "name": "renderHTML",
-            "type": "string",
-            "description": "Complete HTML page with embedded CSS and JavaScript"
-          }
+          "Processed results",
+          "Side effects"
         ],
         "invariants": [
-          "Title validation: form rejects empty titles before submission",
-          "Catppuccin Mocha only: no theme toggle or light mode",
-          "Responsive layout: single column mobile, multi-column desktop",
-          "Overdue tasks show red border and OVERDUE indicator",
-          "localStorage persistence: tasks survive page refreshes",
-          "Inline edit panels: no modal dialogs for editing",
-          "Client-side view switching: no page reload between active/archived"
+          "Valid state transitions only",
+          "Type safety maintained"
         ]
       },
-      "output_path": "src/generated/web-dashboard/dashboard-page.ts",
-      "test_path": "src/generated/web-dashboard/__tests__/web-dashboard.test.ts",
+      "output_path": "src/generated/metrics/index.ts",
+      "test_path": "src/generated/metrics/__tests__/index.test.ts",
       "dependencies": [],
-      "tags": ["ui", "dashboard", "catppuccin", "high-risk"]
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests"
+        ]
+      },
+      "tags": [
+        "metrics",
+        "core",
+        "medium-risk"
+      ]
     },
     {
-      "id": "59d32939d50083b6ecf70e500f215a179f42a5ea99a186cb8af2720e3aaa1d74",
-      "name": "Analytics Panel",
-      "description": "Statistics calculation and compact status bar display for task dashboard. Computes completion rates, overdue counts, and renders inline status bar with metrics.",
+      "id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+      "short_id": "IU-7cce149b",
+      "name": "Priority Domain",
+      "kind": "module",
       "risk_tier": "low",
+      "description": "Implements priority functionality with 4 requirements",
       "source_canon_ids": [
-        "2b5f4aa3f5b6",
-        "3c605bb4a6c7",
-        "3d615cb5b7d9",
-        "4d716cc5b7d8",
-        "4e817dd6c8e1"
+        "1e36aa90a520ec5fa214975a3b3162ce7cd1330d11209c95413de79ab2f1f0c9",
+        "c302c6dc31cbe2f0c5e1878a9b5c5d2669dcca2dc6c99dfa85e2de40ded3f683",
+        "dbd7a98a77dd81992b3e976344356563f1c45bfe3b5ef93bb594ef85341ee436",
+        "ef282c4f58882215fbe95599a77e9ea42ecb09681615199141d7e574a5da4000"
       ],
       "contract": {
-        "description": "Analytics calculation and compact status bar generation",
+        "description": "Implements priority functionality with 4 requirements",
         "inputs": [
-          {
-            "name": "tasks",
-            "type": "Task[]",
-            "description": "Array of tasks to analyze"
-          }
+          "Configuration",
+          "Data inputs"
         ],
         "outputs": [
-          {
-            "name": "calculateStats",
-            "type": "TaskStats",
-            "description": "Calculated statistics including completion rate"
-          },
-          {
-            "name": "renderStatusBar",
-            "type": "string",
-            "description": "HTML for compact inline status bar with metrics"
-          }
+          "Processed results",
+          "Side effects"
         ],
         "invariants": [
-          "Completion rate is calculated as (completed / total) * 100",
-          "Overdue tasks exclude completed and archived tasks",
-          "Status bar is compact, centered, and fit-content width"
+          "Valid state transitions only",
+          "Type safety maintained"
         ]
       },
-      "output_path": "src/generated/web-dashboard/analytics-panel.ts",
-      "test_path": null,
+      "output_path": "src/generated/priority/index.ts",
+      "test_path": "src/generated/priority/__tests__/index.test.ts",
       "dependencies": [],
-      "tags": ["analytics", "metrics", "low-risk"]
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "priority",
+        "core",
+        "low-risk"
+      ]
     },
     {
-      "id": "a6550cdc3ef254c13571c1134a3f1ad230c942e0325c50f89ae97502a302fd01",
-      "name": "Task List Display",
-      "description": "Task list rendering component with filtering and status transitions. Handles task card display, status change callbacks, and filtered views.",
-      "risk_tier": "medium",
+      "id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+      "short_id": "IU-169b3c51",
+      "name": "Team Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements team functionality with 3 requirements",
       "source_canon_ids": [
-        "e71b02c3d5f6",
-        "f82c13d4e6a7",
-        "093d24e5f7b8",
-        "1a4e35f6a8c9",
-        "2b5f46a7b9d0"
+        "21a8432fc76f29827f911a3f936b58245aff878ec7b933c5d72d0b448aafa2b9",
+        "7b890674e3dd62f5f8ce67daa3fbf08173ddfb23c8d6440645db9b01018fd0a5",
+        "c384544cc22649f48f3a8a7d872f4a27a96933210dd8b83059732202ad41d2a1"
       ],
       "contract": {
-        "description": "Task list component with filtering and status management",
+        "description": "Implements team functionality with 3 requirements",
         "inputs": [
-          {
-            "name": "tasks",
-            "type": "Task[]",
-            "description": "Tasks to display"
-          },
-          {
-            "name": "filter",
-            "type": "TaskFilter",
-            "description": "Optional status/priority/assignee filter"
-          },
-          {
-            "name": "options",
-            "type": "TaskListDisplayOptions",
-            "description": "Callbacks for status changes and task clicks"
-          }
+          "Configuration",
+          "Data inputs"
         ],
         "outputs": [
-          {
-            "name": "render",
-            "type": "string",
-            "description": "HTML string of task cards"
-          },
-          {
-            "name": "setTasks",
-            "type": "void",
-            "description": "Update the task list"
-          }
+          "Processed results",
+          "Side effects"
         ],
         "invariants": [
-          "Task cards always show title, priority badge, and status",
-          "Filtering respects status, priority, and assignee criteria",
-          "Status transitions trigger onStatusChange callback"
+          "Valid state transitions only",
+          "Type safety maintained"
         ]
       },
-      "output_path": "src/generated/web-dashboard/task-list-display.ts",
-      "test_path": null,
+      "output_path": "src/generated/team/index.ts",
+      "test_path": "src/generated/team/__tests__/index.test.ts",
       "dependencies": [],
-      "tags": ["ui", "task-list", "medium-risk"]
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "team",
+        "core",
+        "low-risk"
+      ]
     },
     {
-      "id": "8d072032308810bce8136ef5a0a51f8e99a35d83edfa38f4d69cdca300d1c6af",
-      "name": "Styles",
-      "description": "Style configuration system with Catppuccin Mocha color palette for the Task Dashboard",
-      "risk_tier": "medium",
+      "id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+      "short_id": "IU-e4caab5e",
+      "name": "Task Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements task functionality with 14 requirements",
       "source_canon_ids": [
-        "5e827dd6c8e9",
-        "6f938ee7d9f0",
-        "70a49ff8e0a1",
-        "81b5a0g9f1b2",
-        "92c6b1h0a2c3",
-        "a3d7c2i1b3d4",
-        "b4e8d3j2c4e5",
-        "c5f9e4k3d5f6",
-        "d60af5l4e6a7",
-        "e71b06m5f7b8",
-        "f82c17n6a8c9",
-        "093d28o7b9d0",
-        "1a4e39p8c0e1"
+        "0c8fd64b342a96b214bc1537aab16d0a04e4092ddeff1078dda85832bcc09b36",
+        "0ec58c72f695a3228427e43ef2bad08e5a9af15cdda2519e38446c9c8af60fd6",
+        "22c19be38ec443a8fb0881402c14ebd20d4d522a704fc1a173bf5ce289a479c7",
+        "26e1ab361fa6226f00cead3e007dfe6f163917a249ae961f4f6bf456c0142277",
+        "27291946d9c1ae89f5c13df2349724de4c3b1aa0dbfeede363c84e51ea87c589",
+        "3dee3bcd6fc7e663e12f42f0d920e98c598e7266f5709bd0a399dacc5bec6063",
+        "400ee183fafc6e6ab91979e3888f93b42d8aa93cf05e6681ad9a59cc1ba63695",
+        "6741feb08b69fcb97252c882d33eeefd88491cd4ca620cbddafe8918712ff7a1",
+        "950b321591c472b76485732db315febc9fe0863aa521f23d45c272724a5f3e82",
+        "a16f8174b5e546da5f9783ee31240db9732bd7a4643c977fe540a017b0824cc0",
+        "bc27c9f07de88635cff6f237ba4fb27c9f09ef840dd2e327a519c7c03b51b178",
+        "c1cfd0b2d1159f61369bcff61533b5713c54a846eedee72eab1754ba1496dfac",
+        "c438a0777d8c24a5356730cd335d79e239868a8f9182f091e16ab9d7a5c4fe03",
+        "f60039398ec8457e8d6545a1d348b768bd7e207fb8db9deefae8c060f9fcc35f"
       ],
       "contract": {
-        "description": "Style configuration and CSS generation for Catppuccin Mocha theme",
+        "description": "Implements task functionality with 14 requirements",
         "inputs": [
-          {
-            "name": "config",
-            "type": "StyleConfig",
-            "description": "Optional style configuration override"
-          }
+          "Configuration",
+          "Data inputs"
         ],
         "outputs": [
-          {
-            "name": "generateCSS",
-            "type": "string",
-            "description": "Generated CSS with CSS custom properties"
-          },
-          {
-            "name": "defaultStyleConfig",
-            "type": "StyleConfig",
-            "description": "Default Catppuccin Mocha style configuration"
-          }
+          "the dashboard must render all tasks as styled cards in a responsive grid layout"
         ],
         "invariants": [
-          "CSS custom properties use --ctp-* prefix for all Catppuccin colors",
-          "Semantic mappings link to Catppuccin variables (--primary: var(--ctp-blue))",
-          "Default config uses Catppuccin Mocha palette exclusively"
+          "Valid state transitions only",
+          "Type safety maintained"
         ]
       },
-      "output_path": "src/generated/web-dashboard/styles.ts",
-      "test_path": null,
+      "output_path": "src/generated/task/index.ts",
+      "test_path": "src/generated/task/__tests__/index.test.ts",
       "dependencies": [],
-      "tags": ["styles", "css", "catppuccin", "medium-risk"]
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "task",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+      "short_id": "IU-013287c8",
+      "name": "Assignment Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements assignment functionality with 4 requirements",
+      "source_canon_ids": [
+        "3d832f261b6d440d8d061952b4ef0cf49d98841a5386e7210783575a5ec130cb",
+        "5e0a0179854a33ec4fc1e3b2dac67644aab962c45b04e8d642744e8039198eae",
+        "b604c9dae64a2a90e08f32822b2c37e1cc5728ceb8a99be9206e20c6742ec3a4",
+        "f8cbfa7d6c882d94d5a8712676ec777f819b769367cd566f73bc90cc47cc37c9"
+      ],
+      "contract": {
+        "description": "Implements assignment functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/assignment/index.ts",
+      "test_path": "src/generated/assignment/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "assignment",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+      "short_id": "IU-5d746ac1",
+      "name": "Search Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements search functionality with 4 requirements",
+      "source_canon_ids": [
+        "49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06",
+        "d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f",
+        "d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057",
+        "fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed"
+      ],
+      "contract": {
+        "description": "Implements search functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "an empty search query must return all tasks"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/search/index.ts",
+      "test_path": "src/generated/search/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "search",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+      "short_id": "IU-fa4e979e",
+      "name": "Deadline Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements deadline functionality with 4 requirements",
+      "source_canon_ids": [
+        "23a499c17f6d8b814a18fd6b60bbc6b6dfd2a605cb51560d9bcfb4911b81015b",
+        "3306386ed3c6c0b59327576f0716cd23c6e93bd3e55fb6f09663c52461605f8c",
+        "45db43506cd234df7050a25eea309f75993465e219e87839cd80dc869890eb94",
+        "b085dd428dc562f0fdb71ecda7f25218ec4d5b7955379f724372f57f184a9d91"
+      ],
+      "contract": {
+        "description": "Implements deadline functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/deadline/index.ts",
+      "test_path": "src/generated/deadline/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "deadline",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+      "short_id": "IU-92d0c760",
+      "name": "Status Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements status functionality with 12 requirements",
+      "source_canon_ids": [
+        "04863c16775d3737e0e987d41dbe4dae1b05795e9778fc80914ae6d33dddcde5",
+        "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f",
+        "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f",
+        "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a",
+        "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410",
+        "5e9d6248b4c495f8f5a2d27ca40ef82951bbf03e1dde46977b6f213f614dbcc2",
+        "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521",
+        "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00",
+        "dc96fbc84d80cf0cfe1a8dc73708ba0ef09a6c20ab40c050757cdbb249a9c315",
+        "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40",
+        "e5d9fbf05dfb89e997652537e35e81c92ca4cd34307312b413f9a9aef43a7658",
+        "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f"
+      ],
+      "contract": {
+        "description": "Implements status functionality with 12 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "the status bar must render as a single horizontal bar below the header"
+        ],
+        "invariants": [
+          "the status bar must be centered horizontally and only as wide as its content not fullwidth",
+          "the status bar must not consume vertical space like the previous metric cards design"
+        ]
+      },
+      "output_path": "src/generated/status/index.ts",
+      "test_path": "src/generated/status/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "status",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+      "short_id": "IU-fc178077",
+      "name": "Archive Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements archive functionality with 9 requirements",
+      "source_canon_ids": [
+        "0bbf6f693cec8cd4af0edfd28f8a8d27483d02a5887592084fbf87962caf1452",
+        "0bfbf4eb8ef7052518e82aed8af3be904c9b78e05cf76ed64507298dcab5a301",
+        "0dfbaefa54a56b657cabf062b67fa3dbba792cdca641f5c4c28f69198b76cd7f",
+        "1cedce764142f7d8e0d2e01c0dbc6fca0c9b28d615770a15dac414e831c81b08",
+        "78f83d3cedc0462173adb8da727f867add0bad05a5d45efe2668ecca909164c0",
+        "79afe2985ea41923390bc2ff99a204f85d53ea666938103ecc3d6876a04ef244",
+        "81f910f80ba0c36bbe1f7fd8ee46d8cb43b6de784fc47718dfcb5460866e9bdd",
+        "9cc63176bbc98e1ab3ad8be9a913b9f6b451c4473068156613f0a61a694ace0c",
+        "dfcddaf1235efd740d25575a63bc5f2af99a3acd2859b9ec5ae7df397d8300df"
+      ],
+      "contract": {
+        "description": "Implements archive functionality with 9 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/archive/index.ts",
+      "test_path": "src/generated/archive/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "archive",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+      "short_id": "IU-8f7a7e1c",
+      "name": "Page Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements page functionality with 4 requirements",
+      "source_canon_ids": [
+        "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
+        "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62",
+        "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
+        "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953"
+      ],
+      "contract": {
+        "description": "Implements page functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "the dashboard must render a complete html page with inline css and javascript"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/page/index.ts",
+      "test_path": "src/generated/page/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "page",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+      "short_id": "IU-f56c1390",
+      "name": "Catppuccin Domain",
+      "kind": "module",
+      "risk_tier": "medium",
+      "description": "Implements catppuccin functionality with 7 requirements",
+      "source_canon_ids": [
+        "023acc45de3711aa6d5855347d8a60b343256b329a9be25fca3be4155af18b5b",
+        "5897f7d834296f08d73a8358b63926b3afeaca580879cb965d0fa5bbcabcbd26",
+        "894211f4ec8a7d51cc0951a9c45d3b1efb6817e90587121e99bed051a67895bc",
+        "a7e9866bf870807da012639ea4f851d1246105efe849adde0d9f5b4ed73dff04",
+        "b90a45d9d76100ea664f3ed94adbdcafed02c913bfb323e3e8ea62573ebdfe35",
+        "e2ea22fa125ca39ba88de43bd4642b2d562c76bb31e0157fbf474db5c9a9e35d",
+        "ed4b8264171a7006e90435b07d66972b0cdc3260b0daa15a4c356a4c694390ee"
+      ],
+      "contract": {
+        "description": "Implements catppuccin functionality with 7 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "no theme toggle or system preference detection catppuccin mocha is the only theme"
+        ]
+      },
+      "output_path": "src/generated/catppuccin/index.ts",
+      "test_path": "src/generated/catppuccin/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests"
+        ]
+      },
+      "tags": [
+        "catppuccin",
+        "core",
+        "medium-risk"
+      ]
+    },
+    {
+      "id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+      "short_id": "IU-e9b69935",
+      "name": "Base Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements base functionality with 8 requirements",
+      "source_canon_ids": [
+        "0e495d1ee4c2f6a6c7a2155c09f47a678a9e9a3c67f0f00d96e16634613c770a",
+        "1d98cea9ca41391bc76e51d98ac04fee4a9e3102e35531f0d24c36d6f84c890b",
+        "2333b8650b4e8b80b2984dfed30d9bcf08945af4b0595db02967e30e4aee78f0",
+        "39f5873bbfd3cbb1ee4672724e123099c1909fe5e523f989b89ea05e195c9e24",
+        "58b80bc522aa2f198e2ecf315d1090e964ffa1afda871081c13e095e0d3ab4ae",
+        "71c8e6f5c3ef8d2003292ba737f09cf038956ab66bcdbcda9cac53ccc3d52e87",
+        "9d6580bab6570e4d048e2cdb217a4d00b822643e23e7cb7ecab6110447268789",
+        "c90f58ebacff9b6580bbc38f7293e86dffe115780059ef2dc2ea5722ed44a802"
+      ],
+      "contract": {
+        "description": "Implements base functionality with 8 requirements",
+        "inputs": [
+          "date inputs must use a custom date picker component styled with catppuccin mocha theme"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/base/index.ts",
+      "test_path": "src/generated/base/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "base",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+      "short_id": "IU-eb7c109e",
+      "name": "Bulk Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements bulk functionality with 4 requirements",
+      "source_canon_ids": [
+        "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48",
+        "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd",
+        "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939",
+        "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad"
+      ],
+      "contract": {
+        "description": "Implements bulk functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/bulk/index.ts",
+      "test_path": "src/generated/bulk/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "bulk",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+      "short_id": "IU-12c44af6",
+      "name": "Delete Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements delete functionality with 4 requirements",
+      "source_canon_ids": [
+        "0ca3fa4b087995c9e4aa1cccfe1d8a53c88e4e1d5f2cd42bcabf805cc16050bb",
+        "4c4897891d89254e0afba437fd21549f7f782e3bf8c70026a341e26faa976d46",
+        "c37ac43e5c7fbb2f71ed9cf3f121411ebe752a7fd5032b2de2d099056c7c01d0",
+        "d612bbc65b30fddc3fcf82f2e88429442c975b2c04c6688f77f810fda7710cb9"
+      ],
+      "contract": {
+        "description": "Implements delete functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/delete/index.ts",
+      "test_path": "src/generated/delete/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "delete",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+      "short_id": "IU-7bde30d9",
+      "name": "Confirmation Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements confirmation functionality with 2 requirements",
+      "source_canon_ids": [
+        "12fb0edc1287a2f5f0e2542d08540a15133a389b11c319fca62ff187001cca20",
+        "796b4e363127435ffa54a5d186f8d4dd09fdda2877ce8880f5fec40d04e60587"
+      ],
+      "contract": {
+        "description": "Implements confirmation functionality with 2 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/confirmation/index.ts",
+      "test_path": "src/generated/confirmation/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "confirmation",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+      "short_id": "IU-8ae5c45f",
+      "name": "Create Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements create functionality with 2 requirements",
+      "source_canon_ids": [
+        "2e61381676836dee1acf7d2af57c6de6f850122c4c1c37a16893a4effbc91b95",
+        "65cf841d09b215abbd9d4e43ae8b39c6f4d3468fea5683981fde61359b33cc71"
+      ],
+      "contract": {
+        "description": "Implements create functionality with 2 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/create/index.ts",
+      "test_path": "src/generated/create/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "create",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+      "short_id": "IU-1b10421c",
+      "name": "Inline Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements inline functionality with 5 requirements",
+      "source_canon_ids": [
+        "11d42093d9e4ad83156a93fb917dd3fcc601d864266d651960ced28fdd73c215",
+        "56c320fc44633797ae3153f19cb1cb132c6e7095cdd82f0f0a80d350db28c9f4",
+        "9b1a910870349540c9d01d0ba6347192a63d6141e89839bf9c00c59b177ae078",
+        "dad35101507fbcfc7dc8680f972f9940ab89b2130a8a9aa7cac5c5987b857186",
+        "ed55103ac8f56cdef2124b27ea6e9c33dbcedc0f6ebaf2bca425a8fa4bef3cb4"
+      ],
+      "contract": {
+        "description": "Implements inline functionality with 5 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/inline/index.ts",
+      "test_path": "src/generated/inline/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "inline",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+      "short_id": "IU-b0512ab0",
+      "name": "Edit Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements edit functionality with 4 requirements",
+      "source_canon_ids": [
+        "0b7df6f4e1fe1d968a3559e7d07db3f21582f792f851d466e389164bf84d5f5b",
+        "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663",
+        "a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994",
+        "c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0"
+      ],
+      "contract": {
+        "description": "Implements edit functionality with 4 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/edit/index.ts",
+      "test_path": "src/generated/edit/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "edit",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+      "short_id": "IU-a2326ea1",
+      "name": "Component Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements component functionality with 8 requirements",
+      "source_canon_ids": [
+        "09a6c7528b6310dba374140c53e37d97645c71ad77fa3b9d35be7b3bad5a6f9b",
+        "3b3b6ce2da6dcd2ad6576b630478b6e2bf372a5f9a5b8cc20224289d6822fe05",
+        "72c4a2c45dc1edcf82869093e34ec8b75a8b643e78819281ccbfe9bce9ff5a68",
+        "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638",
+        "93e388ff1c8a76fad9445f075c3fd9ea8efe04e9dd6e8cc9ef56a022a742312f",
+        "a731f6b43208397eaad60a9312cf10acd760afc578f3181cc364ed27e6235ae8",
+        "a9bd9ecc8c5b5ccb2fa9e778f7d9262a084ffe9c4c91ab2821685de30589e9c4",
+        "f20e473ea2499d65651a44132b03b7140287261031f24406c651baf7d13830d3"
+      ],
+      "contract": {
+        "description": "Implements component functionality with 8 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "the create form shall append new tasks to localstorage and trigger task grid rerender",
+          "the inline edit form shall update localstorage and trigger task grid rerender on save"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/component/index.ts",
+      "test_path": "src/generated/component/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "component",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+      "short_id": "IU-c73fdbc4",
+      "name": "Event Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements event functionality with 7 requirements",
+      "source_canon_ids": [
+        "2623171ed71406b752f533e36d98a51aaeae33debc89a4ba03d89cd6ed7f7713",
+        "3cabdbbabcf6cedcab4805c3ea9e684e7962022be4b42aaf2fb1b03e02839047",
+        "493bf4f1ea3320f5f909e8e66bfb9a581ad4cd54af80e58dfe1ff323969455a8",
+        "4c22b2bde5ba60bb95ab475a86c0e9bf0cde438cc88d17253a74d607e50fe639",
+        "62e720747aa357d97884ac5b9d7300f6bcb1f695223ed125f147b16fdc669a59",
+        "befecd912aa1aa0fe1a4e579f4b8d4697516d416f8b62a96fc7edbf9884c34da",
+        "e6ea15b2c95d5fc55f65edbc42e02225709b99b00adb430eadf78e4bf5b7f11e"
+      ],
+      "contract": {
+        "description": "Implements event functionality with 7 requirements",
+        "inputs": [
+          "form submit events shall validate input write to localstorage then call render functions"
+        ],
+        "outputs": [
+          "form submit events shall validate input write to localstorage then call render functions",
+          "status transition buttons shall update task status update updatedat timestamp write to localstorage then rerender",
+          "archive and restore actions shall set archived flag with timestamp write to localstorage then rerender current view",
+          "delete actions shall show confirmation modal then on confirm remove from localstorage and rerender",
+          "tab clicks shall switch view state between active and archived clear bulk selection and rerender task grid"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/event/index.ts",
+      "test_path": "src/generated/event/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "event",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+      "short_id": "IU-b25d3806",
+      "name": "State Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements state functionality with 5 requirements",
+      "source_canon_ids": [
+        "01e92e240085650ce79c8f892dd65cf90a6023cec27b6e279ff4db589f9ec4d1",
+        "0afc29d57dce415015bb17016b29f473f6492a31ac7fa7dcb3fa88b6c3f8b806",
+        "4a49ae7c4ceb6b5a1ebfdf188d51adfeba7b84eb3ee76a711cde2ce0dc75d236",
+        "bb1e6cc7b2c8067d47805331c0ddb0bcc4fd090bcfeb2d907b65476d657d7dfd",
+        "f937d4a27dd9744f3620c63370f1d3cc23b53a15aad4916c8a95bda3e119e24f"
+      ],
+      "contract": {
+        "description": "Implements state functionality with 5 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "all components shall read from localstorage on every render with no inmemory caching",
+          "write operations shall complete before triggering rerender using synchronous flow"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/state/index.ts",
+      "test_path": "src/generated/state/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "state",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+      "short_id": "IU-fa4c8303",
+      "name": "UI Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements ui functionality with 13 requirements",
+      "source_canon_ids": [
+        "01e9f448f073ae4f14f69cd176d3ab4012c9bf8a9e51be1dc2adb501e0f1a0b2",
+        "024c1a2b29b16e53913282094b9876b54658ffa254171d6775b200169649d083",
+        "06083503e7868530fa9d6a146f977275eade67e45630e0dd80eefd757f14ddc4",
+        "10753d83edf291bf4519aee6f865a8feb8defeca5db14738580bbbecf8ce61e4",
+        "1551cfef5a8e5348ba15dacaf955633e49a8799ba9db1ba838d1348cb15d0fb7",
+        "7ad31f6c3116a3245b688b4ae74d2937ceb18a7dc4d3e432bbb9e2bca118e430",
+        "7f65243582eeec6211a30c259ffd69f8774ab863d0df9b45dd3a49f795f7fed0",
+        "93833e524931c736679d585aa0c8d147102d55060646b3674918d050dac719ab",
+        "93e81a349be59a7f7768fdc9ca00f49df78a974de9bb0c017cb29689ca6e4847",
+        "a57321f9ffae57af24b007b4cb584a142bfd60e65075589f87c5e035f6eea7e9",
+        "a8da650f4f255b341651f39ae191bb923b6019187d737305b26d53174bde0116",
+        "ab0772dd32f29ad7bb891b86817d3c68fc79ae5a2c45f6794e61f033e9d97ac5",
+        "d6860f3b4f0a11d94d965bf9dfcc96f2f2980e292cc021ae024c9a45f9881def"
+      ],
+      "contract": {
+        "description": "Implements ui functionality with 13 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "the create form and task grid shall render side by side in a twocolumn layout on desktop with create form on left and task grid on right",
+          "done tasks must render in the same grid layout as active tasks with same column widths gaps and responsive behavior"
+        ],
+        "invariants": [
+          "bulk action bar shall only appear when selectedids length is greater than 0"
+        ]
+      },
+      "output_path": "src/generated/ui/index.ts",
+      "test_path": "src/generated/ui/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "ui",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+      "short_id": "IU-379356eb",
+      "name": "Integration Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements integration functionality with 5 requirements",
+      "source_canon_ids": [
+        "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
+        "4d3caa9e1a345c0e551eaaf06682564b7855ee091d8130fc60b36a547a33d655",
+        "5a52732aa411c4ba9de24b7dde1093ed95ccb949e55483c9ee62accff2138900",
+        "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
+        "8a0318be073275b7b03837ad9569fbd7e9f51faaabed47a7c3a4301495af657d"
+      ],
+      "contract": {
+        "description": "Implements integration functionality with 5 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "no component shall render without reading current localstorage state",
+          "rerenders shall be synchronous following state updates"
+        ],
+        "invariants": [
+          "components shall not have external dependencies with all data from localstorage"
+        ]
+      },
+      "output_path": "src/generated/integration/index.ts",
+      "test_path": "src/generated/integration/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "integration",
+        "ui",
+        "high-risk"
+      ]
+    },
+    {
+      "id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+      "short_id": "IU-2ff32cc9",
+      "name": "Overdue Domain",
+      "kind": "module",
+      "risk_tier": "low",
+      "description": "Implements overdue functionality with 1 requirements",
+      "source_canon_ids": [
+        "a38b112678258c10202350b56dfe5e273be02155bb2fd91e93b5dbf8c3f02668"
+      ],
+      "contract": {
+        "description": "Implements overdue functionality with 1 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/overdue/index.ts",
+      "test_path": "src/generated/overdue/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation"
+        ]
+      },
+      "tags": [
+        "overdue",
+        "core",
+        "low-risk"
+      ]
+    },
+    {
+      "id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+      "short_id": "IU-f5ffe871",
+      "name": "Data Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements data functionality with 2 requirements",
+      "source_canon_ids": [
+        "900da6bbb6abdd66d83efe4b9162e74c6bcc540811e4639a2908fe1199a1b02b",
+        "b5ce30f01710bee3d6e9ad93784345656aff05b0ebab96700d6921b59b7ec00d"
+      ],
+      "contract": {
+        "description": "Implements data functionality with 2 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "Valid state transitions only",
+          "Type safety maintained"
+        ]
+      },
+      "output_path": "src/generated/data/index.ts",
+      "test_path": "src/generated/data/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
+        ]
+      },
+      "tags": [
+        "data",
+        "ui",
+        "high-risk"
+      ]
     }
   ]
 }

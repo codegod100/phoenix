@@ -1,0 +1,1242 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-04-07T23:35:11.679Z",
+  "evaluations": [
+    {
+      "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+      "tier": "medium",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/metrics/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:57.241Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 1190,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "ed\n ❯ src/generated/metrics/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Metrics Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 50
+    },
+    {
+      "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:57.241Z",
+          "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/priority/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:57.242Z",
+          "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/team/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:57.242Z",
+          "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/task/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+          "duration_ms": 1128,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": " defined\n ❯ src/generated/task/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Task Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/assignment/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/search/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/deadline/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:58.370Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/status/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:59.461Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 1090,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "ined\n ❯ src/generated/status/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Status Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:34:59.461Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:34:59.461Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:59.461Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/archive/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:00.626Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 1165,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "ed\n ❯ src/generated/archive/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Archive Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:00.626Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:00.626Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:00.626Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/page/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:01.669Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 1043,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": " defined\n ❯ src/generated/page/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Page Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:01.669Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:01.669Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+      "tier": "medium",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:01.669Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/catppuccin/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:02.832Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 1163,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "src/generated/catppuccin/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Catppuccin Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 50
+    },
+    {
+      "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:02.832Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/base/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:03.935Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 1103,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": " defined\n ❯ src/generated/base/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Base Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/bulk/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/delete/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/confirmation/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/create/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:03.936Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/inline/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:04.973Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 1037,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "ined\n ❯ src/generated/inline/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Inline Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:04.973Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:04.973Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:04.973Z",
+          "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/edit/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:04.973Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/component/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:06.098Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 1125,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "❯ src/generated/component/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Component Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:06.098Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:06.098Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:06.098Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/event/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:07.334Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 1232,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "efined\n ❯ src/generated/event/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Event Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:07.335Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:07.335Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:07.335Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/state/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:08.391Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 1056,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "efined\n ❯ src/generated/state/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('State Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:08.391Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:08.391Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:08.391Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/ui/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:09.501Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 1110,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": " not defined\n ❯ src/generated/ui/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('UI Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:09.501Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:09.501Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:09.501Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/integration/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:10.546Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 1044,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "c/generated/integration/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Integration Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:10.546Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:10.546Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:10.546Z",
+          "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/overdue/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:34:55.755Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 1814,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:34:56.051Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 295,
+          "details": "npm error Missing script: \"lint\"\nnpm error\nnpm error Did you mean this?\nnpm error   npm link # Symlink a package folder\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-07T23:35:10.546Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/data/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-07T23:35:11.679Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 1133,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": " defined\n ❯ src/generated/data/__tests__/index.test.ts:6:1\n      4| import { _phoenix } from '../../index.ts';\n      5| \n      6| describe('Data Domain', () => {\n       | ^\n      7|   it('has traceability export', () => {\n      8|     expect(_phoenix).toBeDefined();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:11.679Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-07T23:35:11.679Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "lint",
+        "unit_tests"
+      ],
+      "score": 67
+    }
+  ]
+}

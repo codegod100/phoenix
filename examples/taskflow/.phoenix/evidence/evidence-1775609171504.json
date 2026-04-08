@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-04-08T00:46:11.504Z",
+  "evaluations": [
+    {
+      "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+      "tier": "medium",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "passed",
+          "timestamp": "2026-04-08T00:46:10.456Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 1114,
+          "details": "No type errors"
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T00:46:10.605Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 148,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T00:46:10.605Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 0,
+          "details": "Traceability export found in src/generated/metrics/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T00:46:11.504Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 897,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  17:46:11\n   Duration  341ms (transform 39ms, setup 0ms, collect 30ms, tests 6ms, environment 0ms, prepare 80ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        }
+      ],
+      "status": "ACCEPTED",
+      "missing_evidence": [],
+      "failed_evidence": [],
+      "score": 100
+    }
+  ]
+}

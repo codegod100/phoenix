@@ -1,382 +1,1837 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-06",
-  "canonical": [
+  "generated_at": "2026-04-08T00:27:27.109Z",
+  "bootstrap_state": "BOOTSTRAP_WARMING",
+  "d_rate": 0,
+  "d_rate_level": "TARGET",
+  "d_rate_message": "D-rate 0.0% within target (≤5%)",
+  "node_count": 140,
+  "classification_stats": {
+    "A": 140,
+    "B": 0,
+    "C": 0,
+    "D": 0
+  },
+  "nodes": [
     {
-      "id": "a3f7c8d9e1b2",
+      "canon_id": "41e8bd3b97654fa7ed32b4b9b4b3f2c2b85ff61b3054cef2d0283d250a38d0c8",
+      "short_id": "node-41e8bd3b",
       "type": "REQUIREMENT",
-      "text": "The dashboard must render a complete HTML page with inline CSS and JavaScript",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Dashboard Page",
-      "confidence": 0.95
+      "statement": "the system must track total tasks created completed and overdue",
+      "raw_text": "The system must track total tasks created, completed, and overdue",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "41e8bd3b97654fa7ed32b4b9b4b3f2c2b85ff61b3054cef2d0283d250a38d0c8"
+      ],
+      "section": "Metrics",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "b4e8d9f0a2c3",
+      "canon_id": "d069da158b6cd930e997377f90a2f96b40747e292b7480319cda3bfdae743933",
+      "short_id": "node-d069da15",
       "type": "REQUIREMENT",
-      "text": "The page must display a compact header with the title 'TaskFlow' (minimal vertical padding ~32px height, larger text)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Dashboard Page",
-      "confidence": 0.95
+      "statement": "the system must calculate average task completion time in hours",
+      "raw_text": "The system must calculate average task completion time in hours",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d069da158b6cd930e997377f90a2f96b40747e292b7480319cda3bfdae743933"
+      ],
+      "section": "Metrics",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "c5f9e0a1b3d4",
+      "canon_id": "e25f9b8a3fb3c23808eccf3c5b8afbe7b53363ea50dce2a666694018c89f73cb",
+      "short_id": "node-e25f9b8a",
       "type": "REQUIREMENT",
-      "text": "The page must include a form to create new tasks with fields: title, description, priority dropdown, and optional deadline date",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Dashboard Page",
-      "confidence": 0.95
+      "statement": "the system must compute throughput as tasks completed per day over a rolling 7day window",
+      "raw_text": "The system must compute throughput as tasks completed per day over a rolling 7-day window",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e25f9b8a3fb3c23808eccf3c5b8afbe7b53363ea50dce2a666694018c89f73cb"
+      ],
+      "section": "Metrics",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "d60af1b2c4e5",
+      "canon_id": "6fd3cccffb2620775ce5c7a8dd4f5956d9288e863ec9850fc119e8ba2e799299",
+      "short_id": "node-6fd3cccf",
       "type": "CONSTRAINT",
-      "text": "The create form must validate that title is non-empty before submission",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Dashboard Page",
-      "confidence": 0.95
+      "statement": "metrics must be computable from an array of task records with no database dependency",
+      "raw_text": "Metrics must be computable from an array of task records with no database dependency",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "6fd3cccffb2620775ce5c7a8dd4f5956d9288e863ec9850fc119e8ba2e799299"
+      ],
+      "section": "Metrics",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "e71b02c3d5f7",
+      "canon_id": "dbd7a98a77dd81992b3e976344356563f1c45bfe3b5ef93bb594ef85341ee436",
+      "short_id": "node-dbd7a98a",
       "type": "REQUIREMENT",
-      "text": "Tasks must persist in browser localStorage and survive page refreshes",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Dashboard Page",
-      "confidence": 0.95
+      "statement": "the system must report task count grouped by priority level",
+      "raw_text": "The system must report task count grouped by priority level",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "dbd7a98a77dd81992b3e976344356563f1c45bfe3b5ef93bb594ef85341ee436"
+      ],
+      "section": "Priority Breakdown",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "f82c13d4d6f8",
+      "canon_id": "1e36aa90a520ec5fa214975a3b3162ce7cd1330d11209c95413de79ab2f1f0c9",
+      "short_id": "node-1e36aa90",
       "type": "REQUIREMENT",
-      "text": "The dashboard must immediately display all tasks from localStorage on page load (no manual refresh needed)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Dashboard Page",
-      "confidence": 0.95
+      "statement": "the system must report task count grouped by current status",
+      "raw_text": "The system must report task count grouped by current status",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1e36aa90a520ec5fa214975a3b3162ce7cd1330d11209c95413de79ab2f1f0c9"
+      ],
+      "section": "Priority Breakdown",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "e71b02c3d5f6",
+      "canon_id": "c302c6dc31cbe2f0c5e1878a9b5c5d2669dcca2dc6c99dfa85e2de40ded3f683",
+      "short_id": "node-c302c6dc",
       "type": "REQUIREMENT",
-      "text": "The dashboard must render all tasks as styled cards in a responsive grid layout",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "each breakdown must include percentage of total",
+      "raw_text": "Each breakdown must include percentage of total",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c302c6dc31cbe2f0c5e1878a9b5c5d2669dcca2dc6c99dfa85e2de40ded3f683"
+      ],
+      "section": "Priority Breakdown",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "f82c13d4e6a7",
+      "canon_id": "c384544cc22649f48f3a8a7d872f4a27a96933210dd8b83059732202ad41d2a1",
+      "short_id": "node-c384544c",
       "type": "REQUIREMENT",
-      "text": "Each task card must show: title, description, priority badge, status badge, assignee, and deadline",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "the system must calculate perassignee completion rate as done divided by total assigned",
+      "raw_text": "The system must calculate per-assignee completion rate as done divided by total assigned",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c384544cc22649f48f3a8a7d872f4a27a96933210dd8b83059732202ad41d2a1"
+      ],
+      "section": "Team Performance",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "093d24e5f7b8",
+      "canon_id": "21a8432fc76f29827f911a3f936b58245aff878ec7b933c5d72d0b448aafa2b9",
+      "short_id": "node-21a8432f",
       "type": "REQUIREMENT",
-      "text": "Priority badges must be color-coded: critical=red, high=orange, medium=yellow, low=green",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "the system must identify the top performer with highest completion rate and minimum 3 tasks",
+      "raw_text": "The system must identify the top performer with highest completion rate and minimum 3 tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "21a8432fc76f29827f911a3f936b58245aff878ec7b933c5d72d0b448aafa2b9"
+      ],
+      "section": "Team Performance",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "1a4e35f6a8c9",
-      "type": "REQUIREMENT",
-      "text": "Status badges must be color-coded: open=gray, in_progress=blue, review=purple, done=green",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
-    },
-    {
-      "id": "2b5f46a7b9d0",
-      "type": "REQUIREMENT",
-      "text": "Overdue tasks must have a red border and an OVERDUE indicator",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
-    },
-    {
-      "id": "3c6057b8c0e1",
-      "type": "REQUIREMENT",
-      "text": "Each task card must have an edit button that shows an inline edit panel below the task card (not a modal dialog)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
-    },
-    {
-      "id": "4d7168c9d1f2",
-      "type": "REQUIREMENT",
-      "text": "Each task card must have a delete button that opens a confirmation modal (not browser alert) before permanent removal",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
-    },
-    {
-      "id": "5e8279d0e2a3",
+      "canon_id": "7b890674e3dd62f5f8ce67daa3fbf08173ddfb23c8d6440645db9b01018fd0a5",
+      "short_id": "node-7b890674",
       "type": "CONSTRAINT",
-      "text": "The delete button must use the danger color (red) and include a trash icon",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "unassigned tasks must be excluded from team performance metrics",
+      "raw_text": "Unassigned tasks must be excluded from team performance metrics",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7b890674e3dd62f5f8ce67daa3fbf08173ddfb23c8d6440645db9b01018fd0a5"
+      ],
+      "section": "Team Performance",
+      "source_file": "spec/analytics.md"
     },
     {
-      "id": "5f938ae1f4b5",
+      "canon_id": "0ec58c72f695a3228427e43ef2bad08e5a9af15cdda2519e38446c9c8af60fd6",
+      "short_id": "node-0ec58c72",
+      "type": "REQUIREMENT",
+      "statement": "users must create tasks with a title description and priority low medium high critical",
+      "raw_text": "Users must create tasks with a title, description, and priority (low, medium, high, critical)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0ec58c72f695a3228427e43ef2bad08e5a9af15cdda2519e38446c9c8af60fd6"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "950b321591c472b76485732db315febc9fe0863aa521f23d45c272724a5f3e82",
+      "short_id": "node-950b3215",
+      "type": "REQUIREMENT",
+      "statement": "each task must have a unique id generated as a uuid v4",
+      "raw_text": "Each task must have a unique ID generated as a UUID v4",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "950b321591c472b76485732db315febc9fe0863aa521f23d45c272724a5f3e82"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "26e1ab361fa6226f00cead3e007dfe6f163917a249ae961f4f6bf456c0142277",
+      "short_id": "node-26e1ab36",
+      "type": "REQUIREMENT",
+      "statement": "tasks must support status transitions open inprogress review done and done open for reopening completed tasks",
+      "raw_text": "Tasks must support status transitions: open → in_progress → review → done, and done → open for reopening completed tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "17d99894cb26ba11805cdacd6790da79e3b2e6fe4a3569ee1e8ce4849ad9fb14"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "bc27c9f07de88635cff6f237ba4fb27c9f09ef840dd2e327a519c7c03b51b178",
+      "short_id": "node-bc27c9f0",
       "type": "CONSTRAINT",
-      "text": "All confirmation dialogs must be custom modal overlays (not browser confirm()/alert() popups)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "invalid status transitions must be rejected with a clear error message",
+      "raw_text": "Invalid status transitions must be rejected with a clear error message",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "bc27c9f07de88635cff6f237ba4fb27c9f09ef840dd2e327a519c7c03b51b178"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "6a049bf3a4c6",
+      "canon_id": "22c19be38ec443a8fb0881402c14ebd20d4d522a704fc1a173bf5ce289a479c7",
+      "short_id": "node-22c19be3",
       "type": "REQUIREMENT",
-      "text": "Switching between Active and Archived views must update the task list without a full page reload",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "tasks must track createdat and updatedat timestamps automatically",
+      "raw_text": "Tasks must track created_at and updated_at timestamps automatically",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "22c19be38ec443a8fb0881402c14ebd20d4d522a704fc1a173bf5ce289a479c7"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "6f938ae1f3b4",
+      "canon_id": "3dee3bcd6fc7e663e12f42f0d920e98c598e7266f5709bd0a399dacc5bec6063",
+      "short_id": "node-3dee3bcd",
       "type": "REQUIREMENT",
-      "text": "Bulk selection checkboxes must appear on each task card for multi-select operations",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "completing a task must record the completion timestamp and duration",
+      "raw_text": "Completing a task must record the completion timestamp and duration",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3dee3bcd6fc7e663e12f42f0d920e98c598e7266f5709bd0a399dacc5bec6063"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "70a49bf2a4c5",
+      "canon_id": "400ee183fafc6e6ab91979e3888f93b42d8aa93cf05e6681ad9a59cc1ba63695",
+      "short_id": "node-400ee183",
       "type": "REQUIREMENT",
-      "text": "The header must include a bulk action bar when tasks are selected: delete selected, archive selected",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "tasks must support archiving to hide from active views while retaining data",
+      "raw_text": "Tasks must support archiving to hide from active views while retaining data",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "400ee183fafc6e6ab91979e3888f93b42d8aa93cf05e6681ad9a59cc1ba63695"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "81b5a0c3b5d6",
+      "canon_id": "a16f8174b5e546da5f9783ee31240db9732bd7a4643c977fe540a017b0824cc0",
+      "short_id": "node-a16f8174",
       "type": "REQUIREMENT",
-      "text": "Archived tasks must be viewable via a separate 'Archived' tab or filter",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "archived tasks must be restorable to their previous active status",
+      "raw_text": "Archived tasks must be restorable to their previous active status",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a16f8174b5e546da5f9783ee31240db9732bd7a4643c977fe540a017b0824cc0"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "92c6b1d4c6e7",
+      "canon_id": "c438a0777d8c24a5356730cd335d79e239868a8f9182f091e16ab9d7a5c4fe03",
+      "short_id": "node-c438a077",
       "type": "REQUIREMENT",
-      "text": "The edit panel must appear inline below the task card and contain pre-populated form fields for all editable properties",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "the system must provide a function to list all archived tasks separately from active tasks",
+      "raw_text": "The system must provide a function to list all archived tasks separately from active tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c438a0777d8c24a5356730cd335d79e239868a8f9182f091e16ab9d7a5c4fe03"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "a3d7c2e5d7f8",
+      "canon_id": "5e0a0179854a33ec4fc1e3b2dac67644aab962c45b04e8d642744e8039198eae",
+      "short_id": "node-5e0a0179",
       "type": "REQUIREMENT",
-      "text": "The edit panel must have save and cancel buttons with clear visual distinction",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "tasks must be assignable to a single user by user id",
+      "raw_text": "Tasks must be assignable to a single user by user ID",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "5e0a0179854a33ec4fc1e3b2dac67644aab962c45b04e8d642744e8039198eae"
+      ],
+      "section": "Assignment",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "b4e8d4f7e9b0",
+      "canon_id": "f8cbfa7d6c882d94d5a8712676ec777f819b769367cd566f73bc90cc47cc37c9",
+      "short_id": "node-f8cbfa7d",
+      "type": "REQUIREMENT",
+      "statement": "reassigning a task must log the previous assignee in an audit trail",
+      "raw_text": "Reassigning a task must log the previous assignee in an audit trail",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f8cbfa7d6c882d94d5a8712676ec777f819b769367cd566f73bc90cc47cc37c9"
+      ],
+      "section": "Assignment",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "3d832f261b6d440d8d061952b4ef0cf49d98841a5386e7210783575a5ec130cb",
+      "short_id": "node-3d832f26",
+      "type": "REQUIREMENT",
+      "statement": "unassigned tasks must be queryable as a filtered list",
+      "raw_text": "Unassigned tasks must be queryable as a filtered list",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3d832f261b6d440d8d061952b4ef0cf49d98841a5386e7210783575a5ec130cb"
+      ],
+      "section": "Assignment",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "b604c9dae64a2a90e08f32822b2c37e1cc5728ceb8a99be9206e20c6742ec3a4",
+      "short_id": "node-b604c9da",
       "type": "CONSTRAINT",
-      "text": "Clicking cancel or saving must collapse the edit panel back to the task card view",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task List Display",
-      "confidence": 0.95
+      "statement": "assignment must validate that the user id is nonempty",
+      "raw_text": "Assignment must validate that the user ID is non-empty",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b604c9dae64a2a90e08f32822b2c37e1cc5728ceb8a99be9206e20c6742ec3a4"
+      ],
+      "section": "Assignment",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "b4e8d3f6e8a9",
+      "canon_id": "49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06",
+      "short_id": "node-49a95edd",
       "type": "REQUIREMENT",
-      "text": "Users must be able to delete tasks by their unique ID",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "tasks must be searchable by title substring caseinsensitive",
+      "raw_text": "Tasks must be searchable by title substring (case-insensitive)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06"
+      ],
+      "section": "Search and Filtering",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "c5f9e4a7f9b0",
+      "canon_id": "d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057",
+      "short_id": "node-d87a8adb",
+      "type": "REQUIREMENT",
+      "statement": "tasks must be filterable by status priority assignee and archived state",
+      "raw_text": "Tasks must be filterable by status, priority, assignee, and archived state",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057"
+      ],
+      "section": "Search and Filtering",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f",
+      "short_id": "node-d162133c",
+      "type": "REQUIREMENT",
+      "statement": "search results must be sorted by priority critical first then by createdat",
+      "raw_text": "Search results must be sorted by priority (critical first) then by created_at",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f"
+      ],
+      "section": "Search and Filtering",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed",
+      "short_id": "node-fa9e6c9a",
       "type": "CONSTRAINT",
-      "text": "Deleting a task must require confirmation via a custom modal dialog (not browser confirm/alert)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "an empty search query must return all tasks",
+      "raw_text": "An empty search query must return all tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed"
+      ],
+      "section": "Search and Filtering",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "d60af5b8a0c1",
+      "canon_id": "45db43506cd234df7050a25eea309f75993465e219e87839cd80dc869890eb94",
+      "short_id": "node-45db4350",
       "type": "REQUIREMENT",
-      "text": "The system must provide a function to bulk delete multiple tasks by ID list with confirmation modal",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "tasks must support optional deadline dates",
+      "raw_text": "Tasks must support optional deadline dates",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "45db43506cd234df7050a25eea309f75993465e219e87839cd80dc869890eb94"
+      ],
+      "section": "Deadline Management",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "e71b06c9b1d2",
+      "canon_id": "3306386ed3c6c0b59327576f0716cd23c6e93bd3e55fb6f09663c52461605f8c",
+      "short_id": "node-3306386e",
       "type": "REQUIREMENT",
-      "text": "Users must be able to edit task properties: title, description, priority, deadline, and assignee",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "overdue tasks past deadline and not done must be flagged automatically",
+      "raw_text": "Overdue tasks (past deadline and not done) must be flagged automatically",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3306386ed3c6c0b59327576f0716cd23c6e93bd3e55fb6f09663c52461605f8c"
+      ],
+      "section": "Deadline Management",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "f82c17d0c2e3",
+      "canon_id": "23a499c17f6d8b814a18fd6b60bbc6b6dfd2a605cb51560d9bcfb4911b81015b",
+      "short_id": "node-23a499c1",
+      "type": "REQUIREMENT",
+      "statement": "the system must provide a function to list all overdue tasks",
+      "raw_text": "The system must provide a function to list all overdue tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "23a499c17f6d8b814a18fd6b60bbc6b6dfd2a605cb51560d9bcfb4911b81015b"
+      ],
+      "section": "Deadline Management",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "b085dd428dc562f0fdb71ecda7f25218ec4d5b7955379f724372f57f184a9d91",
+      "short_id": "node-b085dd42",
       "type": "CONSTRAINT",
-      "text": "Editing a task must update the updated_at timestamp automatically",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "setting a deadline in the past must produce a warning but still be allowed",
+      "raw_text": "Setting a deadline in the past must produce a warning but still be allowed",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b085dd428dc562f0fdb71ecda7f25218ec4d5b7955379f724372f57f184a9d91"
+      ],
+      "section": "Deadline Management",
+      "source_file": "spec/tasks.md"
     },
     {
-      "id": "093d28e1d3f4",
+      "canon_id": "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f",
+      "short_id": "node-1d9ff415",
       "type": "REQUIREMENT",
-      "text": "Users must be able to archive completed tasks (hide from active views but retain data)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "the dashboard must include a compact status bar showing key metrics inline",
+      "raw_text": "The dashboard must include a compact status bar showing key metrics inline",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f"
+      ],
+      "section": "Status Bar Layout",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "1a4e39f2e4a5",
+      "canon_id": "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f",
+      "short_id": "node-06236ca2",
       "type": "REQUIREMENT",
-      "text": "The system must support bulk operations: delete multiple, archive multiple",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Task Management",
-      "confidence": 0.95
+      "statement": "the status bar must render as a single horizontal bar below the header",
+      "raw_text": "The status bar must render as a single horizontal bar below the header",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f"
+      ],
+      "section": "Status Bar Layout",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "2b5f4aa3f5b6",
+      "canon_id": "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40",
+      "short_id": "node-e5d2dfbc",
       "type": "REQUIREMENT",
-      "text": "The dashboard must include a compact status bar showing key metrics inline",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Analytics Panel",
-      "confidence": 0.95
+      "statement": "the status bar must be visually compact with max 48px height and minimal padding",
+      "raw_text": "The status bar must be visually compact with max 48px height and minimal padding",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40"
+      ],
+      "section": "Status Bar Layout",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "3c605bb4a6c7",
+      "canon_id": "5e9d6248b4c495f8f5a2d27ca40ef82951bbf03e1dde46977b6f213f614dbcc2",
+      "short_id": "node-5e9d6248",
       "type": "REQUIREMENT",
-      "text": "The status bar must display: total tasks count, completed count, overdue count, and completion rate percentage",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Analytics Panel",
-      "confidence": 0.95
+      "statement": "the status bar must be centered horizontally and only as wide as its content not fullwidth",
+      "raw_text": "The status bar must be centered horizontally and only as wide as its content, not full-width",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "5e9d6248b4c495f8f5a2d27ca40ef82951bbf03e1dde46977b6f213f614dbcc2"
+      ],
+      "section": "Status Bar Layout",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "3d615cb5b7d9",
+      "canon_id": "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f",
+      "short_id": "node-ec926319",
       "type": "CONSTRAINT",
-      "text": "The status bar must render as a single horizontal bar below the header, max 48px height",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Analytics Panel",
-      "confidence": 0.95
+      "statement": "the status bar must not consume vertical space like the previous metric cards design",
+      "raw_text": "The status bar must not consume vertical space like the previous metric cards design",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f"
+      ],
+      "section": "Status Bar Layout",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "4d716cc5b7d8",
-      "type": "CONSTRAINT",
-      "text": "The status bar must be centered horizontally and only as wide as its content (not full-width)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Analytics Panel",
-      "confidence": 0.95
+      "canon_id": "e5d9fbf05dfb89e997652537e35e81c92ca4cd34307312b413f9a9aef43a7658",
+      "short_id": "node-e5d9fbf0",
+      "type": "REQUIREMENT",
+      "statement": "the status bar must display total tasks count completed count overdue count archived count and completion rate percentage",
+      "raw_text": "The status bar must display total tasks count, completed count, overdue count, archived count, and completion rate percentage",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e5d9fbf05dfb89e997652537e35e81c92ca4cd34307312b413f9a9aef43a7658"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "4e817dd6c8e1",
-      "type": "CONSTRAINT",
-      "text": "Metrics must be displayed inline with simple separators, format: '12 tasks • 8 done • 2 overdue • 67%'",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Analytics Panel",
-      "confidence": 0.95
+      "canon_id": "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410",
+      "short_id": "node-3fbf0135",
+      "type": "REQUIREMENT",
+      "statement": "metrics must be displayed inline with simple separators such as bullet or pipe",
+      "raw_text": "Metrics must be displayed inline with simple separators such as bullet or pipe",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "id": "5e827dd6c8e9",
+      "canon_id": "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521",
+      "short_id": "node-8394b999",
+      "type": "REQUIREMENT",
+      "statement": "format example is 12 tasks 8 done 2 overdue 3 archived 67 completion rate",
+      "raw_text": "Format example is 12 tasks, 8 done, 2 overdue, 3 archived, 67% completion rate",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00",
+      "short_id": "node-8f060fef",
+      "type": "REQUIREMENT",
+      "statement": "use subtle text colors with primary metric values in ctptext and labels or separators in ctpsubtext0",
+      "raw_text": "Use subtle text colors with primary metric values in --ctp-text and labels or separators in --ctp-subtext0",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a",
+      "short_id": "node-23d13da9",
       "type": "CONSTRAINT",
-      "text": "The dashboard must use the Catppuccin Mocha color palette exclusively",
-      "source_file": "spec/web-dashboard.md",
+      "statement": "no emoji icons larger than the text itself no card backgrounds no hover effects",
+      "raw_text": "No emoji icons larger than the text itself, no card backgrounds, no hover effects",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "eb443327a877b7e3a462059e94fdd85254b3bdd24e47614888e33a5872bceae2",
+      "short_id": "node-eb443327",
+      "type": "REQUIREMENT",
+      "statement": "the system must track total tasks created completed overdue and archived",
+      "raw_text": "The system must track total tasks created, completed, overdue, and archived",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "eb443327a877b7e3a462059e94fdd85254b3bdd24e47614888e33a5872bceae2"
+      ],
+      "section": "Metrics Calculation",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "81f910f80ba0c36bbe1f7fd8ee46d8cb43b6de784fc47718dfcb5460866e9bdd",
+      "short_id": "node-81f910f8",
+      "type": "REQUIREMENT",
+      "statement": "archived tasks must be viewable via a separate archived tasks tab or filter",
+      "raw_text": "Archived tasks must be viewable via a separate Archived Tasks tab or filter",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "81f910f80ba0c36bbe1f7fd8ee46d8cb43b6de784fc47718dfcb5460866e9bdd"
+      ],
+      "section": "Archive Tab Navigation",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "78f83d3cedc0462173adb8da727f867add0bad05a5d45efe2668ecca909164c0",
+      "short_id": "node-78f83d3c",
+      "type": "REQUIREMENT",
+      "statement": "switching between active and archived views must update the task list without a full page reload",
+      "raw_text": "Switching between Active and Archived views must update the task list without a full page reload",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "78f83d3cedc0462173adb8da727f867add0bad05a5d45efe2668ecca909164c0"
+      ],
+      "section": "Archive Tab Navigation",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "79afe2985ea41923390bc2ff99a204f85d53ea666938103ecc3d6876a04ef244",
+      "short_id": "node-79afe298",
+      "type": "REQUIREMENT",
+      "statement": "archived tasks must be queryable separately and restorable to active status",
+      "raw_text": "Archived tasks must be queryable separately and restorable to active status",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "79afe2985ea41923390bc2ff99a204f85d53ea666938103ecc3d6876a04ef244"
+      ],
+      "section": "Archive Data",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "0bfbf4eb8ef7052518e82aed8af3be904c9b78e05cf76ed64507298dcab5a301",
+      "short_id": "node-0bfbf4eb",
+      "type": "REQUIREMENT",
+      "statement": "users must be able to archive completed tasks to hide from active views but retain data",
+      "raw_text": "Users must be able to archive completed tasks to hide from active views but retain data",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0bfbf4eb8ef7052518e82aed8af3be904c9b78e05cf76ed64507298dcab5a301"
+      ],
+      "section": "Archive Data",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "1cedce764142f7d8e0d2e01c0dbc6fca0c9b28d615770a15dac414e831c81b08",
+      "short_id": "node-1cedce76",
+      "type": "REQUIREMENT",
+      "statement": "archived status must be visually indicated on the task card status badge with a muted or dim appearance",
+      "raw_text": "Archived status must be visually indicated on the task card status badge with a muted or dim appearance",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1cedce764142f7d8e0d2e01c0dbc6fca0c9b28d615770a15dac414e831c81b08"
+      ],
+      "section": "Archive Data",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "9cc63176bbc98e1ab3ad8be9a913b9f6b451c4473068156613f0a61a694ace0c",
+      "short_id": "node-9cc63176",
+      "type": "REQUIREMENT",
+      "statement": "archived tasks must display an archived status badge when viewing the active tab with dimmed or strikethrough style",
+      "raw_text": "Archived tasks must display an archived status badge when viewing the Active tab with dimmed or strikethrough style",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "9cc63176bbc98e1ab3ad8be9a913b9f6b451c4473068156613f0a61a694ace0c"
+      ],
+      "section": "Archive Status Badge",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "0bbf6f693cec8cd4af0edfd28f8a8d27483d02a5887592084fbf87962caf1452",
+      "short_id": "node-0bbf6f69",
+      "type": "REQUIREMENT",
+      "statement": "when viewing the archived tab tasks show their original status with an archived indicator overlay",
+      "raw_text": "When viewing the Archived tab, tasks show their original status with an archived indicator overlay",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0bbf6f693cec8cd4af0edfd28f8a8d27483d02a5887592084fbf87962caf1452"
+      ],
+      "section": "Archive Status Badge",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "dfcddaf1235efd740d25575a63bc5f2af99a3acd2859b9ec5ae7df397d8300df",
+      "short_id": "node-dfcddaf1",
+      "type": "REQUIREMENT",
+      "statement": "archived tasks must be displayed in the same grid layout as active tasks",
+      "raw_text": "Archived tasks must be displayed in the same grid layout as active tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "dfcddaf1235efd740d25575a63bc5f2af99a3acd2859b9ec5ae7df397d8300df"
+      ],
+      "section": "Archive Display",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "0dfbaefa54a56b657cabf062b67fa3dbba792cdca641f5c4c28f69198b76cd7f",
+      "short_id": "node-0dfbaefa",
+      "type": "REQUIREMENT",
+      "statement": "archived task cards must have a restore button to reactivate them",
+      "raw_text": "Archived task cards must have a Restore button to reactivate them",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0dfbaefa54a56b657cabf062b67fa3dbba792cdca641f5c4c28f69198b76cd7f"
+      ],
+      "section": "Archive Display",
+      "source_file": "spec/web-dashboard-archive.md"
+    },
+    {
+      "canon_id": "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953",
+      "short_id": "node-e5812b6a",
+      "type": "REQUIREMENT",
+      "statement": "the dashboard must render a complete html page with inline css and javascript",
+      "raw_text": "The dashboard must render a complete HTML page with inline CSS and JavaScript",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953"
+      ],
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
+      "short_id": "node-d36869b7",
+      "type": "REQUIREMENT",
+      "statement": "the page must display a compact header with the title taskflow with minimal vertical padding 32px height and larger text",
+      "raw_text": "The page must display a compact header with the title \"TaskFlow\" with minimal vertical padding ~32px height and larger text",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975"
+      ],
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
+      "short_id": "node-3b90fe00",
+      "type": "REQUIREMENT",
+      "statement": "the dashboard must use css custom properties for all catppuccin colors",
+      "raw_text": "The dashboard must use CSS custom properties for all Catppuccin colors",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3"
+      ],
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62",
+      "short_id": "node-aab62f83",
+      "type": "REQUIREMENT",
+      "statement": "the layout must be responsive with single column on mobile and multicolumn grid on desktop",
+      "raw_text": "The layout must be responsive with single column on mobile and multi-column grid on desktop",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62"
+      ],
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "023acc45de3711aa6d5855347d8a60b343256b329a9be25fca3be4155af18b5b",
+      "short_id": "node-023acc45",
+      "type": "REQUIREMENT",
+      "statement": "the dashboard must use the catppuccin mocha color palette exclusively",
+      "raw_text": "The dashboard must use the Catppuccin Mocha color palette exclusively",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "023acc45de3711aa6d5855347d8a60b343256b329a9be25fca3be4155af18b5b"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "6f938ee7d9f0",
-      "type": "CONSTRAINT",
-      "text": "Background color: #1e1e2e (base), card background: #313244 (surface0)",
-      "source_file": "spec/web-dashboard.md",
+      "canon_id": "e2ea22fa125ca39ba88de43bd4642b2d562c76bb31e0157fbf474db5c9a9e35d",
+      "short_id": "node-e2ea22fa",
+      "type": "DEFINITION",
+      "statement": "background color is 1e1e2e base card background is 313244 surface0",
+      "raw_text": "Background color is #1e1e2e (base), card background is #313244 (surface0)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e2ea22fa125ca39ba88de43bd4642b2d562c76bb31e0157fbf474db5c9a9e35d"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "70a49ff8e0a1",
-      "type": "CONSTRAINT",
-      "text": "Text color: #cdd6f4 (text), secondary text: #a6adc8 (subtext0)",
-      "source_file": "spec/web-dashboard.md",
+      "canon_id": "5897f7d834296f08d73a8358b63926b3afeaca580879cb965d0fa5bbcabcbd26",
+      "short_id": "node-5897f7d8",
+      "type": "DEFINITION",
+      "statement": "text color is cdd6f4 text secondary text is a6adc8 subtext0",
+      "raw_text": "Text color is #cdd6f4 (text), secondary text is #a6adc8 (subtext0)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "5897f7d834296f08d73a8358b63926b3afeaca580879cb965d0fa5bbcabcbd26"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "81b5a0g9f1b2",
-      "type": "CONSTRAINT",
-      "text": "Primary accent: #89b4fa (blue), success: #a6e3a1 (green), warning: #f9e2af (yellow), danger: #f38ba8 (red)",
-      "source_file": "spec/web-dashboard.md",
+      "canon_id": "b90a45d9d76100ea664f3ed94adbdcafed02c913bfb323e3e8ea62573ebdfe35",
+      "short_id": "node-b90a45d9",
+      "type": "DEFINITION",
+      "statement": "primary accent is 89b4fa blue success is a6e3a1 green warning is f9e2af yellow danger is f38ba8 red",
+      "raw_text": "Primary accent is #89b4fa (blue), success is #a6e3a1 (green), warning is #f9e2af (yellow), danger is #f38ba8 (red)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b90a45d9d76100ea664f3ed94adbdcafed02c913bfb323e3e8ea62573ebdfe35"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "92c6b1h0a2c3",
-      "type": "CONSTRAINT",
-      "text": "Priority critical: #f38ba8 (red), high: #fab387 (peach), medium: #f9e2af (yellow), low: #a6e3a1 (green)",
-      "source_file": "spec/web-dashboard.md",
+      "canon_id": "ed4b8264171a7006e90435b07d66972b0cdc3260b0daa15a4c356a4c694390ee",
+      "short_id": "node-ed4b8264",
+      "type": "DEFINITION",
+      "statement": "priority critical is f38ba8 red high is fab387 peach medium is f9e2af yellow low is a6e3a1 green",
+      "raw_text": "Priority critical is #f38ba8 (red), high is #fab387 (peach), medium is #f9e2af (yellow), low is #a6e3a1 (green)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ed4b8264171a7006e90435b07d66972b0cdc3260b0daa15a4c356a4c694390ee"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "a3d7c2i1b3d4",
-      "type": "CONSTRAINT",
-      "text": "Status open: #6c7086 (overlay0), in_progress: #89b4fa (blue), review: #cba6f7 (mauve), done: #a6e3a1 (green)",
-      "source_file": "spec/web-dashboard.md",
+      "canon_id": "894211f4ec8a7d51cc0951a9c45d3b1efb6817e90587121e99bed051a67895bc",
+      "short_id": "node-894211f4",
+      "type": "DEFINITION",
+      "statement": "status open is 6c7086 overlay0 inprogress is 89b4fa blue review is cba6f7 mauve done is a6e3a1 green archived is 585b70 surface1 dimmed",
+      "raw_text": "Status open is #6c7086 (overlay0), in_progress is #89b4fa (blue), review is #cba6f7 (mauve), done is #a6e3a1 (green), archived is #585b70 (surface1 - dimmed)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "015b418c12e7ee68dd43a0b46846046c1a11bcd5a25a3647fdc2282a99372dcc"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "b4e8d3j2c4e5",
+      "canon_id": "a7e9866bf870807da012639ea4f851d1246105efe849adde0d9f5b4ed73dff04",
+      "short_id": "node-a7e9866b",
       "type": "CONSTRAINT",
-      "text": "The dashboard must use CSS custom properties for all Catppuccin colors",
-      "source_file": "spec/web-dashboard.md",
+      "statement": "no theme toggle or system preference detection catppuccin mocha is the only theme",
+      "raw_text": "No theme toggle or system preference detection - Catppuccin Mocha is the only theme",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c22a3c44ac4bd1d0bccd5400ed0fae6a044351f9864ce0b8a8e8e891c40e6db4"
+      ],
       "section": "Catppuccin Theme",
-      "confidence": 0.98
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "c5f9e4k3d5f6",
-      "type": "CONSTRAINT",
-      "text": "No theme toggle or system preference detection - Catppuccin Mocha is the only theme",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Catppuccin Theme",
-      "confidence": 0.98
-    },
-    {
-      "id": "d60af5l4e6a7",
+      "canon_id": "1d98cea9ca41391bc76e51d98ac04fee4a9e3102e35531f0d24c36d6f84c890b",
+      "short_id": "node-1d98cea9",
       "type": "REQUIREMENT",
-      "text": "The dashboard must use CSS custom properties for theming (--primary, --danger, --success, --warning colors)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Styles",
-      "confidence": 0.95
+      "statement": "the dashboard must use css custom properties for theming with primary danger success and warning colors",
+      "raw_text": "The dashboard must use CSS custom properties for theming with --primary, --danger, --success, and --warning colors",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1d98cea9ca41391bc76e51d98ac04fee4a9e3102e35531f0d24c36d6f84c890b"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "e71b06m5f7b8",
-      "type": "CONSTRAINT",
-      "text": "The layout must be responsive: single column on mobile, multi-column grid on desktop",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Styles",
-      "confidence": 0.95
+      "canon_id": "9d6580bab6570e4d048e2cdb217a4d00b822643e23e7cb7ecab6110447268789",
+      "short_id": "node-9d6580ba",
+      "type": "REQUIREMENT",
+      "statement": "cards must have subtle shadows rounded corners of 8px and hover effects",
+      "raw_text": "Cards must have subtle shadows, rounded corners of 8px, and hover effects",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "9d6580bab6570e4d048e2cdb217a4d00b822643e23e7cb7ecab6110447268789"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "f82c17n6a8c9",
-      "type": "CONSTRAINT",
-      "text": "Cards must have subtle shadows, rounded corners (8px), and hover effects",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Styles",
-      "confidence": 0.95
+      "canon_id": "58b80bc522aa2f198e2ecf315d1090e964ffa1afda871081c13e095e0d3ab4ae",
+      "short_id": "node-58b80bc5",
+      "type": "REQUIREMENT",
+      "statement": "the font must be systemui with appropriate size hierarchy h1 15rem body 095rem",
+      "raw_text": "The font must be system-ui with appropriate size hierarchy (h1: 1.5rem, body: 0.95rem)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "58b80bc522aa2f198e2ecf315d1090e964ffa1afda871081c13e095e0d3ab4ae"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "093d28o7b9d0",
-      "type": "CONSTRAINT",
-      "text": "The font must be system-ui with appropriate size hierarchy (h1: 1.5rem, body: 0.95rem)",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Styles",
-      "confidence": 0.95
+      "canon_id": "c90f58ebacff9b6580bbc38f7293e86dffe115780059ef2dc2ea5722ed44a802",
+      "short_id": "node-c90f58eb",
+      "type": "REQUIREMENT",
+      "statement": "buttons must have rounded corners appropriate padding and cursor pointer",
+      "raw_text": "Buttons must have rounded corners, appropriate padding, and cursor pointer",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c90f58ebacff9b6580bbc38f7293e86dffe115780059ef2dc2ea5722ed44a802"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "id": "1a4e39p8c0e1",
+      "canon_id": "39f5873bbfd3cbb1ee4672724e123099c1909fe5e523f989b89ea05e195c9e24",
+      "short_id": "node-39f5873b",
+      "type": "REQUIREMENT",
+      "statement": "date inputs must use a custom date picker component styled with catppuccin mocha theme",
+      "raw_text": "Date inputs must use a custom date picker component styled with Catppuccin Mocha theme",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "39f5873bbfd3cbb1ee4672724e123099c1909fe5e523f989b89ea05e195c9e24"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "71c8e6f5c3ef8d2003292ba737f09cf038956ab66bcdbcda9cac53ccc3d52e87",
+      "short_id": "node-71c8e6f5",
+      "type": "REQUIREMENT",
+      "statement": "the custom date picker must display a calendar grid with proper month and year navigation",
+      "raw_text": "The custom date picker must display a calendar grid with proper month and year navigation",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "71c8e6f5c3ef8d2003292ba737f09cf038956ab66bcdbcda9cac53ccc3d52e87"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "2333b8650b4e8b80b2984dfed30d9bcf08945af4b0595db02967e30e4aee78f0",
+      "short_id": "node-2333b865",
+      "type": "REQUIREMENT",
+      "statement": "date picker days must have hover states and selected day highlighting using theme colors",
+      "raw_text": "Date picker days must have hover states and selected day highlighting using theme colors",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "2333b8650b4e8b80b2984dfed30d9bcf08945af4b0595db02967e30e4aee78f0"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "0e495d1ee4c2f6a6c7a2155c09f47a678a9e9a3c67f0f00d96e16634613c770a",
+      "short_id": "node-0e495d1e",
+      "type": "REQUIREMENT",
+      "statement": "date picker popover must use ctpsurface0 background with ctpsurface1 borders",
+      "raw_text": "Date picker popover must use --ctp-surface0 background with --ctp-surface1 borders",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0e495d1ee4c2f6a6c7a2155c09f47a678a9e9a3c67f0f00d96e16634613c770a"
+      ],
+      "section": "Base Styles",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd",
+      "short_id": "node-5ba9c276",
+      "type": "REQUIREMENT",
+      "statement": "bulk selection checkboxes must appear on each task card for multiselect operations",
+      "raw_text": "Bulk selection checkboxes must appear on each task card for multi-select operations",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
+      "short_id": "node-dd472043",
+      "type": "REQUIREMENT",
+      "statement": "the header must include a bulk action bar when tasks are selected including delete selected and archive selected",
+      "raw_text": "The header must include a bulk action bar when tasks are selected including delete selected and archive selected",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48",
+      "short_id": "node-47e0a64c",
+      "type": "REQUIREMENT",
+      "statement": "the system must support bulk operations including delete multiple archive multiple and reassign multiple",
+      "raw_text": "The system must support bulk operations including delete multiple, archive multiple, and reassign multiple",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48"
+      ],
+      "section": "Bulk Actions",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939",
+      "short_id": "node-7580079c",
+      "type": "REQUIREMENT",
+      "statement": "the system must provide a function to bulk delete multiple tasks by id list with confirmation modal",
+      "raw_text": "The system must provide a function to bulk delete multiple tasks by ID list with confirmation modal",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939"
+      ],
+      "section": "Bulk Actions",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "0ca3fa4b087995c9e4aa1cccfe1d8a53c88e4e1d5f2cd42bcabf805cc16050bb",
+      "short_id": "node-0ca3fa4b",
+      "type": "REQUIREMENT",
+      "statement": "users must be able to delete tasks by their unique id",
+      "raw_text": "Users must be able to delete tasks by their unique ID",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0ca3fa4b087995c9e4aa1cccfe1d8a53c88e4e1d5f2cd42bcabf805cc16050bb"
+      ],
+      "section": "Delete Operations",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "4c4897891d89254e0afba437fd21549f7f782e3bf8c70026a341e26faa976d46",
+      "short_id": "node-4c489789",
+      "type": "REQUIREMENT",
+      "statement": "each task card must have a delete button that opens a confirmation modal not browser alert before permanent removal",
+      "raw_text": "Each task card must have a delete button that opens a confirmation modal, not browser alert, before permanent removal",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "4c4897891d89254e0afba437fd21549f7f782e3bf8c70026a341e26faa976d46"
+      ],
+      "section": "Delete Operations",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "c37ac43e5c7fbb2f71ed9cf3f121411ebe752a7fd5032b2de2d099056c7c01d0",
+      "short_id": "node-c37ac43e",
+      "type": "REQUIREMENT",
+      "statement": "the delete button must use the danger color red and include a trash icon",
+      "raw_text": "The delete button must use the danger color red and include a trash icon",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c37ac43e5c7fbb2f71ed9cf3f121411ebe752a7fd5032b2de2d099056c7c01d0"
+      ],
+      "section": "Delete Operations",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "d612bbc65b30fddc3fcf82f2e88429442c975b2c04c6688f77f810fda7710cb9",
+      "short_id": "node-d612bbc6",
+      "type": "REQUIREMENT",
+      "statement": "deleted tasks must be removed from all filtered views and search results",
+      "raw_text": "Deleted tasks must be removed from all filtered views and search results",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d612bbc65b30fddc3fcf82f2e88429442c975b2c04c6688f77f810fda7710cb9"
+      ],
+      "section": "Delete Operations",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "796b4e363127435ffa54a5d186f8d4dd09fdda2877ce8880f5fec40d04e60587",
+      "short_id": "node-796b4e36",
+      "type": "REQUIREMENT",
+      "statement": "all confirmation dialogs must be custom modal overlays not browser confirm or alert popups",
+      "raw_text": "All confirmation dialogs must be custom modal overlays, not browser confirm or alert popups",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "796b4e363127435ffa54a5d186f8d4dd09fdda2877ce8880f5fec40d04e60587"
+      ],
+      "section": "Confirmation Modal",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "12fb0edc1287a2f5f0e2542d08540a15133a389b11c319fca62ff187001cca20",
+      "short_id": "node-12fb0edc",
+      "type": "REQUIREMENT",
+      "statement": "deleting a task must require confirmation via a custom modal dialog not browser confirm or alert",
+      "raw_text": "Deleting a task must require confirmation via a custom modal dialog, not browser confirm or alert",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "12fb0edc1287a2f5f0e2542d08540a15133a389b11c319fca62ff187001cca20"
+      ],
+      "section": "Confirmation Modal",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "2e61381676836dee1acf7d2af57c6de6f850122c4c1c37a16893a4effbc91b95",
+      "short_id": "node-2e613816",
+      "type": "REQUIREMENT",
+      "statement": "the page must include a form to create new tasks with fields for title description priority dropdown and optional deadline date",
+      "raw_text": "The page must include a form to create new tasks with fields for title, description, priority dropdown, and optional deadline date",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "2e61381676836dee1acf7d2af57c6de6f850122c4c1c37a16893a4effbc91b95"
+      ],
+      "section": "Create Task Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "65cf841d09b215abbd9d4e43ae8b39c6f4d3468fea5683981fde61359b33cc71",
+      "short_id": "node-65cf841d",
       "type": "CONSTRAINT",
-      "text": "Buttons must have rounded corners, appropriate padding, and cursor pointer",
-      "source_file": "spec/web-dashboard.md",
-      "section": "Styles",
-      "confidence": 0.95
+      "statement": "the create form must validate that title is nonempty before submission",
+      "raw_text": "The create form must validate that title is non-empty before submission",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "65cf841d09b215abbd9d4e43ae8b39c6f4d3468fea5683981fde61359b33cc71"
+      ],
+      "section": "Create Task Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "56c320fc44633797ae3153f19cb1cb132c6e7095cdd82f0f0a80d350db28c9f4",
+      "short_id": "node-56c320fc",
+      "type": "REQUIREMENT",
+      "statement": "each task card must have an edit button that replaces the card content with an edit form not a modal dialog",
+      "raw_text": "Each task card must have an edit button that replaces the card content with an edit form, not a modal dialog",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "56c320fc44633797ae3153f19cb1cb132c6e7095cdd82f0f0a80d350db28c9f4"
+      ],
+      "section": "Inline Edit Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "11d42093d9e4ad83156a93fb917dd3fcc601d864266d651960ced28fdd73c215",
+      "short_id": "node-11d42093",
+      "type": "REQUIREMENT",
+      "statement": "the edit form must appear in place of the task card content and contain prepopulated fields for all editable properties",
+      "raw_text": "The edit form must appear in place of the task card content and contain pre-populated fields for all editable properties",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "11d42093d9e4ad83156a93fb917dd3fcc601d864266d651960ced28fdd73c215"
+      ],
+      "section": "Inline Edit Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "dad35101507fbcfc7dc8680f972f9940ab89b2130a8a9aa7cac5c5987b857186",
+      "short_id": "node-dad35101",
+      "type": "REQUIREMENT",
+      "statement": "the card content must be wrapped in a cardcontent div that can be hidden via css display property",
+      "raw_text": "The card content must be wrapped in a card-content div that can be hidden via CSS display property",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "dad35101507fbcfc7dc8680f972f9940ab89b2130a8a9aa7cac5c5987b857186"
+      ],
+      "section": "Inline Edit Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "ed55103ac8f56cdef2124b27ea6e9c33dbcedc0f6ebaf2bca425a8fa4bef3cb4",
+      "short_id": "node-ed55103a",
+      "type": "REQUIREMENT",
+      "statement": "the edit form must be a sibling element to the cardcontent div not nested inside it",
+      "raw_text": "The edit form must be a sibling element to the card-content div, not nested inside it",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ed55103ac8f56cdef2124b27ea6e9c33dbcedc0f6ebaf2bca425a8fa4bef3cb4"
+      ],
+      "section": "Inline Edit Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "9b1a910870349540c9d01d0ba6347192a63d6141e89839bf9c00c59b177ae078",
+      "short_id": "node-9b1a9108",
+      "type": "REQUIREMENT",
+      "statement": "clicking edit must hide the cardcontent div and show the editform div using inline style display toggling",
+      "raw_text": "Clicking edit must hide the card-content div and show the edit-form div using inline style display toggling",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "9b1a910870349540c9d01d0ba6347192a63d6141e89839bf9c00c59b177ae078"
+      ],
+      "section": "Inline Edit Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0",
+      "short_id": "node-c3ae3e10",
+      "type": "REQUIREMENT",
+      "statement": "the edit form must have save and cancel buttons with clear visual distinction",
+      "raw_text": "The edit form must have save and cancel buttons with clear visual distinction",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0"
+      ],
+      "section": "Edit Form Controls",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "0b7df6f4e1fe1d968a3559e7d07db3f21582f792f851d466e389164bf84d5f5b",
+      "short_id": "node-0b7df6f4",
+      "type": "REQUIREMENT",
+      "statement": "clicking cancel or saving must restore the task card view by hiding editform and showing cardcontent",
+      "raw_text": "Clicking cancel or saving must restore the task card view by hiding edit-form and showing card-content",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0b7df6f4e1fe1d968a3559e7d07db3f21582f792f851d466e389164bf84d5f5b"
+      ],
+      "section": "Edit Form Controls",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994",
+      "short_id": "node-a5367452",
+      "type": "REQUIREMENT",
+      "statement": "users must be able to edit task properties including title description priority deadline and assignee",
+      "raw_text": "Users must be able to edit task properties including title, description, priority, deadline, and assignee",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994"
+      ],
+      "section": "Edit Form Controls",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663",
+      "short_id": "node-8ecb8220",
+      "type": "REQUIREMENT",
+      "statement": "editing a task must update the updatedat timestamp automatically",
+      "raw_text": "Editing a task must update the updated_at timestamp automatically",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663"
+      ],
+      "section": "Edit Persistence",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
+      "canon_id": "93e388ff1c8a76fad9445f075c3fd9ea8efe04e9dd6e8cc9ef56a022a742312f",
+      "short_id": "node-93e388ff",
+      "type": "REQUIREMENT",
+      "statement": "the dashboard shall compose the page theme task list edit form archive tabs bulk selection and analytics bar into a single working page",
+      "raw_text": "The dashboard shall compose the page theme, task list, edit form, archive tabs, bulk selection, and analytics bar into a single working page",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "93e388ff1c8a76fad9445f075c3fd9ea8efe04e9dd6e8cc9ef56a022a742312f"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "f20e473ea2499d65651a44132b03b7140287261031f24406c651baf7d13830d3",
+      "short_id": "node-f20e473e",
+      "type": "REQUIREMENT",
+      "statement": "the analytics bar shall display inline on the same line as the page title in the header with no visual separator line below",
+      "raw_text": "The analytics bar shall display inline on the same line as the page title in the header with no visual separator line below",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f20e473ea2499d65651a44132b03b7140287261031f24406c651baf7d13830d3"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "3b3b6ce2da6dcd2ad6576b630478b6e2bf372a5f9a5b8cc20224289d6822fe05",
+      "short_id": "node-3b3b6ce2",
+      "type": "REQUIREMENT",
+      "statement": "the create form shall append new tasks to localstorage and trigger task grid rerender",
+      "raw_text": "The create form shall append new tasks to localStorage and trigger task grid re-render",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3b3b6ce2da6dcd2ad6576b630478b6e2bf372a5f9a5b8cc20224289d6822fe05"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "72c4a2c45dc1edcf82869093e34ec8b75a8b643e78819281ccbfe9bce9ff5a68",
+      "short_id": "node-72c4a2c4",
+      "type": "REQUIREMENT",
+      "statement": "the task grid shall display tasks from localstorage and pass click events to edit handlers",
+      "raw_text": "The task grid shall display tasks from localStorage and pass click events to edit handlers",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "72c4a2c45dc1edcf82869093e34ec8b75a8b643e78819281ccbfe9bce9ff5a68"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "a731f6b43208397eaad60a9312cf10acd760afc578f3181cc364ed27e6235ae8",
+      "short_id": "node-a731f6b4",
+      "type": "REQUIREMENT",
+      "statement": "the inline edit form shall update localstorage and trigger task grid rerender on save",
+      "raw_text": "The inline edit form shall update localStorage and trigger task grid re-render on save",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a731f6b43208397eaad60a9312cf10acd760afc578f3181cc364ed27e6235ae8"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "a9bd9ecc8c5b5ccb2fa9e778f7d9262a084ffe9c4c91ab2821685de30589e9c4",
+      "short_id": "node-a9bd9ecc",
+      "type": "REQUIREMENT",
+      "statement": "the archive tabs shall filter task grid display without page reload",
+      "raw_text": "The archive tabs shall filter task grid display without page reload",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a9bd9ecc8c5b5ccb2fa9e778f7d9262a084ffe9c4c91ab2821685de30589e9c4"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638",
+      "short_id": "node-8a0f621e",
+      "type": "REQUIREMENT",
+      "statement": "the bulk selection shall update task grid checkbox states and show or hide bulk action bar",
+      "raw_text": "The bulk selection shall update task grid checkbox states and show or hide bulk action bar",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "09a6c7528b6310dba374140c53e37d97645c71ad77fa3b9d35be7b3bad5a6f9b",
+      "short_id": "node-09a6c752",
+      "type": "REQUIREMENT",
+      "statement": "the analytics bar shall recalculate on every localstorage change",
+      "raw_text": "The analytics bar shall recalculate on every localStorage change",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "09a6c7528b6310dba374140c53e37d97645c71ad77fa3b9d35be7b3bad5a6f9b"
+      ],
+      "section": "Component Wiring",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "2623171ed71406b752f533e36d98a51aaeae33debc89a4ba03d89cd6ed7f7713",
+      "short_id": "node-2623171e",
+      "type": "REQUIREMENT",
+      "statement": "form submit events shall validate input write to localstorage then call render functions",
+      "raw_text": "Form submit events shall validate input, write to localStorage, then call render functions",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "2623171ed71406b752f533e36d98a51aaeae33debc89a4ba03d89cd6ed7f7713"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "3cabdbbabcf6cedcab4805c3ea9e684e7962022be4b42aaf2fb1b03e02839047",
+      "short_id": "node-3cabdbba",
+      "type": "REQUIREMENT",
+      "statement": "status transition buttons shall update task status update updatedat timestamp write to localstorage then rerender",
+      "raw_text": "Status transition buttons shall update task status, update updated_at timestamp, write to localStorage, then re-render",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "3cabdbbabcf6cedcab4805c3ea9e684e7962022be4b42aaf2fb1b03e02839047"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "4c22b2bde5ba60bb95ab475a86c0e9bf0cde438cc88d17253a74d607e50fe639",
+      "short_id": "node-4c22b2bd",
+      "type": "REQUIREMENT",
+      "statement": "edit button clicks shall hide card content div and show edit form sibling",
+      "raw_text": "Edit button clicks shall hide card content div and show edit form sibling",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "4c22b2bde5ba60bb95ab475a86c0e9bf0cde438cc88d17253a74d607e50fe639"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "befecd912aa1aa0fe1a4e579f4b8d4697516d416f8b62a96fc7edbf9884c34da",
+      "short_id": "node-befecd91",
+      "type": "REQUIREMENT",
+      "statement": "cancel and save buttons shall toggle display none on edit form and restore card view",
+      "raw_text": "Cancel and save buttons shall toggle display none on edit form and restore card view",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "befecd912aa1aa0fe1a4e579f4b8d4697516d416f8b62a96fc7edbf9884c34da"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "62e720747aa357d97884ac5b9d7300f6bcb1f695223ed125f147b16fdc669a59",
+      "short_id": "node-62e72074",
+      "type": "REQUIREMENT",
+      "statement": "archive and restore actions shall set archived flag with timestamp write to localstorage then rerender current view",
+      "raw_text": "Archive and restore actions shall set archived flag with timestamp, write to localStorage, then re-render current view",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "62e720747aa357d97884ac5b9d7300f6bcb1f695223ed125f147b16fdc669a59"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "e6ea15b2c95d5fc55f65edbc42e02225709b99b00adb430eadf78e4bf5b7f11e",
+      "short_id": "node-e6ea15b2",
+      "type": "REQUIREMENT",
+      "statement": "delete actions shall show confirmation modal then on confirm remove from localstorage and rerender",
+      "raw_text": "Delete actions shall show confirmation modal, then on confirm remove from localStorage and re-render",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "e6ea15b2c95d5fc55f65edbc42e02225709b99b00adb430eadf78e4bf5b7f11e"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "493bf4f1ea3320f5f909e8e66bfb9a581ad4cd54af80e58dfe1ff323969455a8",
+      "short_id": "node-493bf4f1",
+      "type": "REQUIREMENT",
+      "statement": "tab clicks shall switch view state between active and archived clear bulk selection and rerender task grid",
+      "raw_text": "Tab clicks shall switch view state between active and archived, clear bulk selection, and re-render task grid",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "493bf4f1ea3320f5f909e8e66bfb9a581ad4cd54af80e58dfe1ff323969455a8"
+      ],
+      "section": "Event Flow",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "0afc29d57dce415015bb17016b29f473f6492a31ac7fa7dcb3fa88b6c3f8b806",
+      "short_id": "node-0afc29d5",
+      "type": "REQUIREMENT",
+      "statement": "localstorage key taskflowtasks shall be the single source of truth for all components",
+      "raw_text": "localStorage key taskflow_tasks shall be the single source of truth for all components",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0afc29d57dce415015bb17016b29f473f6492a31ac7fa7dcb3fa88b6c3f8b806"
+      ],
+      "section": "State Management",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "4a49ae7c4ceb6b5a1ebfdf188d51adfeba7b84eb3ee76a711cde2ce0dc75d236",
+      "short_id": "node-4a49ae7c",
+      "type": "REQUIREMENT",
+      "statement": "all components shall read from localstorage on every render with no inmemory caching",
+      "raw_text": "All components shall read from localStorage on every render with no in-memory caching",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "4a49ae7c4ceb6b5a1ebfdf188d51adfeba7b84eb3ee76a711cde2ce0dc75d236"
+      ],
+      "section": "State Management",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "01e92e240085650ce79c8f892dd65cf90a6023cec27b6e279ff4db589f9ec4d1",
+      "short_id": "node-01e92e24",
+      "type": "REQUIREMENT",
+      "statement": "write operations shall complete before triggering rerender using synchronous flow",
+      "raw_text": "Write operations shall complete before triggering re-render using synchronous flow",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "01e92e240085650ce79c8f892dd65cf90a6023cec27b6e279ff4db589f9ec4d1"
+      ],
+      "section": "State Management",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "f937d4a27dd9744f3620c63370f1d3cc23b53a15aad4916c8a95bda3e119e24f",
+      "short_id": "node-f937d4a2",
+      "type": "REQUIREMENT",
+      "statement": "state mutations shall include updatedat timestamp automatically",
+      "raw_text": "State mutations shall include updated_at timestamp automatically",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f937d4a27dd9744f3620c63370f1d3cc23b53a15aad4916c8a95bda3e119e24f"
+      ],
+      "section": "State Management",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "bb1e6cc7b2c8067d47805331c0ddb0bcc4fd090bcfeb2d907b65476d657d7dfd",
+      "short_id": "node-bb1e6cc7",
+      "type": "REQUIREMENT",
+      "statement": "archived tasks shall retain all original data plus archived boolean and archivedat timestamp",
+      "raw_text": "Archived tasks shall retain all original data plus archived boolean and archived_at timestamp",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "bb1e6cc7b2c8067d47805331c0ddb0bcc4fd090bcfeb2d907b65476d657d7dfd"
+      ],
+      "section": "State Management",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "93e81a349be59a7f7768fdc9ca00f49df78a974de9bb0c017cb29689ca6e4847",
+      "short_id": "node-93e81a34",
+      "type": "REQUIREMENT",
+      "statement": "the create form and task grid shall render side by side in a twocolumn layout on desktop with create form on left and task grid on right",
+      "raw_text": "The create form and task grid shall render side by side in a two-column layout on desktop with create form on left and task grid on right",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "93e81a349be59a7f7768fdc9ca00f49df78a974de9bb0c017cb29689ca6e4847"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "7f65243582eeec6211a30c259ffd69f8774ab863d0df9b45dd3a49f795f7fed0",
+      "short_id": "node-7f652435",
+      "type": "REQUIREMENT",
+      "statement": "the create form and task grid module containers shall align at the exact same top edge for visual symmetry",
+      "raw_text": "The create form and task grid module containers shall align at the exact same top edge for visual symmetry",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7f65243582eeec6211a30c259ffd69f8774ab863d0df9b45dd3a49f795f7fed0"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "a57321f9ffae57af24b007b4cb584a142bfd60e65075589f87c5e035f6eea7e9",
+      "short_id": "node-a57321f9",
+      "type": "REQUIREMENT",
+      "statement": "both module headers with h2 titles shall have identical margin padding and lineheight",
+      "raw_text": "Both module headers with h2 titles shall have identical margin, padding, and line-height",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a57321f9ffae57af24b007b4cb584a142bfd60e65075589f87c5e035f6eea7e9"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "06083503e7868530fa9d6a146f977275eade67e45630e0dd80eefd757f14ddc4",
+      "short_id": "node-06083503",
+      "type": "REQUIREMENT",
+      "statement": "on mobile the create form shall stack above the task grid in a single column",
+      "raw_text": "On mobile, the create form shall stack above the task grid in a single column",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "06083503e7868530fa9d6a146f977275eade67e45630e0dd80eefd757f14ddc4"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "10753d83edf291bf4519aee6f865a8feb8defeca5db14738580bbbecf8ce61e4",
+      "short_id": "node-10753d83",
+      "type": "REQUIREMENT",
+      "statement": "active tab shall show task cards with status badges and archived tasks shown with dimmed strikethrough badge overlay",
+      "raw_text": "Active tab shall show task cards with status badges and archived tasks shown with dimmed strikethrough badge overlay",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "10753d83edf291bf4519aee6f865a8feb8defeca5db14738580bbbecf8ce61e4"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "01e9f448f073ae4f14f69cd176d3ab4012c9bf8a9e51be1dc2adb501e0f1a0b2",
+      "short_id": "node-01e9f448",
+      "type": "REQUIREMENT",
+      "statement": "active tab shall display done tasks in a separate section below active tasks with a completed heading",
+      "raw_text": "Active tab shall display done tasks in a separate section below active tasks with a Completed heading",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "01e9f448f073ae4f14f69cd176d3ab4012c9bf8a9e51be1dc2adb501e0f1a0b2"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "024c1a2b29b16e53913282094b9876b54658ffa254171d6775b200169649d083",
+      "short_id": "node-024c1a2b",
+      "type": "REQUIREMENT",
+      "statement": "done tasks must render in the same grid layout as active tasks with same column widths gaps and responsive behavior",
+      "raw_text": "Done tasks must render in the same grid layout as active tasks with same column widths, gaps, and responsive behavior",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "024c1a2b29b16e53913282094b9876b54658ffa254171d6775b200169649d083"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "1551cfef5a8e5348ba15dacaf955633e49a8799ba9db1ba838d1348cb15d0fb7",
+      "short_id": "node-1551cfef",
+      "type": "REQUIREMENT",
+      "statement": "archived tab shall show archived tasks with original status badge plus archived indicator",
+      "raw_text": "Archived tab shall show archived tasks with original status badge plus archived indicator",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1551cfef5a8e5348ba15dacaf955633e49a8799ba9db1ba838d1348cb15d0fb7"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "ab0772dd32f29ad7bb891b86817d3c68fc79ae5a2c45f6794e61f033e9d97ac5",
+      "short_id": "node-ab0772dd",
+      "type": "REQUIREMENT",
+      "statement": "bulk action bar shall only appear when selectedids length is greater than 0",
+      "raw_text": "Bulk action bar shall only appear when selectedIds length is greater than 0",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ab0772dd32f29ad7bb891b86817d3c68fc79ae5a2c45f6794e61f033e9d97ac5"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "d6860f3b4f0a11d94d965bf9dfcc96f2f2980e292cc021ae024c9a45f9881def",
+      "short_id": "node-d6860f3b",
+      "type": "REQUIREMENT",
+      "statement": "bulk bar shall disable archive button when viewing archived tab and disable restore when viewing active tab",
+      "raw_text": "Bulk bar shall disable archive button when viewing archived tab and disable restore when viewing active tab",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d6860f3b4f0a11d94d965bf9dfcc96f2f2980e292cc021ae024c9a45f9881def"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "a8da650f4f255b341651f39ae191bb923b6019187d737305b26d53174bde0116",
+      "short_id": "node-a8da650f",
+      "type": "REQUIREMENT",
+      "statement": "confirmation modal shall overlay entire page with semitransparent background",
+      "raw_text": "Confirmation modal shall overlay entire page with semi-transparent background",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a8da650f4f255b341651f39ae191bb923b6019187d737305b26d53174bde0116"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "7ad31f6c3116a3245b688b4ae74d2937ceb18a7dc4d3e432bbb9e2bca118e430",
+      "short_id": "node-7ad31f6c",
+      "type": "REQUIREMENT",
+      "statement": "modal confirm action shall execute callback then close modal",
+      "raw_text": "Modal confirm action shall execute callback then close modal",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7ad31f6c3116a3245b688b4ae74d2937ceb18a7dc4d3e432bbb9e2bca118e430"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "93833e524931c736679d585aa0c8d147102d55060646b3674918d050dac719ab",
+      "short_id": "node-93833e52",
+      "type": "REQUIREMENT",
+      "statement": "escape key shall cancel modal and click outside modal shall cancel",
+      "raw_text": "Escape key shall cancel modal and click outside modal shall cancel",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "93833e524931c736679d585aa0c8d147102d55060646b3674918d050dac719ab"
+      ],
+      "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
+      "short_id": "node-1195e2f9",
+      "type": "CONSTRAINT",
+      "statement": "no component shall render without reading current localstorage state",
+      "raw_text": "No component shall render without reading current localStorage state",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0"
+      ],
+      "section": "Integration Invariants",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
+      "short_id": "node-6bb5fa7f",
+      "type": "CONSTRAINT",
+      "statement": "no state change shall occur without updating localstorage first",
+      "raw_text": "No state change shall occur without updating localStorage first",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114"
+      ],
+      "section": "Integration Invariants",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "5a52732aa411c4ba9de24b7dde1093ed95ccb949e55483c9ee62accff2138900",
+      "short_id": "node-5a52732a",
+      "type": "CONSTRAINT",
+      "statement": "rerenders shall be synchronous following state updates",
+      "raw_text": "Re-renders shall be synchronous following state updates",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "5a52732aa411c4ba9de24b7dde1093ed95ccb949e55483c9ee62accff2138900"
+      ],
+      "section": "Integration Invariants",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "4d3caa9e1a345c0e551eaaf06682564b7855ee091d8130fc60b36a547a33d655",
+      "short_id": "node-4d3caa9e",
+      "type": "CONSTRAINT",
+      "statement": "all event handlers shall be attached on initial page load",
+      "raw_text": "All event handlers shall be attached on initial page load",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "4d3caa9e1a345c0e551eaaf06682564b7855ee091d8130fc60b36a547a33d655"
+      ],
+      "section": "Integration Invariants",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "8a0318be073275b7b03837ad9569fbd7e9f51faaabed47a7c3a4301495af657d",
+      "short_id": "node-8a0318be",
+      "type": "CONSTRAINT",
+      "statement": "components shall not have external dependencies with all data from localstorage",
+      "raw_text": "Components shall not have external dependencies with all data from localStorage",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8a0318be073275b7b03837ad9569fbd7e9f51faaabed47a7c3a4301495af657d"
+      ],
+      "section": "Integration Invariants",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "27291946d9c1ae89f5c13df2349724de4c3b1aa0dbfeede363c84e51ea87c589",
+      "short_id": "node-27291946",
+      "type": "REQUIREMENT",
+      "statement": "the dashboard must render all tasks as styled cards in a responsive grid layout",
+      "raw_text": "The dashboard must render all tasks as styled cards in a responsive grid layout",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "27291946d9c1ae89f5c13df2349724de4c3b1aa0dbfeede363c84e51ea87c589"
+      ],
+      "section": "Task Grid Layout",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "c1cfd0b2d1159f61369bcff61533b5713c54a846eedee72eab1754ba1496dfac",
+      "short_id": "node-c1cfd0b2",
+      "type": "REQUIREMENT",
+      "statement": "completed tasks with statusdone must display in a separate section below active tasks within the active tab",
+      "raw_text": "Completed tasks with status=done must display in a separate section below active tasks within the Active tab",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "c1cfd0b2d1159f61369bcff61533b5713c54a846eedee72eab1754ba1496dfac"
+      ],
+      "section": "Task Grid Layout",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "f60039398ec8457e8d6545a1d348b768bd7e207fb8db9deefae8c060f9fcc35f",
+      "short_id": "node-f6003939",
+      "type": "REQUIREMENT",
+      "statement": "the done tasks section must have a clear visual separator and heading indicating completed tasks",
+      "raw_text": "The done tasks section must have a clear visual separator and heading indicating completed tasks",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f60039398ec8457e8d6545a1d348b768bd7e207fb8db9deefae8c060f9fcc35f"
+      ],
+      "section": "Task Grid Layout",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "0c8fd64b342a96b214bc1537aab16d0a04e4092ddeff1078dda85832bcc09b36",
+      "short_id": "node-0c8fd64b",
+      "type": "REQUIREMENT",
+      "statement": "done tasks must use the same responsive grid layout as active tasks with identical column widths gaps and breakpoints",
+      "raw_text": "Done tasks must use the same responsive grid layout as active tasks with identical column widths, gaps, and breakpoints",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "0c8fd64b342a96b214bc1537aab16d0a04e4092ddeff1078dda85832bcc09b36"
+      ],
+      "section": "Task Grid Layout",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "6741feb08b69fcb97252c882d33eeefd88491cd4ca620cbddafe8918712ff7a1",
+      "short_id": "node-6741feb0",
+      "type": "REQUIREMENT",
+      "statement": "each task card must show title description priority badge status badge assignee and deadline",
+      "raw_text": "Each task card must show title, description, priority badge, status badge, assignee, and deadline",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "6741feb08b69fcb97252c882d33eeefd88491cd4ca620cbddafe8918712ff7a1"
+      ],
+      "section": "Task Card Display",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "ef282c4f58882215fbe95599a77e9ea42ecb09681615199141d7e574a5da4000",
+      "short_id": "node-ef282c4f",
+      "type": "REQUIREMENT",
+      "statement": "priority badges must be colorcoded with criticalred highorange mediumyellow lowgreen",
+      "raw_text": "Priority badges must be color-coded with critical=red, high=orange, medium=yellow, low=green",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ef282c4f58882215fbe95599a77e9ea42ecb09681615199141d7e574a5da4000"
+      ],
+      "section": "Priority Badges",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "dc96fbc84d80cf0cfe1a8dc73708ba0ef09a6c20ab40c050757cdbb249a9c315",
+      "short_id": "node-dc96fbc8",
+      "type": "REQUIREMENT",
+      "statement": "status badges must be colorcoded with opengray inprogressblue reviewpurple donegreen archivedoverlay0dim",
+      "raw_text": "Status badges must be color-coded with open=gray, in_progress=blue, review=purple, done=green, archived=overlay0(dim)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "dc96fbc84d80cf0cfe1a8dc73708ba0ef09a6c20ab40c050757cdbb249a9c315"
+      ],
+      "section": "Status Badges",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "a38b112678258c10202350b56dfe5e273be02155bb2fd91e93b5dbf8c3f02668",
+      "short_id": "node-a38b1126",
+      "type": "REQUIREMENT",
+      "statement": "overdue tasks must have a red border and an overdue indicator",
+      "raw_text": "Overdue tasks must have a red border and an OVERDUE indicator",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a38b112678258c10202350b56dfe5e273be02155bb2fd91e93b5dbf8c3f02668"
+      ],
+      "section": "Overdue Indicator",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "04863c16775d3737e0e987d41dbe4dae1b05795e9778fc80914ae6d33dddcde5",
+      "short_id": "node-04863c16",
+      "type": "REQUIREMENT",
+      "statement": "each card must have buttons for status transitions based on current status",
+      "raw_text": "Each card must have buttons for status transitions based on current status",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "04863c16775d3737e0e987d41dbe4dae1b05795e9778fc80914ae6d33dddcde5"
+      ],
+      "section": "Status Transitions",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "900da6bbb6abdd66d83efe4b9162e74c6bcc540811e4639a2908fe1199a1b02b",
+      "short_id": "node-900da6bb",
+      "type": "REQUIREMENT",
+      "statement": "tasks must persist in browser localstorage and survive page refreshes",
+      "raw_text": "Tasks must persist in browser localStorage and survive page refreshes",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "900da6bbb6abdd66d83efe4b9162e74c6bcc540811e4639a2908fe1199a1b02b"
+      ],
+      "section": "Data Persistence",
+      "source_file": "spec/web-dashboard-tasklist.md"
+    },
+    {
+      "canon_id": "b5ce30f01710bee3d6e9ad93784345656aff05b0ebab96700d6921b59b7ec00d",
+      "short_id": "node-b5ce30f0",
+      "type": "REQUIREMENT",
+      "statement": "the dashboard must immediately display all tasks from localstorage on page load with no manual refresh needed",
+      "raw_text": "The dashboard must immediately display all tasks from localStorage on page load with no manual refresh needed",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b5ce30f01710bee3d6e9ad93784345656aff05b0ebab96700d6921b59b7ec00d"
+      ],
+      "section": "Data Persistence",
+      "source_file": "spec/web-dashboard-tasklist.md"
     }
   ]
 }

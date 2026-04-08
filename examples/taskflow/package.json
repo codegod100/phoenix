@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "lint": "echo 'No lint rules configured'",
     "test": "vitest run",
     "test:watch": "vitest",
     "start:analytics": "tsc && node dist/generated/analytics/server.js",
