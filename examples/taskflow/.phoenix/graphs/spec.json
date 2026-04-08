@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:08:38.085Z",
-  "clause_count": 154,
+  "generated_at": "2026-04-08T22:12:09.828Z",
+  "clause_count": 160,
   "file_count": 9,
   "files": [
     "spec/analytics.md",
@@ -1457,15 +1457,15 @@
       "context_semhash": "1431cf3e7bc8ee9395c451938a0452237b5599d3572a0658587bcb26c876526d"
     },
     {
-      "id": "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
+      "id": "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2",
       "type": "REQUIREMENT",
-      "text": "the modal shall have a maximum width of 700px to accommodate all form fields comfortably",
-      "raw_text": "The modal shall have a maximum width of 700px to accommodate all form fields comfortably",
+      "text": "the modal shall have a maximum width of 800px to accommodate form fields comfortably",
+      "raw_text": "The modal shall have a maximum width of 800px to accommodate form fields comfortably",
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md",
       "line": 53,
-      "clause_semhash": "11836de88b7d0124f4460983f7b9c2004c8c927352fa9896ceb24137032bfdc0",
-      "context_semhash": "ebd07436bd9e567aa8f2dd13863d11cba06c235678dee50d4ccd84d48e114b87"
+      "clause_semhash": "29423bc8f4b1e0f68a9eeb37fc6b879ae3b1859cc80b0a4b9dcc278d6d749211",
+      "context_semhash": "31c7afd39db0243b0f12e91d057277dd2fd69a6f20584f72dda0f5aaad4bcfc1"
     },
     {
       "id": "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
@@ -1476,29 +1476,29 @@
       "source_file": "spec/web-dashboard-integration.md",
       "line": 54,
       "clause_semhash": "3f874814e1e9262e8ff55aa692c61deecaf84ab9d5ed29300ca46c0ac2354db6",
-      "context_semhash": "4a0db65c334e4daa2a9d5a9dd0b33b2089105797d5f6076e5bcfcc0fd3b44b62"
+      "context_semhash": "e7829f03c5002d752cbe5a205f9e4804da80f7e99e915473cb001148be80b89f"
     },
     {
-      "id": "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
+      "id": "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
       "type": "REQUIREMENT",
-      "text": "the modal shall have 32px internal padding for proper spacing of form elements",
-      "raw_text": "The modal shall have 32px internal padding for proper spacing of form elements",
+      "text": "the modal shall have 24px internal padding to reduce overall height",
+      "raw_text": "The modal shall have 24px internal padding to reduce overall height",
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md",
       "line": 55,
-      "clause_semhash": "49a005e2955466603a0a2ec8f7c90f56347a96a698a4fc0194c42128aed9240e",
-      "context_semhash": "50f544dcc9d680d22f8e903f155647971402e288766fa69ca750b967e5f4e520"
+      "clause_semhash": "24191a5d02cd5f33dc97ccf067f56f04a6af206caca510d9d511cec8d9e451ae",
+      "context_semhash": "486039e704ebecea4a314ad2a4764b6c994567078ddb997899a45324ee10f219"
     },
     {
-      "id": "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+      "id": "4e44d6c6743dcd6aa1f3a6b6d42faaa484d2b1ae0015d3a250c5f69a10efe9a7",
       "type": "REQUIREMENT",
-      "text": "the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields",
-      "raw_text": "The modal content area shall scroll internally only if absolutely necessary, preferring to fit all fields",
+      "text": "the modal shall have no overflowy scrolling enabled  all content must fit naturally",
+      "raw_text": "The modal shall have NO overflow-y scrolling enabled - all content must fit naturally",
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md",
       "line": 56,
-      "clause_semhash": "a8a58db04750010acc7aa8c10bef04f3bc5b5993ad63b582cd76d4bb6ecf82ff",
-      "context_semhash": "c76c3fa5381f1d8b1ebe72d4d98c9d09c11c601c6054679c87423601ee5ca00b"
+      "clause_semhash": "043fd7875371b1a26b35a78002700041bcd3a139a440e2c7f3231a71721a9b3a",
+      "context_semhash": "6d60243c27340644413890d1e8a09e4dd2568f471aad229e4a9e688bd379fdbe"
     },
     {
       "id": "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
@@ -1509,7 +1509,73 @@
       "source_file": "spec/web-dashboard-integration.md",
       "line": 57,
       "clause_semhash": "88c76d78b80de8f69e43bc5d811e64e9258676323c9fe7bb2977b7f7dd4ef73e",
-      "context_semhash": "86490cab6a6e33ab3609df7b11bdda82fb6ed56dc01d8965935b540ec14a4d4f"
+      "context_semhash": "332d0565b3c1b663d17e1a1b2b847d0a90c709f5fb1bf96d4244079cb0d848cc"
+    },
+    {
+      "id": "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc",
+      "type": "REQUIREMENT",
+      "text": "status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space",
+      "raw_text": "Status and Priority fields shall render side-by-side in a two-column grid layout to save vertical space",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 58,
+      "clause_semhash": "3888853868a431670d101e22bf6692e4adfc2c7406c2fb7819a73d8bd2bf4775",
+      "context_semhash": "8a0caf2e5416701e63d4eb513629ce9bf1b0ad8d756540a8dc45d304ff41edb9"
+    },
+    {
+      "id": "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88",
+      "type": "REQUIREMENT",
+      "text": "assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space",
+      "raw_text": "Assignee and Deadline fields shall render side-by-side in a two-column grid layout to save vertical space",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 59,
+      "clause_semhash": "c2b0f7626818163d279e98cf2ad4df30a057ba7fcf3e8b317b8e48f673cdbb42",
+      "context_semhash": "213ba0f6cea725b0553fe4284befa9f00e61cbd7d7cb359fc33e55a8fe2d7e98"
+    },
+    {
+      "id": "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3",
+      "type": "REQUIREMENT",
+      "text": "the description textarea shall use 2 rows maximum not 3 to reduce height",
+      "raw_text": "The Description textarea shall use 2 rows maximum (not 3) to reduce height",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 60,
+      "clause_semhash": "3cbc74ae3311dbdb2a2fbab8e99ac68350e6550eaec83cdff3c51bb0be05e6ac",
+      "context_semhash": "3ab3f34cd64b6c62ac6326ceed1d2d590f7ac13603210bd0f12d61a20a38b89b"
+    },
+    {
+      "id": "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3",
+      "type": "REQUIREMENT",
+      "text": "form field margins shall be 12px not 16px between groups to reduce overall height",
+      "raw_text": "Form field margins shall be 12px (not 16px) between groups to reduce overall height",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 61,
+      "clause_semhash": "7a5144fb8f0ae22640fb87ee32baf7bc2f3b56874444300fa71bd8f60bdca5b5",
+      "context_semhash": "3ce6ea84c72e7eda3581b8ca17f11c1434ca2bf42eec6f11038b4d4314e31b57"
+    },
+    {
+      "id": "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc",
+      "type": "REQUIREMENT",
+      "text": "form labels shall have minimal 2px marginbottom to reduce spacing",
+      "raw_text": "Form labels shall have minimal 2px margin-bottom to reduce spacing",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 62,
+      "clause_semhash": "e9e7b568d9c06116a60cdb8a5e9097206af91f2c0110dcabbb7e7919b424b2fa",
+      "context_semhash": "d9b6da229e99cee16ae3de326f87169fcb7b5105171ee6269b0788f3171ee759"
+    },
+    {
+      "id": "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc",
+      "type": "REQUIREMENT",
+      "text": "input padding shall be compact 6px vertical to reduce field heights",
+      "raw_text": "Input padding shall be compact (6px vertical) to reduce field heights",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 63,
+      "clause_semhash": "b27158da140d74fa86c02abc26d38388adfcba1b4a8e3c1f01721b2ff0abdd38",
+      "context_semhash": "38a51a1bb66b2cf7ebcc58013cf9809e7d53b6451a8ba534e66b929f484efb3a"
     },
     {
       "id": "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
@@ -1518,9 +1584,9 @@
       "raw_text": "No component shall render without reading current localStorage state",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 61,
+      "line": 67,
       "clause_semhash": "910c68a0e816a14204015da1051e5d123caac7471b73deae651555255fb9d451",
-      "context_semhash": "f958aac1fbf418f68ac3a2d8ad9100332bbc9117c96ff32c217cf9a5401d8367"
+      "context_semhash": "788528e05c2ad10c1260d2a303caf028f3de2a376a31a6697078e9f1b7119fac"
     },
     {
       "id": "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
@@ -1529,7 +1595,7 @@
       "raw_text": "No state change shall occur without updating localStorage first",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 62,
+      "line": 68,
       "clause_semhash": "e022dfc71035fe776e4aecd6599e51a861e0c9c5383d770f8026577aa89d6720",
       "context_semhash": "d843b9bcd3b269115a32b041790a8f818f8dc00f860900aafcb7cae66407a54a"
     },
@@ -1540,7 +1606,7 @@
       "raw_text": "Re-renders shall be synchronous following state updates",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 63,
+      "line": 69,
       "clause_semhash": "86478d2498dac775989a9184b8c0c2e3cd8d01e7dacbf0487ed3b70e231f2a1e",
       "context_semhash": "911bb63bb54900272ef5b06a733fd6e555a760eba5cdb60d6f926d7cf13778a6"
     },
@@ -1551,7 +1617,7 @@
       "raw_text": "All event handlers shall be attached on initial page load",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 64,
+      "line": 70,
       "clause_semhash": "ba6a1806e1baae468e2f2326a3e4b6569da04a25ba9f2b000bc422e91da5f186",
       "context_semhash": "36cf1259e56a7f11a750eeab4fa1d0539db49a208e0c92264f2b47f4d768cd28"
     },
@@ -1562,7 +1628,7 @@
       "raw_text": "Components shall not have external dependencies with all data from localStorage",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 65,
+      "line": 71,
       "clause_semhash": "070b606f0d310b94e851ab965bf5ba877eeb8f3638b21d98e00e8661f30a7d5b",
       "context_semhash": "85d01e62d31d11b6f0ebf665ab9073402c978f79e5507a17860eb3dd6d68029c"
     },

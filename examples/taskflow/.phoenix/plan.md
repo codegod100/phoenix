@@ -692,24 +692,29 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-138e400b: Modal Domain (MEDIUM)
+## IU-8bac1e0a: Modal Domain (HIGH)
 
-**Description:** Implements modal functionality with 6 requirements
+**Description:** Implements modal functionality with 12 requirements
 
-**Risk Tier:** medium (6 requirements)
+**Risk Tier:** high (12 requirements)
 
 **Canonical Requirements:**
-- 12b7bda30f30...
-- 43ac9db4bba4...
+- 0fcd31ba2080...
+- 395c7bc1288d...
 - 5c212153a1ff...
+- 619c94741ca3...
 - 7141acc2b75a...
-- 8cb07889225c...
-- debbb7585559...
+- 90ee4a23b51c...
+- 954cf4092081...
+- d9ecce2e6f7f...
+- d9f092d708b2...
+- de80ad851535...
+- ... and 2 more
 
 **Contract:**
-- Inputs: Configuration, Data inputs
-- Outputs: Processed results, Side effects
-- Invariants: the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields
+- Inputs: input padding shall be compact 6px vertical to reduce field heights
+- Outputs: status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space, assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space
+- Invariants: Valid state transitions only, Type safety maintained
 
 **Output Files:**
 - `src/generated/modal/index.ts`
@@ -720,6 +725,8 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - lint
 - boundary_validation
 - unit_tests
+- property_tests
+- threat_note
 
 ---
 
@@ -811,6 +818,6 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ## Coverage Summary
 
-- Total canonical nodes: 149
-- Covered: 149
+- Total canonical nodes: 155
+- Covered: 155
 - Orphans: 0

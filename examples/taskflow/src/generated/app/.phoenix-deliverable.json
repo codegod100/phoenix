@@ -1,6 +1,6 @@
 {
   "type": "web-dashboard",
-  "generatedAt": "2026-04-08T22:09:30.014Z",
+  "generatedAt": "2026-04-08T22:12:10.806Z",
   "theory": {
     "domains": [
       {
@@ -92,7 +92,7 @@
         "name": "UI Domain"
       },
       {
-        "id": "138e400b0433d63f",
+        "id": "8bac1e0a38e63f28",
         "name": "Modal Domain"
       },
       {

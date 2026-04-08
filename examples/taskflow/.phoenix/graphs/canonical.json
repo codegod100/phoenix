@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:08:38.139Z",
+  "generated_at": "2026-04-08T22:12:09.872Z",
   "bootstrap_state": "BOOTSTRAP_WARMING",
   "d_rate": 0,
   "d_rate_level": "TARGET",
   "d_rate_message": "D-rate 0.0% within target (≤5%)",
-  "node_count": 149,
+  "node_count": 155,
   "classification_stats": {
-    "A": 149,
+    "A": 155,
     "B": 0,
     "C": 0,
     "D": 0
@@ -1678,14 +1678,14 @@
       "source_file": "spec/web-dashboard-integration.md"
     },
     {
-      "canon_id": "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
-      "short_id": "node-12b7bda3",
+      "canon_id": "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2",
+      "short_id": "node-de80ad85",
       "type": "REQUIREMENT",
-      "statement": "the modal shall have a maximum width of 700px to accommodate all form fields comfortably",
-      "raw_text": "The modal shall have a maximum width of 700px to accommodate all form fields comfortably",
+      "statement": "the modal shall have a maximum width of 800px to accommodate form fields comfortably",
+      "raw_text": "The modal shall have a maximum width of 800px to accommodate form fields comfortably",
       "confidence": 0.95,
       "source_clause_ids": [
-        "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f"
+        "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2"
       ],
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"
@@ -1704,27 +1704,27 @@
       "source_file": "spec/web-dashboard-integration.md"
     },
     {
-      "canon_id": "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
-      "short_id": "node-8cb07889",
+      "canon_id": "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
+      "short_id": "node-0fcd31ba",
       "type": "REQUIREMENT",
-      "statement": "the modal shall have 32px internal padding for proper spacing of form elements",
-      "raw_text": "The modal shall have 32px internal padding for proper spacing of form elements",
+      "statement": "the modal shall have 24px internal padding to reduce overall height",
+      "raw_text": "The modal shall have 24px internal padding to reduce overall height",
       "confidence": 0.95,
       "source_clause_ids": [
-        "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e"
+        "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03"
       ],
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"
     },
     {
-      "canon_id": "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
-      "short_id": "node-43ac9db4",
+      "canon_id": "395c7bc1288d60bee73add79a9237c959d6e1a64c01111e1f508ddfa1edb75da",
+      "short_id": "node-395c7bc1",
       "type": "REQUIREMENT",
-      "statement": "the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields",
-      "raw_text": "The modal content area shall scroll internally only if absolutely necessary, preferring to fit all fields",
+      "statement": "the modal shall have no overflowy scrolling enabled all content must fit naturally",
+      "raw_text": "The modal shall have NO overflow-y scrolling enabled - all content must fit naturally",
       "confidence": 0.95,
       "source_clause_ids": [
-        "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712"
+        "4e44d6c6743dcd6aa1f3a6b6d42faaa484d2b1ae0015d3a250c5f69a10efe9a7"
       ],
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"
@@ -1738,6 +1738,84 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc",
+      "short_id": "node-954cf409",
+      "type": "REQUIREMENT",
+      "statement": "status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space",
+      "raw_text": "Status and Priority fields shall render side-by-side in a two-column grid layout to save vertical space",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88",
+      "short_id": "node-619c9474",
+      "type": "REQUIREMENT",
+      "statement": "assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space",
+      "raw_text": "Assignee and Deadline fields shall render side-by-side in a two-column grid layout to save vertical space",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3",
+      "short_id": "node-d9ecce2e",
+      "type": "REQUIREMENT",
+      "statement": "the description textarea shall use 2 rows maximum not 3 to reduce height",
+      "raw_text": "The Description textarea shall use 2 rows maximum (not 3) to reduce height",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3",
+      "short_id": "node-d9f092d7",
+      "type": "REQUIREMENT",
+      "statement": "form field margins shall be 12px not 16px between groups to reduce overall height",
+      "raw_text": "Form field margins shall be 12px (not 16px) between groups to reduce overall height",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc",
+      "short_id": "node-90ee4a23",
+      "type": "REQUIREMENT",
+      "statement": "form labels shall have minimal 2px marginbottom to reduce spacing",
+      "raw_text": "Form labels shall have minimal 2px margin-bottom to reduce spacing",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc",
+      "short_id": "node-fe95f87a",
+      "type": "REQUIREMENT",
+      "statement": "input padding shall be compact 6px vertical to reduce field heights",
+      "raw_text": "Input padding shall be compact (6px vertical) to reduce field heights",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc"
       ],
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"

@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:08:38.214Z",
+  "generated_at": "2026-04-08T22:12:09.940Z",
   "iu_count": 26,
   "coverage": {
-    "total_canon_nodes": 149,
-    "covered_canon_nodes": 149,
+    "total_canon_nodes": 155,
+    "covered_canon_nodes": 155,
     "orphan_canon_ids": []
   },
   "ius": [
@@ -1612,32 +1612,38 @@
       ]
     },
     {
-      "id": "138e400b0433d63f6baa9d2a31f90e878e136cbe757029331c01c85242b71c49",
-      "short_id": "IU-138e400b",
+      "id": "8bac1e0a38e63f28f4d47df3a76f5ea8dc3882f488a04c9efade562170ac0467",
+      "short_id": "IU-8bac1e0a",
       "name": "Modal Domain",
-      "kind": "module",
-      "risk_tier": "medium",
-      "description": "Implements modal functionality with 6 requirements",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements modal functionality with 12 requirements",
       "source_canon_ids": [
-        "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
-        "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+        "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
+        "395c7bc1288d60bee73add79a9237c959d6e1a64c01111e1f508ddfa1edb75da",
         "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
+        "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88",
         "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
-        "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
-        "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759"
+        "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc",
+        "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc",
+        "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3",
+        "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3",
+        "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2",
+        "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
+        "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc"
       ],
       "contract": {
-        "description": "Implements modal functionality with 6 requirements",
+        "description": "Implements modal functionality with 12 requirements",
         "inputs": [
-          "Configuration",
-          "Data inputs"
+          "input padding shall be compact 6px vertical to reduce field heights"
         ],
         "outputs": [
-          "Processed results",
-          "Side effects"
+          "status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space",
+          "assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space"
         ],
         "invariants": [
-          "the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields"
+          "Valid state transitions only",
+          "Type safety maintained"
         ]
       },
       "output_path": "src/generated/modal/index.ts",
@@ -1671,13 +1677,15 @@
           "typecheck",
           "lint",
           "boundary_validation",
-          "unit_tests"
+          "unit_tests",
+          "property_tests",
+          "threat_note"
         ]
       },
       "tags": [
         "modal",
-        "core",
-        "medium-risk"
+        "ui",
+        "high-risk"
       ]
     },
     {

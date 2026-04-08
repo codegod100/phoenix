@@ -50,11 +50,17 @@ Integration layer that wires all dashboard components together into a complete w
 ## Modal Requirements
 
 - REQUIREMENT: The create/edit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions (1080p)
-- REQUIREMENT: The modal shall have a maximum width of 700px to accommodate all form fields comfortably
+- REQUIREMENT: The modal shall have a maximum width of 800px to accommodate form fields comfortably
 - REQUIREMENT: The modal shall use 95% of viewport width on mobile devices
-- REQUIREMENT: The modal shall have 32px internal padding for proper spacing of form elements
-- REQUIREMENT: The modal content area shall scroll internally only if absolutely necessary, preferring to fit all fields
+- REQUIREMENT: The modal shall have 24px internal padding to reduce overall height
+- REQUIREMENT: The modal shall have NO overflow-y scrolling enabled - all content must fit naturally
 - REQUIREMENT: All form fields (title, description, status, priority, assignee, deadline, tags) shall be visible without scrolling on desktop
+- REQUIREMENT: Status and Priority fields shall render side-by-side in a two-column grid layout to save vertical space
+- REQUIREMENT: Assignee and Deadline fields shall render side-by-side in a two-column grid layout to save vertical space
+- REQUIREMENT: The Description textarea shall use 2 rows maximum (not 3) to reduce height
+- REQUIREMENT: Form field margins shall be 12px (not 16px) between groups to reduce overall height
+- REQUIREMENT: Form labels shall have minimal 2px margin-bottom to reduce spacing
+- REQUIREMENT: Input padding shall be compact (6px vertical) to reduce field heights
 
 ## Integration Invariants
 

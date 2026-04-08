@@ -219,11 +219,17 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 ## Modal Requirements
 
 - [node-5c212153] the createedit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions 1080p
-- [node-12b7bda3] the modal shall have a maximum width of 700px to accommodate all form fields comfortably
+- [node-de80ad85] the modal shall have a maximum width of 800px to accommodate form fields comfortably
 - [node-debbb758] the modal shall use 95 of viewport width on mobile devices
-- [node-8cb07889] the modal shall have 32px internal padding for proper spacing of form elements
-- [node-43ac9db4] the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields
+- [node-0fcd31ba] the modal shall have 24px internal padding to reduce overall height
+- [node-395c7bc1] the modal shall have no overflowy scrolling enabled all content must fit naturally
 - [node-7141acc2] all form fields title description status priority assignee deadline tags shall be visible without scrolling on desktop
+- [node-954cf409] status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space
+- [node-619c9474] assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space
+- [node-d9ecce2e] the description textarea shall use 2 rows maximum not 3 to reduce height
+- [node-d9f092d7] form field margins shall be 12px not 16px between groups to reduce overall height
+- [node-90ee4a23] form labels shall have minimal 2px marginbottom to reduce spacing
+- [node-fe95f87a] input padding shall be compact 6px vertical to reduce field heights
 
 ## Integration Invariants
 

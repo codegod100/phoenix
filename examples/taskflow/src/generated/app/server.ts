@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * @phoenix-deliverable: web-dashboard
- * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,a329ef6c591659d8,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,138e400b0433d63f,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T22:09:30.013Z
+ * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,a329ef6c591659d8,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,8bac1e0a38e63f28,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
+ * @phoenix-generated: 2026-04-08T22:12:10.805Z
  */
 
 import { createServer } from 'http';
@@ -268,16 +268,16 @@ const server = createServer((req, res) => {
       background: var(--surface0);
       border: 1px solid var(--surface1);
       border-radius: 12px;
-      padding: 32px;
+      padding: 24px;
       width: 95%;
-      max-width: 700px;
-      max-height: 95vh;
-      overflow-y: auto;
+      max-width: 800px;
+      max-height: 100vh;
     }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--subtext); }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; }
-    .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 2px; font-size: 12px; color: var(--subtext); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px 10px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
     .tag-input { display: flex; gap: 8px; flex-wrap: wrap; }
     .tag { background: var(--surface1); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
   </style>
@@ -323,33 +323,37 @@ const server = createServer((req, res) => {
       </div>
       <div class="form-group">
         <label>Description</label>
-        <textarea id="taskDesc" rows="3" placeholder="Description..."></textarea>
+        <textarea id="taskDesc" rows="2" placeholder="Description..."></textarea>
       </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="taskStatus">
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="review">Review</option>
-          <option value="done">Done</option>
-        </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="taskStatus">
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="taskPriority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Priority</label>
-        <select id="taskPriority">
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Assignee</label>
-        <input type="text" id="taskAssignee" placeholder="@username">
-      </div>
-      <div class="form-group">
-        <label>Deadline</label>
-        <input type="date" id="taskDeadline">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Assignee</label>
+          <input type="text" id="taskAssignee" placeholder="@username">
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="taskDeadline">
+        </div>
       </div>
       <div class="form-group">
         <label>Tags (comma separated)</label>
