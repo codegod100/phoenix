@@ -60,7 +60,7 @@ const PHASES = [
   },
   { 
     name: 'protolens', 
-    script: 'phoenix-panproto/panproto.js', 
+    script: 'panproto/panproto.js', 
     description: 'Compute migration plan (theory morphism)',
     args: ['migrate'],
   },
@@ -138,6 +138,81 @@ function updateState(projectRoot, phase, status) {
   writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
 }
 
+// === PROTOLENS PHASE ===
+
+/**
+ * Run panproto protolens phase to compute IU migration plan.
+ * Uses theory morphism to determine which implementations can be lifted vs regenerated.
+ */
+async function runProtolensPhase(projectRoot) {
+  const graphsDir = join(projectRoot, '.phoenix', 'graphs');
+  const manifestsDir = join(projectRoot, '.phoenix', 'manifests');
+  
+  const iusPath = join(graphsDir, 'ius.json');
+  const canonPath = join(graphsDir, 'canonical.json');
+  const manifestPath = join(manifestsDir, 'generated_manifest.json');
+  const migrationPath = join(graphsDir, 'iu-migration.json');
+  
+  // Check for previous state
+  const canonPrevPath = join(graphsDir, 'canonical-prev.json');
+  const iusPrevPath = join(graphsDir, 'ius-prev.json');
+  
+  // If no previous state, create a "regenerate all" migration plan
+  if (!existsSync(canonPrevPath) || !existsSync(iusPrevPath)) {
+    console.log('   📋 First run - no previous state to migrate from');
+    
+    if (existsSync(iusPath)) {
+      const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
+      const migration = {
+        timestamp: new Date().toISOString(),
+        first_run: true,
+        schema_changes: { added: [], removed: [], modified: [] },
+        ius: (ius.ius || []).map(iu => ({
+          new_iu_id: iu.id,
+          new_iu_name: iu.name,
+          old_iu_id: null,
+          strategy: 'regenerate',
+          reason: 'first_run_no_previous_state',
+        })),
+        summary: { migrate: 0, regenerate: ius.ius?.length || 0, unchanged: 0 },
+      };
+      
+      writeFileSync(migrationPath, JSON.stringify(migration, null, 2));
+      console.log(`   🎯 ${migration.summary.regenerate} IUs marked for fresh generation`);
+      return { success: true };
+    }
+    return { success: false, error: 'No IUs found' };
+  }
+  
+  // Run panproto migrate
+  const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
+  
+  return new Promise((resolve) => {
+    const child = spawn('node', [
+      panprotoPath,
+      'migrate',
+      '--old-canon', canonPrevPath,
+      '--new-canon', canonPath,
+      '--old-ius', iusPrevPath,
+      '--new-ius', iusPath,
+      '--manifest', manifestPath,
+      '--output', migrationPath,
+    ], {
+      stdio: 'inherit',
+      shell: false,
+    });
+    
+    child.on('close', (exitCode) => {
+      resolve({ success: exitCode === 0, exitCode: exitCode || 0 });
+    });
+    
+    child.on('error', (err) => {
+      console.error(`Error running protolens: ${err.message}`);
+      resolve({ success: false, exitCode: 1 });
+    });
+  });
+}
+
 // === PIPELINE EXECUTION ===
 
 async function runPipeline(projectRoot, options) {
@@ -167,7 +242,13 @@ async function runPipeline(projectRoot, options) {
     }
     console.log();
     
-    const result = await runPhase(phase.script, projectRoot);
+    // Special handling for protolens phase
+    let result;
+    if (phase.name === 'protolens') {
+      result = await runProtolensPhase(projectRoot);
+    } else {
+      result = await runPhase(phase.script, projectRoot, phase.args || []);
+    }
     
     results.push({
       phase: phase.name,
