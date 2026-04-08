@@ -1,8 +1,8 @@
-import { getOverdueTasks } from '../index.js';
+import { process } from '../index.js';
 
-describe('getOverdueTasks', () => {
+describe('process', () => {
   it('should be implemented', () => {
-    expect(typeof getOverdueTasks).toBe('function');
+    expect(typeof process).toBe('function');
   });
 });
 

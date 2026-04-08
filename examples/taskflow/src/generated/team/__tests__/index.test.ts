@@ -1,20 +1,8 @@
-import { assignTask, unassignTask, getUnassignedTasks } from '../index.js';
+import { process } from '../index.js';
 
-describe('assignTask', () => {
+describe('process', () => {
   it('should be implemented', () => {
-    expect(typeof assignTask).toBe('function');
-  });
-});
-
-describe('unassignTask', () => {
-  it('should be implemented', () => {
-    expect(typeof unassignTask).toBe('function');
-  });
-});
-
-describe('getUnassignedTasks', () => {
-  it('should be implemented', () => {
-    expect(typeof getUnassignedTasks).toBe('function');
+    expect(typeof process).toBe('function');
   });
 });
 

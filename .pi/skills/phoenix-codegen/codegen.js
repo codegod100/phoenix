@@ -429,10 +429,14 @@ const server = createServer((req, res) => {
   
   // Serve dashboard HTML
   if (path === '/' || path === '/dashboard') {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8'
+    });
     res.end(\`<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TaskFlow Dashboard</title>
   <style>
     :root {
@@ -521,10 +525,10 @@ const server = createServer((req, res) => {
       background: var(--surface0);
       border: 1px solid var(--surface1);
       border-radius: 12px;
-      padding: 24px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 90vh;
+      padding: 32px;
+      width: 95%;
+      max-width: 700px;
+      max-height: 95vh;
       overflow-y: auto;
     }
     .form-group { margin-bottom: 16px; }

@@ -5,6 +5,8 @@ Core dashboard page structure, theme, and layout.
 ## Page Structure
 
 - REQUIREMENT: The dashboard must render a complete HTML page with inline CSS and JavaScript
+- REQUIREMENT: The page must be encoded in UTF-8 with proper charset meta tag
+- REQUIREMENT: The page must include a viewport meta tag for responsive scaling
 - REQUIREMENT: The page must display a compact header with the title "TaskFlow" with minimal vertical padding ~32px height and larger text
 - REQUIREMENT: The dashboard must use CSS custom properties for all Catppuccin colors
 - REQUIREMENT: The layout must be responsive with single column on mobile and multi-column grid on desktop

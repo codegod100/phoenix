@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T19:50:59.741Z",
+  "generated_at": "2026-04-08T22:08:38.139Z",
   "bootstrap_state": "BOOTSTRAP_WARMING",
   "d_rate": 0,
   "d_rate_level": "TARGET",
   "d_rate_message": "D-rate 0.0% within target (≤5%)",
-  "node_count": 141,
+  "node_count": 149,
   "classification_stats": {
-    "A": 141,
+    "A": 149,
     "B": 0,
     "C": 0,
     "D": 0
@@ -698,6 +698,32 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953"
+      ],
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
+      "short_id": "node-30d7c5ac",
+      "type": "REQUIREMENT",
+      "statement": "the page must be encoded in utf8 with proper charset meta tag",
+      "raw_text": "The page must be encoded in UTF-8 with proper charset meta tag",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298"
+      ],
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
+      "short_id": "node-bf3ef52e",
+      "type": "REQUIREMENT",
+      "statement": "the page must include a viewport meta tag for responsive scaling",
+      "raw_text": "The page must include a viewport meta tag for responsive scaling",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f"
       ],
       "section": "Page Structure",
       "source_file": "spec/web-dashboard-base.md"
@@ -1636,6 +1662,84 @@
         "93833e524931c736679d585aa0c8d147102d55060646b3674918d050dac719ab"
       ],
       "section": "UI Coordination",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
+      "short_id": "node-5c212153",
+      "type": "REQUIREMENT",
+      "statement": "the createedit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions 1080p",
+      "raw_text": "The create/edit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions (1080p)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
+      "short_id": "node-12b7bda3",
+      "type": "REQUIREMENT",
+      "statement": "the modal shall have a maximum width of 700px to accommodate all form fields comfortably",
+      "raw_text": "The modal shall have a maximum width of 700px to accommodate all form fields comfortably",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
+      "short_id": "node-debbb758",
+      "type": "REQUIREMENT",
+      "statement": "the modal shall use 95 of viewport width on mobile devices",
+      "raw_text": "The modal shall use 95% of viewport width on mobile devices",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
+      "short_id": "node-8cb07889",
+      "type": "REQUIREMENT",
+      "statement": "the modal shall have 32px internal padding for proper spacing of form elements",
+      "raw_text": "The modal shall have 32px internal padding for proper spacing of form elements",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+      "short_id": "node-43ac9db4",
+      "type": "REQUIREMENT",
+      "statement": "the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields",
+      "raw_text": "The modal content area shall scroll internally only if absolutely necessary, preferring to fit all fields",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+      "short_id": "node-7141acc2",
+      "type": "REQUIREMENT",
+      "statement": "all form fields title description status priority assignee deadline tags shall be visible without scrolling on desktop",
+      "raw_text": "All form fields (title, description, status, priority, assignee, deadline, tags) shall be visible without scrolling on desktop",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8"
+      ],
+      "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"
     },
     {

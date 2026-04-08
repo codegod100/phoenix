@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T19:50:59.783Z",
-  "iu_count": 25,
+  "generated_at": "2026-04-08T22:08:38.214Z",
+  "iu_count": 26,
   "coverage": {
-    "total_canon_nodes": 141,
-    "covered_canon_nodes": 141,
+    "total_canon_nodes": 149,
+    "covered_canon_nodes": 149,
     "orphan_canon_ids": []
   },
   "ius": [
@@ -62,6 +62,11 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "computMetrics"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -131,14 +136,6 @@
           }
         }
       },
-      "boundary": {
-        "exports": [
-          "setPriority",
-          "filterByPriority",
-          "setStatus",
-          "filterByStatus"
-        ]
-      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -204,13 +201,6 @@
             "files": []
           }
         }
-      },
-      "boundary": {
-        "exports": [
-          "assignTask",
-          "unassignTask",
-          "getUnassignedTasks"
-        ]
       },
       "evidence_policy": {
         "required": [
@@ -291,23 +281,9 @@
       },
       "boundary": {
         "exports": [
-          "setPriority",
-          "filterByPriority",
-          "getCompletedTasks",
-          "setStatus",
-          "filterByStatus",
-          "archiveTask",
-          "getArchivedTasks",
+          "restorTasks",
           "list",
-          "a",
-          "addTags",
-          "removeTags",
-          "getActiveTasks",
-          "assignTask",
-          "unassignTask",
-          "getUnassignedTasks",
-          "setDeadline",
-          "getOverdueTasks"
+          "a"
         ]
       },
       "evidence_policy": {
@@ -382,11 +358,8 @@
       },
       "boundary": {
         "exports": [
-          "assignTask",
-          "unassignTask",
-          "getUnassignedTasks",
-          "isTasks",
-          "getTaskss"
+          "assignTasks",
+          "queryTasks"
         ]
       },
       "evidence_policy": {
@@ -457,16 +430,10 @@
       },
       "boundary": {
         "exports": [
-          "isTasks",
-          "getTaskss",
           "searchTasks",
-          "filterByStatus",
-          "assignTask",
-          "unassignTask",
-          "getUnassignedTasks",
-          "setPriority",
-          "filterByPriority",
-          "setStatus"
+          "search",
+          "filterTasks",
+          "filterByStatus"
         ]
       },
       "evidence_policy": {
@@ -538,8 +505,6 @@
       },
       "boundary": {
         "exports": [
-          "setDeadline",
-          "getOverdueTasks",
           "list",
           "a"
         ]
@@ -618,12 +583,6 @@
           }
         }
       },
-      "boundary": {
-        "exports": [
-          "setStatus",
-          "filterByStatus"
-        ]
-      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -701,13 +660,9 @@
       },
       "boundary": {
         "exports": [
-          "isTasks",
-          "getTaskss",
-          "getArchivedTasks",
-          "setStatus",
-          "filterByStatus",
-          "archiveTask",
-          "getCompletedTasks"
+          "viewTasks",
+          "queryTasks",
+          "archive"
         ]
       },
       "evidence_policy": {
@@ -727,20 +682,22 @@
       ]
     },
     {
-      "id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
-      "short_id": "IU-8f7a7e1c",
+      "id": "a329ef6c591659d8928aa2e24fe484ab3bf96a7c56b3f838165d35b8a7bba08a",
+      "short_id": "IU-a329ef6c",
       "name": "Page Domain",
       "kind": "web-ui",
       "risk_tier": "high",
-      "description": "Implements page functionality with 4 requirements",
+      "description": "Implements page functionality with 6 requirements",
       "source_canon_ids": [
+        "30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
         "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
         "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62",
+        "bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
         "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
         "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953"
       ],
       "contract": {
-        "description": "Implements page functionality with 4 requirements",
+        "description": "Implements page functionality with 6 requirements",
         "inputs": [
           "Configuration",
           "Data inputs"
@@ -850,14 +807,6 @@
             "files": []
           }
         }
-      },
-      "boundary": {
-        "exports": [
-          "setPriority",
-          "filterByPriority",
-          "setStatus",
-          "filterByStatus"
-        ]
       },
       "evidence_policy": {
         "required": [
@@ -1075,7 +1024,7 @@
       },
       "boundary": {
         "exports": [
-          "deleteTask"
+          "delete"
         ]
       },
       "evidence_policy": {
@@ -1207,14 +1156,6 @@
             "files": []
           }
         }
-      },
-      "boundary": {
-        "exports": [
-          "setDeadline",
-          "getOverdueTasks",
-          "setPriority",
-          "filterByPriority"
-        ]
       },
       "evidence_policy": {
         "required": [
@@ -1356,14 +1297,7 @@
       },
       "boundary": {
         "exports": [
-          "editTask",
-          "assignTask",
-          "unassignTask",
-          "getUnassignedTasks",
-          "setDeadline",
-          "getOverdueTasks",
-          "setPriority",
-          "filterByPriority"
+          "edit"
         ]
       },
       "evidence_policy": {
@@ -1512,12 +1446,6 @@
           }
         }
       },
-      "boundary": {
-        "exports": [
-          "setStatus",
-          "filterByStatus"
-        ]
-      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -1588,11 +1516,6 @@
             "files": []
           }
         }
-      },
-      "boundary": {
-        "exports": [
-          "getArchivedTasks"
-        ]
       },
       "evidence_policy": {
         "required": [
@@ -1672,14 +1595,6 @@
           }
         }
       },
-      "boundary": {
-        "exports": [
-          "getArchivedTasks",
-          "setStatus",
-          "filterByStatus",
-          "getActiveTasks"
-        ]
-      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -1694,6 +1609,75 @@
         "ui",
         "ui",
         "high-risk"
+      ]
+    },
+    {
+      "id": "138e400b0433d63f6baa9d2a31f90e878e136cbe757029331c01c85242b71c49",
+      "short_id": "IU-138e400b",
+      "name": "Modal Domain",
+      "kind": "module",
+      "risk_tier": "medium",
+      "description": "Implements modal functionality with 6 requirements",
+      "source_canon_ids": [
+        "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
+        "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+        "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
+        "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+        "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
+        "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759"
+      ],
+      "contract": {
+        "description": "Implements modal functionality with 6 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields"
+        ]
+      },
+      "output_path": "src/generated/modal/index.ts",
+      "test_path": "src/generated/modal/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests"
+        ]
+      },
+      "tags": [
+        "modal",
+        "core",
+        "medium-risk"
       ]
     },
     {
@@ -1816,11 +1800,6 @@
             "files": []
           }
         }
-      },
-      "boundary": {
-        "exports": [
-          "getOverdueTasks"
-        ]
       },
       "evidence_policy": {
         "required": [

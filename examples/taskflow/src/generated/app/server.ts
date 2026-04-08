@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * @phoenix-deliverable: web-dashboard
- * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,8f7a7e1c526a8fc3,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T22:03:52.852Z
+ * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,a329ef6c591659d8,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,138e400b0433d63f,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
+ * @phoenix-generated: 2026-04-08T22:09:30.013Z
  */
 
 import { createServer } from 'http';
-import { archiveTask, getArchivedTasks } from '../task/index.js';
+
 
 const tasks = new Map();
 let idCounter = 1;
@@ -172,10 +172,14 @@ const server = createServer((req, res) => {
   
   // Serve dashboard HTML
   if (path === '/' || path === '/dashboard') {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8'
+    });
     res.end(`<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TaskFlow Dashboard</title>
   <style>
     :root {
@@ -264,10 +268,10 @@ const server = createServer((req, res) => {
       background: var(--surface0);
       border: 1px solid var(--surface1);
       border-radius: 12px;
-      padding: 24px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 90vh;
+      padding: 32px;
+      width: 95%;
+      max-width: 700px;
+      max-height: 95vh;
       overflow-y: auto;
     }
     .form-group { margin-bottom: 16px; }
@@ -518,6 +522,6 @@ const server = createServer((req, res) => {
 
 server.listen(3000, () => {
   console.log('🚀 TaskFlow Dashboard');
-  console.log('   Operations:', ["process","setPriority","filterByPriority","setStatus","filterByStatus","assignTask","unassignTask","getUnassignedTasks","getCompletedTasks","archiveTask","getArchivedTasks","list","a","addTags","removeTags","getActiveTasks","setDeadline","getOverdueTasks","isTasks","getTaskss","searchTasks","bulk","deleteTask","editTask"]);
+  console.log('   Operations:', ["computMetrics","process","restorTasks","list","a","assignTasks","queryTasks","searchTasks","search","filterTasks","filterByStatus","viewTasks","archive","bulk","delete","edit"]);
   console.log('   http://localhost:3000');
 });

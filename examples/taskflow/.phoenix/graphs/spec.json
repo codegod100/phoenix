@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T19:50:59.700Z",
-  "clause_count": 146,
+  "generated_at": "2026-04-08T22:08:38.085Z",
+  "clause_count": 154,
   "file_count": 9,
   "files": [
     "spec/analytics.md",
@@ -621,15 +621,37 @@
       "context_semhash": "6e95ae0a22fdc84f2987e2d7e40438501b18b4a9815c52a944b46540d8da8ef3"
     },
     {
+      "id": "30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
+      "type": "REQUIREMENT",
+      "text": "the page must be encoded in utf8 with proper charset meta tag",
+      "raw_text": "The page must be encoded in UTF-8 with proper charset meta tag",
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 8,
+      "clause_semhash": "bd618c36a358aeb4755a6ccb416a8a7540ccde409f97935e306562d3a052ef81",
+      "context_semhash": "47a302c841324f27c9b004ca7b68742daae3d87cd7cddda1e40652ba7f7c409f"
+    },
+    {
+      "id": "bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
+      "type": "REQUIREMENT",
+      "text": "the page must include a viewport meta tag for responsive scaling",
+      "raw_text": "The page must include a viewport meta tag for responsive scaling",
+      "section": "Page Structure",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 9,
+      "clause_semhash": "253242b990a2cf8c233e8652adf4bbf9044afda6f7b8a053c55965e4a0d12689",
+      "context_semhash": "9dd76ab7fb30d484d56887738989c5b5bcb2d8d911cf4a21ca48534189dbaaa0"
+    },
+    {
       "id": "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
       "type": "REQUIREMENT",
       "text": "the page must display a compact header with the title taskflow with minimal vertical padding 32px height and larger text",
       "raw_text": "The page must display a compact header with the title \"TaskFlow\" with minimal vertical padding ~32px height and larger text",
       "section": "Page Structure",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 8,
+      "line": 10,
       "clause_semhash": "35883dfc0a933c1ac154782ebc19441e7b825cf9526cb0b0a388fd5d3bfedee6",
-      "context_semhash": "dda992028fb16bf054b6330ad9ba4e763c22f09e838923c6a4f09ac4b7ac72f4"
+      "context_semhash": "1d5cedb378a95b922e6d9414f948b3be7cfb0b3c32393b6c2725ee0d692d1a13"
     },
     {
       "id": "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
@@ -638,7 +660,7 @@
       "raw_text": "The dashboard must use CSS custom properties for all Catppuccin colors",
       "section": "Page Structure",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 9,
+      "line": 11,
       "clause_semhash": "77ffabbac59774d682eb69b1826702b98096f33312d642f26829d2c9e787b6d5",
       "context_semhash": "22099317236cb0d0e93729fde08fe709801506415822e0deaa86598e9eba90b6"
     },
@@ -649,7 +671,7 @@
       "raw_text": "The layout must be responsive with single column on mobile and multi-column grid on desktop",
       "section": "Page Structure",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 10,
+      "line": 12,
       "clause_semhash": "15fc931636028e594abab89a07d5673c082e15a716a8ed0e270b0591312e4531",
       "context_semhash": "e3f723d0e546ddd16315c03b15722a577a3387bd9972df969bd33eba8739d60c"
     },
@@ -660,7 +682,7 @@
       "raw_text": "The dashboard must use the Catppuccin Mocha color palette exclusively",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 14,
+      "line": 16,
       "clause_semhash": "d645c8ae6514ac41892273867d53e5be3b08d630fe26bcf09c63b83023201e03",
       "context_semhash": "da1fee5008ae2b95b7f31f3b350c1ff72caea36deb846b4339cedeb650d72af5"
     },
@@ -671,7 +693,7 @@
       "raw_text": "Background color is #1e1e2e (base), card background is #313244 (surface0)",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 15,
+      "line": 17,
       "clause_semhash": "59b2a1d74404c48cc20c987d65c653da2d79d1aaafc0e5be2f4916e700bc2f98",
       "context_semhash": "9280525ee206219671107524a9060c1473c7a30b6cb73099d1e088fefc1b19ca"
     },
@@ -682,7 +704,7 @@
       "raw_text": "Text color is #cdd6f4 (text), secondary text is #a6adc8 (subtext0)",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 16,
+      "line": 18,
       "clause_semhash": "ac722a1fbb47ab68fed96062742a483867f0dd338b35efad30a6ba4cf18919ce",
       "context_semhash": "65c063516d55cf2b1a81e5c83bce78651619f445176df8485c93499b5e7c48b8"
     },
@@ -693,7 +715,7 @@
       "raw_text": "Primary accent is #89b4fa (blue), success is #a6e3a1 (green), warning is #f9e2af (yellow), danger is #f38ba8 (red)",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 17,
+      "line": 19,
       "clause_semhash": "c67ce11fb5a8e935fa7c3c5a7eab63aaa34f0c718f356c23d106ead9a507e20d",
       "context_semhash": "b670db75edbae35a916b19a8acad4bd5c04b79d94e1587eb025b973a2db22d6e"
     },
@@ -704,7 +726,7 @@
       "raw_text": "Priority critical is #f38ba8 (red), high is #fab387 (peach), medium is #f9e2af (yellow), low is #a6e3a1 (green)",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 18,
+      "line": 20,
       "clause_semhash": "46a884653ea66fc7c14795cb4947c243ba79a902335dc68226c8fa28dc0d71a2",
       "context_semhash": "a980d400603ddd2c040ab318e8d37ec1e2e382c95e9541a680a42d58e2b21c44"
     },
@@ -715,7 +737,7 @@
       "raw_text": "Status open is #6c7086 (overlay0), in_progress is #89b4fa (blue), review is #cba6f7 (mauve), done is #a6e3a1 (green), archived is #585b70 (surface1 - dimmed)",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 19,
+      "line": 21,
       "clause_semhash": "59f7e4dfe866b7c9c266d83db130ddff831a2ed83fe473a8aee15c5bec983b85",
       "context_semhash": "1d1b9a4d6b2807c91103fcc8639ca4b52242db21a384331e818b2ffc8e12620a"
     },
@@ -726,7 +748,7 @@
       "raw_text": "The dashboard must use CSS custom properties for all Catppuccin colors",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 20,
+      "line": 22,
       "clause_semhash": "77ffabbac59774d682eb69b1826702b98096f33312d642f26829d2c9e787b6d5",
       "context_semhash": "58d3ea64632acbc3e46124a04432afb0af7448237020cbd9d666cf552639a083"
     },
@@ -737,7 +759,7 @@
       "raw_text": "No theme toggle or system preference detection - Catppuccin Mocha is the only theme",
       "section": "Catppuccin Theme",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 21,
+      "line": 23,
       "clause_semhash": "dd5e4a7b8d66b043d12086bc994728aa60ff1ff4befbbc1dba594733fe424365",
       "context_semhash": "803f6c7caab4cefbdb89d59d64fbe78fee95247b5f6dd993a5c9ed946bec03c4"
     },
@@ -748,7 +770,7 @@
       "raw_text": "The dashboard must use CSS custom properties for theming with --primary, --danger, --success, and --warning colors",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 25,
+      "line": 27,
       "clause_semhash": "15af93c0b51b774dcfb20fcc7961a9900fdcbea7e0d2b1db10cbfdc7057dd4aa",
       "context_semhash": "a1e057b33c42d9c2a667a74190f3b72c7a5281fb4729da36cf663abf98d954d4"
     },
@@ -759,7 +781,7 @@
       "raw_text": "Cards must have subtle shadows, rounded corners of 8px, and hover effects",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 26,
+      "line": 28,
       "clause_semhash": "4d99198bda6bca7e7bf74035a5090f5be7b7c8d8717ee7c8bd7ff32134599362",
       "context_semhash": "96f59eb7ca6172f34eb19c8e7c0259cb2c2a667be8cc6b6c46e900884915314c"
     },
@@ -770,7 +792,7 @@
       "raw_text": "The font must be system-ui with appropriate size hierarchy (h1: 1.5rem, body: 0.95rem)",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 27,
+      "line": 29,
       "clause_semhash": "8b2e4707ccaee061f56674e4fa718ddb4e0caf3719289e83477430da732fdab9",
       "context_semhash": "07396771c336dfa35af02625d3d7173c5b583c2fec8a5b0e4590c591822d6df9"
     },
@@ -781,7 +803,7 @@
       "raw_text": "Buttons must have rounded corners, appropriate padding, and cursor pointer",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 28,
+      "line": 30,
       "clause_semhash": "8afffd5ea9228a984ef6cd02f0d75c245e19703f1764ccd5e6e13f2e0454fa63",
       "context_semhash": "9e1b463c36304c81fd332d10367652afc1e84e0a5c618d7fc9583145f095ab59"
     },
@@ -792,7 +814,7 @@
       "raw_text": "Date inputs must use a custom date picker component styled with Catppuccin Mocha theme",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 29,
+      "line": 31,
       "clause_semhash": "a7f3968103956ce4764ad03d39b450b145f7a324f912d665d00831e76b6d2da6",
       "context_semhash": "5068a45bb0ba2bc58baa7c7ca1d40d7bffa015665140b0f877a6a37786da2923"
     },
@@ -803,7 +825,7 @@
       "raw_text": "The custom date picker must display a calendar grid with proper month and year navigation",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 30,
+      "line": 32,
       "clause_semhash": "7766d72960fbcbad313e726c09dac6384142eb2e9955a2a9fa347fabc073f199",
       "context_semhash": "67a58d047fa69615ddcc215d9015139b2eb83943e64641bb72e8be343db07c6f"
     },
@@ -814,7 +836,7 @@
       "raw_text": "Date picker days must have hover states and selected day highlighting using theme colors",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 31,
+      "line": 33,
       "clause_semhash": "c55b91939cd6098c070cc2b2311e299e6b66ecaa082b4119f582d52facc272be",
       "context_semhash": "81619b4ef6366de72a388d6058df280fccc86aad27ab4a7920a13fb7a950cdfe"
     },
@@ -825,7 +847,7 @@
       "raw_text": "Date picker popover must use --ctp-surface0 background with --ctp-surface1 borders",
       "section": "Base Styles",
       "source_file": "spec/web-dashboard-base.md",
-      "line": 32,
+      "line": 34,
       "clause_semhash": "ac2fb849490ffeceb0ad09d186f93cc788bbfbeff65be85565e4f2b96322f420",
       "context_semhash": "ef9d57401c289754bb871578be8d8bf59c1864c891e220779c7a3067d7ec6659"
     },
@@ -1424,15 +1446,81 @@
       "context_semhash": "8197bea8e9c56bf888fe32025b2631e57f4151579bf03ec59cf5ee10c083e7bd"
     },
     {
+      "id": "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
+      "type": "REQUIREMENT",
+      "text": "the createedit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions 1080p",
+      "raw_text": "The create/edit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions (1080p)",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 52,
+      "clause_semhash": "a7fdd53e4c5208bdc377560925dc6af25db591f7eb657d836a924a99bcef5ecf",
+      "context_semhash": "1431cf3e7bc8ee9395c451938a0452237b5599d3572a0658587bcb26c876526d"
+    },
+    {
+      "id": "12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
+      "type": "REQUIREMENT",
+      "text": "the modal shall have a maximum width of 700px to accommodate all form fields comfortably",
+      "raw_text": "The modal shall have a maximum width of 700px to accommodate all form fields comfortably",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 53,
+      "clause_semhash": "11836de88b7d0124f4460983f7b9c2004c8c927352fa9896ceb24137032bfdc0",
+      "context_semhash": "ebd07436bd9e567aa8f2dd13863d11cba06c235678dee50d4ccd84d48e114b87"
+    },
+    {
+      "id": "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
+      "type": "REQUIREMENT",
+      "text": "the modal shall use 95 of viewport width on mobile devices",
+      "raw_text": "The modal shall use 95% of viewport width on mobile devices",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 54,
+      "clause_semhash": "3f874814e1e9262e8ff55aa692c61deecaf84ab9d5ed29300ca46c0ac2354db6",
+      "context_semhash": "4a0db65c334e4daa2a9d5a9dd0b33b2089105797d5f6076e5bcfcc0fd3b44b62"
+    },
+    {
+      "id": "8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
+      "type": "REQUIREMENT",
+      "text": "the modal shall have 32px internal padding for proper spacing of form elements",
+      "raw_text": "The modal shall have 32px internal padding for proper spacing of form elements",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 55,
+      "clause_semhash": "49a005e2955466603a0a2ec8f7c90f56347a96a698a4fc0194c42128aed9240e",
+      "context_semhash": "50f544dcc9d680d22f8e903f155647971402e288766fa69ca750b967e5f4e520"
+    },
+    {
+      "id": "43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+      "type": "REQUIREMENT",
+      "text": "the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields",
+      "raw_text": "The modal content area shall scroll internally only if absolutely necessary, preferring to fit all fields",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 56,
+      "clause_semhash": "a8a58db04750010acc7aa8c10bef04f3bc5b5993ad63b582cd76d4bb6ecf82ff",
+      "context_semhash": "c76c3fa5381f1d8b1ebe72d4d98c9d09c11c601c6054679c87423601ee5ca00b"
+    },
+    {
+      "id": "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+      "type": "REQUIREMENT",
+      "text": "all form fields title description status priority assignee deadline tags shall be visible without scrolling on desktop",
+      "raw_text": "All form fields (title, description, status, priority, assignee, deadline, tags) shall be visible without scrolling on desktop",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 57,
+      "clause_semhash": "88c76d78b80de8f69e43bc5d811e64e9258676323c9fe7bb2977b7f7dd4ef73e",
+      "context_semhash": "86490cab6a6e33ab3609df7b11bdda82fb6ed56dc01d8965935b540ec14a4d4f"
+    },
+    {
       "id": "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
       "type": "CONSTRAINT",
       "text": "no component shall render without reading current localstorage state",
       "raw_text": "No component shall render without reading current localStorage state",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 52,
+      "line": 61,
       "clause_semhash": "910c68a0e816a14204015da1051e5d123caac7471b73deae651555255fb9d451",
-      "context_semhash": "660a94e4ec29b01c6a682e254bff6571cb59e4549756e1008ac6f20621993559"
+      "context_semhash": "f958aac1fbf418f68ac3a2d8ad9100332bbc9117c96ff32c217cf9a5401d8367"
     },
     {
       "id": "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
@@ -1441,7 +1529,7 @@
       "raw_text": "No state change shall occur without updating localStorage first",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 53,
+      "line": 62,
       "clause_semhash": "e022dfc71035fe776e4aecd6599e51a861e0c9c5383d770f8026577aa89d6720",
       "context_semhash": "d843b9bcd3b269115a32b041790a8f818f8dc00f860900aafcb7cae66407a54a"
     },
@@ -1452,7 +1540,7 @@
       "raw_text": "Re-renders shall be synchronous following state updates",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 54,
+      "line": 63,
       "clause_semhash": "86478d2498dac775989a9184b8c0c2e3cd8d01e7dacbf0487ed3b70e231f2a1e",
       "context_semhash": "911bb63bb54900272ef5b06a733fd6e555a760eba5cdb60d6f926d7cf13778a6"
     },
@@ -1463,7 +1551,7 @@
       "raw_text": "All event handlers shall be attached on initial page load",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 55,
+      "line": 64,
       "clause_semhash": "ba6a1806e1baae468e2f2326a3e4b6569da04a25ba9f2b000bc422e91da5f186",
       "context_semhash": "36cf1259e56a7f11a750eeab4fa1d0539db49a208e0c92264f2b47f4d768cd28"
     },
@@ -1474,7 +1562,7 @@
       "raw_text": "Components shall not have external dependencies with all data from localStorage",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 56,
+      "line": 65,
       "clause_semhash": "070b606f0d310b94e851ab965bf5ba877eeb8f3638b21d98e00e8661f30a7d5b",
       "context_semhash": "85d01e62d31d11b6f0ebf665ab9073402c978f79e5507a17860eb3dd6d68029c"
     },

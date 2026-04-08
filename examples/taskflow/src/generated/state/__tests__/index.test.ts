@@ -1,8 +1,8 @@
-import { getArchivedTasks } from '../index.js';
+import { process } from '../index.js';
 
-describe('getArchivedTasks', () => {
+describe('process', () => {
   it('should be implemented', () => {
-    expect(typeof getArchivedTasks).toBe('function');
+    expect(typeof process).toBe('function');
   });
 });
 

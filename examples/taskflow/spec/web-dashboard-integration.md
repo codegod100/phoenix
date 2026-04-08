@@ -47,6 +47,15 @@ Integration layer that wires all dashboard components together into a complete w
 - REQUIREMENT: Modal confirm action shall execute callback then close modal
 - REQUIREMENT: Escape key shall cancel modal and click outside modal shall cancel
 
+## Modal Requirements
+
+- REQUIREMENT: The create/edit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions (1080p)
+- REQUIREMENT: The modal shall have a maximum width of 700px to accommodate all form fields comfortably
+- REQUIREMENT: The modal shall use 95% of viewport width on mobile devices
+- REQUIREMENT: The modal shall have 32px internal padding for proper spacing of form elements
+- REQUIREMENT: The modal content area shall scroll internally only if absolutely necessary, preferring to fit all fields
+- REQUIREMENT: All form fields (title, description, status, priority, assignee, deadline, tags) shall be visible without scrolling on desktop
+
 ## Integration Invariants
 
 - CONSTRAINT: No component shall render without reading current localStorage state

@@ -1,8 +1,8 @@
-import { process } from '../index.js';
+import { computMetrics } from '../index.js';
 
-describe('process', () => {
+describe('computMetrics', () => {
   it('should be implemented', () => {
-    expect(typeof process).toBe('function');
+    expect(typeof computMetrics).toBe('function');
   });
 });
 

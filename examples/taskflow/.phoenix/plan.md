@@ -285,15 +285,17 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-8f7a7e1c: Page Domain (HIGH)
+## IU-a329ef6c: Page Domain (HIGH)
 
-**Description:** Implements page functionality with 4 requirements
+**Description:** Implements page functionality with 6 requirements
 
-**Risk Tier:** high (4 requirements)
+**Risk Tier:** high (6 requirements)
 
 **Canonical Requirements:**
+- 30d7c5acea64...
 - 3b90fe0067a3...
 - aab62f839329...
+- bf3ef52e9fb0...
 - d36869b76eb6...
 - e5812b6a5847...
 
@@ -690,6 +692,37 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
+## IU-138e400b: Modal Domain (MEDIUM)
+
+**Description:** Implements modal functionality with 6 requirements
+
+**Risk Tier:** medium (6 requirements)
+
+**Canonical Requirements:**
+- 12b7bda30f30...
+- 43ac9db4bba4...
+- 5c212153a1ff...
+- 7141acc2b75a...
+- 8cb07889225c...
+- debbb7585559...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields
+
+**Output Files:**
+- `src/generated/modal/index.ts`
+- `src/generated/modal/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+
+---
+
 ## IU-379356eb: Integration Domain (HIGH)
 
 **Description:** Implements integration functionality with 5 requirements
@@ -778,6 +811,6 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ## Coverage Summary
 
-- Total canonical nodes: 141
-- Covered: 141
+- Total canonical nodes: 149
+- Covered: 149
 - Orphans: 0

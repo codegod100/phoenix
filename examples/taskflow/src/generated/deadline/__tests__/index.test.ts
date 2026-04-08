@@ -1,16 +1,4 @@
-import { setDeadline, getOverdueTasks, list, a } from '../index.js';
-
-describe('setDeadline', () => {
-  it('should be implemented', () => {
-    expect(typeof setDeadline).toBe('function');
-  });
-});
-
-describe('getOverdueTasks', () => {
-  it('should be implemented', () => {
-    expect(typeof getOverdueTasks).toBe('function');
-  });
-});
+import { list, a } from '../index.js';
 
 describe('list', () => {
   it('should be implemented', () => {

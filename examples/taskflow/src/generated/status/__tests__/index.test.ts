@@ -1,14 +1,8 @@
-import { setStatus, filterByStatus } from '../index.js';
+import { process } from '../index.js';
 
-describe('setStatus', () => {
+describe('process', () => {
   it('should be implemented', () => {
-    expect(typeof setStatus).toBe('function');
-  });
-});
-
-describe('filterByStatus', () => {
-  it('should be implemented', () => {
-    expect(typeof filterByStatus).toBe('function');
+    expect(typeof process).toBe('function');
   });
 });
 

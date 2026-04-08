@@ -1,6 +1,6 @@
 {
   "type": "web-dashboard",
-  "generatedAt": "2026-04-08T22:03:52.853Z",
+  "generatedAt": "2026-04-08T22:09:30.014Z",
   "theory": {
     "domains": [
       {
@@ -40,7 +40,7 @@
         "name": "Archive Domain"
       },
       {
-        "id": "8f7a7e1c526a8fc3",
+        "id": "a329ef6c591659d8",
         "name": "Page Domain"
       },
       {
@@ -92,6 +92,10 @@
         "name": "UI Domain"
       },
       {
+        "id": "138e400b0433d63f",
+        "name": "Modal Domain"
+      },
+      {
         "id": "379356eb108fd53b",
         "name": "Integration Domain"
       },
@@ -105,32 +109,24 @@
       }
     ],
     "colimit": {
-      "operationCount": 24,
+      "operationCount": 16,
       "operations": [
+        "computMetrics",
         "process",
-        "setPriority",
-        "filterByPriority",
-        "setStatus",
-        "filterByStatus",
-        "assignTask",
-        "unassignTask",
-        "getUnassignedTasks",
-        "getCompletedTasks",
-        "archiveTask",
-        "getArchivedTasks",
+        "restorTasks",
         "list",
         "a",
-        "addTags",
-        "removeTags",
-        "getActiveTasks",
-        "setDeadline",
-        "getOverdueTasks",
-        "isTasks",
-        "getTaskss",
+        "assignTasks",
+        "queryTasks",
         "searchTasks",
+        "search",
+        "filterTasks",
+        "filterByStatus",
+        "viewTasks",
+        "archive",
         "bulk",
-        "deleteTask",
-        "editTask"
+        "delete",
+        "edit"
       ]
     }
   },

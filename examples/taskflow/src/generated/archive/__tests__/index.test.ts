@@ -1,44 +1,20 @@
-import { isTasks, getTaskss, getArchivedTasks, setStatus, filterByStatus, archiveTask, getCompletedTasks } from '../index.js';
+import { viewTasks, queryTasks, archive } from '../index.js';
 
-describe('isTasks', () => {
+describe('viewTasks', () => {
   it('should be implemented', () => {
-    expect(typeof isTasks).toBe('function');
+    expect(typeof viewTasks).toBe('function');
   });
 });
 
-describe('getTaskss', () => {
+describe('queryTasks', () => {
   it('should be implemented', () => {
-    expect(typeof getTaskss).toBe('function');
+    expect(typeof queryTasks).toBe('function');
   });
 });
 
-describe('getArchivedTasks', () => {
+describe('archive', () => {
   it('should be implemented', () => {
-    expect(typeof getArchivedTasks).toBe('function');
-  });
-});
-
-describe('setStatus', () => {
-  it('should be implemented', () => {
-    expect(typeof setStatus).toBe('function');
-  });
-});
-
-describe('filterByStatus', () => {
-  it('should be implemented', () => {
-    expect(typeof filterByStatus).toBe('function');
-  });
-});
-
-describe('archiveTask', () => {
-  it('should be implemented', () => {
-    expect(typeof archiveTask).toBe('function');
-  });
-});
-
-describe('getCompletedTasks', () => {
-  it('should be implemented', () => {
-    expect(typeof getCompletedTasks).toBe('function');
+    expect(typeof archive).toBe('function');
   });
 });
 

@@ -1,8 +1,8 @@
-import { deleteTask } from '../index.js';
+import { delete } from '../index.js';
 
-describe('deleteTask', () => {
+describe('delete', () => {
   it('should be implemented', () => {
-    expect(typeof deleteTask).toBe('function');
+    expect(typeof delete).toBe('function');
   });
 });
 

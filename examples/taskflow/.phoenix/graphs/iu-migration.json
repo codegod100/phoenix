@@ -1,9 +1,25 @@
 {
-  "timestamp": "2026-04-08T10:34:20.439Z",
+  "timestamp": "2026-04-08T22:08:38.414Z",
   "schema_changes": {
     "added": [
+      "CanonId:12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
+      "CanonId:30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
+      "CanonId:43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+      "CanonId:5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
       "CanonId:6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
-      "ClauseId:6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2"
+      "CanonId:7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+      "CanonId:8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
+      "CanonId:bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
+      "CanonId:debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
+      "ClauseId:12b7bda30f30687d30d5948d23472443a01285d379e8b3417633639166ca9f6f",
+      "ClauseId:30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
+      "ClauseId:43ac9db4bba4a2d43263bb8df568a327e842009a1ffc4cb2b62007a90e5fd712",
+      "ClauseId:5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
+      "ClauseId:6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
+      "ClauseId:7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+      "ClauseId:8cb07889225c2683a90a51cfdeb17ba1edf00219ea76306f854fa98ade721a7e",
+      "ClauseId:bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
+      "ClauseId:debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759"
     ],
     "removed": [],
     "modified": []
@@ -118,13 +134,13 @@
       "new_output_path": null
     },
     {
-      "new_iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+      "new_iu_id": "a329ef6c591659d8928aa2e24fe484ab3bf96a7c56b3f838165d35b8a7bba08a",
       "new_iu_name": "Page Domain",
       "old_iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
       "old_iu_name": "Page Domain",
-      "overlap_ratio": 1,
+      "overlap_ratio": 0.6666666666666666,
       "strategy": "migrate",
-      "reason": "high_overlap_100%",
+      "reason": "partial_overlap_67%_review_needed",
       "old_impl_path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/page/index.ts",
       "old_test_path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/page/__tests__/index.test.ts",
       "new_output_path": null
@@ -274,6 +290,18 @@
       "new_output_path": null
     },
     {
+      "new_iu_id": "138e400b0433d63f6baa9d2a31f90e878e136cbe757029331c01c85242b71c49",
+      "new_iu_name": "Modal Domain",
+      "old_iu_id": null,
+      "old_iu_name": null,
+      "overlap_ratio": 0,
+      "strategy": "regenerate",
+      "reason": "no_matching_old_iu",
+      "old_impl_path": null,
+      "old_test_path": null,
+      "new_output_path": null
+    },
+    {
       "new_iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
       "new_iu_name": "Integration Domain",
       "old_iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
@@ -312,7 +340,7 @@
   ],
   "summary": {
     "migrate": 25,
-    "regenerate": 0,
+    "regenerate": 1,
     "unchanged": 0
   }
 }

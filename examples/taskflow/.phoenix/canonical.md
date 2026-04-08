@@ -99,6 +99,8 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 ## Page Structure
 
 - [node-e5812b6a] the dashboard must render a complete html page with inline css and javascript
+- [node-30d7c5ac] the page must be encoded in utf8 with proper charset meta tag
+- [node-bf3ef52e] the page must include a viewport meta tag for responsive scaling
 - [node-d36869b7] the page must display a compact header with the title taskflow with minimal vertical padding 32px height and larger text
 - [node-3b90fe00] the dashboard must use css custom properties for all catppuccin colors
 - [node-aab62f83] the layout must be responsive with single column on mobile and multicolumn grid on desktop
@@ -213,6 +215,15 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-a8da650f] confirmation modal shall overlay entire page with semitransparent background
 - [node-7ad31f6c] modal confirm action shall execute callback then close modal
 - [node-93833e52] escape key shall cancel modal and click outside modal shall cancel
+
+## Modal Requirements
+
+- [node-5c212153] the createedit modal dialog must fit within the viewport without requiring vertical scroll on standard desktop resolutions 1080p
+- [node-12b7bda3] the modal shall have a maximum width of 700px to accommodate all form fields comfortably
+- [node-debbb758] the modal shall use 95 of viewport width on mobile devices
+- [node-8cb07889] the modal shall have 32px internal padding for proper spacing of form elements
+- [node-43ac9db4] the modal content area shall scroll internally only if absolutely necessary preferring to fit all fields
+- [node-7141acc2] all form fields title description status priority assignee deadline tags shall be visible without scrolling on desktop
 
 ## Integration Invariants
 
