@@ -2,91 +2,74 @@
 /**
  * @phoenix-deliverable: web-dashboard
  * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,8f7a7e1c526a8fc3,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T20:13:28.060Z
- * 
- * THIS FILE IS GENERATED - imports and uses IU implementations
+ * @phoenix-generated: 2026-04-08T20:58:38.056Z
  */
 
 import { createServer } from 'http';
-import { process } from './metrics/index.js';
-import { setPriority, filterByPriority, setStatus } from './priority/index.js';
-import { assignTask, unassignTask, getUnassignedTasks } from './team/index.js';
-import { setPriority, filterByPriority, getCompletedTasks } from './task/index.js';
-import { assignTask, unassignTask, getUnassignedTasks } from './assignment/index.js';
-import { isTasks, getTaskss, searchTasks } from './search/index.js';
-import { setDeadline, getOverdueTasks, list } from './deadline/index.js';
-import { setStatus, filterByStatus } from './status/index.js';
-import { isTasks, getTaskss, getArchivedTasks } from './archive/index.js';
-import { process } from './page/index.js';
-import { setPriority, filterByPriority, setStatus } from './catppuccin/index.js';
-import { process } from './base/index.js';
-import { bulk, a } from './bulk/index.js';
-import { deleteTask } from './delete/index.js';
-import { process } from './confirmation/index.js';
-import { setDeadline, getOverdueTasks, setPriority } from './create/index.js';
-import { process } from './inline/index.js';
-import { editTask, assignTask, unassignTask } from './edit/index.js';
-import { process } from './component/index.js';
-import { setStatus, filterByStatus } from './event/index.js';
-import { getArchivedTasks } from './state/index.js';
-import { getArchivedTasks, setStatus, filterByStatus } from './ui/index.js';
-import { process } from './integration/index.js';
-import { getOverdueTasks } from './overdue/index.js';
-import { process } from './data/index.js';
+import { archiveTask, getArchivedTasks } from '../task/index.js';
 
-// Data store (in-memory, replace with DB in production)
 const tasks = new Map();
 
-// Archive endpoint - uses Archive Domain IU
-if (path === '/api/tasks/archived' && req.method === 'GET') {
-  // Get all tasks and filter archived
-  const all = Array.from(tasks.values());
-  const archived = all.filter(t => t.status === 'archived');
-  res.end(JSON.stringify(archived));
-  return;
-}
-
-// Archive action - uses archiveTask from Archive Domain
-if (path.match(/^/api/tasks/([^/]+)/archive$/) && req.method === 'POST') {
-  const id = path.match(/^/api/tasks/([^/]+)/archive$/)[1];
-  const task = tasks.get(id);
-  if (task) {
-    task.status = 'archived';
-    // Call IU function if available
-    if (typeof archiveTask === 'function') {
-      archiveTask({ id, name: task.title });
-    }
-    res.end(JSON.stringify(task));
-  } else {
-    res.writeHead(404);
-    res.end('{}');
+const server = createServer((req, res) => {
+  const path = req.url || '/';
+  
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
   }
-  return;
-}
-
-// Serve dashboard HTML
-if (path === '/' || path === '/dashboard') {
-  res.writeHead(200, { 'Content-Type': 'text/html' });
-  res.end(`<!DOCTYPE html>
+  
+  // Get all tasks
+  if (path === '/api/tasks' && req.method === 'GET') {
+    const all = Array.from(tasks.values());
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(all));
+    return;
+  }
+  
+  // Get archived tasks
+  if (path === '/api/tasks/archived' && req.method === 'GET') {
+    const all = Array.from(tasks.values());
+    const archived = all.filter(t => t.status === 'archived');
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(archived));
+    return;
+  }
+  
+  // Archive a task
+  const archiveMatch = path.match(/^\/api\/tasks\/([^\/]+)\/archive$/);
+  if (archiveMatch && req.method === 'POST') {
+    const id = archiveMatch[1];
+    const task = tasks.get(id);
+    if (task) {
+      task.status = 'archived';
+      if (typeof archiveTask === 'function') {
+        archiveTask({ id, name: task.title });
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(task));
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Task not found' }));
+    }
+    return;
+  }
+  
+  // Serve dashboard
+  if (path === '/' || path === '/dashboard') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`<!DOCTYPE html>
 <html>
 <head>
   <title>TaskFlow Dashboard</title>
   <style>
-    /* Catppuccin Mocha theme */
-    :root {
-      --base: #1e1e2e;
-      --surface0: #313244;
-      --text: #cdd6f4;
-      --blue: #89b4fa;
-    }
-    body {
-      font-family: system-ui, sans-serif;
-      background: var(--base);
-      color: var(--text);
-      margin: 0;
-      padding: 24px;
-    }
-    /* Archive tab styling */
+    :root { --base: #1e1e2e; --surface0: #313244; --text: #cdd6f4; --blue: #89b4fa; }
+    body { font-family: system-ui, sans-serif; background: var(--base); color: var(--text); margin: 0; padding: 24px; }
     .tab-archived { opacity: 0.7; }
     .badge-archived { background: var(--surface0); text-decoration: line-through; }
   </style>
@@ -105,7 +88,6 @@ if (path === '/' || path === '/dashboard') {
     let currentTab = 'active';
     
     async function loadTasks() {
-      // Load both active and archived
       const [active, archived] = await Promise.all([
         fetch('/api/tasks').then(r => r.json()),
         fetch('/api/tasks/archived').then(r => r.json())
@@ -127,26 +109,26 @@ if (path === '/' || path === '/dashboard') {
         currentTab === 'active' ? t.status !== 'archived' : t.status === 'archived'
       );
       
-      container.innerHTML = filtered.map(t => `
-        <div class="task-card ${t.status === 'archived' ? 'tab-archived' : ''}">
-          <span class="badge-${t.status}">${t.status}</span>
-          <h3>${t.title}</h3>
-          <p>${t.description || ''}</p>
-          ${t.status !== 'archived' 
-            ? `<button onclick="archiveTask('${t.id}')">Archive</button>`
-            : `<button onclick="restoreTask('${t.id}')">Restore</button>`
-          }
-        </div>
-      `).join('');
+      container.innerHTML = filtered.map(t => 
+        '<div class="task-card ' + (t.status === 'archived' ? 'tab-archived' : '') + '">' +
+          '<span class="badge-' + t.status + '">' + t.status + '</span>' +
+          '<h3>' + t.title + '</h3>' +
+          '<p>' + (t.description || '') + '</p>' +
+          (t.status !== 'archived' 
+            ? '<button onclick="archiveTask(' + JSON.stringify(t.id) + ')">Archive</button>'
+            : '<button onclick="restoreTask(' + JSON.stringify(t.id) + ')">Restore</button>'
+          ) +
+        '</div>'
+      ).join('');
     }
     
     async function archiveTask(id) {
-      await fetch(`/api/tasks/${id}/archive`, { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/archive', { method: 'POST' });
       await loadTasks();
     }
     
     async function restoreTask(id) {
-      await fetch(`/api/tasks/${id}/restore`, { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/restore', { method: 'POST' });
       await loadTasks();
     }
     
@@ -154,10 +136,14 @@ if (path === '/' || path === '/dashboard') {
   </script>
 </body>
 </html>`);
-  return;
-}
+    return;
+  }
+  
+  res.writeHead(404);
+  res.end('Not found');
+});
 
 server.listen(3000, () => {
   console.log('🚀 TaskFlow Dashboard');
-  console.log('   Using IU implementations:', ["process","setPriority","filterByPriority","setStatus","filterByStatus","assignTask","unassignTask","getUnassignedTasks","getCompletedTasks","archiveTask","getArchivedTasks","list","a","addTags","removeTags","getActiveTasks","setDeadline","getOverdueTasks","isTasks","getTaskss","searchTasks","bulk","deleteTask","editTask"]);
+  console.log('   Using:', ["process","setPriority","filterByPriority","setStatus","filterByStatus","assignTask","unassignTask","getUnassignedTasks","getCompletedTasks","archiveTask","getArchivedTasks","list","a","addTags","removeTags","getActiveTasks","setDeadline","getOverdueTasks","isTasks","getTaskss","searchTasks","bulk","deleteTask","editTask"]);
 });

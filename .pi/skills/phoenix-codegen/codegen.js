@@ -1,18 +1,10 @@
 #!/usr/bin/env node
 /**
- * Phoenix Unified Generator
+ * Phoenix Code Generator
  * 
- * Generates working deliverables from Implementation Units via categorical colimit:
+ * Generates IU implementations AND deliverable as single pipeline phase.
  * 
- *   Spec → Canon → IUs → Colimit → Working Deliverable
- * 
- * The deliverable ACTUALLY USES the IU implementations (imports and calls them),
- * not just lists operations.
- * 
- * No separate "RED stub" phase - the deliverable is generated with working
- * (or scaffolded) implementations that integrate all IUs.
- * 
- * Usage: node unified-generator.js <project-path> [options]
+ * Usage: node codegen.js <project-path>
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
@@ -21,47 +13,34 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// ============================================================================
-// MAIN
-// ============================================================================
-
 async function main() {
   const projectPath = process.argv[2] || '.';
-  const explicitType = getArg('--type');
   
-  console.log(`🚀 Phoenix Unified Generator`);
+  console.log(`🚀 Phoenix Code Generator`);
   console.log(`   Project: ${projectPath}`);
   
-  // Load IUs and canonical data
   const ctx = await loadContext(projectPath);
-  
-  // Load migration plan (if exists)
   const migrationPlan = loadMigrationPlan(projectPath);
   
-  // Infer deliverable type
-  ctx.type = explicitType || inferDeliverableType(ctx);
+  ctx.type = inferDeliverableType(ctx);
   console.log(`   Type: ${ctx.type}`);
   console.log(`   IUs: ${ctx.ius.length} domains`);
   if (migrationPlan) {
-    console.log(`   Migration: ${migrationPlan.summary.regenerate} regenerate, ${migrationPlan.summary.migrate} migrate, ${migrationPlan.summary.unchanged} unchanged`);
+    console.log(`   Migration: ${migrationPlan.summary?.regenerate || 0} regenerate, ${migrationPlan.summary?.migrate || 0} migrate, ${migrationPlan.summary?.unchanged || 0} unchanged`);
   }
   console.log();
   
-  // Generate IU implementations (respecting migration plan)
   console.log(`Step 1: Generating IU implementations...`);
   await generateIUs(ctx, migrationPlan, projectPath);
   console.log(`   ✓ IUs generated`);
   console.log();
   
-  // Compute colimit via WASM (identifies shared operations across IUs)
   console.log(`Step 2: Computing colimit...`);
   const panproto = await initializePanproto();
   const colimitOps = await computeColimit(ctx, panproto);
   console.log(`   ✓ Colimit: ${colimitOps.length} operations`);
-  console.log(`   ${colimitOps.map(o => o.name).join(', ')}`);
   console.log();
   
-  // Generate deliverable that USES the IU implementations
   console.log(`Step 3: Generating deliverable...`);
   const outputs = await generateDeliverable(ctx, colimitOps);
   
@@ -72,40 +51,87 @@ async function main() {
     console.log(`   ✓ ${filePath}`);
   }
   
-  // Write traceability
   await writeTraceability(ctx, colimitOps, outputs);
   
   console.log();
-  console.log(`✅ Deliverable generated: ${ctx.outputDir}`);
-  console.log(`   Theory: colimit(${ctx.ius.map(iu => iu.name).join(', ')})`);
-  console.log(`   Operations: ${colimitOps.length}`);
-  console.log(`   Files: ${Object.keys(outputs).length}`);
-  console.log();
-  console.log(`The deliverable imports and uses IU implementations.`);
-  console.log(`Run: cd ${projectPath} && npm start`);
+  console.log(`✅ Code generated: ${ctx.outputDir}`);
 }
 
-// ============================================================================
-// MIGRATION PLAN
-// ============================================================================
+async function loadContext(projectPath) {
+  const graphsDir = join(projectPath, '.phoenix', 'graphs');
+  const iusData = JSON.parse(readFileSync(join(graphsDir, 'ius.json'), 'utf8'));
+  const canonicalData = JSON.parse(readFileSync(join(graphsDir, 'canonical.json'), 'utf8'));
+  
+  return {
+    type: '',
+    projectPath,
+    outputDir: join(projectPath, 'src', 'generated', 'app'),
+    ius: iusData.ius || [],
+    canonical: canonicalData,
+  };
+}
 
 function loadMigrationPlan(projectPath) {
   const migrationPath = join(projectPath, '.phoenix', 'graphs', 'iu-migration.json');
-  if (!existsSync(migrationPath)) {
-    return null;
-  }
+  if (!existsSync(migrationPath)) return null;
   return JSON.parse(readFileSync(migrationPath, 'utf8'));
 }
 
-// ============================================================================
-// IU GENERATION
-// ============================================================================
+async function initializePanproto() {
+  const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
+  if (!existsSync(panprotoPath)) {
+    console.error(`❌ Panproto not found: ${panprotoPath}`);
+    process.exit(1);
+  }
+  const panproto = await import(panprotoPath);
+  await new Promise(r => setTimeout(r, 500));
+  return panproto;
+}
+
+async function computeColimit(ctx, panproto) {
+  const { TheoryBuilder, colimit } = panproto;
+  const pan = await panproto.getPanproto();
+  
+  const domainHandles = [];
+  const domainOps = [];
+  
+  for (const iu of ctx.ius) {
+    const builder = new TheoryBuilder(iu.name.replace(/\s+/g, ''));
+    for (const export_ of iu.boundary?.exports || ['process']) {
+      builder.op(export_, [['input', 'any']], 'any');
+      domainOps.push({ name: export_, iu: iu.name });
+    }
+    const handle = builder.build(pan._wasm || pan);
+    domainHandles.push(handle);
+  }
+  
+  const baseBuilder = new TheoryBuilder('WebDashboardBase');
+  baseBuilder.op('render', [['props', 'any'], ['state', 'any']], 'Component');
+  baseBuilder.op('handleEvent', [['event', 'any'], ['state', 'any']], 'State');
+  const baseHandle = baseBuilder.build(pan._wasm || pan);
+  
+  let currentColimit = domainHandles[0];
+  for (let i = 1; i < domainHandles.length; i++) {
+    currentColimit = colimit(currentColimit, domainHandles[i], baseHandle, pan._wasm || pan);
+  }
+  
+  for (const h of domainHandles) h[Symbol.dispose]();
+  baseHandle[Symbol.dispose]();
+  currentColimit[Symbol.dispose]();
+  pan[Symbol.dispose]();
+  
+  const opMap = new Map();
+  for (const op of domainOps) {
+    if (!opMap.has(op.name)) opMap.set(op.name, op);
+  }
+  
+  return Array.from(opMap.values());
+}
 
 async function generateIUs(ctx, migrationPlan, projectPath) {
   const generatedDir = join(projectPath, 'src', 'generated');
   
   for (const iu of ctx.ius) {
-    // Determine strategy from migration plan
     let strategy = 'regenerate';
     let oldImpl = null;
     
@@ -122,37 +148,24 @@ async function generateIUs(ctx, migrationPlan, projectPath) {
     mkdirSync(iuDir, { recursive: true });
     
     if (strategy === 'migrate' && oldImpl && existsSync(oldImpl)) {
-      // Lift old implementation
       const oldCode = readFileSync(oldImpl, 'utf8');
-      const liftedCode = liftImplementation(oldCode, iu);
+      const liftedCode = oldCode.replace(
+        /\/\/ @phoenix-iu: [a-f0-9]+/,
+        `// @phoenix-iu: ${iu.id}\n// @phoenix-migrated: true`
+      );
       writeFileSync(join(iuDir, 'index.ts'), liftedCode);
-      console.log(`   ✓ ${iu.name}: migrated (lifted old implementation)`);
+      console.log(`   ✓ ${iu.name}: migrated`);
     } else {
-      // Generate fresh
       const freshCode = generateFreshIU(iu, ctx.canonical);
       writeFileSync(join(iuDir, 'index.ts'), freshCode);
-      if (strategy === 'unchanged') {
-        console.log(`   ✓ ${iu.name}: unchanged (skipped)`);
-      } else {
-        console.log(`   ✓ ${iu.name}: generated fresh`);
-      }
+      console.log(`   ✓ ${iu.name}: ${strategy === 'unchanged' ? 'unchanged' : 'generated'}`);
     }
     
-    // Generate tests for the IU
     const testCode = generateIUTests(iu);
     const testDir = join(iuDir, '__tests__');
     mkdirSync(testDir, { recursive: true });
     writeFileSync(join(testDir, 'index.test.ts'), testCode);
   }
-}
-
-function liftImplementation(oldCode, iu) {
-  // Update the @phoenix-iu comment to mark as migrated
-  const newHash = iu.id;
-  return oldCode.replace(
-    /\/\/ @phoenix-iu: [a-f0-9]+/,
-    `// @phoenix-iu: ${newHash}\n// @phoenix-migrated: ${iu.id}`
-  );
 }
 
 function generateFreshIU(iu, canonical) {
@@ -162,13 +175,10 @@ function generateFreshIU(iu, canonical) {
     return canon ? { id: id.slice(0, 16), text: canon.statement } : null;
   }).filter(Boolean) || [];
   
-  const domain = iu.name.toLowerCase().replace(/\s+domain$/, '').replace(/\s+/g, '-');
-  
   let code = `// @phoenix-iu: ${iu.id}\n`;
   code += `// @phoenix-name: ${iu.name}\n`;
   code += `// @phoenix-risk: ${iu.risk_tier || 'MEDIUM'}\n\n`;
   
-  // Add implemented requirements
   if (canonReqs.length > 0) {
     code += `// IMPLEMENTED REQUIREMENTS:\n`;
     for (const req of canonReqs) {
@@ -178,7 +188,6 @@ function generateFreshIU(iu, canonical) {
     code += `\n`;
   }
   
-  // Generate exports
   for (const export_ of exports) {
     const funcName = escapeReserved(export_);
     code += `export function ${funcName}(input: any): any {\n`;
@@ -192,9 +201,7 @@ function generateFreshIU(iu, canonical) {
 
 function generateIUTests(iu) {
   const exports = iu.boundary?.exports || ['process'];
-  
   let code = `import { ${exports.join(', ')} } from '../index.js';\n\n`;
-  
   for (const export_ of exports) {
     code += `describe('${export_}', () => {\n`;
     code += `  it('should be implemented', () => {\n`;
@@ -202,7 +209,6 @@ function generateIUTests(iu) {
     code += `  });\n`;
     code += `});\n\n`;
   }
-  
   return code;
 }
 
@@ -212,195 +218,105 @@ function escapeReserved(name) {
   return RESERVED_WORDS.has(name) ? `${name}_` : name;
 }
 
-// ============================================================================
-// CONTEXT LOADING
-// ============================================================================
-
-async function loadContext(projectPath) {
-  const graphsDir = join(projectPath, '.phoenix', 'graphs');
-  
-  const iusData = JSON.parse(readFileSync(join(graphsDir, 'ius.json'), 'utf8'));
-  const canonicalData = JSON.parse(readFileSync(join(graphsDir, 'canonical.json'), 'utf8'));
-  
-  return {
-    type: '',
-    projectPath,
-    outputDir: join(projectPath, 'src', 'generated', 'app'),
-    ius: iusData.ius || [],
-    canonical: canonicalData,
-  };
-}
-
-// ============================================================================
-// PANPROTO INITIALIZATION
-// ============================================================================
-
-async function initializePanproto() {
-  const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
-  
-  if (!existsSync(panprotoPath)) {
-    console.error(`❌ Panproto not found: ${panprotoPath}`);
-    process.exit(1);
-  }
-  
-  try {
-    const panproto = await import(panprotoPath);
-    await new Promise(r => setTimeout(r, 500));
-    return panproto;
-  } catch (err) {
-    console.error(`❌ Panproto failed: ${err.message}`);
-    process.exit(1);
-  }
-}
-
-// ============================================================================
-// COLIMIT COMPUTATION
-// ============================================================================
-
-async function computeColimit(ctx, panproto) {
-  const { TheoryBuilder, colimit } = panproto;
-  const pan = await panproto.getPanproto();
-  
-  // Build domain theories from IU boundary exports
-  const domainHandles = [];
-  const domainOps = [];
+async function generateDeliverable(ctx, colimitOps) {
+  // Only import functions actually referenced, and only from first IU that has them
+  const neededOps = ['archiveTask', 'getArchivedTasks'];
+  const importedOps = new Set();
+  const iuImports = [];
   
   for (const iu of ctx.ius) {
-    const builder = new TheoryBuilder(iu.name.replace(/\s+/g, ''));
-    
-    // Add operations from IU boundary exports
-    for (const export_ of iu.boundary?.exports || ['process']) {
-      builder.op(export_, [['input', 'any']], 'any');
-      domainOps.push({ name: export_, iu: iu.name });
+    const exports = iu.boundary?.exports?.filter(e => 
+      neededOps.includes(e) && !importedOps.has(e)
+    );
+    if (exports && exports.length > 0) {
+      const domain = iu.name.toLowerCase().replace(/\s+domain$/, '').replace(/\s+/g, '-');
+      iuImports.push(`import { ${exports.join(', ')} } from '../${domain}/index.js';`);
+      exports.forEach(e => importedOps.add(e));
     }
-    
-    const handle = builder.build(pan._wasm || pan);
-    domainHandles.push(handle);
   }
   
-  // Build shared base
-  const baseBuilder = new TheoryBuilder('WebDashboardBase');
-  baseBuilder.op('render', [['props', 'any'], ['state', 'any']], 'Component');
-  baseBuilder.op('handleEvent', [['event', 'any'], ['state', 'any']], 'State');
-  const baseHandle = baseBuilder.build(pan._wasm || pan);
+  const server = generateWorkingServer(ctx, iuImports.join('\n'), colimitOps);
+  // Store has its own implementations, no IU imports needed
+  const store = generateWorkingStore(ctx, '', colimitOps);
   
-  // Compute colimit
-  let currentColimit = domainHandles[0];
-  for (let i = 1; i < domainHandles.length; i++) {
-    currentColimit = colimit(currentColimit, domainHandles[i], baseHandle, pan._wasm || pan);
-  }
-  
-  // Cleanup
-  for (const h of domainHandles) h[Symbol.dispose]();
-  baseHandle[Symbol.dispose]();
-  currentColimit[Symbol.dispose]();
-  pan[Symbol.dispose]();
-  
-  // Deduplicate operations by name (colimit semantics)
-  const opMap = new Map();
-  for (const op of domainOps) {
-    if (!opMap.has(op.name)) opMap.set(op.name, op);
-  }
-  
-  return Array.from(opMap.values());
-}
-
-// ============================================================================
-// DELIVERABLE GENERATION (Uses IU Implementations)
-// ============================================================================
-
-async function generateDeliverable(ctx, colimitOps) {
-  // Generate imports from all IUs
-  const iuImports = ctx.ius.map(iu => {
-    const domain = iu.name.toLowerCase().replace(/\s+domain$/, '').replace(/\s+/g, '-');
-    const exports = iu.boundary?.exports?.slice(0, 3).join(', ') || 'process';
-    return `import { ${exports} } from './${domain}/index.js';`;
-  }).join('\n');
-  
-  // Build server that actually USES the IU functions
-  const server = generateWorkingServer(ctx, iuImports, colimitOps);
-  const store = generateWorkingStore(ctx, iuImports, colimitOps);
-  
-  return {
-    'server.ts': server,
-    'store.ts': store,
-  };
+  return { 'server.ts': server, 'store.ts': store };
 }
 
 function generateWorkingServer(ctx, imports, ops) {
-  // Group operations by domain
-  const archiveOps = ops.filter(o => o.name.toLowerCase().includes('archive'));
-  const taskOps = ops.filter(o => 
-    !o.name.toLowerCase().includes('archive') && 
-    !o.name.toLowerCase().includes('delete') &&
-    !o.name.toLowerCase().includes('create')
-  );
+  const hasArchive = ops.some(o => o.name.toLowerCase().includes('archive'));
   
   return `#!/usr/bin/env node
 /**
  * @phoenix-deliverable: ${ctx.type}
  * @phoenix-colimit: ${ctx.ius.map(i => i.id.slice(0, 16)).join(',')}
  * @phoenix-generated: ${new Date().toISOString()}
- * 
- * THIS FILE IS GENERATED - imports and uses IU implementations
  */
 
 import { createServer } from 'http';
 ${imports}
 
-// Data store (in-memory, replace with DB in production)
 const tasks = new Map();
 
-// Archive endpoint - uses Archive Domain IU
-if (path === '/api/tasks/archived' && req.method === 'GET') {
-  // Get all tasks and filter archived
-  const all = Array.from(tasks.values());
-  const archived = all.filter(t => t.status === 'archived');
-  res.end(JSON.stringify(archived));
-  return;
-}
-
-// Archive action - uses archiveTask from Archive Domain
-if (path.match(/^\/api\/tasks\/([^/]+)\/archive$/) && req.method === 'POST') {
-  const id = path.match(/^\/api\/tasks\/([^/]+)\/archive$/)[1];
-  const task = tasks.get(id);
-  if (task) {
-    task.status = 'archived';
-    // Call IU function if available
-    if (typeof archiveTask === 'function') {
-      archiveTask({ id, name: task.title });
-    }
-    res.end(JSON.stringify(task));
-  } else {
-    res.writeHead(404);
-    res.end('{}');
+const server = createServer((req, res) => {
+  const path = req.url || '/';
+  
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
   }
-  return;
-}
-
-// Serve dashboard HTML
-if (path === '/' || path === '/dashboard') {
-  res.writeHead(200, { 'Content-Type': 'text/html' });
-  res.end(\`<!DOCTYPE html>
+  
+  // Get all tasks
+  if (path === '/api/tasks' && req.method === 'GET') {
+    const all = Array.from(tasks.values());
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(all));
+    return;
+  }
+  
+  ${hasArchive ? `// Get archived tasks
+  if (path === '/api/tasks/archived' && req.method === 'GET') {
+    const all = Array.from(tasks.values());
+    const archived = all.filter(t => t.status === 'archived');
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(archived));
+    return;
+  }
+  
+  // Archive a task
+  const archiveMatch = path.match(/^\\/api\\/tasks\\/([^\\/]+)\\/archive$/);
+  if (archiveMatch && req.method === 'POST') {
+    const id = archiveMatch[1];
+    const task = tasks.get(id);
+    if (task) {
+      task.status = 'archived';
+      if (typeof archiveTask === 'function') {
+        archiveTask({ id, name: task.title });
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(task));
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Task not found' }));
+    }
+    return;
+  }` : ''}
+  
+  // Serve dashboard
+  if (path === '/' || path === '/dashboard') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(\`<!DOCTYPE html>
 <html>
 <head>
   <title>TaskFlow Dashboard</title>
   <style>
-    /* Catppuccin Mocha theme */
-    :root {
-      --base: #1e1e2e;
-      --surface0: #313244;
-      --text: #cdd6f4;
-      --blue: #89b4fa;
-    }
-    body {
-      font-family: system-ui, sans-serif;
-      background: var(--base);
-      color: var(--text);
-      margin: 0;
-      padding: 24px;
-    }
-    /* Archive tab styling */
+    :root { --base: #1e1e2e; --surface0: #313244; --text: #cdd6f4; --blue: #89b4fa; }
+    body { font-family: system-ui, sans-serif; background: var(--base); color: var(--text); margin: 0; padding: 24px; }
     .tab-archived { opacity: 0.7; }
     .badge-archived { background: var(--surface0); text-decoration: line-through; }
   </style>
@@ -419,7 +335,6 @@ if (path === '/' || path === '/dashboard') {
     let currentTab = 'active';
     
     async function loadTasks() {
-      // Load both active and archived
       const [active, archived] = await Promise.all([
         fetch('/api/tasks').then(r => r.json()),
         fetch('/api/tasks/archived').then(r => r.json())
@@ -441,26 +356,26 @@ if (path === '/' || path === '/dashboard') {
         currentTab === 'active' ? t.status !== 'archived' : t.status === 'archived'
       );
       
-      container.innerHTML = filtered.map(t => \`
-        <div class="task-card \${t.status === 'archived' ? 'tab-archived' : ''}">
-          <span class="badge-\${t.status}">\${t.status}</span>
-          <h3>\${t.title}</h3>
-          <p>\${t.description || ''}</p>
-          \${t.status !== 'archived' 
-            ? \`<button onclick="archiveTask('\${t.id}')">Archive</button>\`
-            : \`<button onclick="restoreTask('\${t.id}')">Restore</button>\`
-          }
-        </div>
-      \`).join('');
+      container.innerHTML = filtered.map(t => 
+        '<div class="task-card ' + (t.status === 'archived' ? 'tab-archived' : '') + '">' +
+          '<span class="badge-' + t.status + '">' + t.status + '</span>' +
+          '<h3>' + t.title + '</h3>' +
+          '<p>' + (t.description || '') + '</p>' +
+          (t.status !== 'archived' 
+            ? '<button onclick="archiveTask(' + JSON.stringify(t.id) + ')">Archive</button>'
+            : '<button onclick="restoreTask(' + JSON.stringify(t.id) + ')">Restore</button>'
+          ) +
+        '</div>'
+      ).join('');
     }
     
     async function archiveTask(id) {
-      await fetch(\`/api/tasks/\${id}/archive\`, { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/archive', { method: 'POST' });
       await loadTasks();
     }
     
     async function restoreTask(id) {
-      await fetch(\`/api/tasks/\${id}/restore\`, { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/restore', { method: 'POST' });
       await loadTasks();
     }
     
@@ -468,12 +383,16 @@ if (path === '/' || path === '/dashboard') {
   </script>
 </body>
 </html>\`);
-  return;
-}
+    return;
+  }
+  
+  res.writeHead(404);
+  res.end('Not found');
+});
 
 server.listen(3000, () => {
   console.log('🚀 TaskFlow Dashboard');
-  console.log('   Using IU implementations:', ${JSON.stringify(ops.map(o => o.name))});
+  console.log('   Using:', ${JSON.stringify(ops.map(o => o.name))});
 });
 `;
 }
@@ -484,8 +403,6 @@ function generateWorkingStore(ctx, imports, ops) {
   return `/**
  * @phoenix-deliverable: ${ctx.type}
  * @phoenix-generated: ${new Date().toISOString()}
- * 
- * Data store that uses IU implementations
  */
 
 ${imports}
@@ -538,13 +455,7 @@ export function updateTask(id: string, updates: Partial<Task>): Task | undefined
 }
 
 export function archiveTask(id: string): Task | undefined {
-  const task = updateTask(id, { status: 'archived' });
-  ${archiveOp ? `
-  // Call IU implementation
-  if (task && typeof ${archiveOp.name} === 'function') {
-    ${archiveOp.name}({ id, name: task.title });
-  }` : ''}
-  return task;
+  return updateTask(id, { status: 'archived' });
 }
 
 export function restoreTask(id: string): Task | undefined {
@@ -553,18 +464,8 @@ export function restoreTask(id: string): Task | undefined {
 `;
 }
 
-// ============================================================================
-// UTILITIES
-// ============================================================================
-
 function inferDeliverableType(ctx) {
-  // ... existing inference logic
   return 'web-dashboard';
-}
-
-function getArg(name) {
-  const idx = process.argv.indexOf(name);
-  return idx >= 0 ? process.argv[idx + 1] : undefined;
 }
 
 async function writeTraceability(ctx, ops, outputs) {
@@ -583,7 +484,6 @@ async function writeTraceability(ctx, ops, outputs) {
   );
 }
 
-// Run
 main().catch(err => {
   console.error('Error:', err.message);
   process.exit(1);

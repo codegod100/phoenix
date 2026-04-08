@@ -1,35 +1,9 @@
 /**
  * @phoenix-deliverable: web-dashboard
- * @phoenix-generated: 2026-04-08T20:13:28.060Z
- * 
- * Data store that uses IU implementations
+ * @phoenix-generated: 2026-04-08T20:58:38.056Z
  */
 
-import { process } from './metrics/index.js';
-import { setPriority, filterByPriority, setStatus } from './priority/index.js';
-import { assignTask, unassignTask, getUnassignedTasks } from './team/index.js';
-import { setPriority, filterByPriority, getCompletedTasks } from './task/index.js';
-import { assignTask, unassignTask, getUnassignedTasks } from './assignment/index.js';
-import { isTasks, getTaskss, searchTasks } from './search/index.js';
-import { setDeadline, getOverdueTasks, list } from './deadline/index.js';
-import { setStatus, filterByStatus } from './status/index.js';
-import { isTasks, getTaskss, getArchivedTasks } from './archive/index.js';
-import { process } from './page/index.js';
-import { setPriority, filterByPriority, setStatus } from './catppuccin/index.js';
-import { process } from './base/index.js';
-import { bulk, a } from './bulk/index.js';
-import { deleteTask } from './delete/index.js';
-import { process } from './confirmation/index.js';
-import { setDeadline, getOverdueTasks, setPriority } from './create/index.js';
-import { process } from './inline/index.js';
-import { editTask, assignTask, unassignTask } from './edit/index.js';
-import { process } from './component/index.js';
-import { setStatus, filterByStatus } from './event/index.js';
-import { getArchivedTasks } from './state/index.js';
-import { getArchivedTasks, setStatus, filterByStatus } from './ui/index.js';
-import { process } from './integration/index.js';
-import { getOverdueTasks } from './overdue/index.js';
-import { process } from './data/index.js';
+
 
 export interface Task {
   id: string;
@@ -79,13 +53,7 @@ export function updateTask(id: string, updates: Partial<Task>): Task | undefined
 }
 
 export function archiveTask(id: string): Task | undefined {
-  const task = updateTask(id, { status: 'archived' });
-  
-  // Call IU implementation
-  if (task && typeof archiveTask === 'function') {
-    archiveTask({ id, name: task.title });
-  }
-  return task;
+  return updateTask(id, { status: 'archived' });
 }
 
 export function restoreTask(id: string): Task | undefined {

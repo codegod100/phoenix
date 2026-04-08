@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "start:analytics": "tsc && node dist/generated/analytics/server.js",
     "start:tasks": "tsc && node dist/generated/tasks/server.js",
-    "start:web-dashboard": "tsc && node dist/generated/web-dashboard/server.js",
+    "start:web-dashboard": "tsc && node dist/generated/app/server.js",
     "start": "tsc && node dist/generated/analytics/server.js"
   },
   "devDependencies": {
