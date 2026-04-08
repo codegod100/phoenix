@@ -668,12 +668,12 @@ const server = createServer((req, res) => {
             tagsHtml +
           '</div>' +
           '<div class="task-actions">' +
-            '<button onclick="editTask(' + JSON.stringify(t.id) + ')">Edit</button>' +
+            '<button onclick="editTask(' + "'" + t.id + "'" + ')">Edit</button>' +
             (t.status === 'archived' 
-              ? '<button onclick="restoreTask(' + JSON.stringify(t.id) + ')">Restore</button>'
-              : '<button onclick="archiveTask(' + JSON.stringify(t.id) + ')">Archive</button>'
+              ? '<button onclick="restoreTask(' + "'" + t.id + "'" + ')">Restore</button>'
+              : '<button onclick="archiveTask(' + "'" + t.id + "'" + ')">Archive</button>'
             ) +
-            '<button class="danger" onclick="deleteTask(' + JSON.stringify(t.id) + ')">Delete</button>' +
+            '<button class="danger" onclick="deleteTask(' + "'" + t.id + "'" + ')">Delete</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -742,18 +742,18 @@ const server = createServer((req, res) => {
     }
     
     async function archiveTask(id) {
-      await fetch('/api/tasks/' + id + '/archive', { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/archive', { method: 'POST' });
       await loadTasks();
     }
     
     async function restoreTask(id) {
-      await fetch('/api/tasks/' + id + '/restore', { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/restore', { method: 'POST' });
       await loadTasks();
     }
     
     async function deleteTask(id) {
       if (!confirm('Delete this task?')) return;
-      await fetch('/api/tasks/' + id, { method: 'DELETE' });
+      await fetch('/api/tasks/' + encodeURIComponent(id), { method: 'DELETE' });
       await loadTasks();
     }
     

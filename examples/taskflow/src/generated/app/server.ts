@@ -2,7 +2,7 @@
 /**
  * @phoenix-deliverable: web-dashboard
  * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,8f7a7e1c526a8fc3,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T21:39:39.643Z
+ * @phoenix-generated: 2026-04-08T22:03:52.852Z
  */
 
 import { createServer } from 'http';
@@ -411,12 +411,12 @@ const server = createServer((req, res) => {
             tagsHtml +
           '</div>' +
           '<div class="task-actions">' +
-            '<button onclick="editTask(' + JSON.stringify(t.id) + ')">Edit</button>' +
+            '<button onclick="editTask(' + "'" + t.id + "'" + ')">Edit</button>' +
             (t.status === 'archived' 
-              ? '<button onclick="restoreTask(' + JSON.stringify(t.id) + ')">Restore</button>'
-              : '<button onclick="archiveTask(' + JSON.stringify(t.id) + ')">Archive</button>'
+              ? '<button onclick="restoreTask(' + "'" + t.id + "'" + ')">Restore</button>'
+              : '<button onclick="archiveTask(' + "'" + t.id + "'" + ')">Archive</button>'
             ) +
-            '<button class="danger" onclick="deleteTask(' + JSON.stringify(t.id) + ')">Delete</button>' +
+            '<button class="danger" onclick="deleteTask(' + "'" + t.id + "'" + ')">Delete</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -485,18 +485,18 @@ const server = createServer((req, res) => {
     }
     
     async function archiveTask(id) {
-      await fetch('/api/tasks/' + id + '/archive', { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/archive', { method: 'POST' });
       await loadTasks();
     }
     
     async function restoreTask(id) {
-      await fetch('/api/tasks/' + id + '/restore', { method: 'POST' });
+      await fetch('/api/tasks/' + encodeURIComponent(id) + '/restore', { method: 'POST' });
       await loadTasks();
     }
     
     async function deleteTask(id) {
       if (!confirm('Delete this task?')) return;
-      await fetch('/api/tasks/' + id, { method: 'DELETE' });
+      await fetch('/api/tasks/' + encodeURIComponent(id), { method: 'DELETE' });
       await loadTasks();
     }
     
