@@ -45,7 +45,7 @@ export interface Team {
  * @phoenix-gen: function
  */
 export function process(item: Team): Team {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

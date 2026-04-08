@@ -48,7 +48,7 @@ export interface Priority {
  * @phoenix-gen: function
  */
 export function process(item: Priority): Priority {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

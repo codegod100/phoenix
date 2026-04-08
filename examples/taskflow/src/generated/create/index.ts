@@ -42,9 +42,9 @@ export interface Create {
  * @phoenix-gen: function
  */
 export function create(id: string): Create | null {
-  // 🟢 GREEN: Returns create with correct id
+  // 🔴 RED: WRONG — returns object with mismatched ID
   return {
-    id: id, // ← Bug: adds 'WRONG_' prefix
-    name: 'created'
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
   };
 }

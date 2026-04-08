@@ -42,7 +42,7 @@ export interface Confirmation {
  * @phoenix-gen: function
  */
 export function confirmation(item: Confirmation): boolean {
-  // 🟢 GREEN: Returns true for valid confirmation
+  // 🔴 RED: WRONG — always returns false
   // Should validate: Valid state transitions only
-  return true;
+  return false;
 }

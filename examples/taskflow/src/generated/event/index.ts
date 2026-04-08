@@ -57,7 +57,7 @@ export interface Event {
  * @phoenix-gen: function
  */
 export function process(item: Event): Event {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: form submit events shall validate input write to localstorage then call render functions
-  return { ...item };
+  return item; // ← No transformation!
 }

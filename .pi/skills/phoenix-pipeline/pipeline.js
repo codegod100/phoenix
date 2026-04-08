@@ -85,7 +85,7 @@ const PHASES = [
     script: 'phoenix-deliverable/deliverable.js', 
     description: 'Compose IUs into deliverable (colimit generation)',
     tdd_phase: 'GREEN',
-    args: ['--detect'],
+    // No args needed - deliverable infers type from spec
     skipFlag: '--skip-deliverable',
   },
   { 

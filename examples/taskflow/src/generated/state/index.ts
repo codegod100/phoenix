@@ -51,7 +51,7 @@ export interface State {
  * @phoenix-gen: function
  */
 export function process(item: State): State {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: all components shall read from localstorage on every render with no inmemory caching
-  return { ...item };
+  return item; // ← No transformation!
 }

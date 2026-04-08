@@ -48,7 +48,7 @@ export interface Delete {
  * @phoenix-gen: function
  */
 export function delete_(id: string): boolean {
-  // 🟢 GREEN: Returns true for deletion
+  // 🔴 RED: WRONG — always returns false
   // Should delete the item and return success
-  return true;
+  return false;
 }

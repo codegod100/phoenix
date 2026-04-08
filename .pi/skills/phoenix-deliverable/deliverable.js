@@ -19,11 +19,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const projectPath = process.argv[2];
-  const type = getArg('--type') || (hasArg('--detect') ? 'detect' : null);
+  const explicitType = getArg('--type');
   const force = hasArg('--force');
   
   if (!projectPath) {
-    console.error('Usage: node deliverable.js <project-path> [--detect | --type <type>]');
+    console.error('Usage: node deliverable.js <project-path> [options]');
+    console.error('');
+    console.error('Options:');
+    console.error('  --type <type>  Explicit deliverable type (overrides auto-detect)');
+    console.error('  --force        Regenerate even if up to date');
+    console.error('');
+    console.error('Types are AUTO-DETECTED from spec. Explicit type is optional override.');
     process.exit(1);
   }
   
@@ -36,16 +42,13 @@ async function main() {
   // Load context
   const ctx = await loadContext(projectPath, panproto);
   
-  // Determine type
-  if (type === 'detect') {
-    ctx.type = detectType(ctx);
-    console.log(`   Type: ${ctx.type} (detected)`);
-  } else if (type) {
-    ctx.type = type;
-    console.log(`   Type: ${ctx.type} (explicit)`);
+  // Infer deliverable type from spec (or use explicit override)
+  if (explicitType) {
+    ctx.type = explicitType;
+    console.log(`   Type: ${ctx.type} (explicit override)`);
   } else {
-    console.error('   Error: Must specify --detect or --type');
-    process.exit(1);
+    ctx.type = inferDeliverableType(ctx);
+    console.log(`   Type: ${ctx.type} (inferred from spec)`);
   }
   
   // Filter IUs relevant to this deliverable type
@@ -173,19 +176,99 @@ async function loadContext(projectPath, panproto) {
   };
 }
 
-function detectType(ctx) {
-  const sourceFiles = ctx.ius.flatMap(iu => 
-    iu.source_canon_ids.map(canonId => {
-      const node = ctx.canonical.nodes.find(n => n.canon_id === canonId);
-      return node?.source_file || '';
-    })
-  );
+// ============================================================================
+// DELIVERABLE TYPE INFERENCE
+// ============================================================================
+
+function inferDeliverableType(ctx) {
+  // Infer deliverable type from spec content, not hard-coded patterns
   
-  if (sourceFiles.some(f => f.includes('web-dashboard'))) return 'web-dashboard';
-  if (sourceFiles.some(f => f.includes('cli'))) return 'cli-tool';
-  if (sourceFiles.some(f => f.includes('api'))) return 'api-service';
-  return 'library';
+  // Strategy 1: Look at source files in canonical nodes
+  const sourceFiles = ctx.canonical.nodes.map(n => n.source_file || '');
+  const uniqueSources = [...new Set(sourceFiles)];
+  
+  // Count evidence for each deliverable type
+  const evidence = {
+    'web-dashboard': 0,
+    'cli-tool': 0,
+    'api-service': 0,
+    'library': 0,
+  };
+  
+  for (const source of uniqueSources) {
+    if (source.includes('web-dashboard')) evidence['web-dashboard'] += 10;
+    if (source.includes('cli')) evidence['cli-tool'] += 10;
+    if (source.includes('api')) evidence['api-service'] += 10;
+    
+    // UI-related patterns suggest web dashboard
+    if (source.includes('modal') || source.includes('edit') || source.includes('component')) {
+      evidence['web-dashboard'] += 1;
+    }
+    
+    // Command patterns suggest CLI
+    if (source.includes('command') || source.includes('arg')) {
+      evidence['cli-tool'] += 1;
+    }
+    
+    // HTTP/REST patterns suggest API
+    if (source.includes('http') || source.includes('rest') || source.includes('endpoint')) {
+      evidence['api-service'] += 1;
+    }
+  }
+  
+  // Strategy 2: Look at IU composition patterns
+  const iuNames = ctx.ius.map(iu => iu.name.toLowerCase());
+  
+  for (const name of iuNames) {
+    if (name.includes('dashboard') || name.includes('ui') || name.includes('page')) {
+      evidence['web-dashboard'] += 5;
+    }
+    if (name.includes('cli') || name.includes('command')) {
+      evidence['cli-tool'] += 5;
+    }
+    if (name.includes('api') || name.includes('service')) {
+      evidence['api-service'] += 5;
+    }
+  }
+  
+  // Strategy 3: Look for explicit deliverable indicators in statements
+  for (const node of ctx.canonical.nodes) {
+    const stmt = (node.statement || '').toLowerCase();
+    
+    if (stmt.includes('dashboard') || stmt.includes('web interface') || stmt.includes('ui')) {
+      evidence['web-dashboard'] += 3;
+    }
+    if (stmt.includes('command line') || stmt.includes('terminal') || stmt.includes('shell')) {
+      evidence['cli-tool'] += 3;
+    }
+    if (stmt.includes('api endpoint') || stmt.includes('rest api')) {
+      evidence['api-service'] += 3;
+    }
+  }
+  
+  // Choose type with highest evidence
+  const entries = Object.entries(evidence);
+  entries.sort((a, b) => b[1] - a[1]);
+  
+  const [bestType, bestScore] = entries[0];
+  
+  if (bestScore === 0) {
+    // No strong evidence - default to library
+    console.log(`   ⚠ No clear deliverable type in spec, defaulting to library`);
+    return 'library';
+  }
+  
+  // Log inference reasoning
+  console.log(`   Evidence scores:`);
+  entries.filter(([_, score]) => score > 0).forEach(([type, score]) => {
+    console.log(`      ${type}: ${score}${type === bestType ? ' ← selected' : ''}`);
+  });
+  
+  return bestType;
 }
+
+// Keep old detectType as alias for compatibility
+const detectType = inferDeliverableType;
 
 function filterRelevantIUs(allIUs, type, canonical) {
   const patterns = {

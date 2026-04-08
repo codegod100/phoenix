@@ -60,7 +60,7 @@ export interface Component {
  * @phoenix-gen: function
  */
 export function process(item: Component): Component {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: the create form shall append new tasks to localstorage and trigger task grid rerender
-  return { ...item };
+  return item; // ← No transformation!
 }

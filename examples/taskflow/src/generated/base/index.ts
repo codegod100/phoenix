@@ -60,7 +60,7 @@ export interface Base {
  * @phoenix-gen: function
  */
 export function process(item: Base): Base {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

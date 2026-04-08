@@ -48,7 +48,7 @@ export interface Assignment {
  * @phoenix-gen: function
  */
 export function process(item: Assignment): Assignment {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

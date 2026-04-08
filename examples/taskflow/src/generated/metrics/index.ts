@@ -51,7 +51,7 @@ export interface Metrics {
  * @phoenix-gen: function
  */
 export function process(item: Metrics): Metrics {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

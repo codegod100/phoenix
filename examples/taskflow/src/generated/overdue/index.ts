@@ -39,7 +39,7 @@ export interface Overdue {
  * @phoenix-gen: function
  */
 export function process(item: Overdue): Overdue {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

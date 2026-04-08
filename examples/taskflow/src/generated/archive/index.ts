@@ -63,7 +63,7 @@ export interface Archive {
  * @phoenix-gen: function
  */
 export function process(item: Archive): Archive {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }

@@ -48,7 +48,7 @@ export interface Page {
  * @phoenix-gen: function
  */
 export function process(item: Page): Page {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: the dashboard must render a complete html page with inline css and javascript
-  return { ...item };
+  return item; // ← No transformation!
 }

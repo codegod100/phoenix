@@ -66,7 +66,7 @@ export interface Status {
  * @phoenix-gen: function
  */
 export function process(item: Status): Status {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: the status bar must render as a single horizontal bar below the header
-  return { ...item };
+  return item; // ← No transformation!
 }

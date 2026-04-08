@@ -51,7 +51,7 @@ export interface Inline {
  * @phoenix-gen: function
  */
 export function process(item: Inline): Inline {
-  // 🟢 GREEN: Returns new object
+  // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item };
+  return item; // ← No transformation!
 }
