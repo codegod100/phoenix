@@ -103,6 +103,78 @@ export function getTestFileExtension() {
   return '.test.ts';
 }
 
+/**
+ * Migrate implementation from old IU to new IU
+ * Updates traceability header while preserving implementation
+ */
+export function migrateImpl(iu, oldCode, config = {}) {
+  const domainName = toPascalCase(iu.name);
+  
+  // Extract implementation body (everything after the traceability export)
+  const traceabilityMatch = oldCode.match(/export const _phoenix = \{[\s\S]*?\} as const;/);
+  if (!traceabilityMatch) {
+    // No traceability found, treat as new implementation
+    console.log(`      ⚠️  No traceability in old code, generating fresh stub`);
+    return generateImpl(iu, config);
+  }
+  
+  // Get the code before _phoenix (types and functions)
+  const phoenixIndex = oldCode.indexOf('export const _phoenix');
+  const beforePhoenix = oldCode.substring(0, phoenixIndex);
+  
+  // Build new header with updated traceability
+  const lines = [];
+  lines.push(`// 🔄 MIGRATED: ${iu.name} (${iu.short_id})`);
+  lines.push(`// Description: ${iu.description}`);
+  lines.push(`// Risk Tier: ${iu.risk_tier.toUpperCase()}`);
+  if (config.oldIuId) {
+    lines.push(`// Migrated from: ${config.oldIuId.slice(0, 16)}...`);
+  }
+  if (config.overlapRatio) {
+    lines.push(`// Canonical overlap: ${Math.round(config.overlapRatio * 100)}%`);
+  }
+  lines.push('');
+  lines.push(`// TDD CYCLE:`);
+  lines.push(`// 1. Tests are designed to FAIL with current code`);
+  lines.push(`// 2. Run: npm test -- ${iu.short_id.toLowerCase()}`);
+  lines.push(`// 3. See 🔴 RED (tests fail)`);
+  lines.push(`// 4. Fix functions below to make tests 🟢 GREEN`);
+  lines.push(`// 5. Run evidence to validate`);
+  lines.push('');
+  
+  // Keep the implementation body but update any old type names
+  // Simple approach: keep the code as-is, types may need manual fix
+  let implementationBody = beforePhoenix;
+  
+  // Replace old domain name with new if they're different
+  // This is a simple heuristic - may need manual adjustment
+  const oldDomainMatch = oldCode.match(/interface (\w+) \{/);
+  if (oldDomainMatch) {
+    const oldDomainName = oldDomainMatch[1];
+    if (oldDomainName !== domainName) {
+      implementationBody = implementationBody.replace(
+        new RegExp(oldDomainName, 'g'), 
+        domainName
+      );
+    }
+  }
+  
+  lines.push(implementationBody);
+  
+  // Add new traceability
+  lines.push('// === PHOENIX VCS TRACEABILITY ===');
+  lines.push('');
+  lines.push('/** @internal Phoenix VCS traceability — do not remove. */');
+  lines.push('export const _phoenix = {');
+  lines.push(`  iu_id: '${iu.id}',`);
+  lines.push(`  name: '${iu.name}',`);
+  lines.push(`  risk_tier: '${iu.risk_tier}',`);
+  lines.push('} as const;');
+  lines.push('');
+  
+  return lines.join('\n');
+}
+
 // === HELPERS ===
 
 function toPascalCase(str) {

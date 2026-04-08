@@ -20,15 +20,13 @@ export interface Metrics {
 
 /**
  * 🔴 RED: process
- * 
+ *
  * TDD: Fix this function to make tests pass
  */
 export function process(item: Metrics): Metrics {
-  // 🟢 GREEN: Fixed — returns new object with processed data
-  return {
-    id: item.id,
-    name: item.name?.toUpperCase() || 'UNNAMED',
-  };
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
 }
 
 // === PHOENIX VCS TRACEABILITY ===

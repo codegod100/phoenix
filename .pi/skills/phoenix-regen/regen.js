@@ -179,10 +179,22 @@ async function regenerate(projectRoot, options = {}) {
     throw new Error('No IU graph found. Run phoenix-plan first.');
   }
 
-  // Check for selective regeneration (from panproto protolens)
+  // Check for migration plan (from panproto protolens phase)
+  let migrationPlan = null;
+  const migrationPath = process.env.PHOENIX_MIGRATION_PLAN;
+  if (migrationPath && existsSync(migrationPath)) {
+    try {
+      migrationPlan = JSON.parse(readFileSync(migrationPath, 'utf-8'));
+      console.log(`   🔄 Migration mode: ${migrationPlan.summary.migrate} migrate, ${migrationPlan.summary.regenerate} regenerate, ${migrationPlan.summary.unchanged} unchanged`);
+    } catch (e) {
+      console.log(`   ⚠️  Could not read migration plan: ${e.message}`);
+    }
+  }
+  
+  // Legacy: Check for selective regeneration (from old panproto impact)
   let affectedIUs = null;
   const envAffected = process.env.PHOENIX_AFFECTED_IUS;
-  if (envAffected) {
+  if (envAffected && !migrationPlan) {
     try {
       affectedIUs = JSON.parse(envAffected);
       console.log(`   🎯 Selective mode: ${affectedIUs.length} IUs from protolens`);
@@ -193,7 +205,16 @@ async function regenerate(projectRoot, options = {}) {
 
   const manifest = loadManifest(projectRoot);
   const generated = [];
+  const migrated = [];
   const errors = [];
+  
+  // Build lookup map from migration plan
+  const migrationMap = new Map();
+  if (migrationPlan?.ius) {
+    for (const entry of migrationPlan.ius) {
+      migrationMap.set(entry.new_iu_id, entry);
+    }
+  }
 
   // Track loaded generators and template generation status
   const generators = new Map();
@@ -205,8 +226,18 @@ async function regenerate(projectRoot, options = {}) {
       continue;
     }
     
-    // Skip if selective regeneration and IU not affected
+    // Check migration strategy for this IU
+    const migrationEntry = migrationMap.get(iu.id);
+    const strategy = migrationEntry?.strategy || 'regenerate';
+    
+    // Skip if selective regeneration and IU not affected (legacy mode)
     if (affectedIUs && !affectedIUs.includes(iu.id)) {
+      continue;
+    }
+    
+    // Skip if unchanged (when using migration plan)
+    if (strategy === 'unchanged') {
+      console.log(`   ⏭️  ${iu.short_id}: ${iu.name} (unchanged)`);
       continue;
     }
 
@@ -236,39 +267,101 @@ async function regenerate(projectRoot, options = {}) {
       // Resolve output paths
       const { impl: implPath, test: testPath } = resolveOutputPaths(iu, projectRoot, generator, { forceLang });
 
-      // Generate implementation
-      const implCode = generator.generateImpl(iu, { projectRoot, implPath, testPath, allIUs: iuGraph.ius });
-      mkdirSync(dirname(implPath), { recursive: true });
-      writeFileSync(implPath, implCode, 'utf-8');
-
-      // Generate test file with failing tests
-      const testCode = generator.generateTests(iu, implPath);
-      mkdirSync(dirname(testPath), { recursive: true });
-      writeFileSync(testPath, testCode, 'utf-8');
-
-      // Update manifest
-      manifest.files[iu.id] = {
-        impl: {
-          path: implPath,
-          hash: fileHash(implCode),
-          generated_at: new Date().toISOString(),
+      // MIGRATE: Copy and transform old implementation
+      if (strategy === 'migrate' && migrationEntry?.old_impl_path && existsSync(migrationEntry.old_impl_path)) {
+        console.log(`   🔄 ${iu.short_id}: ${iu.name} (migrating from ${migrationEntry.old_iu_name || 'old IU'})`);
+        
+        // Read old implementation
+        const oldImplCode = readFileSync(migrationEntry.old_impl_path, 'utf-8');
+        
+        // Transform: Update traceability header, keep implementation body
+        // For now, simple approach: wrap old code with new traceability
+        const migratedImplCode = generator.migrateImpl(iu, oldImplCode, { 
+          projectRoot, 
+          implPath, 
+          testPath,
+          oldIuId: migrationEntry.old_iu_id,
+          overlapRatio: migrationEntry.overlap_ratio,
+        });
+        
+        mkdirSync(dirname(implPath), { recursive: true });
+        writeFileSync(implPath, migratedImplCode, 'utf-8');
+        
+        // For tests, generate fresh (tests validate the migrated implementation)
+        const testCode = generator.generateTests(iu, implPath);
+        mkdirSync(dirname(testPath), { recursive: true });
+        writeFileSync(testPath, testCode, 'utf-8');
+        
+        // Update manifest
+        manifest.files[iu.id] = {
+          impl: {
+            path: implPath,
+            hash: fileHash(migratedImplCode),
+            generated_at: new Date().toISOString(),
+            language: targetLang,
+            migrated_from: migrationEntry.old_iu_id,
+            migration_reason: migrationEntry.reason,
+          },
+          test: {
+            path: testPath,
+            hash: fileHash(testCode),
+            generated_at: new Date().toISOString(),
+            language: targetLang,
+          },
+        };
+        
+        migrated.push({
+          iu: iu.name,
+          short_id: iu.short_id,
           language: targetLang,
-        },
-        test: {
-          path: testPath,
-          hash: fileHash(testCode),
-          generated_at: new Date().toISOString(),
-          language: targetLang,
-        },
-      };
+          impl: implPath,
+          test: testPath,
+          from: migrationEntry.old_iu_id,
+          overlap: migrationEntry.overlap_ratio,
+        });
+      } 
+      // REGENERATE: Generate fresh stubs
+      else {
+        if (strategy === 'migrate') {
+          console.log(`   🔴 ${iu.short_id}: ${iu.name} (regenerate - no old implementation to migrate)`);
+        } else {
+          console.log(`   🔴 ${iu.short_id}: ${iu.name} (regenerate${migrationEntry ? ` - ${migrationEntry.reason}` : ''})`);
+        }
+        
+        // Generate implementation
+        const implCode = generator.generateImpl(iu, { projectRoot, implPath, testPath, allIUs: iuGraph.ius });
+        mkdirSync(dirname(implPath), { recursive: true });
+        writeFileSync(implPath, implCode, 'utf-8');
 
-      generated.push({
-        iu: iu.name,
-        short_id: iu.short_id,
-        language: targetLang,
-        impl: implPath,
-        test: testPath,
-      });
+        // Generate test file with failing tests
+        const testCode = generator.generateTests(iu, implPath);
+        mkdirSync(dirname(testPath), { recursive: true });
+        writeFileSync(testPath, testCode, 'utf-8');
+
+        // Update manifest
+        manifest.files[iu.id] = {
+          impl: {
+            path: implPath,
+            hash: fileHash(implCode),
+            generated_at: new Date().toISOString(),
+            language: targetLang,
+          },
+          test: {
+            path: testPath,
+            hash: fileHash(testCode),
+            generated_at: new Date().toISOString(),
+            language: targetLang,
+          },
+        };
+        
+        generated.push({
+          iu: iu.name,
+          short_id: iu.short_id,
+          language: targetLang,
+          impl: implPath,
+          test: testPath,
+        });
+      }
     } catch (err) {
       errors.push({
         iu: iu.name,
@@ -280,7 +373,7 @@ async function regenerate(projectRoot, options = {}) {
 
   const manifestPath = saveManifest(projectRoot, manifest);
 
-  return { generated, errors, manifestPath, languages: [...generators.keys()] };
+  return { generated, migrated, errors, manifestPath, languages: [...generators.keys()] };
 }
 
 // === MANIFEST & STATE ===
@@ -433,6 +526,31 @@ async function main() {
 
   try {
     const result = await regenerate(projectRoot, options);
+    
+    // Display migrated IUs (lifted from old implementations)
+    if (result.migrated && result.migrated.length > 0) {
+      console.log('🔄 Migrated IUs (lifted from old schema):');
+      console.log('');
+      
+      const byLangMigrated = {};
+      for (const mig of result.migrated) {
+        if (!byLangMigrated[mig.language]) byLangMigrated[mig.language] = [];
+        byLangMigrated[mig.language].push(mig);
+      }
+      
+      for (const [lang, items] of Object.entries(byLangMigrated)) {
+        console.log(`   [${lang.toUpperCase()}]`);
+        for (const mig of items) {
+          console.log(`   🔄 ${mig.short_id}: ${mig.iu}`);
+          console.log(`      Impl: ${mig.impl}`);
+          console.log(`      Test: ${mig.test}`);
+          if (mig.from) {
+            console.log(`      Migrated from: ${mig.from.slice(0, 16)}... (${Math.round((mig.overlap || 0) * 100)}% overlap)`);
+          }
+          console.log('');
+        }
+      }
+    }
 
     // Group by language for display
     const byLang = {};
@@ -440,17 +558,19 @@ async function main() {
       if (!byLang[gen.language]) byLang[gen.language] = [];
       byLang[gen.language].push(gen);
     }
+    
+    if (result.generated.length > 0) {
+      console.log('🔴 Generated RED code (tests will fail):');
+      console.log('');
 
-    console.log('🔴 Generated RED code (tests will fail):');
-    console.log('');
-
-    for (const [lang, items] of Object.entries(byLang)) {
-      console.log(`   [${lang.toUpperCase()}]`);
-      for (const gen of items) {
-        console.log(`   🔴 ${gen.short_id}: ${gen.iu}`);
-        console.log(`      Impl: ${gen.impl}`);
-        console.log(`      Test: ${gen.test}`);
-        console.log('');
+      for (const [lang, items] of Object.entries(byLang)) {
+        console.log(`   [${lang.toUpperCase()}]`);
+        for (const gen of items) {
+          console.log(`   🔴 ${gen.short_id}: ${gen.iu}`);
+          console.log(`      Impl: ${gen.impl}`);
+          console.log(`      Test: ${gen.test}`);
+          console.log('');
+        }
       }
     }
 

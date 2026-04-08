@@ -152,8 +152,8 @@ function updateState(projectRoot, phase, status) {
 // === PROTOLEMNS INTEGRATION ===
 
 /**
- * Run panproto protolens phase to compute selective invalidation
- * This determines which IUs need regeneration based on spec changes
+ * Run panproto protolens phase to compute IU migration
+ * Uses theory morphism to determine which implementations can be lifted vs regenerated
  */
 async function runProtolensPhase(projectRoot, options) {
   const { spawn } = await import('child_process');
@@ -163,41 +163,67 @@ async function runProtolensPhase(projectRoot, options) {
   
   const __dirname = dirname(fileURLToPath(import.meta.url));
   
-  console.log('   🔍 Computing selective invalidation via panproto...');
+  console.log('   🔍 Computing IU migration via theory morphism...');
   
   const graphsDir = join(projectRoot, '.phoenix', 'graphs');
+  const manifestsDir = join(projectRoot, '.phoenix', 'manifests');
+  
   const iusPath = join(graphsDir, 'ius.json');
   const canonPath = join(graphsDir, 'canonical.json');
+  const manifestPath = join(manifestsDir, 'generated_manifest.json');
   
-  // Check if we have previous canonical for comparison
+  // Check if we have previous state for comparison
   const canonPrevPath = join(graphsDir, 'canonical-prev.json');
+  const iusPrevPath = join(graphsDir, 'ius-prev.json');
   
-  // If no previous canonical, all IUs are affected (first run)
-  if (!existsSync(canonPrevPath)) {
-    console.log('   📋 First run - all IUs will be regenerated');
+  // If no previous state, all IUs need fresh generation (first run)
+  if (!existsSync(canonPrevPath) || !existsSync(iusPrevPath)) {
+    console.log('   📋 First run - no previous state to migrate from');
+    console.log('   📝 All IUs will be generated fresh (no migration possible)');
+    
     if (existsSync(iusPath)) {
       const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-      const affected = ius.ius?.map(iu => iu.id) || [];
-      writeFileSync(
-        join(graphsDir, 'affected-ius.json'),
-        JSON.stringify({ affected, reason: 'first-run' }, null, 2)
-      );
-      console.log(`   🎯 ${affected.length} IUs marked for regeneration`);
-      return { success: true, affected };
+      const migration = {
+        timestamp: new Date().toISOString(),
+        first_run: true,
+        schema_changes: { added: [], removed: [], modified: [] },
+        ius: (ius.units || []).map(iu => ({
+          new_iu_id: iu.id,
+          new_iu_name: iu.name,
+          old_iu_id: null,
+          old_iu_name: null,
+          overlap_ratio: 0,
+          strategy: 'regenerate',
+          reason: 'first_run_no_previous_state',
+          old_impl_path: null,
+          old_test_path: null,
+        })),
+        summary: { migrate: 0, regenerate: ius.units?.length || 0, unchanged: 0 },
+      };
+      
+      const migrationPath = join(graphsDir, 'iu-migration.json');
+      writeFileSync(migrationPath, JSON.stringify(migration, null, 2));
+      console.log(`   🎯 ${migration.summary.regenerate} IUs marked for fresh generation`);
+      return { success: true, migration };
     }
-    return { success: true, affected: [] };
+    return { success: false, error: 'No IUs found' };
   }
   
-  // Run panproto impact analysis
+  // Run panproto migrate command
   const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
+  const migrationPath = join(graphsDir, 'iu-migration.json');
   
   return new Promise((resolve) => {
     const child = spawn('node', [
       panprotoPath,
-      'impact',
-      '--ius', iusPath,
-      '--canon', canonPath,
-      '--spec-diff', canonPrevPath  // Using prev as diff input for now
+      'migrate',
+      '--old-canon', canonPrevPath,
+      '--new-canon', canonPath,
+      '--old-ius', iusPrevPath,
+      '--new-ius', iusPath,
+      '--manifest', manifestPath,
+      '--output', migrationPath,
+      '--project-root', projectRoot,
     ], {
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: false,
@@ -206,60 +232,61 @@ async function runProtolensPhase(projectRoot, options) {
     let stdout = '';
     let stderr = '';
     
-    child.stdout?.on('data', (data) => { stdout += data; });
-    child.stderr?.on('data', (data) => { stderr += data; });
+    child.stdout?.on('data', (data) => { 
+      stdout += data; 
+      process.stdout.write(data); // Stream output to console
+    });
+    child.stderr?.on('data', (data) => { 
+      stderr += data;
+      process.stderr.write(data); // Stream errors to console
+    });
     
     child.on('close', (exitCode) => {
       if (exitCode !== 0) {
-        console.log(`   ⚠️  Panproto impact analysis failed (exit ${exitCode})`);
+        console.log(`   ⚠️  Panproto migration failed (exit ${exitCode})`);
         console.log(`   📝 Falling back to regenerating all IUs`);
         
-        // Fallback: mark all IUs as affected
+        // Fallback: mark all for regeneration
         if (existsSync(iusPath)) {
           const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-          const affected = ius.ius?.map(iu => iu.id) || [];
-          writeFileSync(
-            join(graphsDir, 'affected-ius.json'),
-            JSON.stringify({ affected, reason: 'fallback-panproto-failed' }, null, 2)
-          );
-          resolve({ success: true, affected, fallback: true });
+          const migration = {
+            timestamp: new Date().toISOString(),
+            fallback: true,
+            schema_changes: { added: [], removed: [], modified: [] },
+            ius: (ius.units || []).map(iu => ({
+              new_iu_id: iu.id,
+              new_iu_name: iu.name,
+              old_iu_id: null,
+              strategy: 'regenerate',
+              reason: 'panproto_fallback',
+            })),
+            summary: { migrate: 0, regenerate: ius.units?.length || 0, unchanged: 0 },
+          };
+          writeFileSync(migrationPath, JSON.stringify(migration, null, 2));
+          resolve({ success: true, migration, fallback: true });
           return;
         }
         resolve({ success: false, error: 'No IUs found' });
         return;
       }
       
-      // Parse panproto output to extract affected IUs
-      // For now, mark all as affected (implement proper parsing later)
-      if (existsSync(iusPath)) {
-        const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-        const affected = ius.ius?.map(iu => iu.id) || [];
-        writeFileSync(
-          join(graphsDir, 'affected-ius.json'),
-          JSON.stringify({ affected, reason: 'panproto-impact' }, null, 2)
-        );
-        console.log(`   🎯 ${affected.length} IUs marked for regeneration`);
-        resolve({ success: true, affected });
-      } else {
-        resolve({ success: false, error: 'No IUs found' });
+      // Read the generated migration plan
+      try {
+        const migration = JSON.parse(readFileSync(migrationPath, 'utf-8'));
+        console.log(`\n   ✅ Migration plan computed:`);
+        console.log(`      Unchanged: ${migration.summary.unchanged}`);
+        console.log(`      Migrate: ${migration.summary.migrate}`);
+        console.log(`      Regenerate: ${migration.summary.regenerate}`);
+        resolve({ success: true, migration });
+      } catch (e) {
+        console.error(`   ❌ Failed to read migration plan: ${e.message}`);
+        resolve({ success: false, error: e.message });
       }
     });
     
     child.on('error', (err) => {
       console.error(`   ⚠️  Panproto error: ${err.message}`);
-      console.log(`   📝 Falling back to regenerating all IUs`);
-      
-      if (existsSync(iusPath)) {
-        const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-        const affected = ius.ius?.map(iu => iu.id) || [];
-        writeFileSync(
-          join(graphsDir, 'affected-ius.json'),
-          JSON.stringify({ affected, reason: 'fallback-error' }, null, 2)
-        );
-        resolve({ success: true, affected, fallback: true });
-      } else {
-        resolve({ success: false, error: err.message });
-      }
+      resolve({ success: false, error: err.message });
     });
   });
 }
@@ -331,16 +358,22 @@ async function runPipeline(projectRoot, options) {
       args.push(options.iu);
     }
     
-    // If selective mode and we have affected IUs, use them
+    // If selective mode and we have migration plan, pass it to regen
     if (phase.name === 'regen' && options.selective) {
-      const affectedPath = join(projectRoot, '.phoenix', 'graphs', 'affected-ius.json');
-      if (existsSync(affectedPath)) {
-        const affected = JSON.parse(readFileSync(affectedPath, 'utf-8'));
-        if (affected.affected && affected.affected.length > 0) {
-          console.log(`   🎯 Selective regeneration: ${affected.affected.length} IUs affected`);
-          // Pass affected IUs to regen via a special flag or env var
-          process.env.PHOENIX_AFFECTED_IUS = JSON.stringify(affected.affected);
-        }
+      const migrationPath = join(projectRoot, '.phoenix', 'graphs', 'iu-migration.json');
+      if (existsSync(migrationPath)) {
+        const migration = JSON.parse(readFileSync(migrationPath, 'utf-8'));
+        const toRegenerate = migration.ius?.filter(iu => iu.strategy === 'regenerate').length || 0;
+        const toMigrate = migration.ius?.filter(iu => iu.strategy === 'migrate').length || 0;
+        const unchanged = migration.ius?.filter(iu => iu.strategy === 'unchanged').length || 0;
+        
+        console.log(`   🎯 Migration plan loaded:`);
+        console.log(`      ${toMigrate} IUs to migrate (lift old implementation)`);
+        console.log(`      ${toRegenerate} IUs to regenerate (fresh stubs)`);
+        console.log(`      ${unchanged} IUs unchanged`);
+        
+        // Pass migration plan path to regen via env var
+        process.env.PHOENIX_MIGRATION_PLAN = migrationPath;
       }
     }
     

@@ -16,7 +16,7 @@
  *   node panproto.js impact --ius <ius> --canon <canon>
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { registerPhoenixProtocol } from './lib/phoenix-protocol.js';
@@ -754,6 +754,136 @@ async function cmdImpact(options) {
   };
 }
 
+async function cmdMigrate(options) {
+  console.log('🔄 Computing code migration via theory morphism...');
+  
+  const oldCanon = loadJson(options['old-canon']);
+  const newCanon = loadJson(options['new-canon']);
+  const oldIUs = loadJson(options['old-ius']);
+  const newIUs = loadJson(options['new-ius']);
+  const manifest = loadJson(options['manifest']);
+  
+  const pan = await getPanproto();
+  
+  // Build schemas for old and new canonical (theories)
+  const oldSchema = buildSchemaFromData(pan, 'canon', oldCanon);
+  const newSchema = buildSchemaFromData(pan, 'canon', newCanon);
+  
+  console.log('   📐 Built schemas:');
+  console.log(`      Old: ${Object.keys(oldSchema.data.vertices).length} vertices`);
+  console.log(`      New: ${Object.keys(newSchema.data.vertices).length} vertices`);
+  
+  // Compute diff to understand what changed
+  const diffResult = pan.diff(oldSchema, newSchema);
+  const [added, removed, modified] = diffResult;
+  
+  console.log('   📊 Schema changes:');
+  console.log(`      Added: ${added.length}`);
+  console.log(`      Removed: ${removed.length}`);
+  console.log(`      Modified: ${modified.length}`);
+  
+  // Build migration plan
+  const migration = {
+    timestamp: new Date().toISOString(),
+    schema_changes: { added, removed, modified },
+    ius: [],
+    summary: { migrate: 0, regenerate: 0, unchanged: 0 },
+  };
+  
+  // Map old IUs to new IUs by content overlap
+  const oldIUsMap = new Map((oldIUs.units || []).map(iu => [iu.id, iu]));
+  const newIUsMap = new Map((newIUs.units || []).map(iu => [iu.id, iu]));
+  
+  // For each new IU, find best matching old IU and determine migration strategy
+  for (const newIu of newIUs.units || []) {
+    const newCanonIds = new Set(newIu.source_canon_ids || []);
+    let bestMatch = null;
+    let bestOverlap = 0;
+    
+    // Find old IU with maximum canonical overlap
+    for (const oldIu of oldIUs.units || []) {
+      const oldCanonIds = new Set(oldIu.source_canon_ids || []);
+      const overlap = [...newCanonIds].filter(id => oldCanonIds.has(id)).length;
+      const total = newCanonIds.size;
+      const ratio = total > 0 ? overlap / total : 0;
+      
+      if (ratio > bestOverlap) {
+        bestOverlap = ratio;
+        bestMatch = oldIu;
+      }
+    }
+    
+    // Determine strategy based on overlap and changes
+    let strategy, reason;
+    
+    if (bestOverlap === 1.0 && added.length === 0 && removed.length === 0) {
+      // Perfect match, no schema changes
+      strategy = 'unchanged';
+      reason = 'identical_canonicals';
+    } else if (bestOverlap >= 0.8 && removed.length === 0) {
+      // High overlap, no removals - safe to migrate
+      strategy = 'migrate';
+      reason = `high_overlap_${Math.round(bestOverlap * 100)}%`;
+    } else if (bestMatch && bestOverlap > 0) {
+      // Partial overlap - migrate but mark as needing review
+      strategy = 'migrate';
+      reason = `partial_overlap_${Math.round(bestOverlap * 100)}%_review_needed`;
+    } else {
+      // No overlap - must regenerate
+      strategy = 'regenerate';
+      reason = bestMatch ? 'low_overlap' : 'no_matching_old_iu';
+    }
+    
+    // Find existing implementation from manifest
+    const oldImpl = bestMatch ? manifest.files?.[bestMatch.id] : null;
+    
+    migration.ius.push({
+      new_iu_id: newIu.id,
+      new_iu_name: newIu.name,
+      old_iu_id: bestMatch?.id || null,
+      old_iu_name: bestMatch?.name || null,
+      overlap_ratio: bestOverlap,
+      strategy,
+      reason,
+      old_impl_path: oldImpl?.impl?.path || null,
+      old_test_path: oldImpl?.test?.path || null,
+      new_output_path: null, // To be filled by regen
+    });
+    
+    migration.summary[strategy]++;
+  }
+  
+  // Write migration plan
+  const outputPath = options.output || join(options['project-root'] || '.', '.phoenix', 'graphs', 'iu-migration.json');
+  writeFileSync(outputPath, JSON.stringify(migration, null, 2), 'utf-8');
+  
+  console.log('\n🎯 Migration Plan:');
+  console.log(`   Unchanged: ${migration.summary.unchanged}`);
+  console.log(`   Migrate: ${migration.summary.migrate}`);
+  console.log(`   Regenerate: ${migration.summary.regenerate}`);
+  
+  if (migration.summary.migrate > 0) {
+    console.log('\n🔄 IUs to migrate (lift old implementation):');
+    for (const iu of migration.ius.filter(i => i.strategy === 'migrate')) {
+      console.log(`   • ${iu.new_iu_name} (${iu.reason})`);
+      if (iu.old_impl_path) {
+        console.log(`     from: ${iu.old_impl_path}`);
+      }
+    }
+  }
+  
+  if (migration.summary.regenerate > 0) {
+    console.log('\n🔴 IUs to regenerate (fresh stubs):');
+    for (const iu of migration.ius.filter(i => i.strategy === 'regenerate')) {
+      console.log(`   • ${iu.new_iu_name} (${iu.reason})`);
+    }
+  }
+  
+  console.log(`\n📄 Migration plan saved: ${outputPath}`);
+  
+  return migration;
+}
+
 async function cmdCheck(options) {
   console.log('✓ Checking migration correctness...');
   
@@ -813,11 +943,17 @@ Commands:
   check     Validate migration correctness
            --migration <file> --from <file> --to <file>
 
+  migrate   Compute IU migration plan (theory morphism lifting)
+           --old-canon <file> --new-canon <file>
+           --old-ius <file> --new-ius <file>
+           --manifest <file> [--output <file>]
+
 Examples:
   node panproto.js morphism --from .phoenix/clauses.json --to .phoenix/canonical.json
   node panproto.js lens --from .phoenix/canonical.json --to src/generated/
   node panproto.js diff --old .phoenix/canonical-prev.json --new .phoenix/canonical.json
   node panproto.js impact --ius .phoenix/ius.json --canon .phoenix/canonical.json
+  node panproto.js migrate --old-canon .phoenix/canonical-prev.json --new-canon .phoenix/canonical.json --old-ius .phoenix/graphs/ius-prev.json --new-ius .phoenix/graphs/ius.json --manifest .phoenix/manifests/generated_manifest.json
 `);
     return;
   }
@@ -838,6 +974,9 @@ Examples:
         break;
       case 'check':
         await cmdCheck(options);
+        break;
+      case 'migrate':
+        await cmdMigrate(options);
         break;
       default:
         console.error(`Unknown command: ${command}`);
