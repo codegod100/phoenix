@@ -135,6 +135,10 @@ export function archiveTask(id: string): Task | undefined {
   return updateTask(id, { status: 'archived' });
 }
 
+export function restoreTask(id: string): Task | undefined {
+  return updateTask(id, { status: 'open' });
+}
+
 // ======== SEARCH & FILTER ========
 
 export function searchTasks(query: string): Task[] {
@@ -162,16 +166,18 @@ export function filterByAssignee(assignee: string): Task[] {
 
 export function getStats() {
   const all = getAllTasks();
+  const archived = Array.from(tasks.values()).filter(t => t.status === 'archived').length;
   const now = new Date();
   
   return {
-    total: all.length,
+    total: all.length + archived,
     inProgress: all.filter(t => t.status === 'in_progress').length,
     completed: all.filter(t => t.status === 'done').length,
     overdue: all.filter(t => {
       if (!t.deadline || t.status === 'done') return false;
       return new Date(t.deadline) < now;
     }).length,
+    archived: archived,
     byPriority: {
       critical: all.filter(t => t.priority === 'critical').length,
       high: all.filter(t => t.priority === 'high').length,
@@ -183,6 +189,7 @@ export function getStats() {
       in_progress: all.filter(t => t.status === 'in_progress').length,
       review: all.filter(t => t.status === 'review').length,
       done: all.filter(t => t.status === 'done').length,
+      archived: archived,
     },
   };
 }
