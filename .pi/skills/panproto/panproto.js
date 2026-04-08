@@ -1014,7 +1014,10 @@ Examples:
 }
 
 // Only run main() if this file is the entry point
-const isMainModule = process.argv[1] === fileURLToPath(import.meta.url) || process.argv[1]?.endsWith('panproto.js');
+const isMainModule = process.argv[1] && (
+  process.argv[1] === fileURLToPath(import.meta.url) || 
+  process.argv[1].endsWith('/panproto.js')
+);
 
 if (isMainModule) {
   main();
