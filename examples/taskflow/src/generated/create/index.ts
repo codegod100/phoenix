@@ -1,12 +1,14 @@
-// 🔴 RED: Create Domain (IU-8ae5c45f)
+// 🔄 MIGRATED: Create Domain (IU-8ae5c45f)
 // Description: Implements create functionality with 2 requirements
 // Risk Tier: LOW
+// Migrated from: 8ae5c45f3147f2a0...
+// Canonical overlap: 100%
 
 // TDD CYCLE:
 // 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-8ae5c45f
-// 3. See RED (tests fail)
-// 4. Fix functions below to make tests GREEN
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
 // === TYPES ===
@@ -30,6 +32,7 @@ export function create(id: string): Create | null {
     name: 'not implemented'
   };
 }
+
 
 // === PHOENIX VCS TRACEABILITY ===
 

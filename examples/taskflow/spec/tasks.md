@@ -13,6 +13,7 @@ A task management system for teams with priorities, assignments, and deadlines.
 - REQUIREMENT: Tasks must support archiving to hide from active views while retaining data
 - REQUIREMENT: Archived tasks must be restorable to their previous active status
 - REQUIREMENT: The system must provide a function to list all archived tasks separately from active tasks
+- REQUIREMENT: Tasks must support tagging with multiple labels for flexible categorization
 
 ## Assignment
 

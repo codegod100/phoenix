@@ -1,9 +1,9 @@
 // 🔴 RED: Tests designed to FAIL — fix implementation to pass
-// Task Domain (IU-e4caab5e)
+// Task Domain (IU-d46cdcd2)
 // Risk Tier: HIGH
 
 // TDD CYCLE:
-// 1. npm test -- iu-e4caab5e
+// 1. npm test -- iu-d46cdcd2
 // 2. 🔴 See RED (tests fail)
 // 3. Fix ../index.ts implementations
 // 4. 🟢 See GREEN (tests pass)
@@ -15,7 +15,7 @@ describe('Task Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
   it('has traceability export', () => {
     expect(_phoenix).toBeDefined();
-    expect(_phoenix.iu_id).toBe('e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3');
+    expect(_phoenix.iu_id).toBe('d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5');
   });
 
   // 🔴 RED: This test will FAIL until you fix process()

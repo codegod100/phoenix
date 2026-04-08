@@ -32,6 +32,7 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-400ee183] tasks must support archiving to hide from active views while retaining data
 - [node-a16f8174] archived tasks must be restorable to their previous active status
 - [node-c438a077] the system must provide a function to list all archived tasks separately from active tasks
+- [node-6e2403b9] tasks must support tagging with multiple labels for flexible categorization
 
 ## Assignment
 

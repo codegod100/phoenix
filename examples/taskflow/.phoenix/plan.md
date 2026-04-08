@@ -89,11 +89,11 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-e4caab5e: Task Domain (HIGH)
+## IU-d46cdcd2: Task Domain (HIGH)
 
-**Description:** Implements task functionality with 14 requirements
+**Description:** Implements task functionality with 15 requirements
 
-**Risk Tier:** high (14 requirements)
+**Risk Tier:** high (15 requirements)
 
 **Canonical Requirements:**
 - 0c8fd64b342a...
@@ -104,9 +104,9 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - 3dee3bcd6fc7...
 - 400ee183fafc...
 - 6741feb08b69...
+- 6e2403b97c6f...
 - 950b321591c4...
-- a16f8174b5e5...
-- ... and 4 more
+- ... and 5 more
 
 **Contract:**
 - Inputs: Configuration, Data inputs
@@ -778,6 +778,6 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ## Coverage Summary
 
-- Total canonical nodes: 140
-- Covered: 140
+- Total canonical nodes: 141
+- Covered: 141
 - Orphans: 0

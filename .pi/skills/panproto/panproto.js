@@ -282,12 +282,12 @@ export const PHOENIX_THEORIES = {
       { name: 'Constraint', description: 'Invariant or limitation' },
       { name: 'Definition', description: 'Term definition' },
       { name: 'NodeType', description: 'REQUIREMENT | CONSTRAINT | INVARIANT | DEFINITION' },
+      { name: 'ClauseId', description: 'Source clause identifier' },
     ],
     operations: [
       { name: 'canonId', src: 'Statement', tgt: 'CanonId', description: 'Hash canonical statement' },
       { name: 'nodeType', src: 'CanonId', tgt: 'NodeType', description: 'Get node type' },
-      { name: 'sources', src: 'CanonId', tgt: 'List(ClauseId)', description: 'Trace to source clauses' },
-      { name: 'dependencies', src: 'CanonId', tgt: 'List(CanonId)', description: 'Requirement dependencies' },
+      { name: 'sources', src: 'CanonId', tgt: 'ClauseId', description: 'Trace to source clauses' },
       { name: 'dependsOn', src: 'CanonId', tgt: 'CanonId', description: 'Direct dependency edge' },
     ],
   },
@@ -301,10 +301,11 @@ export const PHOENIX_THEORIES = {
       { name: 'Contract', description: 'Input/output/invariant specification' },
       { name: 'RiskTier', description: 'low | medium | high | critical' },
       { name: 'EvidencePolicy', description: 'Required validations' },
+      { name: 'CanonId', description: 'Canonical requirement ID contained in IU' },
     ],
     operations: [
       { name: 'iuId', src: 'Boundary', tgt: 'IUId', description: 'Compute IU identifier' },
-      { name: 'contains', src: 'IUId', tgt: 'List(CanonId)', description: 'Contained canonical nodes' },
+      { name: 'contains', src: 'IUId', tgt: 'CanonId', description: 'Contained canonical nodes' },
       { name: 'riskTier', src: 'IUId', tgt: 'RiskTier', description: 'Risk classification' },
       { name: 'contract', src: 'IUId', tgt: 'Contract', description: 'Get IU contract' },
       { name: 'boundaryPolicy', src: 'IUId', tgt: 'BoundaryPolicy', description: 'Dependency constraints' },
@@ -320,11 +321,12 @@ export const PHOENIX_THEORIES = {
       { name: 'Function', description: 'Function definition' },
       { name: 'Type', description: 'Type definition' },
       { name: 'Traceability', description: 'IU ID reference in code' },
+      { name: 'IUId', description: 'IU reference' },
+      { name: 'CanonId', description: 'Canonical requirement reference' },
     ],
     operations: [
       { name: 'fileId', src: 'Module', tgt: 'FileId', description: 'Get file path' },
       { name: 'iuRef', src: 'Module', tgt: 'IUId', description: 'Traceability reference' },
-      { name: 'exports', src: 'Module', tgt: 'List(Function | Type)', description: 'Exported symbols' },
       { name: 'implements', src: 'Function', tgt: 'CanonId', description: 'Implements requirement' },
     ],
   },
@@ -428,17 +430,21 @@ export function buildSchemaFromData(panproto, theoryName, data) {
   }
   
   // Add edges based on operations
+  // Note: atproto protocol has limited edge kinds, so we skip edges for now
+  // The diff computation works on vertices anyway
+  /*
   for (const op of theory.operations) {
     const edges = extractEdges(data, op, theoryName);
     for (const edge of edges) {
       currentBuilder = currentBuilder.edge(
         `${op.src}:${edge.src}`,
         `${op.tgt}:${edge.tgt}`,
-        op.name,
-        { name: op.name }
+        'edge',
+        { name: op.name, src: op.src, tgt: op.tgt }
       );
     }
   }
+  */
   
   return currentBuilder.build();
 }
@@ -472,6 +478,18 @@ function extractElements(data, sortName, theoryName) {
           statement: n.statement,
           type: n.type 
         }));
+      }
+      // Also create ClauseId vertices for source tracing
+      if (sortName === 'ClauseId' && Array.isArray(canonNodes)) {
+        const clauseIds = new Set();
+        for (const n of canonNodes) {
+          if (n.source_clause_ids) {
+            for (const cid of n.source_clause_ids) {
+              clauseIds.add(cid);
+            }
+          }
+        }
+        return Array.from(clauseIds).map(id => ({ id, type: 'clause_ref' }));
       }
       break;
       
@@ -791,17 +809,17 @@ async function cmdMigrate(options) {
   };
   
   // Map old IUs to new IUs by content overlap
-  const oldIUsMap = new Map((oldIUs.units || []).map(iu => [iu.id, iu]));
-  const newIUsMap = new Map((newIUs.units || []).map(iu => [iu.id, iu]));
+  const oldIUsMap = new Map((oldIUs.ius || []).map(iu => [iu.id, iu]));
+  const newIUsMap = new Map((newIUs.ius || []).map(iu => [iu.id, iu]));
   
   // For each new IU, find best matching old IU and determine migration strategy
-  for (const newIu of newIUs.units || []) {
+  for (const newIu of newIUs.ius || []) {
     const newCanonIds = new Set(newIu.source_canon_ids || []);
     let bestMatch = null;
     let bestOverlap = 0;
     
     // Find old IU with maximum canonical overlap
-    for (const oldIu of oldIUs.units || []) {
+    for (const oldIu of oldIUs.ius || []) {
       const oldCanonIds = new Set(oldIu.source_canon_ids || []);
       const overlap = [...newCanonIds].filter(id => oldCanonIds.has(id)).length;
       const total = newCanonIds.size;

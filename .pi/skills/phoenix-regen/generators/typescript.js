@@ -110,17 +110,31 @@ export function getTestFileExtension() {
 export function migrateImpl(iu, oldCode, config = {}) {
   const domainName = toPascalCase(iu.name);
   
-  // Extract implementation body (everything after the traceability export)
-  const traceabilityMatch = oldCode.match(/export const _phoenix = \{[\s\S]*?\} as const;/);
-  if (!traceabilityMatch) {
-    // No traceability found, treat as new implementation
-    console.log(`      ⚠️  No traceability in old code, generating fresh stub`);
+  // Find the implementation body - look for type/implementation section markers
+  // Skip old headers (anything before first === section)
+  const typeSectionMatch = oldCode.match(/\/\/ === TYPES ===/);
+  const implSectionMatch = oldCode.match(/\/\/ === RED IMPLEMENTATIONS/);
+  const sectionMatch = typeSectionMatch || implSectionMatch;
+  
+  if (!sectionMatch) {
+    // No implementation section found, treat as new
+    console.log(`      ⚠️  No implementation section in old code, generating fresh stub`);
     return generateImpl(iu, config);
   }
   
-  // Get the code before _phoenix (types and functions)
-  const phoenixIndex = oldCode.indexOf('export const _phoenix');
-  const beforePhoenix = oldCode.substring(0, phoenixIndex);
+  // Find the _phoenix export (we'll replace this with new traceability)
+  const phoenixMatch = oldCode.match(/\/\/ === PHOENIX VCS TRACEABILITY ===[\s\S]*?export const _phoenix = \{[\s\S]*?\} as const;/);
+  
+  // Extract just the implementation body (between section markers and _phoenix)
+  let implementationBody = '';
+  if (phoenixMatch) {
+    const startIdx = sectionMatch.index;
+    const endIdx = phoenixMatch.index;
+    implementationBody = oldCode.substring(startIdx, endIdx);
+  } else {
+    // No _phoenix found, take everything from section to end
+    implementationBody = oldCode.substring(sectionMatch.index);
+  }
   
   // Build new header with updated traceability
   const lines = [];
@@ -142,18 +156,13 @@ export function migrateImpl(iu, oldCode, config = {}) {
   lines.push(`// 5. Run evidence to validate`);
   lines.push('');
   
-  // Keep the implementation body but update any old type names
-  // Simple approach: keep the code as-is, types may need manual fix
-  let implementationBody = beforePhoenix;
-  
   // Replace old domain name with new if they're different
-  // This is a simple heuristic - may need manual adjustment
-  const oldDomainMatch = oldCode.match(/interface (\w+) \{/);
+  const oldDomainMatch = oldCode.match(/export interface (\w+) \{/);
   if (oldDomainMatch) {
     const oldDomainName = oldDomainMatch[1];
     if (oldDomainName !== domainName) {
       implementationBody = implementationBody.replace(
-        new RegExp(oldDomainName, 'g'), 
+        new RegExp(`\\b${oldDomainName}\\b`, 'g'), 
         domainName
       );
     }

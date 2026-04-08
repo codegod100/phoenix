@@ -1,12 +1,14 @@
-// 🔴 RED: Overdue Domain (IU-2ff32cc9)
+// 🔄 MIGRATED: Overdue Domain (IU-2ff32cc9)
 // Description: Implements overdue functionality with 1 requirements
 // Risk Tier: LOW
+// Migrated from: 2ff32cc95412bbeb...
+// Canonical overlap: 100%
 
 // TDD CYCLE:
 // 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-2ff32cc9
-// 3. See RED (tests fail)
-// 4. Fix functions below to make tests GREEN
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
 // === TYPES ===
@@ -28,6 +30,7 @@ export function process(item: Overdue): Overdue {
   // Should: Processed results
   return item; // ← No transformation!
 }
+
 
 // === PHOENIX VCS TRACEABILITY ===
 

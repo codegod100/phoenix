@@ -1,12 +1,14 @@
-// 🔴 RED: Assignment Domain (IU-013287c8)
+// 🔄 MIGRATED: Assignment Domain (IU-013287c8)
 // Description: Implements assignment functionality with 4 requirements
 // Risk Tier: LOW
+// Migrated from: 013287c893c1bba6...
+// Canonical overlap: 100%
 
 // TDD CYCLE:
 // 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-013287c8
-// 3. See RED (tests fail)
-// 4. Fix functions below to make tests GREEN
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
 // === TYPES ===
@@ -28,6 +30,7 @@ export function process(item: Assignment): Assignment {
   // Should: Processed results
   return item; // ← No transformation!
 }
+
 
 // === PHOENIX VCS TRACEABILITY ===
 

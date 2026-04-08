@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T10:21:38.567Z",
-  "clause_count": 145,
+  "generated_at": "2026-04-08T10:27:14.989Z",
+  "clause_count": 146,
   "file_count": 9,
   "files": [
     "spec/analytics.md",
@@ -225,15 +225,26 @@
       "context_semhash": "aa09ad2d4b94c766720913198602aae7ed9c1720c2c570981e31269027eff135"
     },
     {
+      "id": "6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
+      "type": "REQUIREMENT",
+      "text": "tasks must support tagging with multiple labels for flexible categorization",
+      "raw_text": "Tasks must support tagging with multiple labels for flexible categorization",
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md",
+      "line": 16,
+      "clause_semhash": "5250488fe17c356b92027fd0d25e286441c89d047d755e545094700e5d046dca",
+      "context_semhash": "c61a1346b53165e4449973c38e1d36414f684d24fd4c42f4fb0de0ba6e1f4339"
+    },
+    {
       "id": "5e0a0179854a33ec4fc1e3b2dac67644aab962c45b04e8d642744e8039198eae",
       "type": "REQUIREMENT",
       "text": "tasks must be assignable to a single user by user id",
       "raw_text": "Tasks must be assignable to a single user by user ID",
       "section": "Assignment",
       "source_file": "spec/tasks.md",
-      "line": 19,
+      "line": 20,
       "clause_semhash": "0675655a0ab4a71b4ef8fa17397320bf1844158807d75a276db8cd4fb59fca9d",
-      "context_semhash": "abaa02f0d96e47b535b5dc761ca08fdcf506cfb8358acf0de3e8dbce181fcec2"
+      "context_semhash": "65da3e4af2e0c22b4e0af75ecb63a7153b9917eec3cc779d64994ce86c19c288"
     },
     {
       "id": "f8cbfa7d6c882d94d5a8712676ec777f819b769367cd566f73bc90cc47cc37c9",
@@ -242,7 +253,7 @@
       "raw_text": "Reassigning a task must log the previous assignee in an audit trail",
       "section": "Assignment",
       "source_file": "spec/tasks.md",
-      "line": 20,
+      "line": 21,
       "clause_semhash": "61e19c242459dd8194d3dc1cd4d0bb156cd8b0a88252743523eb24c03068c9bf",
       "context_semhash": "bd4f0ebc847ff81a430d8df9e630f9cc2e3ab3e8182d265946c97505737f3ee6"
     },
@@ -253,7 +264,7 @@
       "raw_text": "Unassigned tasks must be queryable as a filtered list",
       "section": "Assignment",
       "source_file": "spec/tasks.md",
-      "line": 21,
+      "line": 22,
       "clause_semhash": "2f9099d59b608bbe671d13becb02510a01583a136d7a83a30f61d01fa20b6c6d",
       "context_semhash": "2cb535ba2fd5e325590ff2332a47544e9e09551a2574a1aa7750114224bb5b93"
     },
@@ -264,7 +275,7 @@
       "raw_text": "Assignment must validate that the user ID is non-empty",
       "section": "Assignment",
       "source_file": "spec/tasks.md",
-      "line": 22,
+      "line": 23,
       "clause_semhash": "a3c047bbe759aab8c9f441867ebceb360a5f829b2f6d08cde8e7a07a2570163f",
       "context_semhash": "b0e57f189d2fa8f407e14ff296a4979b09aadab5b599300c6af348897932f8f6"
     },
@@ -275,7 +286,7 @@
       "raw_text": "Tasks must be searchable by title substring (case-insensitive)",
       "section": "Search and Filtering",
       "source_file": "spec/tasks.md",
-      "line": 26,
+      "line": 27,
       "clause_semhash": "cd92c80aa9cbdba86d14362d33f6f067714309abf0f8fc56702bd0a98f6bca16",
       "context_semhash": "3bed4f6fdcfebf3afc0ad98ca5e2e84b632372fec3a7594ba30647dcc7751e29"
     },
@@ -286,7 +297,7 @@
       "raw_text": "Tasks must be filterable by status, priority, assignee, and archived state",
       "section": "Search and Filtering",
       "source_file": "spec/tasks.md",
-      "line": 27,
+      "line": 28,
       "clause_semhash": "0ddcaed5d04ea95932e57df39140471aeffc718a0bb6759653175d0023bf73d0",
       "context_semhash": "586e091b84d81beb9abf91224c1a35810dd5069a33d11f1ce23b40da0cc092d4"
     },
@@ -297,7 +308,7 @@
       "raw_text": "Search results must be sorted by priority (critical first) then by created_at",
       "section": "Search and Filtering",
       "source_file": "spec/tasks.md",
-      "line": 28,
+      "line": 29,
       "clause_semhash": "9f479867f1acf73e1fb11628c4ef9247d5357b4d8112bca39d11a846bc6aeb2e",
       "context_semhash": "ebdee613346a555ac01fb7189b1fd9eb4c969e971828b0bbb23df17837ba5088"
     },
@@ -308,7 +319,7 @@
       "raw_text": "An empty search query must return all tasks",
       "section": "Search and Filtering",
       "source_file": "spec/tasks.md",
-      "line": 29,
+      "line": 30,
       "clause_semhash": "133297cbb5bb1b909bd879b963d4848ddc13668feb26708f5e730bd8045f73ab",
       "context_semhash": "0276fc9344a44b6ceaabf9177ee60b47cf9011bb398081173dd0eaef00ac8dff"
     },
@@ -319,7 +330,7 @@
       "raw_text": "Tasks must support optional deadline dates",
       "section": "Deadline Management",
       "source_file": "spec/tasks.md",
-      "line": 33,
+      "line": 34,
       "clause_semhash": "072103291dee621b38e3170a7c095e2c926be848bcee30af790c30925cd9ba83",
       "context_semhash": "e9dbd651aa9cd52a98acaf4f49a48e9ba8a977cb6b397f6173ec6980b060d513"
     },
@@ -330,7 +341,7 @@
       "raw_text": "Overdue tasks (past deadline and not done) must be flagged automatically",
       "section": "Deadline Management",
       "source_file": "spec/tasks.md",
-      "line": 34,
+      "line": 35,
       "clause_semhash": "ae40cf7d848d50ca35382f4029fa5fdb42acfbbd73c8dec9690d33ca2df97c86",
       "context_semhash": "fbb09baa500b8ad531ade0f95bb63e6d230de152beeafc8d4b961163b92199d5"
     },
@@ -341,7 +352,7 @@
       "raw_text": "The system must provide a function to list all overdue tasks",
       "section": "Deadline Management",
       "source_file": "spec/tasks.md",
-      "line": 35,
+      "line": 36,
       "clause_semhash": "b02a34cca205c019d11902b273a0b8997c404600224dff9196c6bd62afe9eff9",
       "context_semhash": "4be8a71f26411f6a9a48c20681adab0e799665705fe6069f483dcc12b68bb832"
     },
@@ -352,7 +363,7 @@
       "raw_text": "Setting a deadline in the past must produce a warning but still be allowed",
       "section": "Deadline Management",
       "source_file": "spec/tasks.md",
-      "line": 36,
+      "line": 37,
       "clause_semhash": "4d520aa3fc306d7383a4240ae37111cd9e9edab6468aaeeeade4d6caeefe87e0",
       "context_semhash": "5fd03ae2ebe5c2c7fd3eb9f3ae1690ddd3f0de6467edb1b132cce30f88e9d4c0"
     },

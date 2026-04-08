@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T10:21:38.623Z",
+  "generated_at": "2026-04-08T10:27:15.038Z",
   "bootstrap_state": "BOOTSTRAP_WARMING",
   "d_rate": 0,
   "d_rate_level": "TARGET",
   "d_rate_message": "D-rate 0.0% within target (≤5%)",
-  "node_count": 140,
+  "node_count": 141,
   "classification_stats": {
-    "A": 140,
+    "A": 141,
     "B": 0,
     "C": 0,
     "D": 0
@@ -256,6 +256,19 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "c438a0777d8c24a5356730cd335d79e239868a8f9182f091e16ab9d7a5c4fe03"
+      ],
+      "section": "Task Lifecycle",
+      "source_file": "spec/tasks.md"
+    },
+    {
+      "canon_id": "6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
+      "short_id": "node-6e2403b9",
+      "type": "REQUIREMENT",
+      "statement": "tasks must support tagging with multiple labels for flexible categorization",
+      "raw_text": "Tasks must support tagging with multiple labels for flexible categorization",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2"
       ],
       "section": "Task Lifecycle",
       "source_file": "spec/tasks.md"

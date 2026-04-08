@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T10:27:15.085Z",
+  "generated_at": "2026-04-08T10:21:38.681Z",
   "iu_count": 25,
   "coverage": {
-    "total_canon_nodes": 141,
-    "covered_canon_nodes": 141,
+    "total_canon_nodes": 140,
+    "covered_canon_nodes": 140,
     "orphan_canon_ids": []
   },
   "ius": [
@@ -211,12 +211,12 @@
       ]
     },
     {
-      "id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
-      "short_id": "IU-d46cdcd2",
+      "id": "e4caab5ead2d175caf9cf1deacf957c9f2429599664946e7317838fcf36347c3",
+      "short_id": "IU-e4caab5e",
       "name": "Task Domain",
       "kind": "web-ui",
       "risk_tier": "high",
-      "description": "Implements task functionality with 15 requirements",
+      "description": "Implements task functionality with 14 requirements",
       "source_canon_ids": [
         "0c8fd64b342a96b214bc1537aab16d0a04e4092ddeff1078dda85832bcc09b36",
         "0ec58c72f695a3228427e43ef2bad08e5a9af15cdda2519e38446c9c8af60fd6",
@@ -226,7 +226,6 @@
         "3dee3bcd6fc7e663e12f42f0d920e98c598e7266f5709bd0a399dacc5bec6063",
         "400ee183fafc6e6ab91979e3888f93b42d8aa93cf05e6681ad9a59cc1ba63695",
         "6741feb08b69fcb97252c882d33eeefd88491cd4ca620cbddafe8918712ff7a1",
-        "6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
         "950b321591c472b76485732db315febc9fe0863aa521f23d45c272724a5f3e82",
         "a16f8174b5e546da5f9783ee31240db9732bd7a4643c977fe540a017b0824cc0",
         "bc27c9f07de88635cff6f237ba4fb27c9f09ef840dd2e327a519c7c03b51b178",
@@ -235,7 +234,7 @@
         "f60039398ec8457e8d6545a1d348b768bd7e207fb8db9deefae8c060f9fcc35f"
       ],
       "contract": {
-        "description": "Implements task functionality with 15 requirements",
+        "description": "Implements task functionality with 14 requirements",
         "inputs": [
           "Configuration",
           "Data inputs"

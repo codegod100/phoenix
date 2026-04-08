@@ -5,23 +5,23 @@
   "pipeline": {
     "ingest": {
       "status": "complete",
-      "completed_at": "2026-04-08T10:21:38.576Z"
+      "completed_at": "2026-04-08T10:27:14.997Z"
     },
     "canonicalize": {
       "status": "complete",
-      "completed_at": "2026-04-08T10:21:38.630Z"
+      "completed_at": "2026-04-08T10:27:15.046Z"
     },
     "plan": {
       "status": "complete",
-      "completed_at": "2026-04-08T10:21:38.689Z"
+      "completed_at": "2026-04-08T10:27:15.092Z"
     },
     "regen": {
       "status": "complete",
-      "completed_at": "2026-04-08T10:21:38.768Z"
+      "completed_at": "2026-04-08T10:27:15.365Z"
     },
     "evidence": {
       "status": "failed",
-      "completed_at": "2026-04-08T10:21:52.471Z"
+      "completed_at": "2026-04-08T10:27:29.091Z"
     },
     "audit": {
       "status": "complete",
@@ -33,7 +33,7 @@
     },
     "protolens": {
       "status": "complete",
-      "completed_at": "2026-04-08T10:21:38.690Z"
+      "completed_at": "2026-04-08T10:27:15.305Z"
     }
   },
   "audit": {
