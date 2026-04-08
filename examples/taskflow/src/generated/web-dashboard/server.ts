@@ -14,7 +14,7 @@ import {
   getTaskById, 
   createTask, 
   updateTask, 
-  deleteTask,
+  deleteTaskById,
   archiveTask,
   restoreTask,
   searchTasks,
@@ -880,7 +880,7 @@ const server = createServer(async (req: import('http').IncomingMessage, res: imp
     }
     
     if (taskMatch && req.method === 'DELETE') {
-      const success = deleteTask(taskMatch[1]);
+      const success = deleteTaskById(taskMatch[1]);
       if (!success) { res.writeHead(404); res.end('{}'); return; }
       res.writeHead(204);
       res.end();

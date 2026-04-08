@@ -7,11 +7,7 @@
  * Integrates all Phoenix domains into a unified task management API
  */
 
-import { process as processTask } from '../task/index.js';
-import { selectedids } from '../ui/index.js';
-import { delete_ } from '../delete/index.js';
-import { create } from '../create/index.js';
-import { edit } from '../edit/index.js';
+import { deleteTask } from '../delete/index.js';
 
 // Full Task interface with all domain fields
 export interface Task {
@@ -82,11 +78,8 @@ export function getTaskById(id: string): Task | undefined {
 }
 
 export function createTask(data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task {
-  // Use Create domain
-  const created = create(data.title) || { id: crypto.randomUUID(), name: data.title };
-  
   const task: Task = {
-    id: created.id,
+    id: crypto.randomUUID(),
     title: data.title,
     description: data.description || '',
     priority: data.priority || 'medium',
@@ -98,24 +91,17 @@ export function createTask(data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): 
     tags: data.tags || [],
   };
   
-  // Process through Task domain
-  const processed = processTask({ id: task.id, name: task.title }) as unknown as Task;
-  
-  tasks.set(task.id, { ...task, ...processed });
-  return tasks.get(task.id)!;
+  tasks.set(task.id, task);
+  return task;
 }
 
 export function updateTask(id: string, updates: Partial<Task>): Task | undefined {
   const existing = tasks.get(id);
   if (!existing) return undefined;
   
-  // Use Edit domain
-  const edited = edit({ id, name: existing.title, ...updates } as any);
-  
   const updated: Task = {
     ...existing,
     ...updates,
-    ...edited,
     updatedAt: new Date().toISOString(),
   };
   
@@ -123,12 +109,12 @@ export function updateTask(id: string, updates: Partial<Task>): Task | undefined
   return updated;
 }
 
-export function deleteTask(id: string): boolean {
+export function deleteTaskById(id: string): boolean {
   const task = tasks.get(id);
   if (!task) return false;
   
   // Use Delete domain
-  const deleted = delete_(id);
+  const deleted = deleteTask(id);
   if (!deleted) return false;
   
   return tasks.delete(id);
@@ -198,8 +184,20 @@ export function getStats() {
 }
 
 // ======== SELECTED IDS (UI Domain) ========
+// Note: UI domain exports getArchivedTasks, setStatus, filterByStatus
+// Selection logic is handled locally in the store
+
+const selectedIds = new Set<string>();
 
 export function getSelectedIds(): string[] {
-  const selected = selectedids();
-  return selected.map((s: any) => s.id);
+  return Array.from(selectedIds);
+}
+
+export function setSelectedId(id: string, selected: boolean): void {
+  if (selected) selectedIds.add(id);
+  else selectedIds.delete(id);
+}
+
+export function clearSelectedIds(): void {
+  selectedIds.clear();
 }
