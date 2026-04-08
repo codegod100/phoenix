@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6
+// @phoenix-name: Bulk Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-eb7c109e
+// @phoenix-migrated: eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6
+
 // === TYPES ===
 
 export interface Bulk {
@@ -32,11 +38,3 @@ export function process(item: Bulk): Bulk {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: 'eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6',
-  name: 'Bulk Domain',
-  risk_tier: 'low',
-} as const;

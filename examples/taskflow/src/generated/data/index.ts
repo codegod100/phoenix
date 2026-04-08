@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676
+// @phoenix-name: Data Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-f5ffe871
+// @phoenix-migrated: f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676
+
 // === TYPES ===
 
 export interface Data {
@@ -32,11 +38,3 @@ export function process(item: Data): Data {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: 'f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676',
-  name: 'Data Domain',
-  risk_tier: 'high',
-} as const;

@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143
+// @phoenix-name: Priority Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-7cce149b
+// @phoenix-migrated: 7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143
+
 // === TYPES ===
 
 export interface Priority {
@@ -32,11 +38,3 @@ export function process(item: Priority): Priority {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143',
-  name: 'Priority Domain',
-  risk_tier: 'low',
-} as const;

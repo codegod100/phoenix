@@ -2,6 +2,11 @@
 // Search Domain (IU-5d746ac1)
 // Risk Tier: LOW
 
+// @phoenix-iu: 5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f
+// @phoenix-name: Search Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-5d746ac1
+
 // TDD CYCLE:
 // 1. npm test -- iu-5d746ac1
 // 2. 🔴 See RED (tests fail)
@@ -9,23 +14,22 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { _phoenix, process } from '../index.js';
+import { process } from '../index.js';
 
 describe('Search Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
-  it('has traceability export', () => {
-    expect(_phoenix).toBeDefined();
-    expect(_phoenix.iu_id).toBe('5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f');
+  it('has phoenix traceability comments', () => {
+    // Read the impl file and check for @phoenix-iu comment
+    const fs = require('fs');
+    const impl = fs.readFileSync('./index.ts', 'utf-8');
+    expect(impl).toMatch(/@phoenix-iu:.*5d746ac1128920d7/);
   });
 
-  // 🔴 RED: This test will FAIL until you fix process()
-  it('process transforms the input', () => {
-    const input: Search = { id: '123', name: 'In' };
-    const result = process(input);
-    // 🔴 This FAILS because process returns input unchanged
-    expect(result).not.toBe(input); // Should be new object
-    // FIX: Actually transform/process the input
-    // Then add: expect(result.name).toBe('Expected Output')
+  // 🔴 RED: process should transform input
+  it('process processes search', () => {
+    const item: Search = { id: '1', name: 'test' };
+    const result = process(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
   });
 
 });

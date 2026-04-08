@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64
+// @phoenix-name: Catppuccin Domain
+// @phoenix-risk: medium
+// @phoenix-short: IU-f56c1390
+// @phoenix-migrated: f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64
+
 // === TYPES ===
 
 export interface Catppuccin {
@@ -32,11 +38,3 @@ export function process(item: Catppuccin): Catppuccin {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: 'f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64',
-  name: 'Catppuccin Domain',
-  risk_tier: 'medium',
-} as const;

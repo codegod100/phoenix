@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844
+// @phoenix-name: Archive Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-fc178077
+// @phoenix-migrated: fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844
+
 // === TYPES ===
 
 export interface Archive {
@@ -32,11 +38,3 @@ export function process(item: Archive): Archive {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: 'fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844',
-  name: 'Archive Domain',
-  risk_tier: 'high',
-} as const;

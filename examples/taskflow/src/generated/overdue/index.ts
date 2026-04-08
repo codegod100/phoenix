@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7
+// @phoenix-name: Overdue Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-2ff32cc9
+// @phoenix-migrated: 2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7
+
 // === TYPES ===
 
 export interface Overdue {
@@ -32,11 +38,3 @@ export function process(item: Overdue): Overdue {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7',
-  name: 'Overdue Domain',
-  risk_tier: 'low',
-} as const;

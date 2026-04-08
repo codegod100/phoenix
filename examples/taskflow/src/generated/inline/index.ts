@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7
+// @phoenix-name: Inline Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-1b10421c
+// @phoenix-migrated: 1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7
+
 // === TYPES ===
 
 export interface Inline {
@@ -32,11 +38,3 @@ export function process(item: Inline): Inline {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7',
-  name: 'Inline Domain',
-  risk_tier: 'high',
-} as const;

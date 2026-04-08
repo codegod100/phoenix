@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708
+// @phoenix-name: Edit Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-b0512ab0
+// @phoenix-migrated: b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708
+
 // === TYPES ===
 
 export interface Edit {
@@ -32,11 +38,3 @@ export function process(item: Edit): Edit {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: 'b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708',
-  name: 'Edit Domain',
-  risk_tier: 'low',
-} as const;

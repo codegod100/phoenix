@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5
+// @phoenix-name: Integration Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-379356eb
+// @phoenix-migrated: 379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5
+
 // === TYPES ===
 
 export interface Integration {
@@ -32,11 +38,3 @@ export function process(item: Integration): Integration {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5',
-  name: 'Integration Domain',
-  risk_tier: 'high',
-} as const;

@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7
+// @phoenix-name: UI Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-fa4c8303
+// @phoenix-migrated: fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7
+
 // === TYPES ===
 
 export interface Ui {
@@ -32,11 +38,3 @@ export function process(item: Ui): Ui {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: 'fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7',
-  name: 'UI Domain',
-  risk_tier: 'high',
-} as const;

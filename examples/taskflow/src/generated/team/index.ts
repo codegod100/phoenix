@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf
+// @phoenix-name: Team Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-169b3c51
+// @phoenix-migrated: 169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf
+
 // === TYPES ===
 
 export interface Team {
@@ -32,11 +38,3 @@ export function process(item: Team): Team {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf',
-  name: 'Team Domain',
-  risk_tier: 'low',
-} as const;

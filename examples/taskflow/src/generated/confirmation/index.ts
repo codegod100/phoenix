@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908
+// @phoenix-name: Confirmation Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-7bde30d9
+// @phoenix-migrated: 7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908
+
 // === TYPES ===
 
 export interface Confirmation {
@@ -32,11 +38,3 @@ export function process(item: Confirmation): Confirmation {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908',
-  name: 'Confirmation Domain',
-  risk_tier: 'low',
-} as const;

@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f
+// @phoenix-name: Search Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-5d746ac1
+// @phoenix-migrated: 5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f
+
 // === TYPES ===
 
 export interface Search {
@@ -32,11 +38,3 @@ export function process(item: Search): Search {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f',
-  name: 'Search Domain',
-  risk_tier: 'low',
-} as const;

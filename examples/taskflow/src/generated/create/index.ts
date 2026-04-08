@@ -11,6 +11,12 @@
 // 4. Fix functions below to make tests 🟢 GREEN
 // 5. Run evidence to validate
 
+// @phoenix-iu: 8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0
+// @phoenix-name: Create Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-8ae5c45f
+// @phoenix-migrated: 8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0
+
 // === TYPES ===
 
 export interface Create {
@@ -34,11 +40,3 @@ export function create(id: string): Create | null {
 }
 
 
-// === PHOENIX VCS TRACEABILITY ===
-
-/** @internal Phoenix VCS traceability — do not remove. */
-export const _phoenix = {
-  iu_id: '8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0',
-  name: 'Create Domain',
-  risk_tier: 'low',
-} as const;
