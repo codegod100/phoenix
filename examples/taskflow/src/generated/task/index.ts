@@ -73,4 +73,6 @@ export function process(item): Task {
     processed: true,
     processedAt: new Date().toISOString()
   };
+};
+};
 }

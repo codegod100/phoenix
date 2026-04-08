@@ -202,10 +202,10 @@ async function autoImplementIU(projectRoot, iuId) {
   
   // Find implementation file by IU ID (manifest keys are paths, iu_id is inside)
   let implPath = null;
-  for (const [path, info] of Object.entries(manifest.files || {})) {
-    if (!path.includes('__tests__') && 
-        (info.iu_id === iuId || info.iu_id.startsWith(iuId) || path.includes(iuId))) {
-      implPath = join(projectRoot, path);
+  for (const [filePath, info] of Object.entries(manifest.files || {})) {
+    if (!filePath.includes('__tests__') && info && info.iu_id &&
+        (info.iu_id === iuId || info.iu_id.startsWith(iuId) || filePath.includes(iuId))) {
+      implPath = join(projectRoot, filePath);
       break;
     }
   }
