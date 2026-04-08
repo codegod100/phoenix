@@ -187,7 +187,7 @@ async function runProtolensPhase(projectRoot, options) {
         timestamp: new Date().toISOString(),
         first_run: true,
         schema_changes: { added: [], removed: [], modified: [] },
-        ius: (ius.units || []).map(iu => ({
+        ius: (ius.ius || []).map(iu => ({
           new_iu_id: iu.id,
           new_iu_name: iu.name,
           old_iu_id: null,
@@ -198,7 +198,7 @@ async function runProtolensPhase(projectRoot, options) {
           old_impl_path: null,
           old_test_path: null,
         })),
-        summary: { migrate: 0, regenerate: ius.units?.length || 0, unchanged: 0 },
+        summary: { migrate: 0, regenerate: ius.ius?.length || 0, unchanged: 0 },
       };
       
       const migrationPath = join(graphsDir, 'iu-migration.json');
