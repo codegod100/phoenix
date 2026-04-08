@@ -35,14 +35,26 @@ async function main() {
   // Load IUs and canonical data
   const ctx = await loadContext(projectPath);
   
+  // Load migration plan (if exists)
+  const migrationPlan = loadMigrationPlan(projectPath);
+  
   // Infer deliverable type
   ctx.type = explicitType || inferDeliverableType(ctx);
   console.log(`   Type: ${ctx.type}`);
   console.log(`   IUs: ${ctx.ius.length} domains`);
+  if (migrationPlan) {
+    console.log(`   Migration: ${migrationPlan.summary.regenerate} regenerate, ${migrationPlan.summary.migrate} migrate, ${migrationPlan.summary.unchanged} unchanged`);
+  }
+  console.log();
+  
+  // Generate IU implementations (respecting migration plan)
+  console.log(`Step 1: Generating IU implementations...`);
+  await generateIUs(ctx, migrationPlan, projectPath);
+  console.log(`   ✓ IUs generated`);
   console.log();
   
   // Compute colimit via WASM (identifies shared operations across IUs)
-  console.log(`Step 1: Computing colimit...`);
+  console.log(`Step 2: Computing colimit...`);
   const panproto = await initializePanproto();
   const colimitOps = await computeColimit(ctx, panproto);
   console.log(`   ✓ Colimit: ${colimitOps.length} operations`);
@@ -50,7 +62,7 @@ async function main() {
   console.log();
   
   // Generate deliverable that USES the IU implementations
-  console.log(`Step 2: Generating deliverable...`);
+  console.log(`Step 3: Generating deliverable...`);
   const outputs = await generateDeliverable(ctx, colimitOps);
   
   for (const [filePath, content] of Object.entries(outputs)) {
@@ -71,6 +83,133 @@ async function main() {
   console.log();
   console.log(`The deliverable imports and uses IU implementations.`);
   console.log(`Run: cd ${projectPath} && npm start`);
+}
+
+// ============================================================================
+// MIGRATION PLAN
+// ============================================================================
+
+function loadMigrationPlan(projectPath) {
+  const migrationPath = join(projectPath, '.phoenix', 'graphs', 'iu-migration.json');
+  if (!existsSync(migrationPath)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(migrationPath, 'utf8'));
+}
+
+// ============================================================================
+// IU GENERATION
+// ============================================================================
+
+async function generateIUs(ctx, migrationPlan, projectPath) {
+  const generatedDir = join(projectPath, 'src', 'generated');
+  
+  for (const iu of ctx.ius) {
+    // Determine strategy from migration plan
+    let strategy = 'regenerate';
+    let oldImpl = null;
+    
+    if (migrationPlan) {
+      const iuMigration = migrationPlan.ius?.find(m => m.new_iu_id === iu.id);
+      if (iuMigration) {
+        strategy = iuMigration.strategy;
+        oldImpl = iuMigration.old_impl_path;
+      }
+    }
+    
+    const domain = iu.name.toLowerCase().replace(/\s+domain$/, '').replace(/\s+/g, '-');
+    const iuDir = join(generatedDir, domain);
+    mkdirSync(iuDir, { recursive: true });
+    
+    if (strategy === 'migrate' && oldImpl && existsSync(oldImpl)) {
+      // Lift old implementation
+      const oldCode = readFileSync(oldImpl, 'utf8');
+      const liftedCode = liftImplementation(oldCode, iu);
+      writeFileSync(join(iuDir, 'index.ts'), liftedCode);
+      console.log(`   ✓ ${iu.name}: migrated (lifted old implementation)`);
+    } else {
+      // Generate fresh
+      const freshCode = generateFreshIU(iu, ctx.canonical);
+      writeFileSync(join(iuDir, 'index.ts'), freshCode);
+      if (strategy === 'unchanged') {
+        console.log(`   ✓ ${iu.name}: unchanged (skipped)`);
+      } else {
+        console.log(`   ✓ ${iu.name}: generated fresh`);
+      }
+    }
+    
+    // Generate tests for the IU
+    const testCode = generateIUTests(iu);
+    const testDir = join(iuDir, '__tests__');
+    mkdirSync(testDir, { recursive: true });
+    writeFileSync(join(testDir, 'index.test.ts'), testCode);
+  }
+}
+
+function liftImplementation(oldCode, iu) {
+  // Update the @phoenix-iu comment to mark as migrated
+  const newHash = iu.id;
+  return oldCode.replace(
+    /\/\/ @phoenix-iu: [a-f0-9]+/,
+    `// @phoenix-iu: ${newHash}\n// @phoenix-migrated: ${iu.id}`
+  );
+}
+
+function generateFreshIU(iu, canonical) {
+  const exports = iu.boundary?.exports || ['process'];
+  const canonReqs = iu.source_canon_ids?.map(id => {
+    const canon = canonical.requirements?.find(r => r.id === id);
+    return canon ? { id: id.slice(0, 16), text: canon.statement } : null;
+  }).filter(Boolean) || [];
+  
+  const domain = iu.name.toLowerCase().replace(/\s+domain$/, '').replace(/\s+/g, '-');
+  
+  let code = `// @phoenix-iu: ${iu.id}\n`;
+  code += `// @phoenix-name: ${iu.name}\n`;
+  code += `// @phoenix-risk: ${iu.risk_tier || 'MEDIUM'}\n\n`;
+  
+  // Add implemented requirements
+  if (canonReqs.length > 0) {
+    code += `// IMPLEMENTED REQUIREMENTS:\n`;
+    for (const req of canonReqs) {
+      code += `// @phoenix-canon: ${req.id}...\n`;
+      code += `// REQUIREMENT: ${req.text.slice(0, 80)}${req.text.length > 80 ? '...' : ''}\n`;
+    }
+    code += `\n`;
+  }
+  
+  // Generate exports
+  for (const export_ of exports) {
+    const funcName = escapeReserved(export_);
+    code += `export function ${funcName}(input: any): any {\n`;
+    code += `  // TODO: Implement ${funcName}\n`;
+    code += `  throw new Error('${funcName} not implemented');\n`;
+    code += `}\n\n`;
+  }
+  
+  return code;
+}
+
+function generateIUTests(iu) {
+  const exports = iu.boundary?.exports || ['process'];
+  
+  let code = `import { ${exports.join(', ')} } from '../index.js';\n\n`;
+  
+  for (const export_ of exports) {
+    code += `describe('${export_}', () => {\n`;
+    code += `  it('should be implemented', () => {\n`;
+    code += `    expect(typeof ${export_}).toBe('function');\n`;
+    code += `  });\n`;
+    code += `});\n\n`;
+  }
+  
+  return code;
+}
+
+const RESERVED_WORDS = new Set(['delete', 'class', 'function', 'var', 'let', 'const', 'interface', 'type', 'enum', 'import', 'export', 'default', 'return', 'if', 'else', 'for', 'while', 'switch', 'case', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super', 'extends', 'implements', 'static', 'public', 'private', 'protected', 'readonly', 'abstract', 'async', 'await', 'yield', 'void', 'null', 'undefined', 'true', 'false', 'in', 'of', 'instanceof', 'typeof']);
+
+function escapeReserved(name) {
+  return RESERVED_WORDS.has(name) ? `${name}_` : name;
 }
 
 // ============================================================================
