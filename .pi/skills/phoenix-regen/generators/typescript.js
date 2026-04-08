@@ -251,9 +251,27 @@ function toPascalCase(str) {
     .replace(/Domain$/, '');
 }
 
+// JavaScript/TypeScript reserved words that can't be used as function names
+const RESERVED_WORDS = new Set([
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
+  'delete', 'do', 'else', 'enum', 'export', 'extends', 'false', 'finally',
+  'for', 'function', 'if', 'implements', 'import', 'in', 'instanceof',
+  'interface', 'let', 'new', 'null', 'package', 'private', 'protected',
+  'public', 'return', 'static', 'super', 'switch', 'this', 'throw', 'true',
+  'try', 'typeof', 'var', 'void', 'while', 'with', 'yield'
+]);
+
+/**
+ * Escape reserved words by appending underscore
+ */
+function escapeReserved(name) {
+  return RESERVED_WORDS.has(name) ? name + '_' : name;
+}
+
 function toCamelCase(str) {
   const pascal = toPascalCase(str);
-  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
+  const camel = pascal.charAt(0).toLowerCase() + pascal.slice(1);
+  return escapeReserved(camel);
 }
 
 function extractFunctions(iu) {
@@ -284,7 +302,7 @@ function extractFunctions(iu) {
 
   // Ensure at least one function
   if (functions.length === 0) {
-    functions.push({ name: 'process', type: 'process', original: 'process' });
+    functions.push({ name: escapeReserved('process'), type: 'process', original: 'process' });
   }
 
   return functions.slice(0, 5);

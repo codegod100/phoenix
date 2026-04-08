@@ -47,7 +47,7 @@ export interface Delete {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function delete(id: string): boolean {
+export function delete_(id: string): boolean {
   // 🔴 RED: WRONG — always returns false
   // Should delete the item and return success
   return false;

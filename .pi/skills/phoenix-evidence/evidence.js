@@ -178,22 +178,22 @@ async function runBoundaryValidation(projectRoot, iuId, filePath) {
   const start = Date.now();
   
   try {
-    // Simplified boundary check - just verify file exists and has _phoenix export
+    // Check for comment-based traceability (@phoenix-iu)
     const content = readFileSync(join(projectRoot, filePath), 'utf-8');
-    const hasPhoenix = content.includes('_phoenix');
-    const hasIuId = content.includes(`iu_id:`);
+    const hasPhoenixIu = content.includes('@phoenix-iu:');
+    const hasIuId = content.includes(iuId.slice(0, 16)); // Check for IU ID prefix
     
     const duration = Date.now() - start;
     
     return {
       kind: 'boundary_validation',
-      status: hasPhoenix && hasIuId ? 'passed' : 'failed',
+      status: hasPhoenixIu && hasIuId ? 'passed' : 'failed',
       timestamp: new Date().toISOString(),
       iu_id: iuId,
       duration_ms: duration,
-      details: hasPhoenix && hasIuId 
-        ? `Traceability export found in ${filePath}`
-        : `Missing _phoenix export in ${filePath}`,
+      details: hasPhoenixIu && hasIuId 
+        ? `Comment-based traceability found in ${filePath}`
+        : `Missing @phoenix-iu comment in ${filePath}`,
     };
   } catch (error) {
     return {
