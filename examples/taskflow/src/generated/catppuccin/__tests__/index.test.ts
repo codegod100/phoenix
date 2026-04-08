@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { setPriority, filterByPriority, setStatus, filterByStatus } from '../index.js';
 
 describe('Catppuccin Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,32 @@ describe('Catppuccin Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*f56c1390c9aa63a5/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes catppuccin', () => {
+  // 🔴 RED: setPriority should transform input
+  it('setPriority processes catppuccin', () => {
     const item: Catppuccin = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = setPriority(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByPriority should return correct data
+  it('filterByPriority returns catppuccin by id', () => {
+    const result = filterByPriority('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: setStatus should transform input
+  it('setStatus processes catppuccin', () => {
+    const item: Catppuccin = { id: '1', name: 'test' };
+    const result = setStatus(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByStatus should return correct data
+  it('filterByStatus returns catppuccin by id', () => {
+    const result = filterByStatus('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

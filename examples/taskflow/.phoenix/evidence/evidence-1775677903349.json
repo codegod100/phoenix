@@ -1,0 +1,1235 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-04-08T19:51:43.349Z",
+  "evaluations": [
+    {
+      "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+      "tier": "medium",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.917Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/metrics/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:31.789Z",
+          "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+          "duration_ms": 872,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 3ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:31\n   Duration  364ms (transform 56ms, setup 0ms, collect 49ms, tests 3ms, environment 0ms, prepare 78ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 75
+    },
+    {
+      "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:31.789Z",
+          "iu_id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/priority/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:31.789Z",
+          "iu_id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/team/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:31.789Z",
+          "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/task/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:32.708Z",
+          "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+          "duration_ms": 919,
+          "test_count": 10,
+          "pass_count": 0,
+          "fail_count": 10,
+          "details": "     93|   // 🔴 RED: removeTags should delete and return success\n     94|   it('removeTags deletes task', () => {\n     95|     expect(removeTags('test-id')).toBe(true); // 🔴 Currently returns f…\n       |                                   ^\n     96|   });\n     97| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:32.708Z",
+          "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:32.708Z",
+          "iu_id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:32.709Z",
+          "iu_id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+          "duration_ms": 1,
+          "details": "Comment-based traceability found in src/generated/assignment/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:32.709Z",
+          "iu_id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/search/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:32.709Z",
+          "iu_id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/deadline/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:32.709Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/status/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:33.568Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "duration_ms": 859,
+          "test_count": 2,
+          "pass_count": 0,
+          "fail_count": 2,
+          "details": "tests__/index.test.ts:41:24\n     39|     const result = filterByStatus('test-id');\n     40|     expect(result).not.toBeNull();\n     41|     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'\n       |                        ^\n     42|   });\n     43| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:33.569Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:33.569Z",
+          "iu_id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:33.569Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/archive/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:34.463Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "duration_ms": 894,
+          "test_count": 7,
+          "pass_count": 0,
+          "fail_count": 7,
+          "details": "ts__/index.test.ts:76:24\n     74|     const result = getCompletedTasks('test-id');\n     75|     expect(result).not.toBeNull();\n     76|     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'\n       |                        ^\n     77|   });\n     78| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:34.463Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:34.463Z",
+          "iu_id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:34.463Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/page/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:35.315Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "duration_ms": 852,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:34\n   Duration  297ms (transform 41ms, setup 0ms, collect 42ms, tests 6ms, environment 0ms, prepare 69ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:35.315Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:35.315Z",
+          "iu_id": "8f7a7e1c526a8fc317530bd29bd911ce31fe47813f45dac04fb4cbb286632606",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 83
+    },
+    {
+      "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+      "tier": "medium",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:35.315Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/catppuccin/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:36.296Z",
+          "iu_id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+          "duration_ms": 981,
+          "test_count": 4,
+          "pass_count": 0,
+          "fail_count": 4,
+          "details": "tests__/index.test.ts:55:24\n     53|     const result = filterByStatus('test-id');\n     54|     expect(result).not.toBeNull();\n     55|     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'\n       |                        ^\n     56|   });\n     57| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯\n\n"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 50
+    },
+    {
+      "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:36.296Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/base/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "duration_ms": 866,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:36\n   Duration  326ms (transform 45ms, setup 0ms, collect 41ms, tests 6ms, environment 0ms, prepare 68ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 83
+    },
+    {
+      "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/bulk/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/delete/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/confirmation/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:37.162Z",
+          "iu_id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/create/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:37.163Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 1,
+          "details": "Comment-based traceability found in src/generated/inline/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:38.073Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "duration_ms": 910,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:37\n   Duration  372ms (transform 60ms, setup 0ms, collect 50ms, tests 6ms, environment 0ms, prepare 77ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:38.073Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:38.073Z",
+          "iu_id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 83
+    },
+    {
+      "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:38.074Z",
+          "iu_id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
+          "duration_ms": 1,
+          "details": "Comment-based traceability found in src/generated/edit/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:38.074Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/component/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:38.956Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "duration_ms": 881,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 4ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:38\n   Duration  354ms (transform 61ms, setup 0ms, collect 47ms, tests 4ms, environment 0ms, prepare 80ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:38.956Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:38.956Z",
+          "iu_id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 83
+    },
+    {
+      "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:38.956Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/event/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:39.817Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "duration_ms": 861,
+          "test_count": 2,
+          "pass_count": 0,
+          "fail_count": 2,
+          "details": "tests__/index.test.ts:41:24\n     39|     const result = filterByStatus('test-id');\n     40|     expect(result).not.toBeNull();\n     41|     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'\n       |                        ^\n     42|   });\n     43| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:39.817Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:39.817Z",
+          "iu_id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:39.817Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/state/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:40.749Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "duration_ms": 932,
+          "test_count": 1,
+          "pass_count": 0,
+          "fail_count": 1,
+          "details": "sts__/index.test.ts:34:24\n     32|     const result = getArchivedTasks('test-id');\n     33|     expect(result).not.toBeNull();\n     34|     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'\n       |                        ^\n     35|   });\n     36| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:40.749Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:40.749Z",
+          "iu_id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:40.749Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/ui/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:41.653Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "duration_ms": 904,
+          "test_count": 4,
+          "pass_count": 0,
+          "fail_count": 4,
+          "details": "tests__/index.test.ts:55:24\n     53|     const result = getActiveTasks('test-id');\n     54|     expect(result).not.toBeNull();\n     55|     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'\n       |                        ^\n     56|   });\n     57| \n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯\n\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:41.653Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:41.653Z",
+          "iu_id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck",
+        "unit_tests"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:41.654Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 1,
+          "details": "Comment-based traceability found in src/generated/integration/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:42.463Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "duration_ms": 809,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 3ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:42\n   Duration  301ms (transform 38ms, setup 0ms, collect 32ms, tests 3ms, environment 0ms, prepare 72ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:42.463Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:42.463Z",
+          "iu_id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 83
+    },
+    {
+      "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+      "tier": "low",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:42.463Z",
+          "iu_id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/overdue/index.ts"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 67
+    },
+    {
+      "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+      "tier": "high",
+      "records": [
+        {
+          "kind": "typecheck",
+          "status": "failed",
+          "timestamp": "2026-04-08T19:51:30.755Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 1318,
+          "details": ""
+        },
+        {
+          "kind": "lint",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:30.916Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 161,
+          "details": "No lint errors"
+        },
+        {
+          "kind": "boundary_validation",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:42.463Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 0,
+          "details": "Comment-based traceability found in src/generated/data/index.ts"
+        },
+        {
+          "kind": "unit_tests",
+          "status": "passed",
+          "timestamp": "2026-04-08T19:51:43.349Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "duration_ms": 886,
+          "test_count": 1,
+          "pass_count": 1,
+          "fail_count": 0,
+          "details": "test.ts (2 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  12:51:42\n   Duration  361ms (transform 46ms, setup 0ms, collect 40ms, tests 6ms, environment 0ms, prepare 74ms)\n\nnpm warn Unknown cli config \"--reporter\". This will stop working in the next major version of npm.\n"
+        },
+        {
+          "kind": "threat_note",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:43.349Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "details": "Threat note check waived - manual verification required"
+        },
+        {
+          "kind": "property_tests",
+          "status": "waived",
+          "timestamp": "2026-04-08T19:51:43.349Z",
+          "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+          "details": "Property tests waived - configure property-based testing"
+        }
+      ],
+      "status": "REJECTED",
+      "missing_evidence": [],
+      "failed_evidence": [
+        "typecheck"
+      ],
+      "score": 83
+    }
+  ]
+}

@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { isTasks, getTaskss, getArchivedTasks, setStatus, filterByStatus, archiveTask, getCompletedTasks } from '../index.js';
 
 describe('Archive Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,53 @@ describe('Archive Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*fc1780770cf0e487/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes archive', () => {
+  // 🔴 RED: isTasks should transform input
+  it('isTasks processes archive', () => {
     const item: Archive = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = isTasks(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getTaskss should return correct data
+  it('getTaskss returns archive by id', () => {
+    const result = getTaskss('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: getArchivedTasks should return correct data
+  it('getArchivedTasks returns archive by id', () => {
+    const result = getArchivedTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: setStatus should transform input
+  it('setStatus processes archive', () => {
+    const item: Archive = { id: '1', name: 'test' };
+    const result = setStatus(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByStatus should return correct data
+  it('filterByStatus returns archive by id', () => {
+    const result = filterByStatus('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: archiveTask should transform input
+  it('archiveTask processes archive', () => {
+    const item: Archive = { id: '1', name: 'test' };
+    const result = archiveTask(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getCompletedTasks should return correct data
+  it('getCompletedTasks returns archive by id', () => {
+    const result = getCompletedTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

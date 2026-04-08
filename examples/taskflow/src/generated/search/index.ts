@@ -42,13 +42,149 @@ export interface Search {
 // @phoenix-canon: 49a95edd719e1d20...
 // REQUIREMENT: tasks must be searchable by title substring caseinsensitive
 /**
- * 🔴 RED: process
+ * 🔴 RED: isTasks
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Search): Search {
+export function isTasks(item: Search): Search {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: an empty search query must return all tasks
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: d162133ca6cb92ab...
+// REQUIREMENT: search results must be sorted by priority critical first then by createdat
+/**
+ * 🔴 RED: getTaskss
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getTaskss(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: d87a8adb9feac0dd...
+// REQUIREMENT: tasks must be filterable by status priority assignee and archived state
+/**
+ * 🔴 RED: searchTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function searchTasks(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: fa9e6c9a18b3b575...
+// CONSTRAINT: an empty search query must return all tasks
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 49a95edd719e1d20...
+// REQUIREMENT: tasks must be searchable by title substring caseinsensitive
+/**
+ * 🔴 RED: assignTask
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function assignTask(item: Search): Search {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: an empty search query must return all tasks
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: d162133ca6cb92ab...
+// REQUIREMENT: search results must be sorted by priority critical first then by createdat
+/**
+ * 🔴 RED: unassignTask
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function unassignTask(item: Search): Search {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: an empty search query must return all tasks
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: d87a8adb9feac0dd...
+// REQUIREMENT: tasks must be filterable by status priority assignee and archived state
+/**
+ * 🔴 RED: getUnassignedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getUnassignedTasks(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: fa9e6c9a18b3b575...
+// CONSTRAINT: an empty search query must return all tasks
+/**
+ * 🔴 RED: setPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setPriority(item: Search): Search {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: an empty search query must return all tasks
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 49a95edd719e1d20...
+// REQUIREMENT: tasks must be searchable by title substring caseinsensitive
+/**
+ * 🔴 RED: filterByPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByPriority(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: d162133ca6cb92ab...
+// REQUIREMENT: search results must be sorted by priority critical first then by createdat
+/**
+ * 🔴 RED: setStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setStatus(item: Search): Search {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: an empty search query must return all tasks
+  return item; // ← No transformation!
 }

@@ -151,6 +151,38 @@ export function process(item: Item): Item {
 
 **Why?** TDD requires tests to fail first. RED proves the tests work.
 
+### Function Generation from Boundary Exports
+
+When the plan phase extracts operations from requirements (populating `iu.boundary.exports`), the TypeScript generator creates specific function stubs matching those names:
+
+```json
+// IU with boundary exports
+{
+  "boundary": {
+    "exports": ["getArchivedTasks", "archiveTask", "restoreTask"]
+  }
+}
+```
+
+Generates:
+
+```typescript
+// 🔴 RED: getArchivedTasks - extracted from "provide function to list archived tasks"
+export function getArchivedTasks(id: string): Archive | null {
+  return {
+    id: 'WRONG_' + id,  // ← Bug: wrong ID
+    name: 'not implemented'
+  };
+}
+
+// 🔴 RED: archiveTask - extracted from "users must be able to archive"
+export function archiveTask(item: Archive): Archive {
+  return item; // ← Bug: no transformation
+}
+```
+
+**Benefit:** Functions are named exactly as requirements specify, creating explicit traceability from spec text → function name → test case.
+
 ## Creating Custom Generators
 
 Create a file at `.phoenix/generators/<name>.js`:

@@ -277,6 +277,21 @@ function toCamelCase(str) {
 }
 
 function extractFunctions(iu) {
+  // Use boundary.exports if available (from updated plan phase)
+  // These are already camelCase function names extracted from requirements
+  if (iu.boundary?.exports && iu.boundary.exports.length > 0) {
+    return iu.boundary.exports
+      .filter(name => name && name.length > 2) // Filter out artifacts like "a", "is"
+      .filter(name => /^[a-z][a-zA-Z0-9]*$/.test(name)) // Valid camelCase identifier
+      .slice(0, 10) // Max 10 functions per IU
+      .map(name => ({
+        name: escapeReserved(name), // Just escape reserved words, preserve case
+        type: inferFunctionType(name),
+        original: name
+      }));
+  }
+
+  // Fallback: extract from contract description (old method)
   const functions = [];
   const text = (iu.contract?.description || '') + ' ' + (iu.contract?.invariants?.join(' ') || '');
 
@@ -308,6 +323,35 @@ function extractFunctions(iu) {
   }
 
   return functions.slice(0, 5);
+}
+
+/**
+ * Infer function type from name for RED stub generation
+ */
+function inferFunctionType(name) {
+  const lower = name.toLowerCase();
+  if (lower.includes('get') || lower.includes('find') || lower.includes('list') || lower.includes('lookup')) {
+    return 'query';
+  }
+  if (lower.includes('validate') || lower.includes('check') || lower.includes('verify') || lower.includes('confirm')) {
+    return 'validate';
+  }
+  if (lower.includes('create') || lower.includes('add') || lower.includes('insert') || lower.includes('new')) {
+    return 'create';
+  }
+  if (lower.includes('update') || lower.includes('modify') || lower.includes('edit') || lower.includes('set')) {
+    return 'update';
+  }
+  if (lower.includes('delete') || lower.includes('remove') || lower.includes('clear') || lower.includes('drop')) {
+    return 'delete';
+  }
+  if (lower.includes('archive') || lower.includes('restore')) {
+    return 'update'; // Archive/restore are update operations
+  }
+  if (lower.includes('filter') || lower.includes('search') || lower.includes('sort')) {
+    return 'query';
+  }
+  return 'process';
 }
 
 function generateWrongFunction(func, domainName, iu, canon = null) {

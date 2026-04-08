@@ -5,27 +5,27 @@
   "pipeline": {
     "ingest": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:02.010Z"
+      "completed_at": "2026-04-08T19:50:59.706Z"
     },
     "canonicalize": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:02.057Z"
+      "completed_at": "2026-04-08T19:50:59.747Z"
     },
     "plan": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:02.137Z"
+      "completed_at": "2026-04-08T19:50:59.790Z"
     },
     "regen": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:02.260Z"
+      "completed_at": "2026-04-08T19:50:59.864Z"
     },
     "evidence": {
-      "status": "complete",
-      "completed_at": "2026-04-08T18:49:16.202Z"
+      "status": "failed",
+      "completed_at": "2026-04-08T19:51:14.200Z"
     },
     "audit": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:16.242Z"
+      "completed_at": "2026-04-08T19:45:35.359Z"
     },
     "drift": {
       "status": "failed",
@@ -37,11 +37,11 @@
     },
     "deliverable": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:02.909Z"
+      "completed_at": "2026-04-08T19:51:00.545Z"
     },
     "auto-implement": {
       "status": "complete",
-      "completed_at": "2026-04-08T18:49:02.300Z"
+      "completed_at": "2026-04-08T19:50:59.919Z"
     }
   },
   "audit": {

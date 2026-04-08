@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { setPriority, filterByPriority, setStatus, filterByStatus } from '../index.js';
 
 describe('Priority Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,32 @@ describe('Priority Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*7cce149b135824bc/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes priority', () => {
+  // 🔴 RED: setPriority should transform input
+  it('setPriority processes priority', () => {
     const item: Priority = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = setPriority(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByPriority should return correct data
+  it('filterByPriority returns priority by id', () => {
+    const result = filterByPriority('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: setStatus should transform input
+  it('setStatus processes priority', () => {
+    const item: Priority = { id: '1', name: 'test' };
+    const result = setStatus(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByStatus should return correct data
+  it('filterByStatus returns priority by id', () => {
+    const result = filterByStatus('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

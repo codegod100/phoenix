@@ -42,12 +42,12 @@ export interface Delete {
 // @phoenix-canon: 0ca3fa4b087995c9...
 // REQUIREMENT: users must be able to delete tasks by their unique id
 /**
- * 🔴 RED: delete
+ * 🔴 RED: deleteTask
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function delete_(id: string): boolean {
+export function deleteTask(id: string): boolean {
   // 🔴 RED: WRONG — always returns false
   // Should delete the item and return success
   return false;

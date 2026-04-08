@@ -57,13 +57,105 @@ export interface Archive {
 // @phoenix-canon: 0bbf6f693cec8cd4...
 // REQUIREMENT: when viewing the archived tab tasks show their original status with an archiv...
 /**
- * 🔴 RED: process
+ * 🔴 RED: isTasks
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Archive): Archive {
+export function isTasks(item: Archive): Archive {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 0bfbf4eb8ef70525...
+// REQUIREMENT: users must be able to archive completed tasks to hide from active views but r...
+/**
+ * 🔴 RED: getTaskss
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getTaskss(id: string): Archive | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 0dfbaefa54a56b65...
+// REQUIREMENT: archived task cards must have a restore button to reactivate them
+/**
+ * 🔴 RED: getArchivedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getArchivedTasks(id: string): Archive | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 1cedce764142f7d8...
+// REQUIREMENT: archived status must be visually indicated on the task card status badge with...
+/**
+ * 🔴 RED: setStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setStatus(item: Archive): Archive {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 78f83d3cedc04621...
+// REQUIREMENT: switching between active and archived views must update the task list without...
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Archive | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 79afe2985ea41923...
+// REQUIREMENT: archived tasks must be queryable separately and restorable to active status
+/**
+ * 🔴 RED: archiveTask
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function archiveTask(item: Archive): Archive {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 81f910f80ba0c36b...
+// REQUIREMENT: archived tasks must be viewable via a separate archived tasks tab or filter
+/**
+ * 🔴 RED: getCompletedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getCompletedTasks(id: string): Archive | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

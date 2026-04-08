@@ -36,12 +36,56 @@ export interface Create {
 // @phoenix-canon: 2e61381676836dee...
 // REQUIREMENT: the page must include a form to create new tasks with fields for title descri...
 /**
- * 🔴 RED: create
+ * 🔴 RED: setDeadline
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function create(id: string): Create | null {
+export function setDeadline(item: Create): Create {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 65cf841d09b215ab...
+// CONSTRAINT: the create form must validate that title is nonempty before submission
+/**
+ * 🔴 RED: getOverdueTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getOverdueTasks(id: string): Create | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 2e61381676836dee...
+// REQUIREMENT: the page must include a form to create new tasks with fields for title descri...
+/**
+ * 🔴 RED: setPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setPriority(item: Create): Create {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 65cf841d09b215ab...
+// CONSTRAINT: the create form must validate that title is nonempty before submission
+/**
+ * 🔴 RED: filterByPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByPriority(id: string): Create | null {
   // 🔴 RED: WRONG — returns object with mismatched ID
   return {
     id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix

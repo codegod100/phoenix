@@ -39,13 +39,43 @@ export interface Team {
 // @phoenix-canon: 21a8432fc76f2982...
 // REQUIREMENT: the system must identify the top performer with highest completion rate and m...
 /**
- * 🔴 RED: process
+ * 🔴 RED: assignTask
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Team): Team {
+export function assignTask(item: Team): Team {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 7b890674e3dd62f5...
+// CONSTRAINT: unassigned tasks must be excluded from team performance metrics
+/**
+ * 🔴 RED: unassignTask
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function unassignTask(item: Team): Team {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: c384544cc22649f4...
+// REQUIREMENT: the system must calculate perassignee completion rate as done divided by tota...
+/**
+ * 🔴 RED: getUnassignedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getUnassignedTasks(id: string): Team | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

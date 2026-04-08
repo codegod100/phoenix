@@ -133,6 +133,9 @@ Write to `.phoenix/plan.md` and `.phoenix/graphs/ius.json`:
           }
         }
       },
+      "boundary": {
+        "exports": ["renderDashboard", "getTheme", "applyStyles"]
+      },
       "evidence_policy": {
         "required": ["typecheck", "lint", "boundary_validation", "unit_tests"]
       }
@@ -141,6 +144,26 @@ Write to `.phoenix/plan.md` and `.phoenix/graphs/ius.json`:
 }
 ```
 
+### Boundary Extraction
+
+The plan phase **extracts operations from requirement text** and populates `boundary.exports`:
+
+| Requirement Pattern | Extracted Export |
+|---------------------|------------------|
+| "provide a function to X" | `X` |
+| "users must be able to Y" | `YTask` |
+| "tasks must support Z" | `ZTask`, `getZTasks` |
+| "X tasks must be queryable" | `getXTasks` |
+| "filterable by Y" | `filterByY` |
+| "searchable by Z" | `searchTasks` |
+
+**Example:** From "The system must provide a function to list all archived tasks separately":
+- Extracts: `getArchivedTasks`
+- Added to Archive Domain `boundary.exports`
+- Regen generates: `export function getArchivedTasks(id: string): Archive | null`
+
+This bridges spec → code: requirements explicitly become exported functions.
+
 ## Quality Checks
 
 - [ ] IU ID is SHA-256 of contract + requirements
@@ -148,6 +171,7 @@ Write to `.phoenix/plan.md` and `.phoenix/graphs/ius.json`:
 - [ ] No IU has >20 requirements (split if needed)
 - [ ] UI/API/DB concerns separated
 - [ ] Boundary policy declares side-channels
+- [ ] **Boundary exports extracted from requirements** (function names from spec text)
 - [ ] Evidence policy matches risk tier
 
 ## Selective Invalidation

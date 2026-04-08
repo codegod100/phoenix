@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { assignTask, unassignTask, getUnassignedTasks, isTasks, getTaskss } from '../index.js';
 
 describe('Assignment Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,39 @@ describe('Assignment Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*013287c893c1bba6/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes assignment', () => {
+  // 🔴 RED: assignTask should transform input
+  it('assignTask processes assignment', () => {
     const item: Assignment = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = assignTask(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: unassignTask should transform input
+  it('unassignTask processes assignment', () => {
+    const item: Assignment = { id: '1', name: 'test' };
+    const result = unassignTask(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getUnassignedTasks should return correct data
+  it('getUnassignedTasks returns assignment by id', () => {
+    const result = getUnassignedTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: isTasks should transform input
+  it('isTasks processes assignment', () => {
+    const item: Assignment = { id: '1', name: 'test' };
+    const result = isTasks(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getTaskss should return correct data
+  it('getTaskss returns assignment by id', () => {
+    const result = getTaskss('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

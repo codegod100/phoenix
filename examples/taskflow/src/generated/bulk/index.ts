@@ -42,13 +42,13 @@ export interface Bulk {
 // @phoenix-canon: 47e0a64ce9951c1b...
 // REQUIREMENT: the system must support bulk operations including delete multiple archive mul...
 /**
- * 🔴 RED: process
+ * 🔴 RED: bulk
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Bulk): Bulk {
+export function bulk(item: Bulk): Bulk {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
 }

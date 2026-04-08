@@ -60,12 +60,61 @@ export interface Ui {
 // @phoenix-canon: 01e9f448f073ae4f...
 // REQUIREMENT: active tab shall display done tasks in a separate section below active tasks ...
 /**
- * 🔴 RED: selectedids
+ * 🔴 RED: getArchivedTasks
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function selectedids(): Ui[] {
-  // 🔴 RED: WRONG — returns empty array
-  return [{ id: '1', name: 'selected' }]; // ← Should return actual list
+export function getArchivedTasks(id: string): Ui | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 024c1a2b29b16e53...
+// REQUIREMENT: done tasks must render in the same grid layout as active tasks with same colu...
+/**
+ * 🔴 RED: setStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setStatus(item: Ui): Ui {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: the create form and task grid shall render side by side in a twocolumn layout on desktop with create form on left and task grid on right
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 06083503e7868530...
+// REQUIREMENT: on mobile the create form shall stack above the task grid in a single column
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Ui | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 10753d83edf291bf...
+// REQUIREMENT: active tab shall show task cards with status badges and archived tasks shown ...
+/**
+ * 🔴 RED: getActiveTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getActiveTasks(id: string): Ui | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

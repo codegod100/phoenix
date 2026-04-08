@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { create } from '../index.js';
+import { setDeadline, getOverdueTasks, setPriority, filterByPriority } from '../index.js';
 
 describe('Create Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,9 +27,30 @@ describe('Create Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*8ae5c45f3147f2a0/);
   });
 
-  // 🔴 RED: create should return correct data
-  it('create returns create by id', () => {
-    const result = create('test-id');
+  // 🔴 RED: setDeadline should transform input
+  it('setDeadline processes create', () => {
+    const item: Create = { id: '1', name: 'test' };
+    const result = setDeadline(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getOverdueTasks should return correct data
+  it('getOverdueTasks returns create by id', () => {
+    const result = getOverdueTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: setPriority should transform input
+  it('setPriority processes create', () => {
+    const item: Create = { id: '1', name: 'test' };
+    const result = setPriority(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByPriority should return correct data
+  it('filterByPriority returns create by id', () => {
+    const result = filterByPriority('test-id');
     expect(result).not.toBeNull();
     expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });

@@ -42,13 +42,73 @@ export interface Assignment {
 // @phoenix-canon: 3d832f261b6d440d...
 // REQUIREMENT: unassigned tasks must be queryable as a filtered list
 /**
- * 🔴 RED: process
+ * 🔴 RED: assignTask
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Assignment): Assignment {
+export function assignTask(item: Assignment): Assignment {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 5e0a0179854a33ec...
+// REQUIREMENT: tasks must be assignable to a single user by user id
+/**
+ * 🔴 RED: unassignTask
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function unassignTask(item: Assignment): Assignment {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: b604c9dae64a2a90...
+// CONSTRAINT: assignment must validate that the user id is nonempty
+/**
+ * 🔴 RED: getUnassignedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getUnassignedTasks(id: string): Assignment | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: f8cbfa7d6c882d94...
+// REQUIREMENT: reassigning a task must log the previous assignee in an audit trail
+/**
+ * 🔴 RED: isTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function isTasks(item: Assignment): Assignment {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 3d832f261b6d440d...
+// REQUIREMENT: unassigned tasks must be queryable as a filtered list
+/**
+ * 🔴 RED: getTaskss
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getTaskss(id: string): Assignment | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

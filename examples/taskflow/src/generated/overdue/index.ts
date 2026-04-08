@@ -33,13 +33,15 @@ export interface Overdue {
 // @phoenix-canon: a38b112678258c10...
 // REQUIREMENT: overdue tasks must have a red border and an overdue indicator
 /**
- * 🔴 RED: process
+ * 🔴 RED: getOverdueTasks
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Overdue): Overdue {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: Processed results
-  return { ...item }; // ← No transformation!
+export function getOverdueTasks(id: string): Overdue | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

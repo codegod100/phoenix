@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T18:49:02.129Z",
+  "generated_at": "2026-04-08T19:50:59.783Z",
   "iu_count": 25,
   "coverage": {
     "total_canon_nodes": 141,
@@ -131,6 +131,14 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "setPriority",
+          "filterByPriority",
+          "setStatus",
+          "filterByStatus"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -196,6 +204,13 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "assignTask",
+          "unassignTask",
+          "getUnassignedTasks"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -274,6 +289,27 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "setPriority",
+          "filterByPriority",
+          "getCompletedTasks",
+          "setStatus",
+          "filterByStatus",
+          "archiveTask",
+          "getArchivedTasks",
+          "list",
+          "a",
+          "addTags",
+          "removeTags",
+          "getActiveTasks",
+          "assignTask",
+          "unassignTask",
+          "getUnassignedTasks",
+          "setDeadline",
+          "getOverdueTasks"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -344,6 +380,15 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "assignTask",
+          "unassignTask",
+          "getUnassignedTasks",
+          "isTasks",
+          "getTaskss"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -409,6 +454,20 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "isTasks",
+          "getTaskss",
+          "searchTasks",
+          "filterByStatus",
+          "assignTask",
+          "unassignTask",
+          "getUnassignedTasks",
+          "setPriority",
+          "filterByPriority",
+          "setStatus"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -476,6 +535,14 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "setDeadline",
+          "getOverdueTasks",
+          "list",
+          "a"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -551,6 +618,12 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "setStatus",
+          "filterByStatus"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -625,6 +698,17 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "isTasks",
+          "getTaskss",
+          "getArchivedTasks",
+          "setStatus",
+          "filterByStatus",
+          "archiveTask",
+          "getCompletedTasks"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -767,6 +851,14 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "setPriority",
+          "filterByPriority",
+          "setStatus",
+          "filterByStatus"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -908,6 +1000,12 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "bulk",
+          "a"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -974,6 +1072,11 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "deleteTask"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -1104,6 +1207,14 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "setDeadline",
+          "getOverdueTasks",
+          "setPriority",
+          "filterByPriority"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -1242,6 +1353,18 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "editTask",
+          "assignTask",
+          "unassignTask",
+          "getUnassignedTasks",
+          "setDeadline",
+          "getOverdueTasks",
+          "setPriority",
+          "filterByPriority"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -1389,6 +1512,12 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "setStatus",
+          "filterByStatus"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -1459,6 +1588,11 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "getArchivedTasks"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -1537,6 +1671,14 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "getArchivedTasks",
+          "setStatus",
+          "filterByStatus",
+          "getActiveTasks"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -1674,6 +1816,11 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "getOverdueTasks"
+        ]
       },
       "evidence_policy": {
         "required": [

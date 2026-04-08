@@ -42,13 +42,59 @@ export interface Priority {
 // @phoenix-canon: 1e36aa90a520ec5f...
 // REQUIREMENT: the system must report task count grouped by current status
 /**
- * 🔴 RED: process
+ * 🔴 RED: setPriority
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Priority): Priority {
+export function setPriority(item: Priority): Priority {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: c302c6dc31cbe2f0...
+// REQUIREMENT: each breakdown must include percentage of total
+/**
+ * 🔴 RED: filterByPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByPriority(id: string): Priority | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: dbd7a98a77dd8199...
+// REQUIREMENT: the system must report task count grouped by priority level
+/**
+ * 🔴 RED: setStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setStatus(item: Priority): Priority {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: ef282c4f58882215...
+// REQUIREMENT: priority badges must be colorcoded with criticalred highorange mediumyellow l...
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Priority | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

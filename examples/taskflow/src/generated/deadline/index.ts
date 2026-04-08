@@ -42,13 +42,45 @@ export interface Deadline {
 // @phoenix-canon: 23a499c17f6d8b81...
 // REQUIREMENT: the system must provide a function to list all overdue tasks
 /**
- * 🔴 RED: process
+ * 🔴 RED: setDeadline
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Deadline): Deadline {
+export function setDeadline(item: Deadline): Deadline {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 3306386ed3c6c0b5...
+// REQUIREMENT: overdue tasks past deadline and not done must be flagged automatically
+/**
+ * 🔴 RED: getOverdueTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getOverdueTasks(id: string): Deadline | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 45db43506cd234df...
+// REQUIREMENT: tasks must support optional deadline dates
+/**
+ * 🔴 RED: list
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function list(id: string): Deadline | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { delete_ } from '../index.js';
+import { deleteTask } from '../index.js';
 
 describe('Delete Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,9 +27,9 @@ describe('Delete Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*12c44af604f1ae2d/);
   });
 
-  // 🔴 RED: delete_ should delete and return success
-  it('delete_ deletes delete', () => {
-    expect(delete_('test-id')).toBe(true); // 🔴 Currently returns false
+  // 🔴 RED: deleteTask should delete and return success
+  it('deleteTask deletes delete', () => {
+    expect(deleteTask('test-id')).toBe(true); // 🔴 Currently returns false
   });
 
 });

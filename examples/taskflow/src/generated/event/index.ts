@@ -51,13 +51,29 @@ export interface Event {
 // @phoenix-canon: 2623171ed71406b7...
 // REQUIREMENT: form submit events shall validate input write to localstorage then call rende...
 /**
- * 🔴 RED: process
+ * 🔴 RED: setStatus
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Event): Event {
+export function setStatus(item: Event): Event {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: form submit events shall validate input write to localstorage then call render functions
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 3cabdbbabcf6cedc...
+// REQUIREMENT: status transition buttons shall update task status update updatedat timestamp...
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Event | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

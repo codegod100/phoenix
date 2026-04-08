@@ -71,7 +71,124 @@ function getRequiredEvidence(tier) {
   }
 }
 
-// === IU PLANNING LOGIC ===
+// === OPERATION EXTRACTION FROM REQUIREMENTS ===
+
+/**
+ * Extract operation names from requirement statements.
+ * Parses requirement text to identify functions that should be exported.
+ */
+function extractOperationsFromRequirements(requirements) {
+  const operations = new Set();
+  
+  for (const req of requirements) {
+    const text = req.statement.toLowerCase();
+    
+    // Pattern: "provide a function to X"
+    const provideMatch = text.match(/provide a function to (\w+)/);
+    if (provideMatch) {
+      operations.add(provideMatch[1]);
+    }
+    
+    // Pattern: "system must provide X" / "must provide a function for X"
+    const systemProvideMatch = text.match(/(?:system must|must) provide(?: a function for| a way to)? (\w+)/);
+    if (systemProvideMatch) {
+      operations.add(systemProvideMatch[1]);
+    }
+    
+    // Pattern: "X must be Y" (for status checks)
+    const statusMatch = text.match(/(\w+) must be (\w+)/);
+    if (statusMatch && ['queryable', 'viewable', 'filterable', 'searchable', 'sortable'].includes(statusMatch[2])) {
+      operations.add(`is${capitalize(statusMatch[1])}`);
+      operations.add(`get${capitalize(statusMatch[1])}s`);
+    }
+    
+    // Pattern: "users must be able to X" (action verbs)
+    const userActionMatch = text.match(/users must be able to (\w+)/);
+    if (userActionMatch) {
+      const action = userActionMatch[1];
+      // Convert verb to function name
+      if (action === 'archive') operations.add('archiveTask');
+      else if (action === 'restore') operations.add('restoreTask');
+      else if (action === 'create') operations.add('createTask');
+      else if (action === 'delete') operations.add('deleteTask');
+      else if (action === 'edit') operations.add('editTask');
+      else if (action === 'update') operations.add('updateTask');
+      else operations.add(`${action}Task`);
+    }
+    
+    // Pattern: "tasks must support X" → X becomes an operation
+    const supportMatch = text.match(/tasks must support (\w+)/);
+    if (supportMatch) {
+      const feature = supportMatch[1];
+      if (feature === 'archiving') {
+        operations.add('archiveTask');
+        operations.add('getArchivedTasks');
+      } else if (feature === 'tagging') {
+        operations.add('addTags');
+        operations.add('removeTags');
+      }
+    }
+    
+    // Pattern: "X tasks" (like "archived tasks", "overdue tasks")
+    const listMatch = text.match(/(archived|overdue|completed|active) tasks/);
+    if (listMatch) {
+      const type = listMatch[1];
+      operations.add(`get${capitalize(type)}Tasks`);
+    }
+    
+    // Pattern: "list all X tasks" / "query X tasks separately"
+    const queryMatch = text.match(/(?:list|query)(?: all)? (\w+) tasks/);
+    if (queryMatch) {
+      operations.add(`get${capitalize(queryMatch[1])}Tasks`);
+    }
+    
+    // Pattern: "X must be filterable by Y"
+    const filterMatch = text.match(/(\w+) must be filterable by (\w+)/);
+    if (filterMatch) {
+      operations.add(`filterBy${capitalize(filterMatch[2])}`);
+    }
+    
+    // Pattern: "searchable by X"
+    const searchMatch = text.match(/searchable by (\w+)/);
+    if (searchMatch) {
+      operations.add('searchTasks');
+    }
+    
+    // Pattern: "sortable by X"
+    const sortMatch = text.match(/sortable by (\w+)/);
+    if (sortMatch) {
+      operations.add('sortTasks');
+    }
+    
+    // Domain-specific patterns
+    if (text.includes('assign') && text.includes('task')) {
+      operations.add('assignTask');
+      operations.add('unassignTask');
+      operations.add('getUnassignedTasks');
+    }
+    
+    if (text.includes('deadline') || text.includes('due date')) {
+      operations.add('setDeadline');
+      operations.add('getOverdueTasks');
+    }
+    
+    if (text.includes('priority')) {
+      operations.add('setPriority');
+      operations.add('filterByPriority');
+    }
+    
+    if (text.includes('status')) {
+      operations.add('setStatus');
+      operations.add('filterByStatus');
+    }
+  }
+  
+  return Array.from(operations);
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 function loadCanonical(projectRoot) {
   const canonicalPath = join(projectRoot, '.phoenix', 'graphs', 'canonical.json');
@@ -150,6 +267,14 @@ function createIU(group, index) {
     invariants.push('Type safety maintained');
   }
 
+  // Extract operations from requirements for boundary exports
+  const operations = extractOperationsFromRequirements(group.requirements);
+  
+  // Create boundary with exports if operations found
+  const boundary = operations.length > 0 ? {
+    exports: operations
+  } : undefined;
+
   return {
     id,
     short_id: shortId,
@@ -186,6 +311,7 @@ function createIU(group, index) {
         },
       },
     },
+    boundary,
     evidence_policy: {
       required: getRequiredEvidence(riskTier),
     },

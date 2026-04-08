@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { selectedids } from '../index.js';
+import { getArchivedTasks, setStatus, filterByStatus, getActiveTasks } from '../index.js';
 
 describe('UI Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,10 +27,32 @@ describe('UI Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*fa4c83036ec9c9a9/);
   });
 
-  // 🔴 RED: selectedids should return non-empty list
-  it('selectedids returns list of ui', () => {
-    const result = selectedids();
-    expect(result.length).toBeGreaterThan(0); // 🔴 Currently returns []
+  // 🔴 RED: getArchivedTasks should return correct data
+  it('getArchivedTasks returns ui by id', () => {
+    const result = getArchivedTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: setStatus should transform input
+  it('setStatus processes ui', () => {
+    const item: Ui = { id: '1', name: 'test' };
+    const result = setStatus(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByStatus should return correct data
+  it('filterByStatus returns ui by id', () => {
+    const result = filterByStatus('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: getActiveTasks should return correct data
+  it('getActiveTasks returns ui by id', () => {
+    const result = getActiveTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

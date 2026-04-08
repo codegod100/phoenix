@@ -60,13 +60,29 @@ export interface Status {
 // @phoenix-canon: 04863c16775d3737...
 // REQUIREMENT: each card must have buttons for status transitions based on current status
 /**
- * 🔴 RED: process
+ * 🔴 RED: setStatus
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Status): Status {
+export function setStatus(item: Status): Status {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: the status bar must render as a single horizontal bar below the header
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 06236ca2480f22d7...
+// REQUIREMENT: the status bar must render as a single horizontal bar below the header
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Status | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

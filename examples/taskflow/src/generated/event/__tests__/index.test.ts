@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { setStatus, filterByStatus } from '../index.js';
 
 describe('Event Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,18 @@ describe('Event Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*c73fdbc477cf950a/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes event', () => {
+  // 🔴 RED: setStatus should transform input
+  it('setStatus processes event', () => {
     const item: Event = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = setStatus(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: filterByStatus should return correct data
+  it('filterByStatus returns event by id', () => {
+    const result = filterByStatus('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

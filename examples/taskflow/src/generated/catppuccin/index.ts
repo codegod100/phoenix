@@ -51,13 +51,59 @@ export interface Catppuccin {
 // @phoenix-canon: 023acc45de3711aa...
 // REQUIREMENT: the dashboard must use the catppuccin mocha color palette exclusively
 /**
- * 🔴 RED: process
+ * 🔴 RED: setPriority
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Catppuccin): Catppuccin {
+export function setPriority(item: Catppuccin): Catppuccin {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 5897f7d834296f08...
+// DEFINITION: text color is cdd6f4 text secondary text is a6adc8 subtext0
+/**
+ * 🔴 RED: filterByPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByPriority(id: string): Catppuccin | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 894211f4ec8a7d51...
+// DEFINITION: status open is 6c7086 overlay0 inprogress is 89b4fa blue review is cba6f7 mau...
+/**
+ * 🔴 RED: setStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setStatus(item: Catppuccin): Catppuccin {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: a7e9866bf870807d...
+// CONSTRAINT: no theme toggle or system preference detection catppuccin mocha is the only t...
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Catppuccin | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

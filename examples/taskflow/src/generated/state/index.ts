@@ -45,13 +45,15 @@ export interface State {
 // @phoenix-canon: 01e92e240085650c...
 // REQUIREMENT: write operations shall complete before triggering rerender using synchronous ...
 /**
- * 🔴 RED: process
+ * 🔴 RED: getArchivedTasks
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: State): State {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: all components shall read from localstorage on every render with no inmemory caching
-  return { ...item }; // ← No transformation!
+export function getArchivedTasks(id: string): State | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

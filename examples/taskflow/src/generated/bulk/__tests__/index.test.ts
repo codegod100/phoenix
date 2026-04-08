@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { bulk } from '../index.js';
 
 describe('Bulk Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,10 +27,10 @@ describe('Bulk Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*eb7c109efd2e8536/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes bulk', () => {
+  // 🔴 RED: bulk should transform input
+  it('bulk processes bulk', () => {
     const item: Bulk = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = bulk(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
   });
 

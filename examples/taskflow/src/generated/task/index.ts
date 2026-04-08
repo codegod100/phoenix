@@ -60,13 +60,151 @@ export interface Task {
 // @phoenix-canon: 0c8fd64b342a96b2...
 // REQUIREMENT: done tasks must use the same responsive grid layout as active tasks with iden...
 /**
- * 🔴 RED: process
+ * 🔴 RED: setPriority
  *
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item: Task): Task {
+export function setPriority(item: Task): Task {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: the dashboard must render all tasks as styled cards in a responsive grid layout
-  return { ...item }; // ← No transformation!
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 0ec58c72f695a322...
+// REQUIREMENT: users must create tasks with a title description and priority low medium high...
+/**
+ * 🔴 RED: filterByPriority
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByPriority(id: string): Task | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 22c19be38ec443a8...
+// REQUIREMENT: tasks must track createdat and updatedat timestamps automatically
+/**
+ * 🔴 RED: getCompletedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getCompletedTasks(id: string): Task | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 26e1ab361fa6226f...
+// REQUIREMENT: tasks must support status transitions open inprogress review done and done op...
+/**
+ * 🔴 RED: setStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function setStatus(item: Task): Task {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: the dashboard must render all tasks as styled cards in a responsive grid layout
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 27291946d9c1ae89...
+// REQUIREMENT: the dashboard must render all tasks as styled cards in a responsive grid layout
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Task | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 3dee3bcd6fc7e663...
+// REQUIREMENT: completing a task must record the completion timestamp and duration
+/**
+ * 🔴 RED: archiveTask
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function archiveTask(item: Task): Task {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: the dashboard must render all tasks as styled cards in a responsive grid layout
+  return item; // ← No transformation!
+}
+
+// @phoenix-canon: 400ee183fafc6e6a...
+// REQUIREMENT: tasks must support archiving to hide from active views while retaining data
+/**
+ * 🔴 RED: getArchivedTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function getArchivedTasks(id: string): Task | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 6741feb08b69fcb9...
+// REQUIREMENT: each task card must show title description priority badge status badge assign...
+/**
+ * 🔴 RED: list
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function list(id: string): Task | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 6e2403b97c6f54c7...
+// REQUIREMENT: tasks must support tagging with multiple labels for flexible categorization
+/**
+ * 🔴 RED: addTags
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function addTags(id: string): Task | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: 950b321591c472b7...
+// REQUIREMENT: each task must have a unique id generated as a uuid v4
+/**
+ * 🔴 RED: removeTags
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function removeTags(id: string): boolean {
+  // 🔴 RED: WRONG — always returns false
+  // Should delete the item and return success
+  return false;
 }

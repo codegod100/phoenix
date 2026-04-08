@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { assignTask, unassignTask, getUnassignedTasks } from '../index.js';
 
 describe('Team Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,25 @@ describe('Team Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*169b3c51a6e13ea8/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes team', () => {
+  // 🔴 RED: assignTask should transform input
+  it('assignTask processes team', () => {
     const item: Team = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = assignTask(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: unassignTask should transform input
+  it('unassignTask processes team', () => {
+    const item: Team = { id: '1', name: 'test' };
+    const result = unassignTask(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getUnassignedTasks should return correct data
+  it('getUnassignedTasks returns team by id', () => {
+    const result = getUnassignedTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

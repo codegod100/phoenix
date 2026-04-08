@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { getArchivedTasks } from '../index.js';
 
 describe('State Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,11 @@ describe('State Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*b25d38068f5a68a7/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes state', () => {
-    const item: State = { id: '1', name: 'test' };
-    const result = process(item);
-    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  // 🔴 RED: getArchivedTasks should return correct data
+  it('getArchivedTasks returns state by id', () => {
+    const result = getArchivedTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });

@@ -14,7 +14,7 @@
 // 4. 🟢 See GREEN (tests pass)
 
 import { describe, it, expect } from 'vitest';
-import { process } from '../index.js';
+import { setDeadline, getOverdueTasks, list } from '../index.js';
 
 describe('Deadline Domain', () => {
   // 🟢 GREEN: Traceability (always passes)
@@ -27,11 +27,25 @@ describe('Deadline Domain', () => {
     expect(impl).toMatch(/@phoenix-iu:.*fa4e979e652ff753/);
   });
 
-  // 🔴 RED: process should transform input
-  it('process processes deadline', () => {
+  // 🔴 RED: setDeadline should transform input
+  it('setDeadline processes deadline', () => {
     const item: Deadline = { id: '1', name: 'test' };
-    const result = process(item);
+    const result = setDeadline(item);
     expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+  // 🔴 RED: getOverdueTasks should return correct data
+  it('getOverdueTasks returns deadline by id', () => {
+    const result = getOverdueTasks('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
+  });
+
+  // 🔴 RED: list should return correct data
+  it('list returns deadline by id', () => {
+    const result = list('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
 
 });
