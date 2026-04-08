@@ -368,6 +368,11 @@ async function runPipeline(projectRoot, options) {
       args.push(options.iu);
     }
     
+    // Pass phase-defined args (e.g., deliverable --detect)
+    if (phase.args) {
+      args.push(...phase.args);
+    }
+    
     // If selective mode and we have migration plan, pass it to regen
     if (phase.name === 'regen' && options.selective) {
       const migrationPath = join(projectRoot, '.phoenix', 'graphs', 'iu-migration.json');

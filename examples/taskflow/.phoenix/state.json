@@ -34,6 +34,10 @@
     "protolens": {
       "status": "complete",
       "completed_at": "2026-04-08T10:34:20.456Z"
+    },
+    "deliverable": {
+      "status": "complete",
+      "completed_at": "2026-04-08T17:57:52.377Z"
     }
   },
   "audit": {
