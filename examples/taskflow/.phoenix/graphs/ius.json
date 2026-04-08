@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:12:09.940Z",
+  "generated_at": "2026-04-08T22:16:52.660Z",
   "iu_count": 26,
   "coverage": {
-    "total_canon_nodes": 155,
-    "covered_canon_nodes": 155,
+    "total_canon_nodes": 157,
+    "covered_canon_nodes": 157,
     "orphan_canon_ids": []
   },
   "ius": [
@@ -1612,20 +1612,22 @@
       ]
     },
     {
-      "id": "8bac1e0a38e63f28f4d47df3a76f5ea8dc3882f488a04c9efade562170ac0467",
-      "short_id": "IU-8bac1e0a",
+      "id": "8c63f282c0dc78313f49ae39ae3f0ee3cd3ba60c929a8133c5ab66ee439773ed",
+      "short_id": "IU-8c63f282",
       "name": "Modal Domain",
       "kind": "web-ui",
       "risk_tier": "high",
-      "description": "Implements modal functionality with 12 requirements",
+      "description": "Implements modal functionality with 14 requirements",
       "source_canon_ids": [
         "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
         "395c7bc1288d60bee73add79a9237c959d6e1a64c01111e1f508ddfa1edb75da",
         "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
         "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88",
         "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+        "8cebf2b058433012aaed4e42b48410f92078bbad5386e1960130d20b51f7add3",
         "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc",
         "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc",
+        "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716",
         "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3",
         "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3",
         "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2",
@@ -1633,9 +1635,11 @@
         "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc"
       ],
       "contract": {
-        "description": "Implements modal functionality with 12 requirements",
+        "description": "Implements modal functionality with 14 requirements",
         "inputs": [
-          "input padding shall be compact 6px vertical to reduce field heights"
+          "input padding shall be compact 6px vertical to reduce field heights",
+          "when the modal opens the title input field shall receive immediate focus for rapid data entry",
+          "the title input shall use autofocus attribute or javascript focus call in the openmodal function"
         ],
         "outputs": [
           "status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space",

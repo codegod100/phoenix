@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:12:09.828Z",
-  "clause_count": 160,
+  "generated_at": "2026-04-08T22:16:52.522Z",
+  "clause_count": 162,
   "file_count": 9,
   "files": [
     "spec/analytics.md",
@@ -1578,15 +1578,37 @@
       "context_semhash": "38a51a1bb66b2cf7ebcc58013cf9809e7d53b6451a8ba534e66b929f484efb3a"
     },
     {
+      "id": "8cebf2b058433012aaed4e42b48410f92078bbad5386e1960130d20b51f7add3",
+      "type": "REQUIREMENT",
+      "text": "when the modal opens the title input field shall receive immediate focus for rapid data entry",
+      "raw_text": "When the modal opens, the Title input field shall receive immediate focus for rapid data entry",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 64,
+      "clause_semhash": "a4453108b7d81b5568175b279ebd74ef78985f3073894b07d0542b7a5260650b",
+      "context_semhash": "530406f768e7e652722921e6f52d0b5a55046195fb3d70111c99f454bfb3c4e8"
+    },
+    {
+      "id": "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716",
+      "type": "REQUIREMENT",
+      "text": "the title input shall use autofocus attribute or javascript focus call in the openmodal function",
+      "raw_text": "The Title input shall use autofocus attribute or JavaScript .focus() call in the openModal() function",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 65,
+      "clause_semhash": "ffa074084fa3976d54cc0528bf263531b7158ace435147d19ae46dcc7a3ad280",
+      "context_semhash": "a6a860cad6c631cd8012c13da4ac8efd4899b1ce6d159b9d2aa9c91cf1491eae"
+    },
+    {
       "id": "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
       "type": "CONSTRAINT",
       "text": "no component shall render without reading current localstorage state",
       "raw_text": "No component shall render without reading current localStorage state",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 67,
+      "line": 69,
       "clause_semhash": "910c68a0e816a14204015da1051e5d123caac7471b73deae651555255fb9d451",
-      "context_semhash": "788528e05c2ad10c1260d2a303caf028f3de2a376a31a6697078e9f1b7119fac"
+      "context_semhash": "54c11e1a7246453579a130383c1d9ee4a93a1cf0a836f376fec9c179cae95a3b"
     },
     {
       "id": "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
@@ -1595,7 +1617,7 @@
       "raw_text": "No state change shall occur without updating localStorage first",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 68,
+      "line": 70,
       "clause_semhash": "e022dfc71035fe776e4aecd6599e51a861e0c9c5383d770f8026577aa89d6720",
       "context_semhash": "d843b9bcd3b269115a32b041790a8f818f8dc00f860900aafcb7cae66407a54a"
     },
@@ -1606,7 +1628,7 @@
       "raw_text": "Re-renders shall be synchronous following state updates",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 69,
+      "line": 71,
       "clause_semhash": "86478d2498dac775989a9184b8c0c2e3cd8d01e7dacbf0487ed3b70e231f2a1e",
       "context_semhash": "911bb63bb54900272ef5b06a733fd6e555a760eba5cdb60d6f926d7cf13778a6"
     },
@@ -1617,7 +1639,7 @@
       "raw_text": "All event handlers shall be attached on initial page load",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 70,
+      "line": 72,
       "clause_semhash": "ba6a1806e1baae468e2f2326a3e4b6569da04a25ba9f2b000bc422e91da5f186",
       "context_semhash": "36cf1259e56a7f11a750eeab4fa1d0539db49a208e0c92264f2b47f4d768cd28"
     },
@@ -1628,7 +1650,7 @@
       "raw_text": "Components shall not have external dependencies with all data from localStorage",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 71,
+      "line": 73,
       "clause_semhash": "070b606f0d310b94e851ab965bf5ba877eeb8f3638b21d98e00e8661f30a7d5b",
       "context_semhash": "85d01e62d31d11b6f0ebf665ab9073402c978f79e5507a17860eb3dd6d68029c"
     },

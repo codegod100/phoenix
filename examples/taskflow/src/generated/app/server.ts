@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * @phoenix-deliverable: web-dashboard
- * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,a329ef6c591659d8,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,8bac1e0a38e63f28,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T22:12:10.805Z
+ * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,a329ef6c591659d8,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,8c63f282c0dc7831,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
+ * @phoenix-generated: 2026-04-08T22:16:53.484Z
  */
 
 import { createServer } from 'http';
@@ -460,6 +460,7 @@ const server = createServer((req, res) => {
         document.getElementById('taskTags').value = '';
       }
       document.getElementById('modal').classList.add('open');
+      document.getElementById('taskTitle').focus();
     }
     
     function closeModal() {

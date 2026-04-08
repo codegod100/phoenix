@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:12:09.872Z",
+  "generated_at": "2026-04-08T22:16:52.579Z",
   "bootstrap_state": "BOOTSTRAP_WARMING",
   "d_rate": 0,
   "d_rate_level": "TARGET",
   "d_rate_message": "D-rate 0.0% within target (≤5%)",
-  "node_count": 155,
+  "node_count": 157,
   "classification_stats": {
-    "A": 155,
+    "A": 157,
     "B": 0,
     "C": 0,
     "D": 0
@@ -1816,6 +1816,32 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "8cebf2b058433012aaed4e42b48410f92078bbad5386e1960130d20b51f7add3",
+      "short_id": "node-8cebf2b0",
+      "type": "REQUIREMENT",
+      "statement": "when the modal opens the title input field shall receive immediate focus for rapid data entry",
+      "raw_text": "When the modal opens, the Title input field shall receive immediate focus for rapid data entry",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8cebf2b058433012aaed4e42b48410f92078bbad5386e1960130d20b51f7add3"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716",
+      "short_id": "node-987ca469",
+      "type": "REQUIREMENT",
+      "statement": "the title input shall use autofocus attribute or javascript focus call in the openmodal function",
+      "raw_text": "The Title input shall use autofocus attribute or JavaScript .focus() call in the openModal() function",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716"
       ],
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"

@@ -230,6 +230,8 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-d9f092d7] form field margins shall be 12px not 16px between groups to reduce overall height
 - [node-90ee4a23] form labels shall have minimal 2px marginbottom to reduce spacing
 - [node-fe95f87a] input padding shall be compact 6px vertical to reduce field heights
+- [node-8cebf2b0] when the modal opens the title input field shall receive immediate focus for rapid data entry
+- [node-987ca469] the title input shall use autofocus attribute or javascript focus call in the openmodal function
 
 ## Integration Invariants
 

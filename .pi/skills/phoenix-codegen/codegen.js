@@ -717,6 +717,7 @@ const server = createServer((req, res) => {
         document.getElementById('taskTags').value = '';
       }
       document.getElementById('modal').classList.add('open');
+      document.getElementById('taskTitle').focus();
     }
     
     function closeModal() {

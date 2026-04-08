@@ -692,11 +692,11 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-8bac1e0a: Modal Domain (HIGH)
+## IU-8c63f282: Modal Domain (HIGH)
 
-**Description:** Implements modal functionality with 12 requirements
+**Description:** Implements modal functionality with 14 requirements
 
-**Risk Tier:** high (12 requirements)
+**Risk Tier:** high (14 requirements)
 
 **Canonical Requirements:**
 - 0fcd31ba2080...
@@ -704,15 +704,15 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - 5c212153a1ff...
 - 619c94741ca3...
 - 7141acc2b75a...
+- 8cebf2b05843...
 - 90ee4a23b51c...
 - 954cf4092081...
+- 987ca469857b...
 - d9ecce2e6f7f...
-- d9f092d708b2...
-- de80ad851535...
-- ... and 2 more
+- ... and 4 more
 
 **Contract:**
-- Inputs: input padding shall be compact 6px vertical to reduce field heights
+- Inputs: input padding shall be compact 6px vertical to reduce field heights, when the modal opens the title input field shall receive immediate focus for rapid data entry, the title input shall use autofocus attribute or javascript focus call in the openmodal function
 - Outputs: status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space, assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space
 - Invariants: Valid state transitions only, Type safety maintained
 
@@ -818,6 +818,6 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ## Coverage Summary
 
-- Total canonical nodes: 155
-- Covered: 155
+- Total canonical nodes: 157
+- Covered: 157
 - Orphans: 0

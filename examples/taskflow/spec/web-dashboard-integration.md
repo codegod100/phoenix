@@ -61,6 +61,8 @@ Integration layer that wires all dashboard components together into a complete w
 - REQUIREMENT: Form field margins shall be 12px (not 16px) between groups to reduce overall height
 - REQUIREMENT: Form labels shall have minimal 2px margin-bottom to reduce spacing
 - REQUIREMENT: Input padding shall be compact (6px vertical) to reduce field heights
+- REQUIREMENT: When the modal opens, the Title input field shall receive immediate focus for rapid data entry
+- REQUIREMENT: The Title input shall use autofocus attribute or JavaScript .focus() call in the openModal() function
 
 ## Integration Invariants
 
