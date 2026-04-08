@@ -4,13 +4,7 @@
  * 
  * Uses panproto GAT to compute deliverables as colimits of domain theories.
  * 
- * Architecture:
- *   1. Load IUs → map to theories
- *   2. Compute colimit over shared base
- *   3. Generate code from colimit theory
- * 
- * Usage:
- *   node deliverable.js <project-path> [--detect | --type <type>]
+ * Usage: node deliverable.js <project-path> [--detect | --type <type>]
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
@@ -18,42 +12,6 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface IU {
-  id: string;
-  name: string;
-  description?: string;
-  source_canon_ids: string[];
-  boundary: {
-    exports: string[];
-    imports: string[];
-  };
-}
-
-interface CanonicalNode {
-  canon_id: string;
-  short_id: string;
-  type: string;
-  statement: string;
-  source_file: string;
-  section?: string;
-}
-
-interface DeliverableContext {
-  type: string;
-  projectPath: string;
-  outputDir: string;
-  ius: IU[];
-  canonical: { nodes: CanonicalNode[] };
-  // GAT structures
-  theories: Map<string, any>;      // IU ID → TheoryHandle
-  sharedBase: any;                  // SharedBase TheoryHandle
-  colimit: any;                     // Computed colimit TheoryHandle
-}
 
 // ============================================================================
 // MAIN
@@ -69,17 +27,16 @@ async function main() {
     process.exit(1);
   }
   
-  console.log(`🎯 Phoenix Deliverable Generator (Colimit-based)`);
+  console.log(`🎯 Phoenix Deliverable Generator`);
   console.log(`   Project: ${projectPath}`);
   
-  // Initialize panproto WASM
+  // Initialize panproto
   const panproto = await initializePanproto();
-  console.log(`   WASM: initialized`);
   
   // Load context
   const ctx = await loadContext(projectPath, panproto);
   
-  // Detect or use explicit type
+  // Determine type
   if (type === 'detect') {
     ctx.type = detectType(ctx);
     console.log(`   Type: ${ctx.type} (detected)`);
@@ -91,38 +48,43 @@ async function main() {
     process.exit(1);
   }
   
+  // Filter IUs relevant to this deliverable type
+  ctx.ius = filterRelevantIUs(ctx.ius, ctx.type, ctx.canonical);
+  console.log(`   IUs: ${ctx.ius.length} relevant domains`);
   console.log();
   
-  // Step 1: Build theories from IUs
-  console.log(`Step 1: Building domain theories...`);
-  ctx.theories = buildDomainTheories(ctx, panproto);
-  console.log(`   ✓ ${ctx.theories.size} domain theories`);
+  // Check for existing deliverable
+  const traceFile = join(ctx.outputDir, '.phoenix-deliverable.json');
+  if (existsSync(traceFile) && !force) {
+    const trace = JSON.parse(readFileSync(traceFile, 'utf8'));
+    const currentHash = await hashIUs(ctx.ius);
+    if (trace.iuHash === currentHash && trace.type === ctx.type) {
+      console.log(`   ✓ Deliverable up to date (${currentHash.slice(0, 16)})`);
+      console.log(`   Use --force to regenerate`);
+      process.exit(0);
+    }
+    console.log(`   ⚠ IUs changed, regenerating...`);
+  }
   
-  // Step 2: Create shared base
-  console.log(`Step 2: Creating shared base theory...`);
-  ctx.sharedBase = buildSharedBase(ctx.type, panproto);
-  console.log(`   ✓ SharedBase: ${ctx.type}Base`);
+  // Compute colimit conceptually
+  console.log(`Step 1: Computing colimit of ${ctx.ius.length} domain theories...`);
+  const colimitOps = computeColimitConceptually(ctx);
+  console.log(`   ✓ Colimit: ${colimitOps.length} operations`);
   
-  // Step 3: Compute colimit
-  console.log(`Step 3: Computing colimit...`);
-  ctx.colimit = computeColimit(ctx, panproto);
-  console.log(`   ✓ Colimit theory: ${ctx.type}`);
-  
-  // Step 4: Validate against spec
-  console.log(`Step 4: Validating spec compliance...`);
-  const violations = validateColimit(ctx);
+  // Validate spec compliance
+  console.log(`Step 2: Validating against ${ctx.canonical.nodes.length} canonical requirements...`);
+  const violations = validateSpecCompliance(ctx, colimitOps);
   if (violations.length > 0) {
     console.error(`   ❌ Spec violations:`);
     violations.forEach(v => console.error(`      - ${v}`));
     process.exit(1);
   }
-  console.log(`   ✓ All ${ctx.canonical.nodes.length} canonical requirements satisfied`);
+  console.log(`   ✓ All requirements satisfied`);
   
-  // Step 5: Generate code
-  console.log(`Step 5: Generating code from colimit...`);
-  const outputs = generateFromColimit(ctx, panproto);
+  // Generate code
+  console.log(`Step 3: Generating deliverable...`);
+  const outputs = generateDeliverable(ctx, colimitOps);
   
-  // Write outputs
   for (const [filePath, content] of Object.entries(outputs)) {
     const fullPath = join(ctx.outputDir, filePath);
     mkdirSync(dirname(fullPath), { recursive: true });
@@ -131,12 +93,12 @@ async function main() {
   }
   
   // Write traceability
-  writeTraceability(ctx, outputs);
+  await writeTraceability(ctx, colimitOps, outputs);
   
   console.log();
   console.log(`✅ Deliverable generated: ${ctx.outputDir}`);
-  console.log(`   Theory: colimit(${Array.from(ctx.theories.keys()).join(', ')})`);
-  console.log(`   Operations: ${ctx.colimit.operations?.length || 'computed'}`);
+  console.log(`   Theory: colimit(${ctx.ius.map(iu => iu.name).join(', ')})`);
+  console.log(`   Operations: ${colimitOps.length}`);
   console.log(`   Files: ${Object.keys(outputs).length}`);
 }
 
@@ -145,22 +107,48 @@ async function main() {
 // ============================================================================
 
 async function initializePanproto() {
-  // Use the panproto skill's WASM initialization
-  const panprotoPath = join(__dirname, '..', 'panproto', 'lib', 'phoenix-protocol.js');
+  // The panproto skill is a CLI tool - we can't import it directly
+  // without triggering its CLI. Instead, we use conceptual mode
+  // until panproto exposes a library interface.
   
-  if (!existsSync(panprotoPath)) {
-    throw new Error(`Panproto not found: ${panprotoPath}`);
-  }
-  
-  const { getPanproto } = await import(panprotoPath);
-  return await getPanproto();
+  console.log(`   WASM: Using conceptual mode (panproto GAT library not exposed)`);
+  return createMockPanproto();
+}
+
+function createMockPanproto() {
+  return {
+    conceptualMode: true,
+    TheoryBuilder: class MockTheoryBuilder {
+      constructor(name) { 
+        this.name = name; 
+        this.ops = []; 
+        this.sorts = [];
+      }
+      sort(name) { 
+        this.sorts.push(name);
+        return this; 
+      }
+      op(name, inputs, output) { 
+        this.ops.push({ name, inputs, output }); 
+        return this; 
+      }
+      build() { 
+        return { name: this.name, ops: this.ops, sorts: this.sorts }; 
+      }
+    },
+    colimit: (t1, t2, base) => ({ 
+      name: `colimit(${t1.name}, ${t2.name})`,
+      ops: [...(t1.ops || []), ...(t2.ops || [])],
+      sorts: [...new Set([...(t1.sorts || []), ...(t2.sorts || [])])]
+    })
+  };
 }
 
 // ============================================================================
 // CONTEXT LOADING
 // ============================================================================
 
-async function loadContext(projectPath: string, panproto: any): Promise<DeliverableContext> {
+async function loadContext(projectPath, panproto) {
   const graphsDir = join(projectPath, '.phoenix', 'graphs');
   
   if (!existsSync(graphsDir)) {
@@ -181,13 +169,11 @@ async function loadContext(projectPath: string, panproto: any): Promise<Delivera
     outputDir: join(projectPath, 'src', 'generated', 'deliverable'),
     ius: iusData.ius || [],
     canonical: canonicalData,
-    theories: new Map(),
-    sharedBase: null,
-    colimit: null,
+    panproto,
   };
 }
 
-function detectType(ctx: DeliverableContext): string {
+function detectType(ctx) {
   const sourceFiles = ctx.ius.flatMap(iu => 
     iu.source_canon_ids.map(canonId => {
       const node = ctx.canonical.nodes.find(n => n.canon_id === canonId);
@@ -198,59 +184,73 @@ function detectType(ctx: DeliverableContext): string {
   if (sourceFiles.some(f => f.includes('web-dashboard'))) return 'web-dashboard';
   if (sourceFiles.some(f => f.includes('cli'))) return 'cli-tool';
   if (sourceFiles.some(f => f.includes('api'))) return 'api-service';
-  
   return 'library';
 }
 
+function filterRelevantIUs(allIUs, type, canonical) {
+  const patterns = {
+    'web-dashboard': ['web-dashboard', 'dashboard', 'task', 'confirmation', 'edit', 'delete', 'create', 'archive', 'bulk', 'search', 'analytics'],
+    'cli-tool': ['cli', 'command', 'task'],
+    'api-service': ['api', 'rest', 'task'],
+    'library': [],
+  };
+  
+  const relevant = patterns[type] || [];
+  const canonToFile = new Map(canonical.nodes.map(n => [n.canon_id, n.source_file]));
+  
+  return allIUs.filter(iu => {
+    return iu.source_canon_ids.some(canonId => {
+      const sourceFile = canonToFile.get(canonId) || '';
+      return relevant.some(pattern => 
+        sourceFile.includes(pattern) || iu.name.toLowerCase().includes(pattern)
+      );
+    });
+  });
+}
+
 // ============================================================================
-// THEORY BUILDING
+// COLIMIT COMPUTATION
 // ============================================================================
 
-function buildDomainTheories(ctx: DeliverableContext, panproto: any): Map<string, any> {
-  const theories = new Map<string, any>();
-  
-  // Import the GAT module
-  const { TheoryBuilder } = panproto;
+function computeColimitConceptually(ctx) {
+  const { TheoryBuilder } = ctx.panproto;
+  const domainTheories = [];
   
   for (const iu of ctx.ius) {
-    // Get canonical nodes for this IU
     const nodes = iu.source_canon_ids
       .map(id => ctx.canonical.nodes.find(n => n.canon_id === id))
       .filter(Boolean);
     
-    // Build theory from requirements
-    const theory = iuToTheory(iu, nodes, panproto);
-    theories.set(iu.id.slice(0, 16), theory);
+    const theory = buildTheoryFromIU(iu, nodes, TheoryBuilder);
+    domainTheories.push(theory);
   }
   
-  return theories;
-}
-
-function iuToTheory(iu: IU, nodes: any[], panproto: any): any {
-  const { TheoryBuilder } = panproto;
+  const sharedBase = buildSharedBase(ctx.type, TheoryBuilder);
   
-  const theoryName = iu.name.replace(/\s+/g, '');
-  const builder = new TheoryBuilder(theoryName);
+  // Compute colimit (conceptually)
+  const colimitOps = [];
   
-  // Add sorts based on boundary exports
-  for (const export_ of iu.boundary?.exports || []) {
-    // Sort for each exported type
-    builder.sort(`${export_}Type`);
-  }
-  
-  // Add operations based on exports
-  for (const export_ of iu.boundary?.exports || []) {
-    if (export_.includes('process') || export_.includes('create')) {
-      // Operation: input → output
-      const inputSort = `${export_}Input`;
-      const outputSort = `${export_}Output`;
-      builder.sort(inputSort);
-      builder.sort(outputSort);
-      builder.op(export_, [['input', inputSort]], outputSort);
+  for (const theory of domainTheories) {
+    if (theory.ops) {
+      colimitOps.push(...theory.ops);
     }
   }
   
-  // Add domain-specific operations from canonical requirements
+  if (sharedBase.ops) {
+    colimitOps.push(...sharedBase.ops);
+  }
+  
+  return colimitOps;
+}
+
+function buildTheoryFromIU(iu, nodes, TheoryBuilder) {
+  const name = iu.name.replace(/\s+/g, '');
+  const builder = new TheoryBuilder(name);
+  
+  for (const export_ of iu.boundary?.exports || []) {
+    builder.op(export_, [['input', 'any']], 'any');
+  }
+  
   for (const node of nodes) {
     const ops = requirementsToOperations(node.statement);
     for (const op of ops) {
@@ -258,158 +258,70 @@ function iuToTheory(iu: IU, nodes: any[], panproto: any): any {
     }
   }
   
-  return builder.build(panproto.wasm);
+  return builder.build();
 }
 
-function requirementsToOperations(statement: string): Array<{name: string, inputs: [string, string][], output: string}> {
-  // Parse requirement statements to extract operations
-  const ops = [];
-  const lower = statement.toLowerCase();
+function buildSharedBase(type, TheoryBuilder) {
+  const name = type.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) + 'Base';
+  const builder = new TheoryBuilder(name);
   
-  // Modal/dialog operations
+  builder.op('render', [['props', 'any'], ['state', 'any']], 'Component');
+  builder.op('handleEvent', [['event', 'any'], ['state', 'any']], 'State');
+  
+  if (type === 'web-dashboard') {
+    builder.op('handleRequest', [['request', 'any'], ['state', 'any']], 'Response');
+  }
+  
+  return builder.build();
+}
+
+function requirementsToOperations(statement) {
+  const ops = [];
+  const lower = (statement || '').toLowerCase();
+  
   if (lower.includes('modal') && lower.includes('confirm')) {
     ops.push({
       name: 'showConfirmationModal',
-      inputs: [['message', 'String'], ['onConfirm', 'Callback']],
-      output: 'DialogHandle'
-    });
-    ops.push({
-      name: 'hideModal',
-      inputs: [['handle', 'DialogHandle']],
-      output: 'Unit'
+      inputs: [['message', 'string'], ['onConfirm', 'function']],
+      output: 'void'
     });
   }
   
-  // Inline edit operations
-  if (lower.includes('edit') && lower.includes('inline')) {
+  if (lower.includes('edit') && lower.includes('not') && lower.includes('modal')) {
     ops.push({
-      name: 'enterEditMode',
-      inputs: [['componentId', 'String']],
+      name: 'enterInlineEdit',
+      inputs: [['id', 'string']],
       output: 'EditState'
     });
-    ops.push({
-      name: 'saveInlineEdit',
-      inputs: [['state', 'EditState'], ['data', 'Record']],
-      output: 'Record'
-    });
   }
   
-  // Archive operations
   if (lower.includes('archive')) {
-    ops.push({
-      name: 'archiveItem',
-      inputs: [['id', 'String']],
-      output: 'ArchivedItem'
-    });
-    ops.push({
-      name: 'restoreItem',
-      inputs: [['id', 'String']],
-      output: 'RestoredItem'
-    });
+    ops.push({ name: 'archiveItem', inputs: [['id', 'string']], output: 'void' });
+    ops.push({ name: 'restoreItem', inputs: [['id', 'string']], output: 'void' });
   }
   
-  // Bulk operations
   if (lower.includes('bulk')) {
-    ops.push({
-      name: 'selectItems',
-      inputs: [['ids', 'String[]']],
-      output: 'Selection'
-    });
-    ops.push({
-      name: 'bulkAction',
-      inputs: [['selection', 'Selection'], ['action', 'String']],
-      output: 'BulkResult'
-    });
+    ops.push({ name: 'selectItems', inputs: [['ids', 'string[]']], output: 'void' });
+    ops.push({ name: 'bulkDelete', inputs: [['ids', 'string[]']], output: 'void' });
   }
   
   return ops;
-}
-
-function buildSharedBase(type: string, panproto: any): any {
-  const { TheoryBuilder } = panproto;
-  
-  const baseName = `${type.replace(/-([a-z])/g, (_, c) => c.toUpperCase())}Base`;
-  const builder = new TheoryBuilder(baseName);
-  
-  // Common infrastructure
-  builder.sort('State');
-  builder.sort('Event');
-  builder.sort('Props');
-  builder.sort('Component');
-  
-  // Core operations
-  builder.op('render', [['props', 'Props'], ['state', 'State']], 'Component');
-  builder.op('handleEvent', [['event', 'Event'], ['state', 'State']], 'State');
-  builder.op('getInitialState', [], 'State');
-  
-  // Type-specific base operations
-  if (type === 'web-dashboard') {
-    builder.sort('Route');
-    builder.sort('Request');
-    builder.sort('Response');
-    builder.op('handleRequest', [['request', 'Request'], ['state', 'State']], 'Response');
-    builder.op('routeToComponent', [['route', 'Route']], 'Component');
-  }
-  
-  if (type === 'cli-tool') {
-    builder.sort('Command');
-    builder.sort('Args');
-    builder.op('parseArgs', [['args', 'String[]']], 'Args');
-    builder.op('executeCommand', [['command', 'Command'], ['args', 'Args']], 'State');
-  }
-  
-  return builder.build(panproto.wasm);
-}
-
-// ============================================================================
-// COLIMIT COMPUTATION
-// ============================================================================
-
-function computeColimit(ctx: DeliverableContext, panproto: any): any {
-  const { colimit } = panproto;
-  const theories = Array.from(ctx.theories.values());
-  
-  if (theories.length === 0) {
-    throw new Error('No domain theories to compose');
-  }
-  
-  if (theories.length === 1) {
-    // Just one theory, use it directly but extend with base
-    // Actually, we need to compute pushout with base
-    return colimit(theories[0], ctx.sharedBase, ctx.sharedBase, panproto.wasm);
-  }
-  
-  // Compute colimit iteratively
-  let result = colimit(theories[0], theories[1], ctx.sharedBase, panproto.wasm);
-  
-  for (let i = 2; i < theories.length; i++) {
-    result = colimit(result, theories[i], ctx.sharedBase, panproto.wasm);
-  }
-  
-  return result;
 }
 
 // ============================================================================
 // VALIDATION
 // ============================================================================
 
-function validateColimit(ctx: DeliverableContext): string[] {
-  const violations: string[] = [];
+function validateSpecCompliance(ctx, colimitOps) {
+  const violations = [];
   
-  // Get all operations from colimit theory
-  // (This would need WASM introspection, for now we validate conceptually)
-  
-  // Check that each canonical requirement has a corresponding operation
   for (const node of ctx.canonical.nodes) {
     const requiredOps = requirementsToOperations(node.statement);
     
-    for (const op of requiredOps) {
-      // In reality, we'd check the colimit theory has this operation
-      // For now, we assume the colimit has all domain operations
-      const hasOperation = true; // Would check: ctx.colimit.hasOperation(op.name)
-      
-      if (!hasOperation) {
-        violations.push(`${node.short_id}: Missing operation ${op.name}`);
+    for (const reqOp of requiredOps) {
+      const hasOp = colimitOps.some(op => op.name === reqOp.name);
+      if (!hasOp) {
+        violations.push(`${node.short_id}: Missing operation ${reqOp.name}`);
       }
     }
   }
@@ -421,131 +333,158 @@ function validateColimit(ctx: DeliverableContext): string[] {
 // CODE GENERATION
 // ============================================================================
 
-function generateFromColimit(ctx: DeliverableContext, panproto: any): Record<string, string> {
-  const outputs: Record<string, string> = {};
-  
-  // Generate based on deliverable type
-  if (ctx.type === 'web-dashboard') {
-    Object.assign(outputs, generateWebDashboard(ctx, panproto));
-  } else if (ctx.type === 'cli-tool') {
-    Object.assign(outputs, generateCliTool(ctx, panproto));
-  } else if (ctx.type === 'api-service') {
-    Object.assign(outputs, generateApiService(ctx, panproto));
+function generateDeliverable(ctx, colimitOps) {
+  switch (ctx.type) {
+    case 'web-dashboard':
+      return generateWebDashboard(ctx, colimitOps);
+    case 'cli-tool':
+      return generateCliTool(ctx, colimitOps);
+    case 'api-service':
+      return generateApiService(ctx, colimitOps);
+    default:
+      return generateLibrary(ctx, colimitOps);
   }
-  
-  return outputs;
 }
 
-function generateWebDashboard(ctx: DeliverableContext, panproto: any): Record<string, string> {
-  // Extract operations from colimit theory
-  const operations = extractOperations(ctx.colimit);
+function generateWebDashboard(ctx, colimitOps) {
+  const iuImports = ctx.ius.map(iu => {
+    const domain = iu.name.toLowerCase().replace(/\s+/g, '-');
+    const exports = iu.boundary?.exports?.join(', ') || '';
+    return `import { ${exports} } from '../${domain}/index.js';`;
+  }).join('\n');
   
-  // Generate server.ts
-  const server = generateServerFile(operations, ctx);
+  const modalOps = colimitOps.filter(o => o.name.includes('Modal'));
+  const editOps = colimitOps.filter(o => o.name.includes('Edit'));
+  const archiveOps = colimitOps.filter(o => o.name.includes('archive') || o.name.includes('restore'));
+  const bulkOps = colimitOps.filter(o => o.name.includes('bulk') || o.name.includes('select'));
+  const crudOps = colimitOps.filter(o => !o.name.match(/Modal|Edit|archive|restore|bulk|select/));
   
-  // Generate store.ts
-  const store = generateStoreFile(operations, ctx);
+  const server = `#!/usr/bin/env node
+/**
+ * @phoenix-deliverable: web-dashboard
+ * @phoenix-colimit: ${ctx.ius.map(iu => iu.id.slice(0, 16)).join(',')}
+ * @phoenix-operations: ${colimitOps.map(o => o.name).join(',')}
+ * @phoenix-generated: ${new Date().toISOString()}
+ * 
+ * THIS FILE IS GENERATED - DO NOT EDIT DIRECTLY
+ * Regenerate: node .pi/skills/phoenix-deliverable/deliverable.js ${ctx.projectPath} --type web-dashboard
+ */
+
+import { createServer } from 'http';
+${iuImports}
+
+// Generated from colimit theory operations
+const OPERATIONS = {
+  // Modal operations
+${modalOps.map(o => `  ${o.name}: ${JSON.stringify(o)},`).join('\n')}
   
-  // Generate client HTML
-  const client = generateClientFile(operations, ctx);
+  // Edit operations  
+${editOps.map(o => `  ${o.name}: ${JSON.stringify(o)},`).join('\n')}
   
+  // Archive operations
+${archiveOps.map(o => `  ${o.name}: ${JSON.stringify(o)},`).join('\n')}
+  
+  // Bulk operations
+${bulkOps.map(o => `  ${o.name}: ${JSON.stringify(o)},`).join('\n')}
+  
+  // CRUD operations
+${crudOps.map(o => `  ${o.name}: ${JSON.stringify(o)},`).join('\n')}
+};
+
+const server = createServer((req, res) => {
+  console.log(\`\${req.method} \${req.url}\`);
+  
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ 
+    status: 'ok', 
+    operations: Object.keys(OPERATIONS),
+    theory: 'colimit(${ctx.ius.map(iu => iu.name).join(', ')})'
+  }));
+});
+
+server.listen(3000, () => {
+  console.log('🚀 Generated from colimit of ${ctx.ius.length} domain theories');
+  console.log('   Operations:', Object.keys(OPERATIONS).join(', '));
+});
+`;
+
+  const store = `/**
+ * @phoenix-deliverable: web-dashboard
+ * @phoenix-colimit: store
+ * @phoenix-ius: ${ctx.ius.map(iu => iu.id.slice(0, 16)).join(',')}
+ * @phoenix-generated: ${new Date().toISOString()}
+ */
+
+${iuImports}
+
+// Colimit operations
+${colimitOps.map(op => `
+/**
+ * @phoenix-operation: ${op.name}
+ * @phoenix-inputs: ${op.inputs.map(i => i[0]).join(', ')}
+ * @phoenix-output: ${op.output}
+ */
+export function ${op.name}(${op.inputs.map(i => `${i[0]}: ${i[1]}`).join(', ')}) {
+  throw new Error('Implement: ${op.name}');
+}`).join('\n')}
+`;
+
   return {
     'server.ts': server,
     'store.ts': store,
-    'index.html': client,
   };
 }
 
-function extractOperations(colimit: any): Array<{name: string, inputs: string[], output: string}> {
-  // Would extract from WASM theory handle
-  // For now, return conceptual operations
-  return [
-    { name: 'showConfirmationModal', inputs: ['message', 'onConfirm'], output: 'DialogHandle' },
-    { name: 'enterEditMode', inputs: ['componentId'], output: 'EditState' },
-    { name: 'archiveItem', inputs: ['id'], output: 'ArchivedItem' },
-    // ... etc
-  ];
-}
-
-function generateServerFile(ops: any[], ctx: DeliverableContext): string {
-  // Generate TypeScript server from operations
-  return `// @phoenix-deliverable: ${ctx.type}
-// @phoenix-theory: colimit(${Array.from(ctx.theories.keys()).join(', ')})
-// @phoenix-generated: ${new Date().toISOString()}
-
-import { createServer } from 'http';
-${generateImports(ctx.ius)}
-
-const server = createServer((req, res) => {
-${generateRequestHandler(ops)}
-});
-
-${generateOperationImplementations(ops)}
-
-server.listen(3000);
-`;
-}
-
-function generateImports(ius: IU[]): string {
-  return ius.map(iu => {
-    const domainName = iu.name.toLowerCase().replace(/\s+/g, '-');
-    return `import { ${iu.boundary?.exports?.join(', ')} } from '../${domainName}/index.js';`;
-  }).join('\n');
-}
-
-function generateRequestHandler(ops: any[]): string {
-  return `  // Operations from colimit theory:
-${ops.map(op => `  // - ${op.name}(${op.inputs.join(', ')}): ${op.output}`).join('\n')}
-`;
-}
-
-function generateOperationImplementations(ops: any[]): string {
-  return ops.map(op => `
-function ${op.name}(${op.inputs.map((i: string) => `${i}: any`).join(', ')}): ${op.output} {
-  // Generated from colimit operation
-  throw new Error('Not implemented');
-}`).join('\n');
-}
-
-function generateStoreFile(ops: any[], ctx: DeliverableContext): string {
-  return `// @phoenix-deliverable: ${ctx.type}
-// @phoenix-theory: colimit store
-// @phoenix-generated: ${new Date().toISOString()}
-
-${generateImports(ctx.ius)}
-
-// Data store orchestrating ${ctx.ius.length} domains
-export interface Store {
-${ops.map(op => `  ${op.name}: (${op.inputs.map((i: string) => `${i}: any`).join(', ')}) => ${op.output};`).join('\n')}
-}
-`;
-}
-
-function generateClientFile(ops: any[], ctx: DeliverableContext): string {
-  return `<!DOCTYPE html>
-<!--
-@phoenix-deliverable: ${ctx.type}
-@phoenix-theory: colimit client
-@phoenix-generated: ${new Date().toISOString()}
--->
-<html>
-<head><title>${ctx.type}</title></head>
-<body>
-  <!-- Operations available: ${ops.map(o => o.name).join(', ')} -->
-</body>
-</html>
-`;
-}
-
-function generateCliTool(ctx: DeliverableContext, panproto: any): Record<string, string> {
+function generateCliTool(ctx, colimitOps) {
   return {
-    'cli.ts': '// CLI implementation from colimit theory\n',
+    'cli.ts': `#!/usr/bin/env node
+// @phoenix-deliverable: cli-tool
+// @phoenix-generated: ${new Date().toISOString()}
+
+import { program } from 'commander';
+
+${colimitOps.map(op => `
+program
+  .command('${op.name}')
+  .description('Colimit operation: ${op.name}')
+  .action(() => {
+    console.log('Executing: ${op.name}');
+  });`).join('\n')}
+
+program.parse();
+`,
   };
 }
 
-function generateApiService(ctx: DeliverableContext, panproto: any): Record<string, string> {
+function generateApiService(ctx, colimitOps) {
   return {
-    'api.ts': '// API implementation from colimit theory\n',
+    'api.ts': `// @phoenix-deliverable: api-service
+// @phoenix-generated: ${new Date().toISOString()}
+
+import express from 'express';
+const app = express();
+
+${colimitOps.map(op => `
+// @phoenix-operation: ${op.name}
+app.post('/api/${op.name}', (req, res) => {
+  res.json({ operation: '${op.name}', status: 'from-colimit' });
+});`).join('\n')}
+
+app.listen(3000);
+`,
+  };
+}
+
+function generateLibrary(ctx, colimitOps) {
+  return {
+    'index.ts': `// @phoenix-deliverable: library
+// @phoenix-generated: ${new Date().toISOString()}
+
+${colimitOps.map(op => `
+export function ${op.name}(${op.inputs.map(i => `${i[0]}: ${i[1]}`).join(', ')}) {
+  return {} as ${op.output};
+}`).join('\n')}
+`,
   };
 }
 
@@ -553,16 +492,19 @@ function generateApiService(ctx: DeliverableContext, panproto: any): Record<stri
 // TRACEABILITY
 // ============================================================================
 
-function writeTraceability(ctx: DeliverableContext, outputs: Record<string, string>) {
+async function writeTraceability(ctx, colimitOps, outputs) {
+  const iuHash = await hashIUs(ctx.ius);
+  
   const trace = {
     type: ctx.type,
     generatedAt: new Date().toISOString(),
+    iuHash,
     theory: {
       name: ctx.type,
-      base: `${ctx.type}Base`,
-      domains: Array.from(ctx.theories.entries()).map(([id, t]) => ({ id, name: t.name })),
+      domains: ctx.ius.map(iu => ({ id: iu.id.slice(0, 16), name: iu.name })),
       colimit: {
-        operations: extractOperations(ctx.colimit).map(o => o.name),
+        operationCount: colimitOps.length,
+        operations: colimitOps.map(o => o.name),
       },
     },
     canonicalRequirements: ctx.canonical.nodes.map(n => n.short_id),
@@ -571,19 +513,25 @@ function writeTraceability(ctx: DeliverableContext, outputs: Record<string, stri
   
   const tracePath = join(ctx.outputDir, '.phoenix-deliverable.json');
   writeFileSync(tracePath, JSON.stringify(trace, null, 2));
-  console.log(`   ✓ Trace: ${tracePath}`);
+  console.log(`   ✓ Trace: .phoenix-deliverable.json`);
+}
+
+async function hashIUs(ius) {
+  const { createHash } = await import('crypto');
+  const data = ius.map(iu => `${iu.id}:${iu.name}`).sort().join(';');
+  return createHash('sha256').update(data).digest('hex').slice(0, 16);
 }
 
 // ============================================================================
 // UTILITIES
 // ============================================================================
 
-function getArg(name: string): string | undefined {
+function getArg(name) {
   const idx = process.argv.indexOf(name);
   return idx >= 0 ? process.argv[idx + 1] : undefined;
 }
 
-function hasArg(name: string): boolean {
+function hasArg(name) {
   return process.argv.includes(name);
 }
 
@@ -593,5 +541,6 @@ function hasArg(name: string): boolean {
 
 main().catch(err => {
   console.error('Error:', err.message);
+  console.error(err.stack);
   process.exit(1);
 });
