@@ -1,43 +1,33 @@
 #!/usr/bin/env node
 /**
- * Phoenix Pipeline — TDD with Automated Scaffolding
+ * Phoenix Pipeline — Spec-Driven Development
  * 
- * Phoenix implements Test-Driven Development with optional auto-implementation:
+ *   SPEC → CANON → PLAN → CODEGEN → EVIDENCE → AUDIT → DRIFT
+ *    ↑                              ↓
+ *    └──────── MANUAL EDITS ───────┘
  * 
- *   SPEC → STUB (RED) → IMPLEMENT (GREEN) → EVIDENCE → DELIVERABLE
- *    ↑                                         ↓           ↓
- *    └──────── SELECTIVE INVALIDATION ←───────┘           └→ Deploy
- * 
- * By default, stubs are RED (throw statements). Use --auto-implement to
- * automatically fill in common patterns and go directly to GREEN.
+ * All code generation happens in single CODEGEN phase at the end.
+ * The deliverable is generated along with IU implementations.
  * 
  * Phases:
  * 1. Ingest - Parse specs into clauses
- * 2. Canonicalize - Extract clean requirements (GREEN)
- * 3. Plan - Create IUs (GREEN)
- * 4. Protolens - Compute selective invalidation (GREEN, optional)
- * 5. Regen - Generate **failing stubs** (RED)
- * 6. Auto-implement - Fill common patterns (GREEN, use --auto-implement)
- * 7. Deliverable - Compose IUs into working application (GREEN)
- * 8. Evidence - Validate implementation (GREEN)
- * 9. Audit - Boundary checks
- * 10. Drift - Detect manual changes
+ * 2. Canonicalize - Extract clean requirements
+ * 3. Plan - Create IUs with boundary exports
+ * 4. Codegen - Generate IU implementations AND deliverable
+ * 5. Evidence - Validate implementation
+ * 6. Audit - Boundary checks
+ * 7. Drift - Detect manual changes
  * 
  * Usage: node .pi/skills/phoenix-pipeline/pipeline.js [project-root] [options]
  * Options:
- *   --auto-implement      Auto-implement RED stubs (go directly to GREEN)
  *   --skip-ingest
  *   --skip-canonicalize
  *   --skip-plan
- *   --skip-protolens      (Skip selective invalidation)
- *   --skip-regen          (Preserve your implementations!)
- *   --skip-deliverable    (Skip deliverable generation)
+ *   --skip-codegen         (Preserve your implementations!)
  *   --skip-evidence
  *   --skip-audit
  *   --skip-drift
  *   --continue-on-error
- *   --selective           (Use panproto for selective regen)
- *   --iu=<iu-id>          (Regenerate specific IU only)
  */
 
 import { spawn } from 'child_process';
@@ -47,66 +37,44 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// === TDD PHASE CONFIGURATION ===
+// === PHASE CONFIGURATION ===
 
 const PHASES = [
   { 
     name: 'ingest', 
     script: 'phoenix-ingest/ingest.js', 
     description: 'Parse specs into content-addressed clauses',
-    tdd_phase: 'GREEN' 
   },
   { 
     name: 'canonicalize', 
     script: 'phoenix-canonicalize/canonicalize.js', 
     description: 'Extract clean requirements with traceability',
-    tdd_phase: 'GREEN'
   },
   { 
     name: 'plan', 
     script: 'phoenix-plan/plan.js', 
     description: 'Group requirements into Implementation Units',
-    tdd_phase: 'GREEN'
   },
   { 
-    name: 'protolens', 
-    script: null,  // Internal phase - uses panproto
-    description: 'Compute selective invalidation via protolens',
-    tdd_phase: 'GREEN',
-    internal: true  // Handled specially, not a child process
-  },
-  { 
-    name: 'regen', 
-    script: 'phoenix-regen/regen.js', 
-    description: 'Generate failing stubs (RED) — YOU implement',
-    tdd_phase: 'RED',
+    name: 'codegen', 
+    script: 'phoenix-codegen/codegen.js', 
+    description: 'Generate IU implementations and deliverable',
     warning: '⚠️  DESTRUCTIVE: Overwrites src/generated/*. Edit with care!',
-  },
-  { 
-    name: 'deliverable', 
-    script: 'phoenix-deliverable/deliverable.js', 
-    description: 'Compose IUs into deliverable (colimit generation)',
-    tdd_phase: 'GREEN',
-    // No args needed - deliverable infers type from spec
-    skipFlag: '--skip-deliverable',
   },
   { 
     name: 'evidence', 
     script: 'phoenix-evidence/evidence.js', 
-    description: 'Validate tier requirements (GREEN or REJECTED)',
-    tdd_phase: 'GREEN'
+    description: 'Validate tier requirements (pass or fail)',
   },
   { 
     name: 'audit', 
     script: 'phoenix-audit/audit.js', 
     description: 'Validate architectural boundaries',
-    tdd_phase: 'GREEN'
   },
   { 
     name: 'drift', 
     script: 'phoenix-drift/drift.js', 
     description: 'Detect manual changes vs manifest',
-    tdd_phase: 'GREEN'
   },
 ];
 
@@ -161,158 +129,16 @@ function updateState(projectRoot, phase, status) {
   writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
 }
 
-// === PROTOLEMNS INTEGRATION ===
-
-/**
- * Run panproto protolens phase to compute IU migration
- * Uses theory morphism to determine which implementations can be lifted vs regenerated
- */
-async function runProtolensPhase(projectRoot, options) {
-  const { spawn } = await import('child_process');
-  const { join, dirname } = await import('path');
-  const { fileURLToPath } = await import('url');
-  const { existsSync, readFileSync, writeFileSync } = await import('fs');
-  
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-  
-  console.log('   🔍 Computing IU migration via theory morphism...');
-  
-  const graphsDir = join(projectRoot, '.phoenix', 'graphs');
-  const manifestsDir = join(projectRoot, '.phoenix', 'manifests');
-  
-  const iusPath = join(graphsDir, 'ius.json');
-  const canonPath = join(graphsDir, 'canonical.json');
-  const manifestPath = join(manifestsDir, 'generated_manifest.json');
-  
-  // Check if we have previous state for comparison
-  const canonPrevPath = join(graphsDir, 'canonical-prev.json');
-  const iusPrevPath = join(graphsDir, 'ius-prev.json');
-  
-  // If no previous state, all IUs need fresh generation (first run)
-  if (!existsSync(canonPrevPath) || !existsSync(iusPrevPath)) {
-    console.log('   📋 First run - no previous state to migrate from');
-    console.log('   📝 All IUs will be generated fresh (no migration possible)');
-    
-    if (existsSync(iusPath)) {
-      const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-      const migration = {
-        timestamp: new Date().toISOString(),
-        first_run: true,
-        schema_changes: { added: [], removed: [], modified: [] },
-        ius: (ius.ius || []).map(iu => ({
-          new_iu_id: iu.id,
-          new_iu_name: iu.name,
-          old_iu_id: null,
-          old_iu_name: null,
-          overlap_ratio: 0,
-          strategy: 'regenerate',
-          reason: 'first_run_no_previous_state',
-          old_impl_path: null,
-          old_test_path: null,
-        })),
-        summary: { migrate: 0, regenerate: ius.ius?.length || 0, unchanged: 0 },
-      };
-      
-      const migrationPath = join(graphsDir, 'iu-migration.json');
-      writeFileSync(migrationPath, JSON.stringify(migration, null, 2));
-      console.log(`   🎯 ${migration.summary.regenerate} IUs marked for fresh generation`);
-      return { success: true, migration };
-    }
-    return { success: false, error: 'No IUs found' };
-  }
-  
-  // Run panproto migrate command
-  const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
-  const migrationPath = join(graphsDir, 'iu-migration.json');
-  
-  return new Promise((resolve) => {
-    const child = spawn('node', [
-      panprotoPath,
-      'migrate',
-      '--old-canon', canonPrevPath,
-      '--new-canon', canonPath,
-      '--old-ius', iusPrevPath,
-      '--new-ius', iusPath,
-      '--manifest', manifestPath,
-      '--output', migrationPath,
-      '--project-root', projectRoot,
-    ], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      shell: false,
-    });
-    
-    let stdout = '';
-    let stderr = '';
-    
-    child.stdout?.on('data', (data) => { 
-      stdout += data; 
-      process.stdout.write(data); // Stream output to console
-    });
-    child.stderr?.on('data', (data) => { 
-      stderr += data;
-      process.stderr.write(data); // Stream errors to console
-    });
-    
-    child.on('close', (exitCode) => {
-      if (exitCode !== 0) {
-        console.log(`   ⚠️  Panproto migration failed (exit ${exitCode})`);
-        console.log(`   📝 Falling back to regenerating all IUs`);
-        
-        // Fallback: mark all for regeneration
-        if (existsSync(iusPath)) {
-          const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-          const migration = {
-            timestamp: new Date().toISOString(),
-            fallback: true,
-            schema_changes: { added: [], removed: [], modified: [] },
-            ius: (ius.units || []).map(iu => ({
-              new_iu_id: iu.id,
-              new_iu_name: iu.name,
-              old_iu_id: null,
-              strategy: 'regenerate',
-              reason: 'panproto_fallback',
-            })),
-            summary: { migrate: 0, regenerate: ius.units?.length || 0, unchanged: 0 },
-          };
-          writeFileSync(migrationPath, JSON.stringify(migration, null, 2));
-          resolve({ success: true, migration, fallback: true });
-          return;
-        }
-        resolve({ success: false, error: 'No IUs found' });
-        return;
-      }
-      
-      // Read the generated migration plan
-      try {
-        const migration = JSON.parse(readFileSync(migrationPath, 'utf-8'));
-        console.log(`\n   ✅ Migration plan computed:`);
-        console.log(`      Unchanged: ${migration.summary.unchanged}`);
-        console.log(`      Migrate: ${migration.summary.migrate}`);
-        console.log(`      Regenerate: ${migration.summary.regenerate}`);
-        resolve({ success: true, migration });
-      } catch (e) {
-        console.error(`   ❌ Failed to read migration plan: ${e.message}`);
-        resolve({ success: false, error: e.message });
-      }
-    });
-    
-    child.on('error', (err) => {
-      console.error(`   ⚠️  Panproto error: ${err.message}`);
-      resolve({ success: false, error: err.message });
-    });
-  });
-}
-
-// === TDD PIPELINE EXECUTION ===
+// === PIPELINE EXECUTION ===
 
 async function runPipeline(projectRoot, options) {
   const results = [];
   const skipped = [];
   
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  Phoenix Pipeline — TDD with Automated Scaffolding           ║');
+  console.log('║  Phoenix Pipeline — Spec-Driven Development                  ║');
   console.log('╠══════════════════════════════════════════════════════════════╣');
-  console.log('║  RED = Failing stubs    GREEN = Passing evidence             ║');
+  console.log('║  Spec → Canon → Plan → Codegen → Evidence → Audit → Drift   ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
   console.log('');
   
@@ -321,125 +147,32 @@ async function runPipeline(projectRoot, options) {
     
     if (skipFlag) {
       skipped.push(phase.name);
-      console.log(`⏭️  [${phase.tdd_phase}] Skipping ${phase.name}: ${phase.description}`);
+      console.log(`⏭️  [GREEN] Skipping ${phase.name}: ${phase.description}`);
       continue;
     }
     
-    // Handle internal protolens phase
-    if (phase.internal && phase.name === 'protolens') {
-      // Skip if selective regeneration is not enabled
-      if (!options.selective) {
-        console.log(`⏭️  [${phase.tdd_phase}] Skipping protolens (use --selective to enable)`);
-        continue;
-      }
-      
-      const tddIcon = '🟢';
-      console.log(`\n${tddIcon} [${phase.tdd_phase}] Phase: ${phase.name.toUpperCase()}`);
-      console.log(`   ${phase.description}`);
-      console.log('');
-      
-      const result = await runProtolensPhase(projectRoot, options);
-      
-      results.push({
-        phase: phase.name,
-        success: result.success,
-        exitCode: result.success ? 0 : 1,
-        tdd_phase: phase.tdd_phase,
-        affected: result.affected,
-        fallback: result.fallback,
-      });
-      
-      if (result.success) {
-        updateState(projectRoot, phase.name, 'complete');
-        console.log(`   ✅ Protolens computed ${result.affected?.length || 0} affected IUs`);
-        if (result.fallback) {
-          console.log('   📝 (Using fallback - all IUs affected)');
-        }
-      } else {
-        console.log(`   ❌ Protolens failed: ${result.error}`);
-        if (!options['continue-on-error']) {
-          break;
-        }
-      }
-      continue;
-    }
-    
-    // Special handling for regen with selective IU
-    const args = [];
-    if (phase.name === 'regen' && options.iu) {
-      args.push(options.iu);
-    }
-    
-    // Pass phase-defined args (e.g., deliverable --detect)
-    if (phase.args) {
-      args.push(...phase.args);
-    }
-    
-    // If selective mode and we have migration plan, pass it to regen
-    if (phase.name === 'regen' && options.selective) {
-      const migrationPath = join(projectRoot, '.phoenix', 'graphs', 'iu-migration.json');
-      if (existsSync(migrationPath)) {
-        const migration = JSON.parse(readFileSync(migrationPath, 'utf-8'));
-        const toRegenerate = migration.ius?.filter(iu => iu.strategy === 'regenerate').length || 0;
-        const toMigrate = migration.ius?.filter(iu => iu.strategy === 'migrate').length || 0;
-        const unchanged = migration.ius?.filter(iu => iu.strategy === 'unchanged').length || 0;
-        
-        console.log(`   🎯 Migration plan loaded:`);
-        console.log(`      ${toMigrate} IUs to migrate (lift old implementation)`);
-        console.log(`      ${toRegenerate} IUs to regenerate (fresh stubs)`);
-        console.log(`      ${unchanged} IUs unchanged`);
-        
-        // Pass migration plan path to regen via env var
-        process.env.PHOENIX_MIGRATION_PLAN = migrationPath;
-      }
-    }
-    
-    const tddIcon = phase.tdd_phase === 'RED' ? '🔴' : '🟢';
-    console.log(`\n${tddIcon} [${phase.tdd_phase}] Phase: ${phase.name.toUpperCase()}`);
+    console.log(`\n🟢 [GREEN] Phase: ${phase.name.toUpperCase()}`);
     console.log(`   ${phase.description}`);
     if (phase.warning) {
       console.log(`   ${phase.warning}`);
     }
-    console.log('');
+    console.log();
     
-    const result = await runPhase(phase.script, projectRoot, args);
+    const result = await runPhase(phase.script, projectRoot);
     
     results.push({
       phase: phase.name,
       success: result.success,
       exitCode: result.exitCode,
-      tdd_phase: phase.tdd_phase,
+      tdd_phase: 'GREEN',
     });
     
     if (result.success) {
       updateState(projectRoot, phase.name, 'complete');
       
-      // TDD-specific messaging
-      if (phase.name === 'regen') {
-        if (options['auto-implement']) {
-          // Run pattern-based implement immediately after regen (no LLM needed)
-          console.log('\n   🔴 Stubs generated with throw statements');
-          console.log('   🔧 Applying pattern implementations...');
-          
-          const autoImplResult = await runPhase(
-            'phoenix-regen/implement-patterns.js',
-            projectRoot,
-            [projectRoot]
-          );
-          
-          if (autoImplResult.success) {
-            console.log('   🟢 Pattern implement complete');
-            updateState(projectRoot, 'auto-implement', 'complete');
-          } else {
-            console.log('   ⚠️  Pattern implement had issues, continuing...');
-          }
-        } else {
-          console.log('\n   🔴 Stubs generated with throw statements');
-          console.log('   → Next: Implement functions (you OR LLM)');
-          console.log('   → Replace throw with real logic');
-          console.log('   → Run evidence to verify (GREEN)');
-          console.log('   → Or use --auto-implement to fill common patterns automatically');
-        }
+      if (phase.name === 'codegen') {
+        console.log('   ✅ Generated IU implementations and deliverable');
+        console.log('   → Both IU layer and app/ deliverable created');
       }
       if (phase.name === 'evidence') {
         console.log('\n   🟢 Evidence collected — check scores above');
@@ -450,16 +183,13 @@ async function runPipeline(projectRoot, options) {
       updateState(projectRoot, phase.name, 'failed');
       console.log(`\n   ❌ Phase ${phase.name} failed`);
       
-      // TDD guidance for failures
       if (phase.name === 'evidence') {
-        console.log('\n   💡 Implementation needed:');
-        console.log('      Stubs are RED by design (throw statements)');
-        console.log('      Human OR LLM must implement to make them GREEN');
+        console.log('\n   💡 Implementation needed: fix functions to pass tests');
       }
       
       if (!options['continue-on-error']) {
         console.log('\n   ⚠️  Pipeline halted. Use --continue-on-error to proceed anyway.');
-        console.log('   Or use --skip-regen to preserve implementations and re-evidence.');
+        console.log('   Or use --skip-codegen to preserve implementations and re-evidence.');
         break;
       }
     }
@@ -593,23 +323,22 @@ console.log('');
       }
       
       console.log('');
-      console.log('   Next Steps (choose one):');
-      console.log('   1. Manual: Edit src/generated/*/index.ts (replace throw with logic)');
-      console.log('   2. Auto: Use LLM to implement from spec + stub');
-      console.log('   3. Hybrid: LLM does LOW tiers, you do HIGH tiers');
+      console.log('   Next Steps:');
+      console.log('   1. Manual: Edit src/generated/*/index.ts (implement functions)');
+      console.log('   2. Auto: Use LLM to implement from spec');
       console.log('');
       console.log('   Then: node .pi/skills/phoenix-evidence/evidence.js .');
-      console.log('   Once GREEN: run full pipeline with --skip-regen');
+      console.log('   Once passing: run full pipeline with --skip-codegen');
       
       process.exit(1);
     } else {
       console.log('✅ All pipeline phases passed');
       console.log('');
-      console.log('   🎯 TDD Status: All IUs meeting tier requirements!');
+      console.log('   🎯 All IUs meeting tier requirements!');
       console.log('');
       console.log('   Next steps:');
       console.log('   • Edit specs to add features');
-      console.log('   • Re-run pipeline (selective invalidation preserves work)');
+      console.log('   • Re-run pipeline to regenerate code');
       console.log('   • Check status: node .pi/skills/phoenix-status/status.js');
     }
     
