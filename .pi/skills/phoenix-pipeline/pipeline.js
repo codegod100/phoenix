@@ -4,9 +4,9 @@
  * 
  * Phoenix implements Test-Driven Development:
  * 
- *   SPEC → STUB (RED) → IMPLEMENT (GREEN) → EVIDENCE
- *    ↑                                         ↓
- *    └──────── SELECTIVE INVALIDATION ←───────┘
+ *   SPEC → STUB (RED) → IMPLEMENT (GREEN) → EVIDENCE → DELIVERABLE
+ *    ↑                                         ↓           ↓
+ *    └──────── SELECTIVE INVALIDATION ←───────┘           └→ Deploy
  * 
  * Phases:
  * 1. Ingest - Parse specs into clauses
@@ -14,9 +14,10 @@
  * 3. Plan - Create IUs (GREEN)
  * 4. Protolens - Compute selective invalidation (GREEN, optional)
  * 5. Regen - Generate **failing stubs** (RED)
- * 6. Evidence - Validate implementation (GREEN)
- * 7. Audit - Boundary checks
- * 8. Drift - Detect manual changes
+ * 6. Deliverable - Compose IUs into working application (GREEN)
+ * 7. Evidence - Validate implementation (GREEN)
+ * 8. Audit - Boundary checks
+ * 9. Drift - Detect manual changes
  * 
  * Key Principle: Regen creates throw statements on purpose.
  * Tests fail until you (or AI) implement real logic.
@@ -28,6 +29,7 @@
  *   --skip-plan
  *   --skip-protolens      (Skip selective invalidation)
  *   --skip-regen          (Preserve your implementations!)
+ *   --skip-deliverable    (Skip deliverable generation)
  *   --skip-evidence
  *   --skip-audit
  *   --skip-drift
@@ -77,6 +79,14 @@ const PHASES = [
     description: 'Generate failing stubs (RED) — YOU implement',
     tdd_phase: 'RED',
     warning: '⚠️  DESTRUCTIVE: Overwrites src/generated/*. Edit with care!',
+  },
+  { 
+    name: 'deliverable', 
+    script: 'phoenix-deliverable/deliverable.js', 
+    description: 'Compose IUs into deliverable (colimit generation)',
+    tdd_phase: 'GREEN',
+    args: ['--detect'],
+    skipFlag: '--skip-deliverable',
   },
   { 
     name: 'evidence', 
