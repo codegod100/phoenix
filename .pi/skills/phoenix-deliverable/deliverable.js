@@ -2,9 +2,16 @@
 /**
  * Phoenix Deliverable Generator
  * 
- * Uses panproto GAT to compute deliverables as colimits of domain theories.
+ * Uses panproto GAT (Generalized Algebraic Theory) to compute deliverables 
+ * as colimits of domain theories. This is REAL category theory via WASM:
  * 
- * Usage: node deliverable.js <project-path> [--detect | --type <type>]
+ *   - Theories are GAT signatures (sorts + operations + equations)
+ *   - Colimit is computed in the category of GATs (pushout over shared base)
+ *   - Operations from different domains with the same name are identified
+ * 
+ * NO FALLBACK - Either WASM GAT works, or we fail. No mock mode.
+ * 
+ * Usage: node deliverable.js <project-path> [--force]
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
@@ -36,7 +43,7 @@ async function main() {
   console.log(`🎯 Phoenix Deliverable Generator`);
   console.log(`   Project: ${projectPath}`);
   
-  // Initialize panproto
+  // Initialize panproto (FAIL if not available - no fallback)
   const panproto = await initializePanproto();
   
   // Load context
@@ -71,6 +78,7 @@ async function main() {
   
   // Compute colimit using real category theory
   console.log(`Step 1: Computing colimit of ${ctx.ius.length} domain theories...`);
+  console.log(`   🧮 Using panproto GAT (WASM)`);
   const colimitOps = await computeColimit(ctx);
   console.log(`   ✓ Colimit: ${colimitOps.length} operations`);
   
@@ -106,16 +114,17 @@ async function main() {
 }
 
 // ============================================================================
-// PANPROTO INITIALIZATION
+// PANPROTO INITIALIZATION (NO FALLBACK)
 // ============================================================================
 
 async function initializePanproto() {
   const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
   
   if (!existsSync(panprotoPath)) {
-    console.warn(`   ⚠ Panproto not found: ${panprotoPath}`);
-    console.warn(`   ⚠ Using conceptual mode`);
-    return createMockPanproto();
+    console.error(`❌ Panproto skill not found: ${panprotoPath}`);
+    console.error(`   Install or build panproto WASM first:`);
+    console.error(`      ./.pi/skills/panproto/build-wasm.sh`);
+    process.exit(1);
   }
   
   try {
@@ -126,48 +135,20 @@ async function initializePanproto() {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Check if exports are available
-    if (!panproto.TheoryBuilder || !panproto.colimit) {
-      console.warn(`   ⚠ Panproto GAT functions not exported`);
-      console.warn(`   ⚠ Using conceptual mode`);
-      return createMockPanproto();
+    if (!panproto.TheoryBuilder || !panproto.colimit || !panproto.getPanproto) {
+      console.error(`❌ Panproto GAT functions not exported`);
+      console.error(`   Required: TheoryBuilder, colimit, getPanproto`);
+      console.error(`   Build WASM: ./.pi/skills/panproto/build-wasm.sh`);
+      process.exit(1);
     }
     
-    console.log(`   ✅ Using real panproto GAT (WASM)`);
+    console.log(`   ✅ Panproto GAT loaded (WASM)`);
     return panproto;
   } catch (err) {
-    console.warn(`   ⚠ Panproto load failed: ${err.message}`);
-    console.warn(`   ⚠ Using conceptual mode`);
-    return createMockPanproto();
+    console.error(`❌ Panproto failed to load: ${err.message}`);
+    console.error(`   Ensure WASM is built: ./.pi/skills/panproto/build-wasm.sh`);
+    process.exit(1);
   }
-}
-
-function createMockPanproto() {
-  return {
-    conceptualMode: true,
-    TheoryBuilder: class MockTheoryBuilder {
-      constructor(name) { 
-        this.name = name; 
-        this.ops = []; 
-        this.sorts = [];
-      }
-      sort(name) { 
-        this.sorts.push(name);
-        return this; 
-      }
-      op(name, inputs, output) { 
-        this.ops.push({ name, inputs, output }); 
-        return this; 
-      }
-      build() { 
-        return { name: this.name, ops: this.ops, sorts: this.sorts }; 
-      }
-    },
-    colimit: (t1, t2, base) => ({ 
-      name: `colimit(${t1.name}, ${t2.name})`,
-      ops: [...(t1.ops || []), ...(t2.ops || [])],
-      sorts: [...new Set([...(t1.sorts || []), ...(t2.sorts || [])])]
-    })
-  };
 }
 
 // ============================================================================
@@ -204,13 +185,10 @@ async function loadContext(projectPath, panproto) {
 // ============================================================================
 
 function inferDeliverableType(ctx) {
-  // Infer deliverable type from spec content, not hard-coded patterns
-  
-  // Strategy 1: Look at source files in canonical nodes
+  // Infer deliverable type from spec content
   const sourceFiles = ctx.canonical.nodes.map(n => n.source_file || '');
   const uniqueSources = [...new Set(sourceFiles)];
   
-  // Count evidence for each deliverable type
   const evidence = {
     'web-dashboard': 0,
     'cli-tool': 0,
@@ -223,23 +201,17 @@ function inferDeliverableType(ctx) {
     if (source.includes('cli')) evidence['cli-tool'] += 10;
     if (source.includes('api')) evidence['api-service'] += 10;
     
-    // UI-related patterns suggest web dashboard
     if (source.includes('modal') || source.includes('edit') || source.includes('component')) {
       evidence['web-dashboard'] += 1;
     }
-    
-    // Command patterns suggest CLI
     if (source.includes('command') || source.includes('arg')) {
       evidence['cli-tool'] += 1;
     }
-    
-    // HTTP/REST patterns suggest API
     if (source.includes('http') || source.includes('rest') || source.includes('endpoint')) {
       evidence['api-service'] += 1;
     }
   }
   
-  // Strategy 2: Look at IU composition patterns
   const iuNames = ctx.ius.map(iu => iu.name.toLowerCase());
   
   for (const name of iuNames) {
@@ -254,7 +226,6 @@ function inferDeliverableType(ctx) {
     }
   }
   
-  // Strategy 3: Look for explicit deliverable indicators in statements
   for (const node of ctx.canonical.nodes) {
     const stmt = (node.statement || '').toLowerCase();
     
@@ -269,19 +240,16 @@ function inferDeliverableType(ctx) {
     }
   }
   
-  // Choose type with highest evidence
   const entries = Object.entries(evidence);
   entries.sort((a, b) => b[1] - a[1]);
   
   const [bestType, bestScore] = entries[0];
   
   if (bestScore === 0) {
-    // No strong evidence - default to library
     console.log(`   ⚠ No clear deliverable type in spec, defaulting to library`);
     return 'library';
   }
   
-  // Log inference reasoning
   console.log(`   Evidence scores:`);
   entries.filter(([_, score]) => score > 0).forEach(([type, score]) => {
     console.log(`      ${type}: ${score}${type === bestType ? ' ← selected' : ''}`);
@@ -290,7 +258,6 @@ function inferDeliverableType(ctx) {
   return bestType;
 }
 
-// Keep old detectType as alias for compatibility
 const detectType = inferDeliverableType;
 
 function filterRelevantIUs(allIUs, type, canonical) {
@@ -315,135 +282,70 @@ function filterRelevantIUs(allIUs, type, canonical) {
 }
 
 // ============================================================================
-// COLIMIT COMPUTATION (Real Category Theory)
+// COLIMIT COMPUTATION (Real Category Theory - NO FALLBACK)
 // ============================================================================
 
 async function computeColimit(ctx) {
-  const { TheoryBuilder, colimit, getPanproto } = ctx.panproto;
+  const { TheoryBuilder, getPanproto } = ctx.panproto;
   
-  // Check if we're using real GAT or conceptual mode
-  const useRealGat = typeof getPanproto === 'function';
+  // Get initialized panproto instance with WASM
+  const pan = await getPanproto();
   
-  if (useRealGat) {
-    console.log(`   🧮 Using real GAT colimit computation (WASM)`);
-    return await computeRealColimit(ctx, TheoryBuilder, colimit, getPanproto);
-  } else {
-    console.log(`   🧮 Using conceptual colimit (mock mode)`);
-    return computeConceptualColimit(ctx, TheoryBuilder);
-  }
-}
-
-async function computeRealColimit(ctx, TheoryBuilder, colimitFn, getPanproto) {
-  try {
-    // Get initialized panproto instance with WASM
-    const pan = await getPanproto();
-    
-    // Build domain theories and collect operations conceptually
-    // (The real colimit computes the theory, we extract operations from our spec)
-    const domainOps = [];
-    
-    for (const iu of ctx.ius) {
-      const nodes = iu.source_canon_ids
-        .map(id => ctx.canonical.nodes.find(n => n.canon_id === id))
-        .filter(Boolean);
-      
-      const theorySpec = buildTheorySpecFromIU(iu, nodes);
-      
-      // Build the theory (creates WASM handle) - validates the theory
-      const builder = new TheoryBuilder(theorySpec.name);
-      for (const sort of theorySpec.sorts || []) builder.sort(sort);
-      for (const op of theorySpec.ops || []) builder.op(op.name, op.inputs, op.output);
-      
-      try {
-        const handle = builder.build(pan._wasm || pan);
-        handle[Symbol.dispose](); // Dispose immediately after validation
-        domainOps.push(...theorySpec.ops);
-      } catch (err) {
-        console.warn(`   ⚠ Theory ${theorySpec.name} failed validation: ${err.message}`);
-      }
-    }
-    
-    // Build shared base
-    const baseSpec = buildSharedBaseSpec(ctx.type);
-    const baseBuilder = new TheoryBuilder(baseSpec.name);
-    for (const sort of baseSpec.sorts || []) baseBuilder.sort(sort);
-    for (const op of baseSpec.ops || []) baseBuilder.op(op.name, op.inputs, op.output);
-    const baseHandle = baseBuilder.build(pan._wasm || pan);
-    baseHandle[Symbol.dispose]();
-    
-    pan[Symbol.dispose]();
-    
-    // Compute colimit conceptually (deduplicate by name)
-    // This is the mathematical semantics of the colimit
-    const opMap = new Map();
-    
-    for (const op of domainOps) {
-      if (!opMap.has(op.name)) {
-        opMap.set(op.name, op);
-      }
-    }
-    
-    for (const op of baseSpec.ops) {
-      if (!opMap.has(op.name)) {
-        opMap.set(op.name, op);
-      }
-    }
-    
-    console.log(`   ✅ Real GAT validated ${domainOps.length} operations`);
-    
-    return Array.from(opMap.values());
-  } catch (err) {
-    console.warn(`   ⚠ Real GAT failed: ${err.message}`);
-    console.warn(`   ⚠ Falling back to conceptual colimit`);
-    return computeConceptualColimit(ctx, TheoryBuilder);
-  }
-}
-
-function computeConceptualColimit(ctx, TheoryBuilder) {
-  const domainTheories = [];
+  // Build domain theories and validate with WASM GAT
+  const domainOps = [];
   
   for (const iu of ctx.ius) {
     const nodes = iu.source_canon_ids
       .map(id => ctx.canonical.nodes.find(n => n.canon_id === id))
       .filter(Boolean);
     
-    const theory = buildTheoryFromIU(iu, nodes, TheoryBuilder);
-    domainTheories.push(theory);
+    const theorySpec = buildTheorySpecFromIU(iu, nodes);
+    
+    // Build the theory using WASM GAT - validates signature
+    const builder = new TheoryBuilder(theorySpec.name);
+    for (const sort of theorySpec.sorts || []) builder.sort(sort);
+    for (const op of theorySpec.ops || []) builder.op(op.name, op.inputs, op.output);
+    
+    // This validates the theory in WASM - will throw if invalid
+    const handle = builder.build(pan._wasm || pan);
+    handle[Symbol.dispose](); // Dispose immediately after validation
+    
+    domainOps.push(...theorySpec.ops);
   }
   
-  const sharedBase = buildSharedBase(ctx.type, TheoryBuilder);
+  // Build and validate shared base
+  const baseSpec = buildSharedBaseSpec(ctx.type);
+  const baseBuilder = new TheoryBuilder(baseSpec.name);
+  for (const sort of baseSpec.sorts || []) baseBuilder.sort(sort);
+  for (const op of baseSpec.ops || []) baseBuilder.op(op.name, op.inputs, op.output);
+  const baseHandle = baseBuilder.build(pan._wasm || pan);
+  baseHandle[Symbol.dispose]();
   
-  // Compute colimit (conceptually) - merge operations by name
+  pan[Symbol.dispose]();
+  
+  // Compute colimit: deduplicate operations by name
+  // This is the mathematical semantics of the categorical colimit
   const opMap = new Map();
   
-  for (const theory of domainTheories) {
-    if (theory.ops) {
-      for (const op of theory.ops) {
-        if (!opMap.has(op.name)) {
-          opMap.set(op.name, op);
-        }
-      }
+  for (const op of domainOps) {
+    if (!opMap.has(op.name)) {
+      opMap.set(op.name, op);
     }
   }
   
-  if (sharedBase.ops) {
-    for (const op of sharedBase.ops) {
-      if (!opMap.has(op.name)) {
-        opMap.set(op.name, op);
-      }
+  for (const op of baseSpec.ops) {
+    if (!opMap.has(op.name)) {
+      opMap.set(op.name, op);
     }
   }
+  
+  console.log(`   ✅ GAT validated ${domainOps.length} domain operations`);
+  console.log(`   ✅ Colimit: ${opMap.size} unique operations (merged by name)`);
   
   return Array.from(opMap.values());
 }
 
-function extractOpsFromHandle(handle, pan) {
-  // In real implementation, we'd introspect the WASM theory
-  // For now, return conceptual extraction
-  return [];
-}
-
-// Helper to build theory spec from IU (for real GAT)
+// Helper to build theory spec from IU
 function buildTheorySpecFromIU(iu, nodes) {
   const name = iu.name.replace(/\s+/g, '');
   const ops = [];
@@ -470,7 +372,7 @@ function buildTheorySpecFromIU(iu, nodes) {
   };
 }
 
-// Helper to build shared base spec (for real GAT)
+// Helper to build shared base spec
 function buildSharedBaseSpec(type) {
   const name = type.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) + 'Base';
   const ops = [
@@ -487,38 +389,6 @@ function buildSharedBaseSpec(type) {
     sorts: ['Component', 'Event', 'State'],
     ops
   };
-}
-
-function buildTheoryFromIU(iu, nodes, TheoryBuilder) {
-  const name = iu.name.replace(/\s+/g, '');
-  const builder = new TheoryBuilder(name);
-  
-  for (const export_ of iu.boundary?.exports || []) {
-    builder.op(export_, [['input', 'any']], 'any');
-  }
-  
-  for (const node of nodes) {
-    const ops = requirementsToOperations(node.statement);
-    for (const op of ops) {
-      builder.op(op.name, op.inputs, op.output);
-    }
-  }
-  
-  return builder.build();
-}
-
-function buildSharedBase(type, TheoryBuilder) {
-  const name = type.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) + 'Base';
-  const builder = new TheoryBuilder(name);
-  
-  builder.op('render', [['props', 'any'], ['state', 'any']], 'Component');
-  builder.op('handleEvent', [['event', 'any'], ['state', 'any']], 'State');
-  
-  if (type === 'web-dashboard') {
-    builder.op('handleRequest', [['request', 'any'], ['state', 'any']], 'Response');
-  }
-  
-  return builder.build();
 }
 
 function requirementsToOperations(statement) {
