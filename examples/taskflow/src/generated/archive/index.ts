@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Archive Domain (IU-fc178077)
+// 🔴 RED: Archive Domain (IU-fc178077)
 // Description: Implements archive functionality with 9 requirements
 // Risk Tier: HIGH
 
@@ -38,7 +38,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-fc178077
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -63,11 +63,7 @@ export interface Archive {
  * @phoenix-gen: function
  */
 export function process(item: Archive): Archive {
-  // 🟢 GREEN: Processes according to requirement
-  // REQUIREMENT: when viewing the archived tab tasks show their original status with an archiv...
-  return {
-    ...item,
-    processed: true,
-    processedAt: new Date().toISOString()
-  };
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
 }

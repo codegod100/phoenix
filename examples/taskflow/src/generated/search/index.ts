@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Search Domain (IU-5d746ac1)
+// 🔴 RED: Search Domain (IU-5d746ac1)
 // Description: Implements search functionality with 4 requirements
 // Risk Tier: LOW
 
@@ -23,7 +23,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-5d746ac1
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -48,11 +48,7 @@ export interface Search {
  * @phoenix-gen: function
  */
 export function process(item: Search): Search {
-  // 🟢 GREEN: Processes according to requirement
-  // REQUIREMENT: tasks must be searchable by title substring caseinsensitive
-  return {
-    ...item,
-    processed: true,
-    processedAt: new Date().toISOString()
-  };
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: an empty search query must return all tasks
+  return item; // ← No transformation!
 }

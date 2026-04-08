@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Create Domain (IU-8ae5c45f)
+// 🔴 RED: Create Domain (IU-8ae5c45f)
 // Description: Implements create functionality with 2 requirements
 // Risk Tier: LOW
 
@@ -17,7 +17,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-8ae5c45f
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -42,11 +42,9 @@ export interface Create {
  * @phoenix-gen: function
  */
 export function create(id: string): Create | null {
-  // 🟢 GREEN: Creates according to requirement
-  // REQUIREMENT: the page must include a form to create new tasks with fields for title descri...
+  // 🔴 RED: WRONG — returns object with mismatched ID
   return {
-    id: String(id?.id || 'new-id'),
-    name: id?.name || 'created',
-    createdAt: new Date().toISOString()
-  } as Create | null;
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

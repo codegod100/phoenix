@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Component Domain (IU-a2326ea1)
+// 🔴 RED: Component Domain (IU-a2326ea1)
 // Description: Implements component functionality with 8 requirements
 // Risk Tier: HIGH
 
@@ -35,7 +35,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-a2326ea1
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -59,11 +59,8 @@ export interface Component {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(): Component {
-  // 🟢 GREEN: Returns list according to requirement
-  // REQUIREMENT: the analytics bar shall recalculate on every localstorage change
-  return [{
-    id: '1',
-    name: 'sample'
-  }] as Component;
+export function process(item: Component): Component {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: the create form shall append new tasks to localstorage and trigger task grid rerender
+  return item; // ← No transformation!
 }

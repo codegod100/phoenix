@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Team Domain (IU-169b3c51)
+// 🔴 RED: Team Domain (IU-169b3c51)
 // Description: Implements team functionality with 3 requirements
 // Risk Tier: LOW
 
@@ -20,7 +20,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-169b3c51
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -45,11 +45,7 @@ export interface Team {
  * @phoenix-gen: function
  */
 export function process(item: Team): Team {
-  // 🟢 GREEN: Processes according to requirement
-  // REQUIREMENT: the system must identify the top performer with highest completion rate and m...
-  return {
-    ...item,
-    processed: true,
-    processedAt: new Date().toISOString()
-  };
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
 }

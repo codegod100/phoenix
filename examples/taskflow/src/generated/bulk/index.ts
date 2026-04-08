@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Bulk Domain (IU-eb7c109e)
+// 🔴 RED: Bulk Domain (IU-eb7c109e)
 // Description: Implements bulk functionality with 4 requirements
 // Risk Tier: LOW
 
@@ -23,7 +23,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-eb7c109e
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -48,9 +48,7 @@ export interface Bulk {
  * @phoenix-gen: function
  */
 export function process(item: Bulk): Bulk {
-  // 🟢 GREEN: Deletes according to requirement
-  // REQUIREMENT: the system must support bulk operations including delete multiple archive mul...
-  const id = item?.id || item;
-  console.log('Deleting:', id);
-  return true;
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
 }

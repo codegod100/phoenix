@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Page Domain (IU-8f7a7e1c)
+// 🔴 RED: Page Domain (IU-8f7a7e1c)
 // Description: Implements page functionality with 4 requirements
 // Risk Tier: HIGH
 
@@ -23,7 +23,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-8f7a7e1c
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -47,11 +47,8 @@ export interface Page {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(): Page {
-  // 🟢 GREEN: Returns list according to requirement
-  // REQUIREMENT: the dashboard must use css custom properties for all catppuccin colors
-  return [{
-    id: '1',
-    name: 'sample'
-  }] as Page;
+export function process(item: Page): Page {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: the dashboard must render a complete html page with inline css and javascript
+  return item; // ← No transformation!
 }

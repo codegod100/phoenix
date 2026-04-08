@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Overdue Domain (IU-2ff32cc9)
+// 🔴 RED: Overdue Domain (IU-2ff32cc9)
 // Description: Implements overdue functionality with 1 requirements
 // Risk Tier: LOW
 
@@ -14,7 +14,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-2ff32cc9
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -39,11 +39,7 @@ export interface Overdue {
  * @phoenix-gen: function
  */
 export function process(item: Overdue): Overdue {
-  // 🟢 GREEN: Processes according to requirement
-  // REQUIREMENT: overdue tasks must have a red border and an overdue indicator
-  return {
-    ...item,
-    processed: true,
-    processedAt: new Date().toISOString()
-  };
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
 }

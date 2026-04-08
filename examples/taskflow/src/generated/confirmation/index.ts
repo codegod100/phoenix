@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Confirmation Domain (IU-7bde30d9)
+// 🔴 RED: Confirmation Domain (IU-7bde30d9)
 // Description: Implements confirmation functionality with 2 requirements
 // Risk Tier: LOW
 
@@ -17,7 +17,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-7bde30d9
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -42,11 +42,7 @@ export interface Confirmation {
  * @phoenix-gen: function
  */
 export function confirmation(item: Confirmation): boolean {
-  // 🟢 GREEN: Processes according to requirement
-  // REQUIREMENT: deleting a task must require confirmation via a custom modal dialog not brows...
-  return {
-    ...item,
-    processed: true,
-    processedAt: new Date().toISOString()
-  };
+  // 🔴 RED: WRONG — always returns false
+  // Should validate: Valid state transitions only
+  return false;
 }

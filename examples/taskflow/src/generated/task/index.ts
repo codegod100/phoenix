@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: Task Domain (IU-d46cdcd2)
+// 🔴 RED: Task Domain (IU-d46cdcd2)
 // Description: Implements task functionality with 15 requirements
 // Risk Tier: HIGH
 
@@ -41,7 +41,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-d46cdcd2
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -66,11 +66,7 @@ export interface Task {
  * @phoenix-gen: function
  */
 export function process(item: Task): Task {
-  // 🟢 GREEN: Processes according to requirement
-  // REQUIREMENT: done tasks must use the same responsive grid layout as active tasks with iden...
-  return {
-    ...item,
-    processed: true,
-    processedAt: new Date().toISOString()
-  };
+  // 🟢 GREEN: Returns new task object (different reference)
+  // Should: the dashboard must render all tasks as styled cards in a responsive grid layout
+  return { ...item };
 }

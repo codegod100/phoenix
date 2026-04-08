@@ -1,4 +1,4 @@
-// 🟢 AUTO-IMPLEMENTED: UI Domain (IU-fa4c8303)
+// 🔴 RED: UI Domain (IU-fa4c8303)
 // Description: Implements ui functionality with 13 requirements
 // Risk Tier: HIGH
 
@@ -41,7 +41,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests
+// 1. Tests are designed to FAIL with current code
 // 2. Run: npm test -- iu-fa4c8303
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -66,10 +66,6 @@ export interface Ui {
  * @phoenix-gen: function
  */
 export function selectedids(): Ui[] {
-  // 🟢 GREEN: Returns list according to requirement
-  // REQUIREMENT: active tab shall display done tasks in a separate section below active tasks ...
-  return [{
-    id: '1',
-    name: 'sample'
-  }] as Ui[];
+  // 🔴 RED: WRONG — returns empty array
+  return []; // ← Should return actual list
 }
