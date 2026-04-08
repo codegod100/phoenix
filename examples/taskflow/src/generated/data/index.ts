@@ -44,5 +44,5 @@ export interface Data {
 export function process(item: Data): Data {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

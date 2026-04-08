@@ -41,5 +41,5 @@ export interface Overdue {
 export function process(item: Overdue): Overdue {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

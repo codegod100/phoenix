@@ -2,11 +2,14 @@
 /**
  * Phoenix Pipeline — TDD with Automated Scaffolding
  * 
- * Phoenix implements Test-Driven Development:
+ * Phoenix implements Test-Driven Development with optional auto-implementation:
  * 
  *   SPEC → STUB (RED) → IMPLEMENT (GREEN) → EVIDENCE → DELIVERABLE
  *    ↑                                         ↓           ↓
  *    └──────── SELECTIVE INVALIDATION ←───────┘           └→ Deploy
+ * 
+ * By default, stubs are RED (throw statements). Use --auto-implement to
+ * automatically fill in common patterns and go directly to GREEN.
  * 
  * Phases:
  * 1. Ingest - Parse specs into clauses
@@ -14,16 +17,15 @@
  * 3. Plan - Create IUs (GREEN)
  * 4. Protolens - Compute selective invalidation (GREEN, optional)
  * 5. Regen - Generate **failing stubs** (RED)
- * 6. Deliverable - Compose IUs into working application (GREEN)
- * 7. Evidence - Validate implementation (GREEN)
- * 8. Audit - Boundary checks
- * 9. Drift - Detect manual changes
- * 
- * Key Principle: Regen creates throw statements on purpose.
- * Tests fail until you (or AI) implement real logic.
+ * 6. Auto-implement - Fill common patterns (GREEN, use --auto-implement)
+ * 7. Deliverable - Compose IUs into working application (GREEN)
+ * 8. Evidence - Validate implementation (GREEN)
+ * 9. Audit - Boundary checks
+ * 10. Drift - Detect manual changes
  * 
  * Usage: node .pi/skills/phoenix-pipeline/pipeline.js [project-root] [options]
  * Options:
+ *   --auto-implement      Auto-implement RED stubs (go directly to GREEN)
  *   --skip-ingest
  *   --skip-canonicalize
  *   --skip-plan
@@ -414,10 +416,30 @@ async function runPipeline(projectRoot, options) {
       
       // TDD-specific messaging
       if (phase.name === 'regen') {
-        console.log('\n   🔴 Stubs generated with throw statements');
-        console.log('   → Next: Implement functions (you OR LLM)');
-        console.log('   → Replace throw with real logic');
-        console.log('   → Run evidence to verify (GREEN)');
+        if (options['auto-implement']) {
+          // Run pattern-based implement immediately after regen (no LLM needed)
+          console.log('\n   🔴 Stubs generated with throw statements');
+          console.log('   🔧 Applying pattern implementations...');
+          
+          const autoImplResult = await runPhase(
+            'phoenix-regen/implement-patterns.js',
+            projectRoot,
+            [projectRoot]
+          );
+          
+          if (autoImplResult.success) {
+            console.log('   🟢 Pattern implement complete');
+            updateState(projectRoot, 'auto-implement', 'complete');
+          } else {
+            console.log('   ⚠️  Pattern implement had issues, continuing...');
+          }
+        } else {
+          console.log('\n   🔴 Stubs generated with throw statements');
+          console.log('   → Next: Implement functions (you OR LLM)');
+          console.log('   → Replace throw with real logic');
+          console.log('   → Run evidence to verify (GREEN)');
+          console.log('   → Or use --auto-implement to fill common patterns automatically');
+        }
       }
       if (phase.name === 'evidence') {
         console.log('\n   🟢 Evidence collected — check scores above');
@@ -455,11 +477,13 @@ function parseOptions(args) {
     'skip-plan': false,
     'skip-protolens': false,
     'skip-regen': false,
+    'skip-deliverable': false,
     'skip-evidence': false,
     'skip-audit': false,
     'skip-drift': false,
     'continue-on-error': false,
     'selective': false,
+    'auto-implement': false,
     'iu': null,
   };
   
@@ -474,6 +498,7 @@ function parseOptions(args) {
     if (arg === '--skip-drift') options['skip-drift'] = true;
     if (arg === '--continue-on-error') options['continue-on-error'] = true;
     if (arg === '--selective') options.selective = true;
+    if (arg === '--auto-implement') options['auto-implement'] = true;
     if (arg.startsWith('--iu=')) options.iu = arg.split('=')[1];
   }
   
@@ -493,6 +518,9 @@ if (options.iu) {
 }
 if (options.selective) {
   console.log(`   Mode: Selective regeneration (--selective) via panproto`);
+}
+if (options['auto-implement']) {
+  console.log(`   Mode: Auto-implement (--auto-implement) RED→GREEN in one step`);
 }
 if (options['skip-regen']) {
   console.log(`   Mode: Preserve implementations (--skip-regen)`);

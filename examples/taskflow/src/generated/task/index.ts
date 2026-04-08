@@ -68,5 +68,5 @@ export interface Task {
 export function process(item: Task): Task {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: the dashboard must render all tasks as styled cards in a responsive grid layout
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

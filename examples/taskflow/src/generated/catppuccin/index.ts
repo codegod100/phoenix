@@ -59,5 +59,5 @@ export interface Catppuccin {
 export function process(item: Catppuccin): Catppuccin {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

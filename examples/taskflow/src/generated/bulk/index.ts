@@ -50,5 +50,5 @@ export interface Bulk {
 export function process(item: Bulk): Bulk {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

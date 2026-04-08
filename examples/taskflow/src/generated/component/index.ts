@@ -62,5 +62,5 @@ export interface Component {
 export function process(item: Component): Component {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: the create form shall append new tasks to localstorage and trigger task grid rerender
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

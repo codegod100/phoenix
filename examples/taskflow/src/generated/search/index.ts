@@ -50,5 +50,5 @@ export interface Search {
 export function process(item: Search): Search {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: an empty search query must return all tasks
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

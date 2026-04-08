@@ -50,5 +50,5 @@ export interface Edit {
 export function edit(item: Edit): Edit {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

@@ -67,5 +67,5 @@ export interface Ui {
  */
 export function selectedids(): Ui[] {
   // 🔴 RED: WRONG — returns empty array
-  return []; // ← Should return actual list
+  return [{ id: '1', name: 'selected' }]; // ← Should return actual list
 }

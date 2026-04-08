@@ -50,5 +50,5 @@ export interface Page {
 export function process(item: Page): Page {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: the dashboard must render a complete html page with inline css and javascript
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

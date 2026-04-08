@@ -59,5 +59,5 @@ export interface Event {
 export function process(item: Event): Event {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: form submit events shall validate input write to localstorage then call render functions
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

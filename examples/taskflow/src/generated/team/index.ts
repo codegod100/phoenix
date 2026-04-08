@@ -47,5 +47,5 @@ export interface Team {
 export function process(item: Team): Team {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

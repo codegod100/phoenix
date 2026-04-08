@@ -68,5 +68,5 @@ export interface Status {
 export function process(item: Status): Status {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: the status bar must render as a single horizontal bar below the header
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

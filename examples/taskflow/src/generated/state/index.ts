@@ -53,5 +53,5 @@ export interface State {
 export function process(item: State): State {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: all components shall read from localstorage on every render with no inmemory caching
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

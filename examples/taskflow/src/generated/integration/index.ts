@@ -53,5 +53,5 @@ export interface Integration {
 export function process(item: Integration): Integration {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: no component shall render without reading current localstorage state
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }

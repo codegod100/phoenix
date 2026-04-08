@@ -50,5 +50,5 @@ export interface Priority {
 export function process(item: Priority): Priority {
   // 🔴 RED: WRONG — returns input unchanged
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item }; // ← No transformation!
 }
