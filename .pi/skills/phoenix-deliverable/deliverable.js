@@ -310,20 +310,32 @@ function computeColimitConceptually(ctx) {
   
   const sharedBase = buildSharedBase(ctx.type, TheoryBuilder);
   
-  // Compute colimit (conceptually)
-  const colimitOps = [];
+  // Compute colimit (conceptually) - merge operations by name
+  const opMap = new Map();
   
+  // Add domain theory operations
   for (const theory of domainTheories) {
     if (theory.ops) {
-      colimitOps.push(...theory.ops);
+      for (const op of theory.ops) {
+        // In a real colimit, operations with same name from different
+        // domains are identified (merged) if they have compatible signatures
+        if (!opMap.has(op.name)) {
+          opMap.set(op.name, op);
+        }
+      }
     }
   }
   
+  // Add shared base operations (lower priority)
   if (sharedBase.ops) {
-    colimitOps.push(...sharedBase.ops);
+    for (const op of sharedBase.ops) {
+      if (!opMap.has(op.name)) {
+        opMap.set(op.name, op);
+      }
+    }
   }
   
-  return colimitOps;
+  return Array.from(opMap.values());
 }
 
 function buildTheoryFromIU(iu, nodes, TheoryBuilder) {
@@ -365,7 +377,7 @@ function requirementsToOperations(statement) {
   if (lower.includes('modal') && lower.includes('confirm')) {
     ops.push({
       name: 'showConfirmationModal',
-      inputs: [['message', 'string'], ['onConfirm', 'function']],
+      inputs: [['message', 'string'], ['onConfirm', 'Function']],
       output: 'void'
     });
   }
@@ -430,8 +442,11 @@ function generateDeliverable(ctx, colimitOps) {
 }
 
 function generateWebDashboard(ctx, colimitOps) {
+  // Map IU names to actual folder names (e.g., "Metrics Domain" -> "metrics")
   const iuImports = ctx.ius.map(iu => {
-    const domain = iu.name.toLowerCase().replace(/\s+/g, '-');
+    const domain = iu.name.toLowerCase()
+      .replace(/\s+domain$/, '')      // Remove " domain" suffix
+      .replace(/\s+/g, '-');           // Spaces to hyphens
     const exports = iu.boundary?.exports?.join(', ') || '';
     return `import { ${exports} } from '../${domain}/index.js';`;
   }).join('\n');

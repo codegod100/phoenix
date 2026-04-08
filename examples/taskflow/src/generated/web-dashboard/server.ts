@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 /**
+ * @phoenix-deliverable: web-dashboard-legacy
+ * @phoenix-generated: 2026-04-08T18:00:00.000Z
+ * 
  * TaskFlow Web Dashboard Server
  * 
  * Full Phoenix integration - all UI implemented per spec requirements

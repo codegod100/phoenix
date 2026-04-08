@@ -207,17 +207,16 @@ function validateBoundary(iuId, filePath, sourceCode, policy, enforcement) {
     }
   }
   
-  // Check for _phoenix export (traceability requirement)
-  const hasPhoenix = sourceCode.includes('_phoenix');
-  const hasIuId = sourceCode.includes('iu_id:');
+  // Check for phoenix traceability comment (supports both IU and deliverable formats)
+  const hasPhoenixComment = sourceCode.includes('@phoenix-iu:') || sourceCode.includes('@phoenix-deliverable:');
   
-  if (!hasPhoenix || !hasIuId) {
+  if (!hasPhoenixComment) {
     diagnostics.push({
       severity: 'error',
       category: 'traceability',
       subject: iuId,
-      message: `Missing _phoenix traceability export`,
-      recommendation: `Add export const _phoenix = { iu_id: '...', name: '...', risk_tier: '...' }`,
+      message: `Missing @phoenix-iu or @phoenix-deliverable traceability comment`,
+      recommendation: `Add // @phoenix-iu: <hash> or // @phoenix-deliverable: <type> comment at top of file`,
     });
   }
   
@@ -328,9 +327,10 @@ try {
   for (const filePath of filesToAudit) {
     const sourceCode = readFileSync(filePath, 'utf-8');
     
-    // Extract IU ID from _phoenix export
-    const iuIdMatch = sourceCode.match(/iu_id:\s*['"]([^'"]+)['"]/);
-    const iuId = iuIdMatch?.[1] || basename(filePath);
+    // Extract ID from @phoenix-iu or @phoenix-deliverable comment
+    const iuIdMatch = sourceCode.match(/@phoenix-iu:\s*([a-f0-9]+)/);
+    const deliverableMatch = sourceCode.match(/@phoenix-deliverable:\s*(\w+)/);
+    const iuId = iuIdMatch?.[1] || deliverableMatch?.[1] || basename(filePath);
     
     const policy = defaultBoundaryPolicy();
     const enforcement = {

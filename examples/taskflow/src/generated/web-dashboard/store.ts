@@ -1,4 +1,7 @@
 /**
+ * @phoenix-deliverable: web-dashboard-legacy
+ * @phoenix-generated: 2026-04-08T18:00:00.000Z
+ * 
  * TaskFlow Data Store
  * 
  * Integrates all Phoenix domains into a unified task management API
