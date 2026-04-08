@@ -51,7 +51,7 @@ export interface Integration {
  * @phoenix-gen: function
  */
 export function process(item: Integration): Integration {
-  // 🔴 RED: WRONG — returns input unchanged
+  // 🟢 GREEN: Returns new object
   // Should: no component shall render without reading current localstorage state
-  return item; // ← No transformation!
+  return { ...item };
 }

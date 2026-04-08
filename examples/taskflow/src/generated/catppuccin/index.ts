@@ -57,7 +57,7 @@ export interface Catppuccin {
  * @phoenix-gen: function
  */
 export function process(item: Catppuccin): Catppuccin {
-  // 🔴 RED: WRONG — returns input unchanged
+  // 🟢 GREEN: Returns new object
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item };
 }

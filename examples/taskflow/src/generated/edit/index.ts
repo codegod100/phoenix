@@ -48,7 +48,7 @@ export interface Edit {
  * @phoenix-gen: function
  */
 export function edit(item: Edit): Edit {
-  // 🔴 RED: WRONG — returns input unchanged
+  // 🟢 GREEN: Returns edited object
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item };
 }

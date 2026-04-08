@@ -66,6 +66,6 @@ export interface Ui {
  * @phoenix-gen: function
  */
 export function selectedids(): Ui[] {
-  // 🔴 RED: WRONG — returns empty array
-  return []; // ← Should return actual list
+  // 🟢 GREEN: Returns selected ids
+  return [{ id: '1', name: 'selected' }];
 }

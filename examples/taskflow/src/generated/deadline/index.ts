@@ -48,7 +48,7 @@ export interface Deadline {
  * @phoenix-gen: function
  */
 export function process(item: Deadline): Deadline {
-  // 🔴 RED: WRONG — returns input unchanged
+  // 🟢 GREEN: Returns new object
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item };
 }

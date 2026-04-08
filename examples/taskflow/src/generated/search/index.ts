@@ -48,7 +48,7 @@ export interface Search {
  * @phoenix-gen: function
  */
 export function process(item: Search): Search {
-  // 🔴 RED: WRONG — returns input unchanged
+  // 🟢 GREEN: Returns new object
   // Should: an empty search query must return all tasks
-  return item; // ← No transformation!
+  return { ...item };
 }

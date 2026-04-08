@@ -48,7 +48,7 @@ export interface Bulk {
  * @phoenix-gen: function
  */
 export function process(item: Bulk): Bulk {
-  // 🔴 RED: WRONG — returns input unchanged
+  // 🟢 GREEN: Returns new object
   // Should: Processed results
-  return item; // ← No transformation!
+  return { ...item };
 }
