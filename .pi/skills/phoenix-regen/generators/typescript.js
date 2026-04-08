@@ -151,7 +151,9 @@ export function generateTests(iu, implPath) {
   lines.push("  it('has phoenix traceability comments', () => {");
   lines.push("    // Read the impl file and check for @phoenix-iu comment");
   lines.push("    const fs = require('fs');");
-  lines.push("    const impl = fs.readFileSync('./index.ts', 'utf-8');");
+  lines.push("    const path = require('path');");
+  lines.push("    const implPath = path.join(__dirname, '..', 'index.ts');");
+  lines.push("    const impl = fs.readFileSync(implPath, 'utf-8');");
   lines.push(`    expect(impl).toMatch(/@phoenix-iu:.*${iu.id.slice(0, 16)}/);`);
   lines.push('  });');
   lines.push('');
