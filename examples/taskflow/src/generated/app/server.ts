@@ -2,7 +2,7 @@
 /**
  * @phoenix-deliverable: web-dashboard
  * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,8f7a7e1c526a8fc3,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T21:32:11.295Z
+ * @phoenix-generated: 2026-04-08T21:39:39.643Z
  */
 
 import { createServer } from 'http';
@@ -20,6 +20,13 @@ const server = createServer((req, res) => {
   
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
+    res.end();
+    return;
+  }
+  
+  // Favicon (avoid 404 noise)
+  if (path === '/favicon.ico') {
+    res.writeHead(204);
     res.end();
     return;
   }
@@ -47,6 +54,35 @@ const server = createServer((req, res) => {
     return;
   }
   
+  // POST create task
+  if (path === '/api/tasks' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const task = {
+          id: String(idCounter++),
+          title: data.title || 'Untitled',
+          description: data.description || '',
+          status: data.status || 'open',
+          priority: data.priority || 'medium',
+          assignee: data.assignee || '',
+          deadline: data.deadline || '',
+          tags: data.tags || [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        tasks.set(task.id, task);
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(task));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
   
   
   // PUT update task

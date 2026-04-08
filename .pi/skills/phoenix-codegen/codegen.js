@@ -243,10 +243,11 @@ async function generateDeliverable(ctx, colimitOps) {
 }
 
 function generateWorkingServer(ctx, imports, ops) {
+  // Basic data operations always enabled for dashboard
   const hasArchive = ops.some(o => o.name.toLowerCase().includes('archive'));
-  const hasCreate = ops.some(o => o.name.toLowerCase().includes('create'));
-  const hasEdit = ops.some(o => o.name.toLowerCase().includes('edit'));
-  const hasDelete = ops.some(o => o.name.toLowerCase().includes('delete'));
+  const hasCreate = true;  // Always provide create
+  const hasEdit = true;    // Always provide edit
+  const hasDelete = true;  // Always provide delete
   const hasPriority = ops.some(o => o.name.toLowerCase().includes('priority'));
   const hasStatus = ops.some(o => o.name.toLowerCase().includes('status'));
   const hasAssign = ops.some(o => o.name.toLowerCase().includes('assign'));
@@ -276,6 +277,13 @@ const server = createServer((req, res) => {
   
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
+    res.end();
+    return;
+  }
+  
+  // Favicon (avoid 404 noise)
+  if (path === '/favicon.ico') {
+    res.writeHead(204);
     res.end();
     return;
   }
