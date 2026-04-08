@@ -7,7 +7,7 @@
  * Integrates all Phoenix domains into a unified task management API
  */
 
-import { deleteTask } from '../delete/index.js';
+import { getArchivedTasks as getArchivedFromIU, archiveTask as archiveFromIU } from '../archive/index.js';
 
 // Full Task interface with all domain fields
 export interface Task {
@@ -121,11 +121,23 @@ export function deleteTaskById(id: string): boolean {
 }
 
 export function archiveTask(id: string): Task | undefined {
-  return updateTask(id, { status: 'archived' });
+  const task = updateTask(id, { status: 'archived' });
+  if (task) {
+    // Call IU function for archive processing
+    archiveFromIU({ id, name: task.title });
+  }
+  return task;
 }
 
 export function restoreTask(id: string): Task | undefined {
   return updateTask(id, { status: 'open' });
+}
+
+// ======== ARCHIVED TASKS ========
+
+export function getArchivedTasks(): Task[] {
+  // Get from internal store - IU layer provides the operation
+  return Array.from(tasks.values()).filter(t => t.status === 'archived');
 }
 
 // ======== SEARCH & FILTER ========

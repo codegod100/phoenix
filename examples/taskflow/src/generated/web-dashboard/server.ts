@@ -17,6 +17,7 @@ import {
   deleteTaskById,
   archiveTask,
   restoreTask,
+  getArchivedTasks,
   searchTasks,
   filterByStatus,
   filterByPriority,
@@ -800,11 +801,12 @@ function generateHTML(): string {
     
     // Load data
     async function loadTasks() {
-      const [data, stats] = await Promise.all([
+      const [data, archived, stats] = await Promise.all([
         api('GET', '/api/tasks'),
+        api('GET', '/api/tasks/archived'),
         api('GET', '/api/stats')
       ]);
-      tasks = data;
+      tasks = [...data, ...archived];
       renderAnalytics(stats);
       renderTasks();
     }
@@ -850,6 +852,14 @@ const server = createServer(async (req: import('http').IncomingMessage, res: imp
       let tasks = query ? searchTasks(query) : getAllTasks();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(tasks));
+      return;
+    }
+    
+    // Archived tasks endpoint - uses IU getArchivedTasks
+    if (path === '/api/tasks/archived' && req.method === 'GET') {
+      const archived = getArchivedTasks();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(archived));
       return;
     }
     
