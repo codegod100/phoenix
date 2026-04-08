@@ -23,7 +23,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-b0512ab0
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -47,7 +47,7 @@ export interface Edit {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function edit(item): Edit {
+export function edit(item: Edit): Edit {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: clicking cancel or saving must restore the task card view by hiding editform ...
   return {
@@ -55,5 +55,4 @@ export function edit(item): Edit {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

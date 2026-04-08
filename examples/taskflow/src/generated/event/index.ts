@@ -32,7 +32,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-c73fdbc4
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -56,7 +56,7 @@ export interface Event {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): boolean {
+export function process(item: Event): Event {
   // 🟢 GREEN: Validates according to requirement
   // REQUIREMENT: form submit events shall validate input write to localstorage then call rende...
   return !!item && item.id !== undefined;

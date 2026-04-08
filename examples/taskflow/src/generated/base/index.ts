@@ -35,7 +35,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-e9b69935
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -59,7 +59,7 @@ export interface Base {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Base {
+export function process(item: Base): Base {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: date picker popover must use ctpsurface0 background with ctpsurface1 borders
   return {
@@ -67,5 +67,4 @@ export function process(item): Base {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

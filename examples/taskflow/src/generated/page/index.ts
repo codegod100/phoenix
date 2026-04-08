@@ -23,7 +23,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-8f7a7e1c
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -54,5 +54,4 @@ export function process(): Page {
     id: '1',
     name: 'sample'
   }] as Page;
-}] as Page;
 }

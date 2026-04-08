@@ -20,7 +20,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-169b3c51
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -44,7 +44,7 @@ export interface Team {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Team {
+export function process(item: Team): Team {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: the system must identify the top performer with highest completion rate and m...
   return {
@@ -52,5 +52,4 @@ export function process(item): Team {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

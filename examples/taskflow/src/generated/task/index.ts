@@ -41,7 +41,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-d46cdcd2
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -65,7 +65,7 @@ export interface Task {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Task {
+export function process(item: Task): Task {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: done tasks must use the same responsive grid layout as active tasks with iden...
   return {
@@ -73,6 +73,4 @@ export function process(item): Task {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
-};
 }

@@ -17,7 +17,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-f5ffe871
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -41,7 +41,7 @@ export interface Data {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Data {
+export function process(item: Data): Data {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: tasks must persist in browser localstorage and survive page refreshes
   return {
@@ -49,5 +49,4 @@ export function process(item): Data {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

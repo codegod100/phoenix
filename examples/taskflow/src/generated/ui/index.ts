@@ -41,7 +41,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-fa4c8303
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -72,5 +72,4 @@ export function selectedids(): Ui[] {
     id: '1',
     name: 'sample'
   }] as Ui[];
-}] as Ui[];
 }

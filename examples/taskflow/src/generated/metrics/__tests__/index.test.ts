@@ -21,7 +21,9 @@ describe('Metrics Domain', () => {
   it('has phoenix traceability comments', () => {
     // Read the impl file and check for @phoenix-iu comment
     const fs = require('fs');
-    const impl = fs.readFileSync('./index.ts', 'utf-8');
+    const path = require('path');
+    const implPath = path.join(__dirname, '..', 'index.ts');
+    const impl = fs.readFileSync(implPath, 'utf-8');
     expect(impl).toMatch(/@phoenix-iu:.*29eaf5668c0afbf2/);
   });
 

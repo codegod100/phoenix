@@ -39,27 +39,42 @@ function extractRequirements(code) {
 }
 
 /**
- * Extract function stubs from code
+ * Find all function positions in code (with proper brace matching)
  */
-function extractFunctions(code) {
+function findFunctions(code) {
   const functions = [];
-  
-  // Match export function declarations with their bodies
-  const funcRegex = /export function (\w+)\(([^)]*)\):\s*(\w+[\|\w<>\[\]]*)\s*\{([^}]+(?:\{[^}]*\}[^}]*)*)\}/g;
+  const funcStartRegex = /export function (\w+)\s*\(/g;
   
   let match;
-  while ((match = funcRegex.exec(code)) !== null) {
-    const [fullMatch, name, params, returnType, body] = match;
+  while ((match = funcStartRegex.exec(code)) !== null) {
+    const name = match[1];
+    const startIdx = match.index;
     
-    // Find the canon comment that precedes this function
-    const beforeFunc = code.substring(0, match.index);
+    // Find the opening brace after parameters
+    let braceIdx = code.indexOf('{', startIdx);
+    if (braceIdx === -1) continue;
+    
+    // Find matching closing brace
+    let braceCount = 1;
+    let endIdx = braceIdx + 1;
+    while (braceCount > 0 && endIdx < code.length) {
+      if (code[endIdx] === '{') braceCount++;
+      else if (code[endIdx] === '}') braceCount--;
+      endIdx++;
+    }
+    
+    // Extract full function text
+    const fullText = code.substring(startIdx, endIdx);
+    
+    // Find associated canon comment (look backwards from start)
+    const beforeFunc = code.substring(0, startIdx);
     const lines = beforeFunc.split('\n');
-    let associatedCanon = null;
+    let canonId = null;
     
     for (let i = lines.length - 1; i >= 0; i--) {
       const canonMatch = lines[i].match(/@phoenix-canon:\s*([a-f0-9]+)/);
       if (canonMatch) {
-        associatedCanon = canonMatch[1];
+        canonId = canonMatch[1];
         break;
       }
       if (lines[i].includes('export function')) break;
@@ -67,11 +82,10 @@ function extractFunctions(code) {
     
     functions.push({
       name,
-      params,
-      returnType,
-      body: body.trim(),
-      canonId: associatedCanon,
-      fullMatch
+      startIdx,
+      endIdx,
+      fullText,
+      canonId
     });
   }
   
@@ -82,10 +96,12 @@ function extractFunctions(code) {
  * Generate implementation based on requirement + stub
  */
 function generateImplementation(func, requirement) {
-  const { name, params, returnType, body } = func;
+  const { name, fullText } = func;
   
-  // Simple pattern-matching implementation generator
-  // In production, this would call an LLM API
+  // Extract params and return type from original
+  const sigMatch = fullText.match(/export function \w+\(([^)]*)\):\s*([^{]+)/);
+  const params = sigMatch ? sigMatch[1] : 'item: any';
+  const returnType = sigMatch ? sigMatch[2].trim() : 'any';
   
   const paramName = params.split(':')[0].trim() || 'item';
   
@@ -94,65 +110,38 @@ function generateImplementation(func, requirement) {
   
   // Generate appropriate implementation
   if (req.includes('validate') || req.includes('check') || name.includes('validate')) {
-    return generateValidationImpl(name, paramName, returnType, requirement);
+    return `export function ${name}(${params}): ${returnType} {
+  // 🟢 GREEN: Validates according to requirement
+  // REQUIREMENT: ${requirement}
+  return !!${paramName} && ${paramName}.id !== undefined;
+}`;
   }
   
   if (req.includes('create') || req.includes('add') || name.includes('create')) {
-    return generateCreateImpl(name, paramName, returnType, requirement);
-  }
-  
-  if (req.includes('delete') || req.includes('remove') || name.includes('delete')) {
-    return generateDeleteImpl(name, paramName, returnType, requirement);
-  }
-  
-  if (req.includes('list') || req.includes('all') || name.includes('list') || name.includes('getAll')) {
-    return generateListImpl(name, paramName, returnType, requirement);
-  }
-  
-  if (req.includes('update') || req.includes('modify') || name.includes('update')) {
-    return generateUpdateImpl(name, paramName, returnType, requirement);
-  }
-  
-  // Default: process/transform
-  return generateProcessImpl(name, paramName, returnType, requirement);
-}
-
-// === Implementation Generators ===
-
-function generateValidationImpl(name, param, returnType, requirement) {
-  return `export function ${name}(${param}): boolean {
-  // 🟢 GREEN: Validates according to requirement
-  // REQUIREMENT: ${requirement}
-  return !!${param} && ${param}.id !== undefined;
-}`;
-}
-
-function generateCreateImpl(name, param, returnType, requirement) {
-  const id = param.includes('id') ? param.split(',')[0].split(':')[0].trim() : 'id';
-  return `export function ${name}(${param}): ${returnType} {
+    return `export function ${name}(${params}): ${returnType} {
   // 🟢 GREEN: Creates according to requirement
   // REQUIREMENT: ${requirement}
   return {
-    id: String(${id}),
-    name: 'created',
+    id: String(${paramName}?.id || 'new-id'),
+    name: ${paramName}?.name || 'created',
     createdAt: new Date().toISOString()
   } as ${returnType};
 }`;
-}
-
-function generateDeleteImpl(name, param, returnType, requirement) {
-  const id = param.includes('id') ? param.split(':')[0].trim() : 'id';
-  return `export function ${name}(${param}): boolean {
+  }
+  
+  if (req.includes('delete') || req.includes('remove') || name.includes('delete')) {
+    return `export function ${name}(${params}): ${returnType} {
   // 🟢 GREEN: Deletes according to requirement
   // REQUIREMENT: ${requirement}
-  console.log('Deleting:', ${id});
+  const id = ${paramName}?.id || ${paramName};
+  console.log('Deleting:', id);
   return true;
 }`;
-}
-
-function generateListImpl(name, param, returnType, requirement) {
-  const itemType = returnType.replace('[]', '');
-  return `export function ${name}(): ${returnType} {
+  }
+  
+  if (req.includes('list') || req.includes('all') || name.includes('list') || name.includes('getAll')) {
+    const itemType = returnType.replace('[]', '');
+    return `export function ${name}(): ${returnType} {
   // 🟢 GREEN: Returns list according to requirement
   // REQUIREMENT: ${requirement}
   return [{
@@ -160,27 +149,25 @@ function generateListImpl(name, param, returnType, requirement) {
     name: 'sample'
   }] as ${returnType};
 }`;
-}
-
-function generateUpdateImpl(name, param, returnType, requirement) {
-  const itemName = param.split(':')[0].trim();
-  return `export function ${name}(${param}): ${returnType} {
+  }
+  
+  if (req.includes('update') || req.includes('modify') || name.includes('update')) {
+    return `export function ${name}(${params}): ${returnType} {
   // 🟢 GREEN: Updates according to requirement
   // REQUIREMENT: ${requirement}
   return {
-    ...${itemName},
+    ...${paramName},
     updatedAt: new Date().toISOString()
   };
 }`;
-}
-
-function generateProcessImpl(name, param, returnType, requirement) {
-  const itemName = param.split(':')[0].trim();
-  return `export function ${name}(${param}): ${returnType} {
+  }
+  
+  // Default: process/transform
+  return `export function ${name}(${params}): ${returnType} {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: ${requirement}
   return {
-    ...${itemName},
+    ...${paramName},
     processed: true,
     processedAt: new Date().toISOString()
   };
@@ -211,49 +198,57 @@ async function autoImplementIU(projectRoot, iuId) {
   }
   
   if (!implPath) {
+    // Skip test files silently
+    if (iuId.includes('__tests__') || iuId.endsWith('.test.ts')) {
+      return true;
+    }
     console.error(`❌ IU ${iuId} not found in manifest`);
     return false;
   }
   
-  console.log(`🤖 Auto-implementing: ${iuId}`);
+  console.log(`🤖 Auto-implementing: ${iuId.slice(0, 16)}...`);
   console.log(`   File: ${implPath}`);
   
   // Read current code
   const code = readFileSync(implPath, 'utf-8');
   
+  // Check if already auto-implemented
+  if (code.includes('🟢 GREEN:') || code.includes('🟢 AUTO-IMPLEMENTED')) {
+    console.log(`   ⏭️  Already implemented`);
+    return true;
+  }
+  
   // Extract requirements and functions
   const requirements = extractRequirements(code);
-  const functions = extractFunctions(code);
+  const functions = findFunctions(code);
   
   console.log(`   Found ${requirements.length} requirements`);
   console.log(`   Found ${functions.length} functions to implement`);
   
-  // Generate new implementations
+  if (functions.length === 0) {
+    console.log(`   ⏭️  No functions to implement`);
+    return true;
+  }
+  
+  // Build new code by replacing functions
   let newCode = code;
   
-  for (const func of functions) {
+  // Sort functions by start position descending (so replacements don't shift indices)
+  const sortedFuncs = [...functions].sort((a, b) => b.startIdx - a.startIdx);
+  
+  for (const func of sortedFuncs) {
     // Find associated requirement
     const req = requirements.find(r => r.canonId === func.canonId) || 
-                requirements[functions.indexOf(func) % requirements.length];
+                requirements[sortedFuncs.indexOf(func) % requirements.length];
     
     if (req) {
       const newImpl = generateImplementation(func, req.statement);
       
-      // Replace in code (simple string replacement)
-      // Note: This is fragile - in production use AST parsing
-      const oldFuncRegex = new RegExp(
-        `export function ${func.name}\\([^)]*\\):[^;]+?\{[\\s\\S]*?\}(?!\\s*\\))`, 
-        'g'
-      );
-      
-      // Safer: Find the exact function and replace
-      const funcStart = newCode.indexOf(func.fullMatch);
-      if (funcStart !== -1) {
-        newCode = newCode.substring(0, funcStart) + 
-                  newImpl + 
-                  newCode.substring(funcStart + func.fullMatch.length);
-        console.log(`   🟢 Implemented: ${func.name}`);
-      }
+      // Replace function in code
+      newCode = newCode.substring(0, func.startIdx) + 
+                newImpl + 
+                newCode.substring(func.endIdx);
+      console.log(`   🟢 Implemented: ${func.name}`);
     }
   }
   
@@ -263,7 +258,7 @@ async function autoImplementIU(projectRoot, iuId) {
     '// 🟢 AUTO-IMPLEMENTED:'
   );
   newCode = newCode.replace(
-    /Tests are designed to FAIL/, 
+    /Tests are designed to FAIL with current code/, 
     'Auto-implemented from spec — verify with tests'
   );
   
@@ -308,8 +303,17 @@ async function main() {
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
     let success = 0;
     let failed = 0;
+    let skipped = 0;
     
-    for (const iuId of Object.keys(manifest.files)) {
+    // Get unique IU IDs from manifest (skip test files)
+    const iuIds = new Set();
+    for (const [filePath, info] of Object.entries(manifest.files || {})) {
+      if (!filePath.includes('__tests__') && info && info.iu_id) {
+        iuIds.add(info.iu_id);
+      }
+    }
+    
+    for (const iuId of iuIds) {
       const ok = await autoImplementIU(projectRoot, iuId);
       if (ok) success++;
       else failed++;

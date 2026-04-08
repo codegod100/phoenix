@@ -32,7 +32,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-f56c1390
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -56,7 +56,7 @@ export interface Catppuccin {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Catppuccin {
+export function process(item: Catppuccin): Catppuccin {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: the dashboard must use the catppuccin mocha color palette exclusively
   return {
@@ -64,5 +64,4 @@ export function process(item): Catppuccin {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

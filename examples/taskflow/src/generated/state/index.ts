@@ -26,7 +26,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-b25d3806
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -57,5 +57,4 @@ export function process(): State {
     id: '1',
     name: 'sample'
   }] as State;
-}] as State;
 }

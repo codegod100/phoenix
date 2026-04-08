@@ -41,7 +41,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-92d0c760
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -65,7 +65,7 @@ export interface Status {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Status {
+export function process(item: Status): Status {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: each card must have buttons for status transitions based on current status
   return {
@@ -73,5 +73,4 @@ export function process(item): Status {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

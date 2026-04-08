@@ -38,7 +38,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-fc178077
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -62,7 +62,7 @@ export interface Archive {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Archive {
+export function process(item: Archive): Archive {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: when viewing the archived tab tasks show their original status with an archiv...
   return {
@@ -70,5 +70,4 @@ export function process(item): Archive {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

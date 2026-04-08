@@ -17,7 +17,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-7bde30d9
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -41,7 +41,7 @@ export interface Confirmation {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function confirmation(item): boolean {
+export function confirmation(item: Confirmation): boolean {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: deleting a task must require confirmation via a custom modal dialog not brows...
   return {
@@ -49,5 +49,4 @@ export function confirmation(item): boolean {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

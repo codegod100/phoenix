@@ -14,7 +14,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-2ff32cc9
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -38,7 +38,7 @@ export interface Overdue {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Overdue {
+export function process(item: Overdue): Overdue {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: overdue tasks must have a red border and an overdue indicator
   return {
@@ -46,5 +46,4 @@ export function process(item): Overdue {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

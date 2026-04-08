@@ -26,7 +26,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-1b10421c
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -50,7 +50,7 @@ export interface Inline {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Inline {
+export function process(item: Inline): Inline {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: the edit form must appear in place of the task card content and contain prepo...
   return {
@@ -58,5 +58,4 @@ export function process(item): Inline {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }

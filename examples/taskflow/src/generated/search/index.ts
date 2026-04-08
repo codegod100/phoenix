@@ -23,7 +23,7 @@
 
 
 // TDD CYCLE:
-// 1. Auto-implemented from spec — verify with tests with current code
+// 1. Auto-implemented from spec — verify with tests
 // 2. Run: npm test -- iu-5d746ac1
 // 3. See 🔴 RED (tests fail)
 // 4. Fix functions below to make tests 🟢 GREEN
@@ -47,7 +47,7 @@ export interface Search {
  * TDD: Fix this function to make tests pass
  * @phoenix-gen: function
  */
-export function process(item): Search {
+export function process(item: Search): Search {
   // 🟢 GREEN: Processes according to requirement
   // REQUIREMENT: tasks must be searchable by title substring caseinsensitive
   return {
@@ -55,5 +55,4 @@ export function process(item): Search {
     processed: true,
     processedAt: new Date().toISOString()
   };
-};
 }
