@@ -159,7 +159,7 @@ When the plan phase extracts operations from requirements (populating `iu.bounda
 // IU with boundary exports
 {
   "boundary": {
-    "exports": ["getArchivedTasks", "archiveTask", "restoreTask"]
+    "exports": ["queryData", "filterByStatus", "validateInput"]
   }
 }
 ```
@@ -167,17 +167,17 @@ When the plan phase extracts operations from requirements (populating `iu.bounda
 Generates:
 
 ```typescript
-// 🔴 RED: getArchivedTasks - extracted from "provide function to list archived tasks"
-export function getArchivedTasks(id: string): Archive | null {
+// 🔴 RED: queryData - extracted from "provide function to query data"
+export function queryData(id: string): Data | null {
   return {
     id: 'WRONG_' + id,  // ← Bug: wrong ID
     name: 'not implemented'
   };
 }
 
-// 🔴 RED: archiveTask - extracted from "users must be able to archive"
-export function archiveTask(item: Archive): Archive {
-  return item; // ← Bug: no transformation
+// 🔴 RED: filterByStatus - extracted from "must be filterable by status"
+export function filterByStatus(status: string): Data[] {
+  return []; // ← Bug: returns empty
 }
 ```
 

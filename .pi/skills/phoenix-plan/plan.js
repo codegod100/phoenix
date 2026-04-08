@@ -76,6 +76,9 @@ function getRequiredEvidence(tier) {
 /**
  * Extract operation names from requirement statements.
  * Parses requirement text to identify functions that should be exported.
+ * 
+ * This uses GENERIC patterns - no application-specific logic.
+ * Derives everything from canonical requirement text only.
  */
 function extractOperationsFromRequirements(requirements) {
   const operations = new Set();
@@ -95,91 +98,36 @@ function extractOperationsFromRequirements(requirements) {
       operations.add(systemProvideMatch[1]);
     }
     
-    // Pattern: "X must be Y" (for status checks)
-    const statusMatch = text.match(/(\w+) must be (\w+)/);
-    if (statusMatch && ['queryable', 'viewable', 'filterable', 'searchable', 'sortable'].includes(statusMatch[2])) {
-      operations.add(`is${capitalize(statusMatch[1])}`);
-      operations.add(`get${capitalize(statusMatch[1])}s`);
-    }
-    
-    // Pattern: "users must be able to X" (action verbs)
+    // Pattern: "users must be able to X" (generic verb extraction)
     const userActionMatch = text.match(/users must be able to (\w+)/);
     if (userActionMatch) {
-      const action = userActionMatch[1];
-      // Convert verb to function name
-      if (action === 'archive') operations.add('archiveTask');
-      else if (action === 'restore') operations.add('restoreTask');
-      else if (action === 'create') operations.add('createTask');
-      else if (action === 'delete') operations.add('deleteTask');
-      else if (action === 'edit') operations.add('editTask');
-      else if (action === 'update') operations.add('updateTask');
-      else operations.add(`${action}Task`);
+      operations.add(userActionMatch[1]);
     }
     
-    // Pattern: "tasks must support X" → X becomes an operation
-    const supportMatch = text.match(/tasks must support (\w+)/);
-    if (supportMatch) {
-      const feature = supportMatch[1];
-      if (feature === 'archiving') {
-        operations.add('archiveTask');
-        operations.add('getArchivedTasks');
-      } else if (feature === 'tagging') {
-        operations.add('addTags');
-        operations.add('removeTags');
-      }
-    }
-    
-    // Pattern: "X tasks" (like "archived tasks", "overdue tasks")
-    const listMatch = text.match(/(archived|overdue|completed|active) tasks/);
-    if (listMatch) {
-      const type = listMatch[1];
-      operations.add(`get${capitalize(type)}Tasks`);
-    }
-    
-    // Pattern: "list all X tasks" / "query X tasks separately"
-    const queryMatch = text.match(/(?:list|query)(?: all)? (\w+) tasks/);
-    if (queryMatch) {
-      operations.add(`get${capitalize(queryMatch[1])}Tasks`);
+    // Pattern: "X must be Yable" (queryable, filterable, searchable, etc.)
+    const ableMatch = text.match(/(\w+) must be (\w+able)/);
+    if (ableMatch) {
+      const entity = ableMatch[1];
+      const capability = ableMatch[2].replace('able', ''); // queryable -> query
+      operations.add(`${capability}${capitalize(entity)}`);
     }
     
     // Pattern: "X must be filterable by Y"
-    const filterMatch = text.match(/(\w+) must be filterable by (\w+)/);
+    const filterMatch = text.match(/must be filterable by (\w+)/);
     if (filterMatch) {
-      operations.add(`filterBy${capitalize(filterMatch[2])}`);
-    }
-    
-    // Pattern: "searchable by X"
-    const searchMatch = text.match(/searchable by (\w+)/);
-    if (searchMatch) {
-      operations.add('searchTasks');
+      operations.add(`filterBy${capitalize(filterMatch[1])}`);
     }
     
     // Pattern: "sortable by X"
     const sortMatch = text.match(/sortable by (\w+)/);
     if (sortMatch) {
-      operations.add('sortTasks');
+      operations.add('sortBy');
     }
     
-    // Domain-specific patterns
-    if (text.includes('assign') && text.includes('task')) {
-      operations.add('assignTask');
-      operations.add('unassignTask');
-      operations.add('getUnassignedTasks');
-    }
-    
-    if (text.includes('deadline') || text.includes('due date')) {
-      operations.add('setDeadline');
-      operations.add('getOverdueTasks');
-    }
-    
-    if (text.includes('priority')) {
-      operations.add('setPriority');
-      operations.add('filterByPriority');
-    }
-    
-    if (text.includes('status')) {
-      operations.add('setStatus');
-      operations.add('filterByStatus');
+    // Pattern: "searchable by X"
+    const searchMatch = text.match(/searchable by (\w+)/);
+    if (searchMatch) {
+      operations.add('search');
     }
   }
   

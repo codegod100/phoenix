@@ -146,23 +146,19 @@ Write to `.phoenix/plan.md` and `.phoenix/graphs/ius.json`:
 
 ### Boundary Extraction
 
-The plan phase **extracts operations from requirement text** and populates `boundary.exports`:
+The plan phase **extracts operations from requirement text** using GENERIC patterns (no hardcoded application logic):
 
 | Requirement Pattern | Extracted Export |
 |---------------------|------------------|
 | "provide a function to X" | `X` |
-| "users must be able to Y" | `YTask` |
-| "tasks must support Z" | `ZTask`, `getZTasks` |
-| "X tasks must be queryable" | `getXTasks` |
-| "filterable by Y" | `filterByY` |
-| "searchable by Z" | `searchTasks` |
+| "system must provide X" | `X` |
+| "users must be able to X" | `X` |
+| "X must be queryable" | `queryX` |
+| "X must be filterable by Y" | `filterByY` |
+| "searchable by X" | `search` |
+| "sortable by X" | `sortBy` |
 
-**Example:** From "The system must provide a function to list all archived tasks separately":
-- Extracts: `getArchivedTasks`
-- Added to Archive Domain `boundary.exports`
-- Regen generates: `export function getArchivedTasks(id: string): Archive | null`
-
-This bridges spec → code: requirements explicitly become exported functions.
+**Derived from canonical requirements only** — no config, no hardcoding. The verb "archive" in your spec becomes the function `archive`, "query archived tasks" becomes `queryArchivedTasks`, etc.
 
 ## Quality Checks
 
