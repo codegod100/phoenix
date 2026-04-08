@@ -66,7 +66,7 @@ export interface Task {
  * @phoenix-gen: function
  */
 export function process(item: Task): Task {
-  // 🟢 GREEN: Returns new task object (different reference)
+  // 🟢 GREEN: Returns new object
   // Should: the dashboard must render all tasks as styled cards in a responsive grid layout
   return { ...item };
 }
