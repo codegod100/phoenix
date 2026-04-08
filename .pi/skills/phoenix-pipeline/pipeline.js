@@ -2,27 +2,30 @@
 /**
  * Phoenix Pipeline — Spec-Driven Development
  * 
- *   SPEC → CANON → PLAN → CODEGEN → EVIDENCE → AUDIT → DRIFT
- *    ↑                              ↓
- *    └──────── MANUAL EDITS ───────┘
+ *   SPEC → CANON → PLAN → PROTOLENS → CODEGEN → EVIDENCE → AUDIT → DRIFT
+ *    ↑                                                    ↓
+ *    └────────────────── Manual Edits ←───────────────────┘
  * 
  * All code generation happens in single CODEGEN phase at the end.
+ * PROTOLENS computes migration plan using theory morphism (category theory).
  * The deliverable is generated along with IU implementations.
  * 
  * Phases:
  * 1. Ingest - Parse specs into clauses
  * 2. Canonicalize - Extract clean requirements
  * 3. Plan - Create IUs with boundary exports
- * 4. Codegen - Generate IU implementations AND deliverable
- * 5. Evidence - Validate implementation
- * 6. Audit - Boundary checks
- * 7. Drift - Detect manual changes
+ * 4. Protolens - Compute migration plan (theory morphism)
+ * 5. Codegen - Generate IU implementations AND deliverable
+ * 6. Evidence - Validate implementation
+ * 7. Audit - Boundary checks
+ * 8. Drift - Detect manual changes
  * 
  * Usage: node .pi/skills/phoenix-pipeline/pipeline.js [project-root] [options]
  * Options:
  *   --skip-ingest
  *   --skip-canonicalize
  *   --skip-plan
+ *   --skip-protolens      (Skip migration computation)
  *   --skip-codegen         (Preserve your implementations!)
  *   --skip-evidence
  *   --skip-audit
@@ -54,6 +57,12 @@ const PHASES = [
     name: 'plan', 
     script: 'phoenix-plan/plan.js', 
     description: 'Group requirements into Implementation Units',
+  },
+  { 
+    name: 'protolens', 
+    script: 'phoenix-panproto/panproto.js', 
+    description: 'Compute migration plan (theory morphism)',
+    args: ['migrate'],
   },
   { 
     name: 'codegen', 
@@ -138,7 +147,7 @@ async function runPipeline(projectRoot, options) {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║  Phoenix Pipeline — Spec-Driven Development                  ║');
   console.log('╠══════════════════════════════════════════════════════════════╣');
-  console.log('║  Spec → Canon → Plan → Codegen → Evidence → Audit → Drift   ║');
+  console.log('║  Spec → Canon → Plan → Protolens → Codegen → Evidence...    ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
   console.log('');
   
@@ -147,11 +156,11 @@ async function runPipeline(projectRoot, options) {
     
     if (skipFlag) {
       skipped.push(phase.name);
-      console.log(`⏭️  [GREEN] Skipping ${phase.name}: ${phase.description}`);
+      console.log(`⏭️  Skipping ${phase.name}: ${phase.description}`);
       continue;
     }
     
-    console.log(`\n🟢 [GREEN] Phase: ${phase.name.toUpperCase()}`);
+    console.log(`\n▶ Phase: ${phase.name.toUpperCase()}`);
     console.log(`   ${phase.description}`);
     if (phase.warning) {
       console.log(`   ${phase.warning}`);
@@ -164,7 +173,6 @@ async function runPipeline(projectRoot, options) {
       phase: phase.name,
       success: result.success,
       exitCode: result.exitCode,
-      tdd_phase: 'GREEN',
     });
     
     if (result.success) {
@@ -206,15 +214,11 @@ function parseOptions(args) {
     'skip-canonicalize': false,
     'skip-plan': false,
     'skip-protolens': false,
-    'skip-regen': false,
-    'skip-deliverable': false,
+    'skip-codegen': false,
     'skip-evidence': false,
     'skip-audit': false,
     'skip-drift': false,
     'continue-on-error': false,
-    'selective': false,
-    'auto-implement': false,
-    'iu': null,
   };
   
   for (const arg of args) {
@@ -222,14 +226,11 @@ function parseOptions(args) {
     if (arg === '--skip-canonicalize') options['skip-canonicalize'] = true;
     if (arg === '--skip-plan') options['skip-plan'] = true;
     if (arg === '--skip-protolens') options['skip-protolens'] = true;
-    if (arg === '--skip-regen') options['skip-regen'] = true;
+    if (arg === '--skip-codegen') options['skip-codegen'] = true;
     if (arg === '--skip-evidence') options['skip-evidence'] = true;
     if (arg === '--skip-audit') options['skip-audit'] = true;
     if (arg === '--skip-drift') options['skip-drift'] = true;
     if (arg === '--continue-on-error') options['continue-on-error'] = true;
-    if (arg === '--selective') options.selective = true;
-    if (arg === '--auto-implement') options['auto-implement'] = true;
-    if (arg.startsWith('--iu=')) options.iu = arg.split('=')[1];
   }
   
   return options;
@@ -241,19 +242,10 @@ const args = process.argv.slice(2);
 const projectRoot = resolve(args[0] || '.');
 const options = parseOptions(args.slice(1));
 
-console.log('🚀 Phoenix Pipeline — TDD with Automated Scaffolding');
+console.log('🚀 Phoenix Pipeline — Spec-Driven Development');
 console.log(`   Project: ${projectRoot}`);
-if (options.iu) {
-  console.log(`   Selective IU: ${options.iu}`);
-}
-if (options.selective) {
-  console.log(`   Mode: Selective regeneration (--selective) via panproto`);
-}
-if (options['auto-implement']) {
-  console.log(`   Mode: Auto-implement (--auto-implement) RED→GREEN in one step`);
-}
-if (options['skip-regen']) {
-  console.log(`   Mode: Preserve implementations (--skip-regen)`);
+if (options['skip-codegen']) {
+  console.log(`   Mode: Preserve implementations (--skip-codegen)`);
 }
 console.log('');
 
@@ -276,27 +268,20 @@ console.log('');
     console.log('═'.repeat(64));
     console.log('');
     
-    const greenPhases = results.filter(r => r.tdd_phase === 'GREEN');
-    const redPhases = results.filter(r => r.tdd_phase === 'RED');
     const passed = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
     
     for (const result of results) {
-      const icon = result.success ? '🟢' : '🔴';
-      const tdd = result.tdd_phase;
-      console.log(`   ${icon} [${tdd}] ${result.phase}`);
+      const icon = result.success ? '✓' : '✗';
+      console.log(`   ${icon} ${result.phase}`);
     }
     
     for (const phase of skipped) {
-      const phaseConfig = PHASES.find(p => p.name === phase);
-      const tdd = phaseConfig?.tdd_phase || '?';
-      console.log(`   ⏭️  [${tdd}] ${phase} (skipped)`);
+      console.log(`   ⏭  ${phase} (skipped)`);
     }
     
     console.log('');
     console.log(`   Passed: ${passed.length}/${results.length}`);
-    console.log(`   GREEN phases: ${greenPhases.filter(r => r.success).length}/${greenPhases.length}`);
-    console.log(`   RED phases: ${redPhases.filter(r => r.success).length}/${redPhases.length}`);
     if (skipped.length > 0) {
       console.log(`   Skipped: ${skipped.length}`);
     }
@@ -305,36 +290,17 @@ console.log('');
     if (failed.length > 0) {
       console.log('❌ Pipeline completed with failures');
       console.log('');
-      const redFailed = failed.filter(f => f.tdd_phase === 'RED');
-      const greenFailed = failed.filter(f => f.tdd_phase === 'GREEN');
-      
-      if (redFailed.length > 0) {
-        console.log('   🔴 RED Phase Failures (expected until implemented):');
-        for (const f of redFailed) {
-          console.log(`      - ${f.phase}: Stubs generated, implement to proceed`);
-        }
-      }
-      
-      if (greenFailed.length > 0) {
-        console.log('   🟢 GREEN Phase Failures (requires attention):');
-        for (const f of greenFailed) {
-          console.log(`      - ${f.phase}`);
-        }
+      for (const f of failed) {
+        console.log(`   ✗ ${f.phase}`);
       }
       
       console.log('');
-      console.log('   Next Steps:');
-      console.log('   1. Manual: Edit src/generated/*/index.ts (implement functions)');
-      console.log('   2. Auto: Use LLM to implement from spec');
-      console.log('');
-      console.log('   Then: node .pi/skills/phoenix-evidence/evidence.js .');
-      console.log('   Once passing: run full pipeline with --skip-codegen');
+      console.log('   Fix the failed phases and re-run.');
+      console.log('   Use --skip-codegen to preserve implementations during re-run.');
       
       process.exit(1);
     } else {
       console.log('✅ All pipeline phases passed');
-      console.log('');
-      console.log('   🎯 All IUs meeting tier requirements!');
       console.log('');
       console.log('   Next steps:');
       console.log('   • Edit specs to add features');
