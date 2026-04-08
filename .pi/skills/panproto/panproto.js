@@ -29,7 +29,7 @@ let WasmLoaded = false;
 let globalWasmModule = null;
 
 // Helper to get initialized Panproto instance
-async function getPanproto() {
+export async function getPanproto() {
   let pan;
   if (WasmLoaded && globalWasmModule) {
     // Use pre-initialized WASM module
@@ -53,6 +53,9 @@ async function getPanproto() {
   
   return pan;
 }
+
+// Re-export GAT functions for other skills
+export { TheoryBuilder, colimit } from '@panproto/core';
 
 // Check for local WASM build
 const localWasmPath = join(__dirname, 'wasm', 'panproto_wasm.js');
@@ -1010,4 +1013,9 @@ Examples:
   }
 }
 
-main();
+// Only run main() if this file is the entry point
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url) || process.argv[1]?.endsWith('panproto.js');
+
+if (isMainModule) {
+  main();
+}
