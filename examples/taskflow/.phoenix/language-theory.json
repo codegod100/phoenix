@@ -1,0 +1,956 @@
+{
+  "language": "typescript-web",
+  "languageName": "TypeScript (Web)",
+  "extension": ".ts",
+  "moduleSystem": "esm",
+  "iuMappings": [
+    {
+      "id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
+      "name": "Metrics Domain",
+      "domain": "metrics",
+      "riskTier": "medium",
+      "files": {
+        "dir": "metrics",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "computMetrics",
+          "signature": "export function computMetrics(input: any): any",
+          "asyncSignature": "export async function computMetrics(input: any): Promise<any>",
+          "isAsync": false
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "41e8bd3b97654fa7ed32b4b9b4b3f2c2b85ff61b3054cef2d0283d250a38d0c8",
+        "6fd3cccffb2620775ce5c7a8dd4f5956d9288e863ec9850fc119e8ba2e799299",
+        "d069da158b6cd930e997377f90a2f96b40747e292b7480319cda3bfdae743933",
+        "e25f9b8a3fb3c23808eccf3c5b8afbe7b53363ea50dce2a666694018c89f73cb",
+        "eb443327a877b7e3a462059e94fdd85254b3bdd24e47614888e33a5872bceae2"
+      ]
+    },
+    {
+      "id": "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143",
+      "name": "Priority Domain",
+      "domain": "priority",
+      "riskTier": "low",
+      "files": {
+        "dir": "priority",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "1e36aa90a520ec5fa214975a3b3162ce7cd1330d11209c95413de79ab2f1f0c9",
+        "c302c6dc31cbe2f0c5e1878a9b5c5d2669dcca2dc6c99dfa85e2de40ded3f683",
+        "dbd7a98a77dd81992b3e976344356563f1c45bfe3b5ef93bb594ef85341ee436",
+        "ef282c4f58882215fbe95599a77e9ea42ecb09681615199141d7e574a5da4000"
+      ]
+    },
+    {
+      "id": "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf",
+      "name": "Team Domain",
+      "domain": "team",
+      "riskTier": "low",
+      "files": {
+        "dir": "team",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "21a8432fc76f29827f911a3f936b58245aff878ec7b933c5d72d0b448aafa2b9",
+        "7b890674e3dd62f5f8ce67daa3fbf08173ddfb23c8d6440645db9b01018fd0a5",
+        "c384544cc22649f48f3a8a7d872f4a27a96933210dd8b83059732202ad41d2a1"
+      ]
+    },
+    {
+      "id": "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5",
+      "name": "Task Domain",
+      "domain": "task",
+      "riskTier": "high",
+      "files": {
+        "dir": "task",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "restorTasks",
+          "signature": "export function restorTasks(input: any): any",
+          "asyncSignature": "export async function restorTasks(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "list",
+          "signature": "export function list(input: any): any",
+          "asyncSignature": "export async function list(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "a",
+          "signature": "export function a(input: any): any",
+          "asyncSignature": "export async function a(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": true,
+        "search": false
+      },
+      "canonIds": [
+        "0c8fd64b342a96b214bc1537aab16d0a04e4092ddeff1078dda85832bcc09b36",
+        "0ec58c72f695a3228427e43ef2bad08e5a9af15cdda2519e38446c9c8af60fd6",
+        "22c19be38ec443a8fb0881402c14ebd20d4d522a704fc1a173bf5ce289a479c7",
+        "26e1ab361fa6226f00cead3e007dfe6f163917a249ae961f4f6bf456c0142277",
+        "27291946d9c1ae89f5c13df2349724de4c3b1aa0dbfeede363c84e51ea87c589",
+        "3dee3bcd6fc7e663e12f42f0d920e98c598e7266f5709bd0a399dacc5bec6063",
+        "400ee183fafc6e6ab91979e3888f93b42d8aa93cf05e6681ad9a59cc1ba63695",
+        "6741feb08b69fcb97252c882d33eeefd88491cd4ca620cbddafe8918712ff7a1",
+        "6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
+        "950b321591c472b76485732db315febc9fe0863aa521f23d45c272724a5f3e82",
+        "a16f8174b5e546da5f9783ee31240db9732bd7a4643c977fe540a017b0824cc0",
+        "bc27c9f07de88635cff6f237ba4fb27c9f09ef840dd2e327a519c7c03b51b178",
+        "c1cfd0b2d1159f61369bcff61533b5713c54a846eedee72eab1754ba1496dfac",
+        "c438a0777d8c24a5356730cd335d79e239868a8f9182f091e16ab9d7a5c4fe03",
+        "f60039398ec8457e8d6545a1d348b768bd7e207fb8db9deefae8c060f9fcc35f"
+      ]
+    },
+    {
+      "id": "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026",
+      "name": "Assignment Domain",
+      "domain": "assignment",
+      "riskTier": "low",
+      "files": {
+        "dir": "assignment",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "assignTasks",
+          "signature": "export function assignTasks(input: any): any",
+          "asyncSignature": "export async function assignTasks(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "queryTasks",
+          "signature": "export function queryTasks(input: any): any",
+          "asyncSignature": "export async function queryTasks(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "3d832f261b6d440d8d061952b4ef0cf49d98841a5386e7210783575a5ec130cb",
+        "5e0a0179854a33ec4fc1e3b2dac67644aab962c45b04e8d642744e8039198eae",
+        "b604c9dae64a2a90e08f32822b2c37e1cc5728ceb8a99be9206e20c6742ec3a4",
+        "f8cbfa7d6c882d94d5a8712676ec777f819b769367cd566f73bc90cc47cc37c9"
+      ]
+    },
+    {
+      "id": "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f",
+      "name": "Search Domain",
+      "domain": "search",
+      "riskTier": "low",
+      "files": {
+        "dir": "search",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "searchTasks",
+          "signature": "export function searchTasks(input: any): any",
+          "asyncSignature": "export async function searchTasks(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "search",
+          "signature": "export function search(input: any): any",
+          "asyncSignature": "export async function search(input: any): Promise<any>",
+          "isAsync": false
+        },
+        {
+          "name": "filterTasks",
+          "signature": "export function filterTasks(input: any): any",
+          "asyncSignature": "export async function filterTasks(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "filterByStatus",
+          "signature": "export function filterByStatus(input: any): any",
+          "asyncSignature": "export async function filterByStatus(input: any): Promise<any>",
+          "isAsync": false
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": true
+      },
+      "canonIds": [
+        "49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06",
+        "d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f",
+        "d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057",
+        "fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed"
+      ]
+    },
+    {
+      "id": "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e",
+      "name": "Deadline Domain",
+      "domain": "deadline",
+      "riskTier": "low",
+      "files": {
+        "dir": "deadline",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "list",
+          "signature": "export function list(input: any): any",
+          "asyncSignature": "export async function list(input: any): Promise<any>",
+          "isAsync": false
+        },
+        {
+          "name": "a",
+          "signature": "export function a(input: any): any",
+          "asyncSignature": "export async function a(input: any): Promise<any>",
+          "isAsync": false
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": true,
+        "search": false
+      },
+      "canonIds": [
+        "23a499c17f6d8b814a18fd6b60bbc6b6dfd2a605cb51560d9bcfb4911b81015b",
+        "3306386ed3c6c0b59327576f0716cd23c6e93bd3e55fb6f09663c52461605f8c",
+        "45db43506cd234df7050a25eea309f75993465e219e87839cd80dc869890eb94",
+        "b085dd428dc562f0fdb71ecda7f25218ec4d5b7955379f724372f57f184a9d91"
+      ]
+    },
+    {
+      "id": "9042fe4f437f6cc14ecb734ea5f25f7478a8725702d5fd517b429195384cfb2f",
+      "name": "Status Domain",
+      "domain": "status",
+      "riskTier": "high",
+      "files": {
+        "dir": "status",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "04863c16775d3737e0e987d41dbe4dae1b05795e9778fc80914ae6d33dddcde5",
+        "5e9d6248b4c495f8f5a2d27ca40ef82951bbf03e1dde46977b6f213f614dbcc2",
+        "87f6aafe8c38c6fc20d722660ead0ba43d7d7d661eb5b2ef9bdd3a79f3c00507",
+        "8d42c17a07a9e826137ccec4574d47a562d3fabb424fdb99cd6a9ee8936256d6",
+        "9605be0b8e2c6cb1e4453408de1a9f94953ab2318544bda3d96495e7affb1034",
+        "c24d1ac5b8c368c7edfd363dd4d8ca59757cfff1f3d8058892d283f4085ee073",
+        "c4e21e3e50799e099b0ccb5a0dbaa4d283b4506e6506debcd8b51fbb73dbfd4a",
+        "c8ea3a9e81a7c9bc047c656fd0ea110f1c795c93c8f6b8169209eb8c0c5bb2b9",
+        "ccb161d8da38b88cfdec513d5b1cbf6ac01f4f0176e6d093e0f9a07c1c0d9a53",
+        "dc96fbc84d80cf0cfe1a8dc73708ba0ef09a6c20ab40c050757cdbb249a9c315",
+        "e5a204e2c39e109274318a2c507303b5eb6f3585df345dc1f144c02372a1f284",
+        "e5d9fbf05dfb89e997652537e35e81c92ca4cd34307312b413f9a9aef43a7658",
+        "eb6fcdb56d144801868cf29e831e4dc71dc171571ff9b012753f00b7823d202c",
+        "f4e018445819ee3971e9f5ea4027087c81abfec89fc02333c9fd8d5350f72377",
+        "f680ef5ebce71ab378be6af8e09f5a8250d6d55f53418e1dc4e3341297e8a9ea"
+      ]
+    },
+    {
+      "id": "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844",
+      "name": "Archive Domain",
+      "domain": "archive",
+      "riskTier": "high",
+      "files": {
+        "dir": "archive",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "viewTasks",
+          "signature": "export function viewTasks(input: any): any",
+          "asyncSignature": "export async function viewTasks(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "queryTasks",
+          "signature": "export function queryTasks(input: any): any",
+          "asyncSignature": "export async function queryTasks(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "archive",
+          "signature": "export function archive(input: any): any",
+          "asyncSignature": "export async function archive(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [
+          "archive"
+        ],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "0bbf6f693cec8cd4af0edfd28f8a8d27483d02a5887592084fbf87962caf1452",
+        "0bfbf4eb8ef7052518e82aed8af3be904c9b78e05cf76ed64507298dcab5a301",
+        "0dfbaefa54a56b657cabf062b67fa3dbba792cdca641f5c4c28f69198b76cd7f",
+        "1cedce764142f7d8e0d2e01c0dbc6fca0c9b28d615770a15dac414e831c81b08",
+        "78f83d3cedc0462173adb8da727f867add0bad05a5d45efe2668ecca909164c0",
+        "79afe2985ea41923390bc2ff99a204f85d53ea666938103ecc3d6876a04ef244",
+        "81f910f80ba0c36bbe1f7fd8ee46d8cb43b6de784fc47718dfcb5460866e9bdd",
+        "9cc63176bbc98e1ab3ad8be9a913b9f6b451c4473068156613f0a61a694ace0c",
+        "dfcddaf1235efd740d25575a63bc5f2af99a3acd2859b9ec5ae7df397d8300df"
+      ]
+    },
+    {
+      "id": "84d7fff4444e467ce261fbdafe6a926bf929dbfc01f9cdd0c49e8ed3dac7a77e",
+      "name": "Page Domain",
+      "domain": "page",
+      "riskTier": "high",
+      "files": {
+        "dir": "page",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
+        "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
+        "68b2d5f231d7af6bd6fd33c47f94a1ef9d9149aae06b3a945cecae0a879afb27",
+        "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62",
+        "bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
+        "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953"
+      ]
+    },
+    {
+      "id": "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64",
+      "name": "Catppuccin Domain",
+      "domain": "catppuccin",
+      "riskTier": "medium",
+      "files": {
+        "dir": "catppuccin",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "023acc45de3711aa6d5855347d8a60b343256b329a9be25fca3be4155af18b5b",
+        "5897f7d834296f08d73a8358b63926b3afeaca580879cb965d0fa5bbcabcbd26",
+        "894211f4ec8a7d51cc0951a9c45d3b1efb6817e90587121e99bed051a67895bc",
+        "a7e9866bf870807da012639ea4f851d1246105efe849adde0d9f5b4ed73dff04",
+        "b90a45d9d76100ea664f3ed94adbdcafed02c913bfb323e3e8ea62573ebdfe35",
+        "e2ea22fa125ca39ba88de43bd4642b2d562c76bb31e0157fbf474db5c9a9e35d",
+        "ed4b8264171a7006e90435b07d66972b0cdc3260b0daa15a4c356a4c694390ee"
+      ]
+    },
+    {
+      "id": "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67",
+      "name": "Base Domain",
+      "domain": "base",
+      "riskTier": "high",
+      "files": {
+        "dir": "base",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "0e495d1ee4c2f6a6c7a2155c09f47a678a9e9a3c67f0f00d96e16634613c770a",
+        "1d98cea9ca41391bc76e51d98ac04fee4a9e3102e35531f0d24c36d6f84c890b",
+        "2333b8650b4e8b80b2984dfed30d9bcf08945af4b0595db02967e30e4aee78f0",
+        "39f5873bbfd3cbb1ee4672724e123099c1909fe5e523f989b89ea05e195c9e24",
+        "58b80bc522aa2f198e2ecf315d1090e964ffa1afda871081c13e095e0d3ab4ae",
+        "71c8e6f5c3ef8d2003292ba737f09cf038956ab66bcdbcda9cac53ccc3d52e87",
+        "9d6580bab6570e4d048e2cdb217a4d00b822643e23e7cb7ecab6110447268789",
+        "c90f58ebacff9b6580bbc38f7293e86dffe115780059ef2dc2ea5722ed44a802"
+      ]
+    },
+    {
+      "id": "cf6962caff7e397d251009ef1c4f815369b02a37c0e7837de1b323120d3a6d1b",
+      "name": "Tab Domain",
+      "domain": "tab",
+      "riskTier": "medium",
+      "files": {
+        "dir": "tab",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "196bfc916d3f0b764650c862c47afed43f72f5a3739d7df88fb8c3205a67f3ba",
+        "2bc7e5e88ba5e0b8d4ff63647393f8cc3df84d5bb676f1ca2a7e52ab87857b48",
+        "45293a7b83061cdd3a65155d172a75294386d16e3a38f18a838a5ce184302cab",
+        "8f5ee864ccd9e7ef708125db935214b0144f151ce8f6a8ba90dce755d42e1df4",
+        "909445f046403c1fd87e25c9be3dd3fb2bbbe6ad3cf5e9bbe5142134d9679a25",
+        "91f627e610b4794b7ed7359fd8c74cb522023a8d07a32ae7adcb614cb0ac5619",
+        "b2e88a7f1128cf4c19ca55d6d16fb592d4a66d721acba37d96d64c9cc8bf702a",
+        "b3e81cef6081f47ade085574584271e41022e37e48ea0ce802652fe36bd52b88",
+        "be8721be55cfdedaabf53fa2893bdd8b21325d81b8578994d1995729ef3567f4"
+      ]
+    },
+    {
+      "id": "a9a3faf254636c2c445aa68d36abbf16ac249c630734ada1578bddfbde9b846c",
+      "name": "Bulk Domain",
+      "domain": "bulk",
+      "riskTier": "high",
+      "files": {
+        "dir": "bulk",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "bulk",
+          "signature": "export function bulk(input: any): any",
+          "asyncSignature": "export async function bulk(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "a",
+          "signature": "export function a(input: any): any",
+          "asyncSignature": "export async function a(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "1a410f8a7c017a0f37968e45a1a7dc608c2714a4e3b2a7b76f14f7c49cb7b3a7",
+        "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3",
+        "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48",
+        "66b1f11ee00a0d7740176a2b4de490a7fceed7b4bce127cbd739d516bf00de1f",
+        "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939",
+        "7d96ab28ef5877bcf7b68160621ff53ea635e5586627441eda17cdff6fc3b41b",
+        "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26",
+        "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd",
+        "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
+        "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9"
+      ]
+    },
+    {
+      "id": "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec",
+      "name": "Delete Domain",
+      "domain": "delete",
+      "riskTier": "low",
+      "files": {
+        "dir": "delete",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "delete",
+          "signature": "export function delete(input: any): any",
+          "asyncSignature": "export async function delete(input: any): Promise<any>",
+          "isAsync": false
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": [
+          "delete"
+        ],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "0ca3fa4b087995c9e4aa1cccfe1d8a53c88e4e1d5f2cd42bcabf805cc16050bb",
+        "4c4897891d89254e0afba437fd21549f7f782e3bf8c70026a341e26faa976d46",
+        "c37ac43e5c7fbb2f71ed9cf3f121411ebe752a7fd5032b2de2d099056c7c01d0",
+        "d612bbc65b30fddc3fcf82f2e88429442c975b2c04c6688f77f810fda7710cb9"
+      ]
+    },
+    {
+      "id": "7bde30d9da55ca743d864a676fe373d504b50dca4598de3710c1705f2ccfd908",
+      "name": "Confirmation Domain",
+      "domain": "confirmation",
+      "riskTier": "low",
+      "files": {
+        "dir": "confirmation",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "12fb0edc1287a2f5f0e2542d08540a15133a389b11c319fca62ff187001cca20",
+        "796b4e363127435ffa54a5d186f8d4dd09fdda2877ce8880f5fec40d04e60587"
+      ]
+    },
+    {
+      "id": "a71840711883fbadc80665b28f2172f7a65a116dee522018b85b0f88d9b9c527",
+      "name": "Create Domain",
+      "domain": "create",
+      "riskTier": "low",
+      "files": {
+        "dir": "create",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "2cbb70950a51c496ab86595836fa293c8a9a6bc704915fe733a576a9d2390cdf",
+        "2e61381676836dee1acf7d2af57c6de6f850122c4c1c37a16893a4effbc91b95",
+        "65cf841d09b215abbd9d4e43ae8b39c6f4d3468fea5683981fde61359b33cc71"
+      ]
+    },
+    {
+      "id": "1b10421cf0b4c927ca339c223c9e2d9439707320ce17234c3001ec7c896a3cb7",
+      "name": "Inline Domain",
+      "domain": "inline",
+      "riskTier": "high",
+      "files": {
+        "dir": "inline",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "11d42093d9e4ad83156a93fb917dd3fcc601d864266d651960ced28fdd73c215",
+        "56c320fc44633797ae3153f19cb1cb132c6e7095cdd82f0f0a80d350db28c9f4",
+        "9b1a910870349540c9d01d0ba6347192a63d6141e89839bf9c00c59b177ae078",
+        "dad35101507fbcfc7dc8680f972f9940ab89b2130a8a9aa7cac5c5987b857186",
+        "ed55103ac8f56cdef2124b27ea6e9c33dbcedc0f6ebaf2bca425a8fa4bef3cb4"
+      ]
+    },
+    {
+      "id": "01d057d324fc5db4ffc40f3cec6b04ffc9833be7b622c00f6c649bc76cb9a0b5",
+      "name": "Edit Domain",
+      "domain": "edit",
+      "riskTier": "medium",
+      "files": {
+        "dir": "edit",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [
+        {
+          "name": "edit",
+          "signature": "export function edit(input: any): any",
+          "asyncSignature": "export async function edit(input: any): Promise<any>",
+          "isAsync": false
+        }
+      ],
+      "components": {
+        "form": true,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "0b7df6f4e1fe1d968a3559e7d07db3f21582f792f851d466e389164bf84d5f5b",
+        "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663",
+        "a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994",
+        "c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0",
+        "f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7"
+      ]
+    },
+    {
+      "id": "413bea8f7a19dc72b473d2f370b67fbd9e53acc35f7b6cc960478854101a6e02",
+      "name": "Component Domain",
+      "domain": "component",
+      "riskTier": "high",
+      "files": {
+        "dir": "component",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "09a6c7528b6310dba374140c53e37d97645c71ad77fa3b9d35be7b3bad5a6f9b",
+        "3b3b6ce2da6dcd2ad6576b630478b6e2bf372a5f9a5b8cc20224289d6822fe05",
+        "72c4a2c45dc1edcf82869093e34ec8b75a8b643e78819281ccbfe9bce9ff5a68",
+        "93e388ff1c8a76fad9445f075c3fd9ea8efe04e9dd6e8cc9ef56a022a742312f",
+        "a731f6b43208397eaad60a9312cf10acd760afc578f3181cc364ed27e6235ae8",
+        "a9bd9ecc8c5b5ccb2fa9e778f7d9262a084ffe9c4c91ab2821685de30589e9c4",
+        "b4dff0dae945af992378155679edd4cd4db3962a626109968a6af96c992157fb",
+        "f20e473ea2499d65651a44132b03b7140287261031f24406c651baf7d13830d3"
+      ]
+    },
+    {
+      "id": "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665",
+      "name": "Event Domain",
+      "domain": "event",
+      "riskTier": "high",
+      "files": {
+        "dir": "event",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "2623171ed71406b752f533e36d98a51aaeae33debc89a4ba03d89cd6ed7f7713",
+        "3cabdbbabcf6cedcab4805c3ea9e684e7962022be4b42aaf2fb1b03e02839047",
+        "493bf4f1ea3320f5f909e8e66bfb9a581ad4cd54af80e58dfe1ff323969455a8",
+        "4c22b2bde5ba60bb95ab475a86c0e9bf0cde438cc88d17253a74d607e50fe639",
+        "62e720747aa357d97884ac5b9d7300f6bcb1f695223ed125f147b16fdc669a59",
+        "befecd912aa1aa0fe1a4e579f4b8d4697516d416f8b62a96fc7edbf9884c34da",
+        "e6ea15b2c95d5fc55f65edbc42e02225709b99b00adb430eadf78e4bf5b7f11e"
+      ]
+    },
+    {
+      "id": "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a",
+      "name": "State Domain",
+      "domain": "state",
+      "riskTier": "high",
+      "files": {
+        "dir": "state",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "01e92e240085650ce79c8f892dd65cf90a6023cec27b6e279ff4db589f9ec4d1",
+        "0afc29d57dce415015bb17016b29f473f6492a31ac7fa7dcb3fa88b6c3f8b806",
+        "4a49ae7c4ceb6b5a1ebfdf188d51adfeba7b84eb3ee76a711cde2ce0dc75d236",
+        "bb1e6cc7b2c8067d47805331c0ddb0bcc4fd090bcfeb2d907b65476d657d7dfd",
+        "f937d4a27dd9744f3620c63370f1d3cc23b53a15aad4916c8a95bda3e119e24f"
+      ]
+    },
+    {
+      "id": "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7",
+      "name": "UI Domain",
+      "domain": "ui",
+      "riskTier": "high",
+      "files": {
+        "dir": "ui",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "01e9f448f073ae4f14f69cd176d3ab4012c9bf8a9e51be1dc2adb501e0f1a0b2",
+        "024c1a2b29b16e53913282094b9876b54658ffa254171d6775b200169649d083",
+        "06083503e7868530fa9d6a146f977275eade67e45630e0dd80eefd757f14ddc4",
+        "10753d83edf291bf4519aee6f865a8feb8defeca5db14738580bbbecf8ce61e4",
+        "1551cfef5a8e5348ba15dacaf955633e49a8799ba9db1ba838d1348cb15d0fb7",
+        "7ad31f6c3116a3245b688b4ae74d2937ceb18a7dc4d3e432bbb9e2bca118e430",
+        "7f65243582eeec6211a30c259ffd69f8774ab863d0df9b45dd3a49f795f7fed0",
+        "93833e524931c736679d585aa0c8d147102d55060646b3674918d050dac719ab",
+        "93e81a349be59a7f7768fdc9ca00f49df78a974de9bb0c017cb29689ca6e4847",
+        "a57321f9ffae57af24b007b4cb584a142bfd60e65075589f87c5e035f6eea7e9",
+        "a8da650f4f255b341651f39ae191bb923b6019187d737305b26d53174bde0116",
+        "ab0772dd32f29ad7bb891b86817d3c68fc79ae5a2c45f6794e61f033e9d97ac5",
+        "d6860f3b4f0a11d94d965bf9dfcc96f2f2980e292cc021ae024c9a45f9881def"
+      ]
+    },
+    {
+      "id": "e0fdf2ac458f57d61ad4fe13b6a3be679fdd2fcd31b9237fa0cb2d6d50c84085",
+      "name": "Modal Domain",
+      "domain": "modal",
+      "riskTier": "high",
+      "files": {
+        "dir": "modal",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
+        "15db98bfbb1bce143846e2a0c429ead2d2ce31cf1bcbcc163463d850b25e48e9",
+        "395c7bc1288d60bee73add79a9237c959d6e1a64c01111e1f508ddfa1edb75da",
+        "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
+        "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88",
+        "7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+        "8cebf2b058433012aaed4e42b48410f92078bbad5386e1960130d20b51f7add3",
+        "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc",
+        "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc",
+        "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716",
+        "98ba0fabf9fa320cb727d429f629e5209d0c07d9765a2ae9ff4d94a0d24e06c9",
+        "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3",
+        "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3",
+        "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2",
+        "debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
+        "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc"
+      ]
+    },
+    {
+      "id": "379356eb108fd53b5842cafb023d0776f1cec812c8b561a0e8e41e124f789cc5",
+      "name": "Integration Domain",
+      "domain": "integration",
+      "riskTier": "high",
+      "files": {
+        "dir": "integration",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
+        "4d3caa9e1a345c0e551eaaf06682564b7855ee091d8130fc60b36a547a33d655",
+        "5a52732aa411c4ba9de24b7dde1093ed95ccb949e55483c9ee62accff2138900",
+        "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
+        "8a0318be073275b7b03837ad9569fbd7e9f51faaabed47a7c3a4301495af657d"
+      ]
+    },
+    {
+      "id": "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7",
+      "name": "Overdue Domain",
+      "domain": "overdue",
+      "riskTier": "low",
+      "files": {
+        "dir": "overdue",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "a38b112678258c10202350b56dfe5e273be02155bb2fd91e93b5dbf8c3f02668"
+      ]
+    },
+    {
+      "id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
+      "name": "Data Domain",
+      "domain": "data",
+      "riskTier": "high",
+      "files": {
+        "dir": "data",
+        "index": "index.ts",
+        "test": "__tests__/index.test.ts"
+      },
+      "functions": [],
+      "components": {
+        "form": false,
+        "buttons": [],
+        "list": false,
+        "search": false
+      },
+      "canonIds": [
+        "900da6bbb6abdd66d83efe4b9162e74c6bcc540811e4639a2908fe1199a1b02b",
+        "b5ce30f01710bee3d6e9ad93784345656aff05b0ebab96700d6921b59b7ec00d"
+      ]
+    }
+  ],
+  "constraintMappings": [
+    {
+      "statement": "metrics must be computable from an array of task records with no database dependency",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "unassigned tasks must be excluded from team performance metrics",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "invalid status transitions must be rejected with a clear error message",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "assignment must validate that the user id is nonempty",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "an empty search query must return all tasks",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "setting a deadline in the past must produce a warning but still be allowed",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "no theme toggle or system preference detection catppuccin mocha is the only theme",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "the tab button must use borderradius 0 to ensure perfectly straight edges",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "the highlight line must not use any boxshadow or gradient effects that could create a curved appearance",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "the create form must validate that title is nonempty before submission",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "create form inputs must use autocompleteoff attribute to disable browser autocomplete",
+      "matchedPattern": "autocompleteoff attribute",
+      "implementation": "autocomplete=\"off\" on input elements"
+    },
+    {
+      "statement": "form inputs must use autocompleteoff attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values",
+      "matchedPattern": "autocompleteoff attribute",
+      "implementation": "autocomplete=\"off\" on input elements"
+    },
+    {
+      "statement": "all modal form inputs must use autocompleteoff attribute to disable browser autocomplete",
+      "matchedPattern": "autocompleteoff attribute",
+      "implementation": "autocomplete=\"off\" on input elements"
+    },
+    {
+      "statement": "no component shall render without reading current localstorage state",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "no state change shall occur without updating localstorage first",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "rerenders shall be synchronous following state updates",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "all event handlers shall be attached on initial page load",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "components shall not have external dependencies with all data from localstorage",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    }
+  ],
+  "deliverable": {
+    "dir": "app",
+    "serverFile": "server.ts",
+    "storeFile": "store.ts",
+    "patterns": {
+      "serverFramework": "Node.js native http",
+      "uiPattern": "inline HTML/JS",
+      "stateManagement": "in-memory Map"
+    }
+  }
+}

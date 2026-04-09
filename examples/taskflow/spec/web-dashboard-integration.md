@@ -10,7 +10,7 @@ Integration layer that wires all dashboard components together into a complete w
 - REQUIREMENT: The task grid shall display tasks from localStorage and pass click events to edit handlers
 - REQUIREMENT: The inline edit form shall update localStorage and trigger task grid re-render on save
 - REQUIREMENT: The archive tabs shall filter task grid display without page reload
-- REQUIREMENT: The bulk selection shall update task grid checkbox states and show or hide bulk action bar
+- REQUIREMENT: The bulk selection shall update task card visual selection states and show or hide bulk action bar
 - REQUIREMENT: The analytics bar shall recalculate on every localStorage change
 
 ## Event Flow
@@ -63,6 +63,8 @@ Integration layer that wires all dashboard components together into a complete w
 - REQUIREMENT: Input padding shall be compact (6px vertical) to reduce field heights
 - REQUIREMENT: When the modal opens, the Title input field shall receive immediate focus for rapid data entry
 - REQUIREMENT: The Title input shall use autofocus attribute or JavaScript .focus() call in the openModal() function
+- REQUIREMENT: Pressing the Enter key while in any form field shall submit the form and save the task
+- CONSTRAINT: All modal form inputs must use autocomplete="off" attribute to disable browser autocomplete
 
 ## Integration Invariants
 

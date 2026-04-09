@@ -1,6 +1,6 @@
 {
   "type": "web-dashboard",
-  "generatedAt": "2026-04-08T22:16:53.485Z",
+  "generatedAt": "2026-04-09T00:27:14.046Z",
   "theory": {
     "domains": [
       {
@@ -64,7 +64,7 @@
         "name": "Confirmation Domain"
       },
       {
-        "id": "8ae5c45f3147f2a0",
+        "id": "a71840711883fbad",
         "name": "Create Domain"
       },
       {
@@ -72,7 +72,7 @@
         "name": "Inline Domain"
       },
       {
-        "id": "b0512ab0394066ac",
+        "id": "01d057d324fc5db4",
         "name": "Edit Domain"
       },
       {
@@ -92,7 +92,7 @@
         "name": "UI Domain"
       },
       {
-        "id": "8c63f282c0dc7831",
+        "id": "e0fdf2ac458f57d6",
         "name": "Modal Domain"
       },
       {

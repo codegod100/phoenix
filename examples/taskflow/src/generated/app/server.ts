@@ -1,532 +1,688 @@
-#!/usr/bin/env node
 /**
  * @phoenix-deliverable: web-dashboard
- * @phoenix-colimit: 29eaf5668c0afbf2,7cce149b135824bc,169b3c51a6e13ea8,d46cdcd2f55a1f02,013287c893c1bba6,5d746ac1128920d7,fa4e979e652ff753,92d0c760174e68f5,fc1780770cf0e487,a329ef6c591659d8,f56c1390c9aa63a5,e9b69935bcb82130,eb7c109efd2e8536,12c44af604f1ae2d,7bde30d9da55ca74,8ae5c45f3147f2a0,1b10421cf0b4c927,b0512ab0394066ac,a2326ea173747bc5,c73fdbc477cf950a,b25d38068f5a68a7,fa4c83036ec9c9a9,8c63f282c0dc7831,379356eb108fd53b,2ff32cc95412bbeb,f5ffe871e50a8aa8
- * @phoenix-generated: 2026-04-08T22:16:53.484Z
+ * @phoenix-language: typescript-web
+ * 
+ * @phoenix-canon: e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953
+ * Requirement: The dashboard must render a complete HTML page with inline CSS and JavaScript
+ * 
+ * @phoenix-canon: 30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298
+ * Requirement: The page must be encoded in UTF-8 with proper charset meta tag
+ * 
+ * @phoenix-canon: bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f
+ * Requirement: The page must include a viewport meta tag for responsive scaling
+ * 
+ * Server - Node.js native HTTP server with inline HTML dashboard
+ * All IU functions exposed via global API
+ * All canonical constraints implemented
  */
 
-import { createServer } from 'http';
+import http from "http";
 
+const PORT = process.env.PORT || 3000;
 
-const tasks = new Map();
-let idCounter = 1;
-
-const server = createServer((req, res) => {
-  const path = req.url || '/';
-  
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
-  
-  // Favicon (avoid 404 noise)
-  if (path === '/favicon.ico') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-  
-  // GET all tasks
-  if (path === '/api/tasks' && req.method === 'GET') {
-    const all = Array.from(tasks.values());
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(all));
-    return;
-  }
-  
-  // GET single task
-  const getMatch = path.match(/^\/api\/tasks\/([^\/]+)$/);
-  if (getMatch && req.method === 'GET') {
-    const id = getMatch[1];
-    const task = tasks.get(id);
-    if (task) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(task));
-    } else {
-      res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Task not found' }));
-    }
-    return;
-  }
-  
-  // POST create task
-  if (path === '/api/tasks' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const data = JSON.parse(body);
-        const task = {
-          id: String(idCounter++),
-          title: data.title || 'Untitled',
-          description: data.description || '',
-          status: data.status || 'open',
-          priority: data.priority || 'medium',
-          assignee: data.assignee || '',
-          deadline: data.deadline || '',
-          tags: data.tags || [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        tasks.set(task.id, task);
-        res.writeHead(201, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(task));
-      } catch (e) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'Invalid JSON' }));
-      }
-    });
-    return;
-  }
-  
-  
-  // PUT update task
-  if (getMatch && req.method === 'PUT') {
-    const id = getMatch[1];
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const updates = JSON.parse(body);
-        const task = tasks.get(id);
-        if (task) {
-          Object.assign(task, updates, { updatedAt: new Date().toISOString() });
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify(task));
-        } else {
-          res.writeHead(404);
-          res.end(JSON.stringify({ error: 'Task not found' }));
-        }
-      } catch (e) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'Invalid JSON' }));
-      }
-    });
-    return;
-  }
-  
-  
-  // DELETE task
-  if (getMatch && req.method === 'DELETE') {
-    const id = getMatch[1];
-    if (tasks.has(id)) {
-      tasks.delete(id);
-      res.writeHead(204);
-      res.end();
-    } else {
-      res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Task not found' }));
-    }
-    return;
-  }
-  
-  
-  // GET archived tasks
-  if (path === '/api/tasks/archived' && req.method === 'GET') {
-    const all = Array.from(tasks.values());
-    const archived = all.filter(t => t.status === 'archived');
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(archived));
-    return;
-  }
-  
-  // POST archive task
-  const archiveMatch = path.match(/^\/api\/tasks\/([^\/]+)\/archive$/);
-  if (archiveMatch && req.method === 'POST') {
-    const id = archiveMatch[1];
-    const task = tasks.get(id);
-    if (task) {
-      task.status = 'archived';
-      task.updatedAt = new Date().toISOString();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(task));
-    } else {
-      res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Task not found' }));
-    }
-    return;
-  }
-  
-  // POST restore task
-  const restoreMatch = path.match(/^\/api\/tasks\/([^\/]+)\/restore$/);
-  if (restoreMatch && req.method === 'POST') {
-    const id = restoreMatch[1];
-    const task = tasks.get(id);
-    if (task) {
-      task.status = 'open';
-      task.updatedAt = new Date().toISOString();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(task));
-    } else {
-      res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Task not found' }));
-    }
-    return;
-  }
-  
-  
-  // Serve dashboard HTML
-  if (path === '/' || path === '/dashboard') {
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8'
-    });
-    res.end(`<!DOCTYPE html>
-<html>
+// HTML Dashboard with embedded JavaScript
+const DASHBOARD_HTML = `<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow Dashboard</title>
+  <title>TaskFlow</title>
   <style>
     :root {
-      --base: #1e1e2e; --surface0: #313244; --surface1: #45475a;
-      --text: #cdd6f4; --subtext: #a6adc8; --blue: #89b4fa;
-      --green: #a6e3a1; --red: #f38ba8; --yellow: #f9e2af;
-      --crust: #11111b;
+      --ctp-base: #1e1e2e;
+      --ctp-mantle: #181825;
+      --ctp-crust: #11111b;
+      --ctp-surface0: #313244;
+      --ctp-surface1: #45475a;
+      --ctp-surface2: #585b70;
+      --ctp-overlay0: #6c7086;
+      --ctp-text: #cdd6f4;
+      --ctp-subtext0: #a6adc8;
+      --ctp-blue: #89b4fa;
+      --ctp-green: #a6e3a1;
+      --ctp-yellow: #f9e2af;
+      --ctp-peach: #fab387;
+      --ctp-red: #f38ba8;
+      --ctp-mauve: #cba6f7;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--base);
-      color: var(--text);
-      margin: 0;
-      padding: 24px;
-      line-height: 1.6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      background: var(--ctp-base);
+      color: var(--ctp-text);
+      min-height: 100vh;
     }
-    h1 { margin: 0 0 24px 0; font-size: 28px; }
-    .toolbar {
+    .header {
+      background: var(--ctp-mantle);
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--ctp-surface0);
       display: flex;
-      gap: 12px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      min-height: 56px;
     }
-    button {
-      background: var(--surface0);
-      color: var(--text);
-      border: 1px solid var(--surface1);
+    .header h1 { font-size: 1.75rem; font-weight: 600; color: var(--ctp-text); }
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--ctp-surface0);
       padding: 8px 16px;
-      border-radius: 6px;
+      border-radius: 8px;
+    }
+    .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--ctp-surface1);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+    .metric-badge:hover { background: var(--ctp-surface2); }
+    .metric-badge .label { color: var(--ctp-subtext0); font-weight: 400; }
+    .metric-badge .value { color: var(--ctp-text); font-weight: 600; }
+    .metric-badge.rate .value { color: var(--ctp-blue); }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 16px 24px 0;
+      border-bottom: 1px solid var(--ctp-surface0);
+    }
+    .nav-tab {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: var(--ctp-subtext0);
       cursor: pointer;
-      font-size: 14px;
+      border-bottom: 3px solid transparent;
+      transition: border-bottom-color 0.2s, color 0.2s;
     }
-    button:hover { background: var(--surface1); }
-    button.primary { background: var(--blue); color: var(--crust); border: none; }
-    button.primary:hover { opacity: 0.9; }
-    button.danger { background: var(--red); color: var(--crust); border: none; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .tab { background: transparent; border: 1px solid var(--surface1); }
-    .tab.active { background: var(--surface1); }
-    input, select, textarea {
-      background: var(--surface0);
-      color: var(--text);
-      border: 1px solid var(--surface1);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 14px;
+    .nav-tab:hover { color: var(--ctp-text); }
+    .nav-tab.active { color: var(--ctp-blue); border-bottom-color: var(--ctp-blue); }
+    .main-container {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
     }
-    .search-box { min-width: 200px; }
-    .task-card {
-      background: var(--surface0);
-      border: 1px solid var(--surface1);
+    @media (max-width: 768px) {
+      .main-container { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--ctp-surface0);
       border-radius: 8px;
       padding: 16px;
-      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .task-title { font-size: 18px; font-weight: 600; margin: 0; }
-    .task-meta { display: flex; gap: 12px; font-size: 13px; color: var(--subtext); flex-wrap: wrap; }
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
+    .card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    h2 { font-size: 1.25rem; font-weight: 600; margin: 0 0 16px 0; padding: 0; line-height: 1.3; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 2px; font-size: 0.85rem; color: var(--ctp-subtext0); }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--ctp-surface1);
+      border-radius: 6px;
+      background: var(--ctp-surface1);
+      color: var(--ctp-text);
+      font-family: inherit;
+      font-size: 0.95rem;
     }
-    .badge-open { background: var(--blue); color: var(--crust); }
-    .badge-in_progress { background: var(--yellow); color: var(--crust); }
-    .badge-done { background: var(--green); color: var(--crust); }
-    .badge-archived { background: var(--surface1); opacity: 0.7; }
-    .badge-priority-high { background: var(--red); color: var(--crust); }
-    .badge-priority-medium { background: var(--yellow); color: var(--crust); }
-    .badge-priority-low { background: var(--blue); color: var(--crust); }
-    .task-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { outline: none; border-color: var(--ctp-blue); }
+    .form-group textarea { min-height: 50px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--ctp-blue); color: var(--ctp-crust); }
+    .btn-success { background: var(--ctp-green); color: var(--ctp-crust); }
+    .btn-danger { background: var(--ctp-red); color: var(--ctp-crust); }
+    .btn-secondary { background: var(--ctp-surface1); color: var(--ctp-text); }
+    .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 768px) { .task-grid { grid-template-columns: 1fr; } }
+    .task-card {
+      background: var(--ctp-surface0);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    .task-card.overdue { border: 2px solid var(--ctp-red); }
+    .task-card.archived { opacity: 0.7; }
+    .task-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .task-title { font-weight: 600; font-size: 1rem; flex: 1; }
+    .task-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; }
+    .badge-priority-critical { background: var(--ctp-red); color: var(--ctp-crust); }
+    .badge-priority-high { background: var(--ctp-peach); color: var(--ctp-crust); }
+    .badge-priority-medium { background: var(--ctp-yellow); color: var(--ctp-crust); }
+    .badge-priority-low { background: var(--ctp-green); color: var(--ctp-crust); }
+    .badge-status-open { background: var(--ctp-overlay0); color: var(--ctp-text); }
+    .badge-status-in_progress { background: var(--ctp-blue); color: var(--ctp-crust); }
+    .badge-status-review { background: var(--ctp-mauve); color: var(--ctp-crust); }
+    .badge-status-done { background: var(--ctp-green); color: var(--ctp-crust); }
+    .badge-status-archived { background: var(--ctp-surface2); color: var(--ctp-subtext0); text-decoration: line-through; }
+    .badge-overdue { background: var(--ctp-red); color: var(--ctp-crust); font-weight: 600; }
+    .task-description { color: var(--ctp-subtext0); font-size: 0.9rem; margin-bottom: 12px; line-height: 1.4; }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: var(--ctp-subtext0); margin-bottom: 12px; }
+    .task-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .task-actions button { padding: 4px 10px; font-size: 0.8rem; }
+    .task-card {
+      position: relative;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: border-left-color 0.2s, background-color 0.2s;
+    }
+    .task-card:hover { border-left-color: var(--ctp-surface1); }
+    .task-card.selected {
+      border-left-color: var(--ctp-blue);
+      background: var(--ctp-surface2);
+    }
+    .task-card .card-content {
+      pointer-events: none;
+    }
+    .task-card .task-actions {
+      pointer-events: auto;
+    }
+    .bulk-action-bar {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ctp-surface0);
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      gap: 12px;
+      align-items: center;
+      z-index: 100;
+    }
+    .bulk-action-bar.visible { display: flex; }
     .modal-overlay {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(17, 17, 27, 0.8);
       align-items: center;
       justify-content: center;
+      z-index: 1000;
     }
-    .modal-overlay.open { display: flex; }
+    .modal-overlay.visible { display: flex; }
     .modal {
-      background: var(--surface0);
-      border: 1px solid var(--surface1);
+      background: var(--ctp-surface0);
       border-radius: 12px;
       padding: 24px;
       width: 95%;
-      max-width: 800px;
-      max-height: 100vh;
+      max-width: 400px;
     }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; margin-bottom: 2px; font-size: 12px; color: var(--subtext); }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px 10px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-    .tag-input { display: flex; gap: 8px; flex-wrap: wrap; }
-    .tag { background: var(--surface1); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { margin: 0; }
+    .modal-close { background: none; border: none; color: var(--ctp-subtext0); font-size: 1.5rem; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+    .modal-close:hover { background: var(--ctp-surface1); color: var(--ctp-text); }
+    .modal-footer { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+    .edit-form { display: none; }
+    .edit-form.visible { display: block; }
+    .card-content.hidden { display: none; }
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--ctp-subtext0); }
+    .section-header { margin: 24px 0 16px; padding-top: 16px; border-top: 1px solid var(--ctp-surface1); }
+    .section-header h3 { color: var(--ctp-subtext0); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .search-bar { margin-bottom: 16px; }
+    .search-bar input { width: 100%; padding: 10px 16px; background: var(--ctp-surface1); border: 1px solid var(--ctp-surface2); border-radius: 6px; color: var(--ctp-text); font-size: 0.95rem; }
+    .search-bar input:focus { outline: none; border-color: var(--ctp-blue); }
   </style>
 </head>
 <body>
-  <h1>📋 TaskFlow Dashboard</h1>
-  
-  <div class="toolbar">
-    <button class="primary" onclick="openModal()">+ New Task</button>
-    <input type="text" class="search-box" id="searchInput" placeholder="Search tasks..." oninput="renderTasks()">
-    <select id="filterStatus" onchange="renderTasks()">
-      <option value="">All Status</option>
-      <option value="open">Open</option>
-      <option value="in_progress">In Progress</option>
-      <option value="review">Review</option>
-      <option value="done">Done</option>
-    </select>
-    <select id="filterPriority" onchange="renderTasks()">
-      <option value="">All Priorities</option>
-      <option value="critical">Critical</option>
-      <option value="high">High</option>
-      <option value="medium">Medium</option>
-      <option value="low">Low</option>
-    </select>
+  <header class="header">
+    <h1>📋 TaskFlow</h1>
+    <div class="status-bar" id="statusBar">
+      <span class="metric-badge"><span class="label">Tasks:</span> <span class="value" id="metricTotal">0</span></span>
+      <span class="metric-badge"><span class="label">✓ Done:</span> <span class="value" id="metricCompleted">0</span></span>
+      <span class="metric-badge"><span class="label">⚠ Overdue:</span> <span class="value" id="metricOverdue">0</span></span>
+      <span class="metric-badge"><span class="label">🗄 Archived:</span> <span class="value" id="metricArchived">0</span></span>
+      <span class="metric-badge rate"><span class="label">📊 Rate:</span> <span class="value" id="metricRate">0%</span></span>
+    </div>
+  </header>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="active" id="tabActive">Active Tasks</button>
+    <button class="nav-tab" data-tab="archived" id="tabArchived">Archived Tasks</button>
+  </nav>
+  <main class="main-container">
+    <section class="create-section">
+      <h2>Create Task</h2>
+      <form id="createForm" class="card">
+        <div class="form-group">
+          <label for="createTitle">Title *</label>
+          <input type="text" id="createTitle" name="title" required autocomplete="off" placeholder="Enter task title">
+        </div>
+        <div class="form-group">
+          <label for="createDescription">Description</label>
+          <textarea id="createDescription" name="description" rows="2" autocomplete="off" placeholder="Enter task description"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="createPriority">Priority *</label>
+            <select id="createPriority" name="priority" required autocomplete="off">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="createStatus">Status</label>
+            <select id="createStatus" name="status" autocomplete="off">
+              <option value="open" selected>Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="createAssignee">Assignee</label>
+            <input type="text" id="createAssignee" name="assignee" autocomplete="off" placeholder="Enter assignee">
+          </div>
+          <div class="form-group">
+            <label for="createDeadline">Deadline</label>
+            <input type="date" id="createDeadline" name="deadline" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="createTags">Tags (comma-separated)</label>
+          <input type="text" id="createTags" name="tags" autocomplete="off" placeholder="tag1, tag2, tag3">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%;">Create Task</button>
+      </form>
+    </section>
+    <section class="tasks-section">
+      <h2>Tasks</h2>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search tasks by title or description..." autocomplete="off">
+      </div>
+      <div id="activeTasksContainer">
+        <div id="activeTasks" class="task-grid"></div>
+        <div class="section-header" id="completedHeader" style="display: none;">
+          <h3>Completed Tasks</h3>
+        </div>
+        <div id="completedTasks" class="task-grid"></div>
+      </div>
+      <div id="archivedTasksContainer" style="display: none;">
+        <div id="archivedTasks" class="task-grid"></div>
+      </div>
+    </section>
+  </main>
+  <div class="bulk-action-bar" id="bulkActionBar">
+    <span id="bulkCount">0 selected</span>
+    <button class="btn-secondary" id="bulkArchiveBtn">Archive Selected</button>
+    <button class="btn-secondary" id="bulkRestoreBtn" style="display: none;">Restore Selected</button>
+    <button class="btn-danger" id="bulkDeleteBtn">Delete Selected</button>
+    <button class="btn-secondary" id="bulkCancelBtn">Cancel</button>
   </div>
-  
-  <div class="tabs">
-    <button class="tab active" id="tab-active" onclick="setTab('active')">Active</button>
-    <button class="tab" id="tab-archived" onclick="setTab('archived')">Archived</button>
-    <button class="tab" id="tab-all" onclick="setTab('all')">All</button>
-  </div>
-  
-  <div id="taskList"></div>
-  
-  <!-- Create/Edit Modal -->
-  <div class="modal-overlay" id="modal">
+  <div class="modal-overlay confirm-modal" id="confirmModal">
     <div class="modal">
-      <h2 id="modalTitle">New Task</h2>
-      <input type="hidden" id="taskId">
-      <div class="form-group">
-        <label>Title</label>
-        <input type="text" id="taskTitle" placeholder="Task title...">
+      <div class="modal-header">
+        <h2 id="confirmTitle">Confirm Action</h2>
+        <button class="modal-close" id="confirmClose">×</button>
       </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="taskDesc" rows="2" placeholder="Description..."></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Status</label>
-          <select id="taskStatus">
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="done">Done</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Priority</label>
-          <select id="taskPriority">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Assignee</label>
-          <input type="text" id="taskAssignee" placeholder="@username">
-        </div>
-        <div class="form-group">
-          <label>Deadline</label>
-          <input type="date" id="taskDeadline">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Tags (comma separated)</label>
-        <input type="text" id="taskTags" placeholder="frontend, urgent, bug...">
-      </div>
-      <div class="form-actions">
-        <button onclick="closeModal()">Cancel</button>
-        <button class="primary" onclick="saveTask()">Save</button>
+      <p class="confirm-message" id="confirmMessage">Are you sure?</p>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="confirmCancel">Cancel</button>
+        <button class="btn-danger" id="confirmAction">Confirm</button>
       </div>
     </div>
   </div>
-  
   <script>
-    let tasks = [];
+    // @phoenix-canon: 900da6bbb6abdd66d83efe4b9162e74c6bcc540811e4639a2908fe1199a1b02b
+    const STORAGE_KEY = 'taskflow_tasks';
+    const taskStore = new Map();
     let currentTab = 'active';
-    let editingId = null;
+    let selectedIds = new Set();
+    let confirmCallback = null;
     
-    async function loadTasks() {
-      const res = await fetch('/api/tasks');
-      tasks = await res.json();
-      renderTasks();
-    }
-    
-    function setTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('tab-' + tab).classList.add('active');
-      renderTasks();
-    }
-    
-    function renderTasks() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const statusFilter = document.getElementById('filterStatus').value;
-      const priorityFilter = document.getElementById('filterPriority').value;
-      
-      let filtered = tasks.filter(t => {
-        if (currentTab === 'active' && t.status === 'archived') return false;
-        if (currentTab === 'archived' && t.status !== 'archived') return false;
-        if (search && !t.title.toLowerCase().includes(search) && !t.description?.toLowerCase().includes(search)) return false;
-        if (statusFilter && t.status !== statusFilter) return false;
-        if (priorityFilter && t.priority !== priorityFilter) return false;
-        return true;
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
       });
-      
-      const container = document.getElementById('taskList');
-      if (filtered.length === 0) {
-        container.innerHTML = '<p style="color: var(--subtext); text-align: center; padding: 40px;">No tasks found</p>';
-        return;
+    }
+    
+    function loadFromStorage() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const tasks = JSON.parse(stored);
+          taskStore.clear();
+          tasks.forEach(t => taskStore.set(t.id, t));
+        } catch (e) { console.error('Failed to parse tasks', e); }
       }
-      
-      container.innerHTML = filtered.map(t => {
-        const tagsHtml = (t.tags || []).map(tag => '<span class="tag">' + tag + '</span>').join('');
-        return '<div class="task-card">' +
-          '<div class="task-header">' +
-            '<h3 class="task-title">' + escapeHtml(t.title) + '</h3>' +
-            '<span class="badge badge-' + t.status + '">' + t.status.replace('_', ' ') + '</span>' +
-          '</div>' +
-          '<p style="margin: 8px 0; color: var(--subtext);">' + escapeHtml(t.description || '') + '</p>' +
-          '<div class="task-meta">' +
-            '<span class="badge badge-priority-' + t.priority + '">' + t.priority + '</span>' +
-            (t.assignee ? '<span>👤 ' + escapeHtml(t.assignee) + '</span>' : '') +
-            (t.deadline ? '<span>📅 ' + t.deadline + '</span>' : '') +
-            tagsHtml +
-          '</div>' +
-          '<div class="task-actions">' +
-            '<button onclick="editTask(' + "'" + t.id + "'" + ')">Edit</button>' +
-            (t.status === 'archived' 
-              ? '<button onclick="restoreTask(' + "'" + t.id + "'" + ')">Restore</button>'
-              : '<button onclick="archiveTask(' + "'" + t.id + "'" + ')">Archive</button>'
-            ) +
-            '<button class="danger" onclick="deleteTask(' + "'" + t.id + "'" + ')">Delete</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+    }
+    
+    function persistToStorage() {
+      const tasks = Array.from(taskStore.values());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+    
+    function getAllTasks() {
+      loadFromStorage();
+      return Array.from(taskStore.values());
+    }
+    
+    function createTask(data) {
+      if (!data.title || data.title.trim() === '') throw new Error('Title is required');
+      const now = new Date().toISOString();
+      const task = { ...data, id: generateUUID(), created_at: now, updated_at: now, archived: false, tags: data.tags || [], audit_trail: [] };
+      taskStore.set(task.id, task);
+      persistToStorage();
+      return task;
+    }
+    
+    function updateTask(id, updates) {
+      const task = taskStore.get(id);
+      if (!task) throw new Error('Task not found');
+      const validTransitions = { open: ['in_progress'], in_progress: ['review', 'open'], review: ['done', 'in_progress'], done: ['open'] };
+      if (updates.status && updates.status !== task.status) {
+        const allowed = validTransitions[task.status];
+        if (!allowed.includes(updates.status)) throw new Error('Invalid transition: ' + task.status + ' → ' + updates.status);
+      }
+      const now = new Date().toISOString();
+      const updated = { ...task, ...updates, updated_at: now };
+      if (updates.status === 'done' && task.status !== 'done') {
+        updated.completed_at = now;
+        updated.duration = new Date(now).getTime() - new Date(task.created_at).getTime();
+      }
+      taskStore.set(id, updated);
+      persistToStorage();
+      return updated;
+    }
+    
+    function deleteTask(id) {
+      const result = taskStore.delete(id);
+      if (result) persistToStorage();
+      return result;
+    }
+    
+    function archiveTask(id) {
+      const task = taskStore.get(id);
+      if (!task) throw new Error('Task not found');
+      const now = new Date().toISOString();
+      const updated = { ...task, archived: true, archived_at: now, previous_status: task.status, updated_at: now };
+      taskStore.set(id, updated);
+      persistToStorage();
+      return updated;
+    }
+    
+    function restoreTask(id) {
+      const task = taskStore.get(id);
+      if (!task) throw new Error('Task not found');
+      const now = new Date().toISOString();
+      const updated = { ...task, archived: false, archived_at: undefined, status: task.previous_status || task.status, previous_status: undefined, updated_at: now };
+      taskStore.set(id, updated);
+      persistToStorage();
+      return updated;
+    }
+    
+    function getMetrics() {
+      const tasks = getAllTasks();
+      const total = tasks.length;
+      const completed = tasks.filter(t => t.status === 'done').length;
+      const now = new Date().toISOString();
+      const overdue = tasks.filter(t => { if (t.status === 'done' || !t.deadline) return false; return new Date(t.deadline) < new Date(now); }).length;
+      const archived = tasks.filter(t => t.archived).length;
+      const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return { total, completed, overdue, archived, completionRate };
+    }
+    
+    function searchTasks(query) {
+      const tasks = getAllTasks();
+      if (!query || query.trim() === '') return tasks;
+      const lower = query.toLowerCase();
+      return tasks.filter(t => t.title.toLowerCase().includes(lower) || t.description.toLowerCase().includes(lower));
+    }
+    
+    function seedData() {
+      if (taskStore.size === 0) {
+        const samples = [
+          { title: 'Setup project repository', description: 'Initialize Git repo and configure CI/CD', priority: 'high', status: 'done', assignee: 'alice', deadline: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], tags: ['devops', 'setup'] },
+          { title: 'Design database schema', description: 'Create ERD and define table structures', priority: 'critical', status: 'in_progress', assignee: 'bob', deadline: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], tags: ['database', 'design'] },
+          { title: 'Write API documentation', description: 'Document all REST endpoints', priority: 'medium', status: 'open', assignee: 'charlie', deadline: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], tags: ['docs', 'api'] },
+          { title: 'Fix navigation bug', description: 'Mobile menu does not close on selection', priority: 'high', status: 'review', deadline: new Date(Date.now() - 86400000).toISOString().split('T')[0], tags: ['bug', 'ui'] },
+          { title: 'Update dependencies', description: 'Check for security updates', priority: 'low', status: 'open', tags: ['maintenance'] }
+        ];
+        samples.forEach(s => { try { createTask(s); } catch (e) {} });
+      }
     }
     
     function escapeHtml(text) {
+      if (!text) return '';
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
     
-    function openModal(id = null) {
-      editingId = id;
-      document.getElementById('modalTitle').textContent = id ? 'Edit Task' : 'New Task';
-      if (id) {
-        const t = tasks.find(x => x.id === id);
-        document.getElementById('taskId').value = t.id;
-        document.getElementById('taskTitle').value = t.title;
-        document.getElementById('taskDesc').value = t.description || '';
-        document.getElementById('taskStatus').value = t.status;
-        document.getElementById('taskPriority').value = t.priority || 'medium';
-        document.getElementById('taskAssignee').value = t.assignee || '';
-        document.getElementById('taskDeadline').value = t.deadline || '';
-        document.getElementById('taskTags').value = (t.tags || []).join(', ');
-      } else {
-        document.getElementById('taskId').value = '';
-        document.getElementById('taskTitle').value = '';
-        document.getElementById('taskDesc').value = '';
-        document.getElementById('taskStatus').value = 'open';
-        document.getElementById('taskPriority').value = 'medium';
-        document.getElementById('taskAssignee').value = '';
-        document.getElementById('taskDeadline').value = '';
-        document.getElementById('taskTags').value = '';
-      }
-      document.getElementById('modal').classList.add('open');
-      document.getElementById('taskTitle').focus();
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     
-    function closeModal() {
-      document.getElementById('modal').classList.remove('open');
-      editingId = null;
+    function renderStatusBar() {
+      const metrics = getMetrics();
+      document.getElementById('metricTotal').textContent = metrics.total;
+      document.getElementById('metricCompleted').textContent = metrics.completed;
+      document.getElementById('metricOverdue').textContent = metrics.overdue;
+      document.getElementById('metricArchived').textContent = metrics.archived;
+      document.getElementById('metricRate').textContent = metrics.completionRate + '%';
     }
     
-    async function saveTask() {
-      const data = {
-        title: document.getElementById('taskTitle').value,
-        description: document.getElementById('taskDesc').value,
-        status: document.getElementById('taskStatus').value,
-        priority: document.getElementById('taskPriority').value,
-        assignee: document.getElementById('taskAssignee').value,
-        deadline: document.getElementById('taskDeadline').value,
-        tags: document.getElementById('taskTags').value.split(',').map(t => t.trim()).filter(t => t)
-      };
+    function createTaskCard(task) {
+      const div = document.createElement('div');
+      div.className = 'task-card';
+      if (selectedIds.has(task.id)) div.classList.add('selected');
+      div.dataset.taskId = task.id;
+      const isOverdue = task.deadline && task.status !== 'done' && new Date(task.deadline) < new Date();
+      if (isOverdue) div.classList.add('overdue');
+      if (task.archived) div.classList.add('archived');
+      const priorityColors = { critical: 'badge-priority-critical', high: 'badge-priority-high', medium: 'badge-priority-medium', low: 'badge-priority-low' };
+      const statusColors = { open: 'badge-status-open', in_progress: 'badge-status-in_progress', review: 'badge-status-review', done: 'badge-status-done' };
+      const validTransitions = { open: [{ status: 'in_progress', label: 'Start' }], in_progress: [{ status: 'review', label: 'Submit for Review' }, { status: 'open', label: 'Back to Open' }], review: [{ status: 'done', label: 'Complete' }, { status: 'in_progress', label: 'Back to Progress' }], done: [{ status: 'open', label: 'Reopen' }] };
+      const transitions = validTransitions[task.status] || [];
+      const transitionButtons = transitions.map(t => '<button class="btn-secondary btn-sm transition-btn" data-task-id="' + task.id + '" data-status="' + t.status + '">' + t.label + '</button>').join('');
+      div.innerHTML = '<div class="card-content"><div class="task-header"><span class="task-title">' + escapeHtml(task.title) + '</span></div><div class="task-badges"><span class="badge ' + priorityColors[task.priority] + '">' + task.priority + '</span><span class="badge ' + statusColors[task.status] + '">' + task.status.replace('_', ' ') + '</span>' + (task.archived ? '<span class="badge badge-status-archived">archived</span>' : '') + (isOverdue ? '<span class="badge badge-overdue">OVERDUE</span>' : '') + '</div><p class="task-description">' + escapeHtml(task.description) + '</p><div class="task-meta">' + (task.assignee ? '<span>👤 ' + escapeHtml(task.assignee) + '</span>' : '') + (task.deadline ? '<span>📅 ' + formatDate(task.deadline) + '</span>' : '') + (task.tags.length ? '<span>🏷️ ' + task.tags.join(', ') + '</span>' : '') + '</div><div class="task-actions">' + transitionButtons + '<button class="btn-secondary btn-sm edit-btn" data-task-id="' + task.id + '">Edit</button>' + (!task.archived ? '<button class="btn-secondary btn-sm archive-btn" data-task-id="' + task.id + '">Archive</button>' : '') + (task.archived ? '<button class="btn-secondary btn-sm restore-btn" data-task-id="' + task.id + '">Restore</button>' : '') + '<button class="btn-danger btn-sm delete-btn" data-task-id="' + task.id + '">Delete</button></div></div><div class="edit-form" id="edit-form-' + task.id + '"><div class="form-group"><label>Title</label><input type="text" class="edit-title" value="' + escapeHtml(task.title) + '" autocomplete="off"></div><div class="form-group"><label>Description</label><textarea class="edit-description" rows="2" autocomplete="off">' + escapeHtml(task.description) + '</textarea></div><div class="form-row"><div class="form-group"><label>Priority</label><select class="edit-priority" autocomplete="off"><option value="low" ' + (task.priority === 'low' ? 'selected' : '') + '>Low</option><option value="medium" ' + (task.priority === 'medium' ? 'selected' : '') + '>Medium</option><option value="high" ' + (task.priority === 'high' ? 'selected' : '') + '>High</option><option value="critical" ' + (task.priority === 'critical' ? 'selected' : '') + '>Critical</option></select></div><div class="form-group"><label>Status</label><select class="edit-status" autocomplete="off"><option value="open" ' + (task.status === 'open' ? 'selected' : '') + '>Open</option><option value="in_progress" ' + (task.status === 'in_progress' ? 'selected' : '') + '>In Progress</option><option value="review" ' + (task.status === 'review' ? 'selected' : '') + '>Review</option><option value="done" ' + (task.status === 'done' ? 'selected' : '') + '>Done</option></select></div></div><div class="form-row"><div class="form-group"><label>Assignee</label><input type="text" class="edit-assignee" value="' + escapeHtml(task.assignee || '') + '" autocomplete="off"></div><div class="form-group"><label>Deadline</label><input type="date" class="edit-deadline" value="' + (task.deadline || '') + '"></div></div><div class="task-actions"><button class="btn-success btn-sm save-edit-btn" data-task-id="' + task.id + '">Save</button><button class="btn-secondary btn-sm cancel-edit-btn" data-task-id="' + task.id + '">Cancel</button></div></div>';
       
-      const id = document.getElementById('taskId').value;
-      if (id) {
-        await fetch('/api/tasks/' + id, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+      // Click card to toggle selection
+      div.addEventListener('click', (e) => {
+        // Don't select if clicking buttons or form elements
+        if (e.target.closest('.task-actions') || e.target.closest('.edit-form')) return;
+        if (selectedIds.has(task.id)) {
+          selectedIds.delete(task.id);
+          div.classList.remove('selected');
+        } else {
+          selectedIds.add(task.id);
+          div.classList.add('selected');
+        }
+        updateBulkBar();
+      });
+      return div;
+    }
+    
+    function renderTasks() {
+      const tasks = searchTasks(document.getElementById('searchInput').value);
+      const activeContainer = document.getElementById('activeTasks');
+      const completedContainer = document.getElementById('completedTasks');
+      const archivedContainer = document.getElementById('archivedTasks');
+      activeContainer.innerHTML = '';
+      completedContainer.innerHTML = '';
+      archivedContainer.innerHTML = '';
+      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      if (currentTab === 'active') {
+        const activeTasks = tasks.filter(t => !t.archived && t.status !== 'done').sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        const completedTasks = tasks.filter(t => !t.archived && t.status === 'done').sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        if (activeTasks.length === 0 && completedTasks.length === 0) {
+          activeContainer.innerHTML = '<div class="empty-state">No tasks found. Create one to get started!</div>';
+        } else {
+          activeTasks.forEach(task => { activeContainer.appendChild(createTaskCard(task)); });
+          document.getElementById('completedHeader').style.display = completedTasks.length ? 'block' : 'none';
+          completedTasks.forEach(task => { completedContainer.appendChild(createTaskCard(task)); });
+        }
       } else {
-        await fetch('/api/tasks', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+        const archivedTasks = tasks.filter(t => t.archived).sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        if (archivedTasks.length === 0) { archivedContainer.innerHTML = '<div class="empty-state">No archived tasks.</div>'; } else { archivedTasks.forEach(task => { archivedContainer.appendChild(createTaskCard(task)); }); }
       }
-      closeModal();
-      await loadTasks();
+      renderStatusBar();
     }
     
-    function editTask(id) {
-      openModal(id);
+    function updateBulkBar() {
+      const bar = document.getElementById('bulkActionBar');
+      const count = document.getElementById('bulkCount');
+      const archiveBtn = document.getElementById('bulkArchiveBtn');
+      const restoreBtn = document.getElementById('bulkRestoreBtn');
+      if (selectedIds.size > 0) {
+        bar.classList.add('visible');
+        count.textContent = selectedIds.size + ' selected';
+        if (currentTab === 'active') { archiveBtn.style.display = 'block'; restoreBtn.style.display = 'none'; } else { archiveBtn.style.display = 'none'; restoreBtn.style.display = 'block'; }
+      } else { bar.classList.remove('visible'); }
     }
     
-    async function archiveTask(id) {
-      await fetch('/api/tasks/' + encodeURIComponent(id) + '/archive', { method: 'POST' });
-      await loadTasks();
+    function showConfirm(title, message, callback) {
+      confirmCallback = callback;
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      document.getElementById('confirmModal').classList.add('visible');
     }
     
-    async function restoreTask(id) {
-      await fetch('/api/tasks/' + encodeURIComponent(id) + '/restore', { method: 'POST' });
-      await loadTasks();
+    function hideConfirm() {
+      document.getElementById('confirmModal').classList.remove('visible');
+      confirmCallback = null;
     }
     
-    async function deleteTask(id) {
-      if (!confirm('Delete this task?')) return;
-      await fetch('/api/tasks/' + encodeURIComponent(id), { method: 'DELETE' });
-      await loadTasks();
-    }
-    
-    // Close modal on overlay click
-    document.getElementById('modal').addEventListener('click', e => {
-      if (e.target.id === 'modal') closeModal();
+    document.addEventListener('DOMContentLoaded', () => {
+      seedData();
+      renderTasks();
+      document.getElementById('createTitle').focus();
+      document.getElementById('tabActive').addEventListener('click', () => {
+        currentTab = 'active';
+        document.getElementById('tabActive').classList.add('active');
+        document.getElementById('tabArchived').classList.remove('active');
+        document.getElementById('activeTasksContainer').style.display = 'block';
+        document.getElementById('archivedTasksContainer').style.display = 'none';
+        selectedIds.clear(); updateBulkBar(); renderTasks();
+      });
+      document.getElementById('tabArchived').addEventListener('click', () => {
+        currentTab = 'archived';
+        document.getElementById('tabArchived').classList.add('active');
+        document.getElementById('tabActive').classList.remove('active');
+        document.getElementById('activeTasksContainer').style.display = 'none';
+        document.getElementById('archivedTasksContainer').style.display = 'block';
+        selectedIds.clear(); updateBulkBar(); renderTasks();
+      });
+      document.getElementById('createForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('createTitle').value.trim();
+        if (!title) { alert('Title is required'); return; }
+        const tags = document.getElementById('createTags').value.split(',').map(t => t.trim()).filter(t => t);
+        createTask({ title, description: document.getElementById('createDescription').value, priority: document.getElementById('createPriority').value, status: document.getElementById('createStatus').value, assignee: document.getElementById('createAssignee').value || undefined, deadline: document.getElementById('createDeadline').value || undefined, tags });
+        document.getElementById('createForm').reset();
+        document.getElementById('createTitle').focus();
+        renderTasks();
+      });
+      document.getElementById('createForm').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); document.getElementById('createForm').dispatchEvent(new Event('submit')); } });
+      document.getElementById('searchInput').addEventListener('input', () => { renderTasks(); });
+      document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.classList.contains('transition-btn')) {
+          const taskId = target.dataset.taskId;
+          const newStatus = target.dataset.status;
+          try { updateTask(taskId, { status: newStatus }); renderTasks(); } catch (err) { alert(err.message); }
+        }
+        if (target.classList.contains('edit-btn')) {
+          const taskId = target.dataset.taskId;
+          const card = document.querySelector('[data-task-id="' + taskId + '"]');
+          card.querySelector('.card-content').classList.add('hidden');
+          card.querySelector('.edit-form').classList.add('visible');
+        }
+        if (target.classList.contains('cancel-edit-btn')) {
+          const taskId = target.dataset.taskId;
+          const card = document.querySelector('[data-task-id="' + taskId + '"]');
+          card.querySelector('.card-content').classList.remove('hidden');
+          card.querySelector('.edit-form').classList.remove('visible');
+        }
+        if (target.classList.contains('save-edit-btn')) {
+          const taskId = target.dataset.taskId;
+          const card = document.querySelector('[data-task-id="' + taskId + '"]');
+          try {
+            updateTask(taskId, { title: card.querySelector('.edit-title').value, description: card.querySelector('.edit-description').value, priority: card.querySelector('.edit-priority').value, status: card.querySelector('.edit-status').value, assignee: card.querySelector('.edit-assignee').value || undefined, deadline: card.querySelector('.edit-deadline').value || undefined });
+            renderTasks();
+          } catch (err) { alert(err.message); }
+        }
+        if (target.classList.contains('archive-btn')) {
+          const taskId = target.dataset.taskId;
+          showConfirm('Archive Task', 'Archive this task? It can be restored later.', () => { archiveTask(taskId); renderTasks(); });
+        }
+        if (target.classList.contains('restore-btn')) { restoreTask(target.dataset.taskId); renderTasks(); }
+        if (target.classList.contains('delete-btn')) {
+          const taskId = target.dataset.taskId;
+          const task = taskStore.get(taskId);
+          showConfirm('Delete Task', 'Are you sure you want to delete "' + task.title + '"? This cannot be undone.', () => { deleteTask(taskId); selectedIds.delete(taskId); updateBulkBar(); renderTasks(); });
+        }
+      });
+      document.getElementById('bulkCancelBtn').addEventListener('click', () => { selectedIds.clear(); updateBulkBar(); renderTasks(); });
+      document.getElementById('bulkArchiveBtn').addEventListener('click', () => { showConfirm('Archive Selected', 'Archive ' + selectedIds.size + ' selected tasks?', () => { selectedIds.forEach(id => archiveTask(id)); selectedIds.clear(); updateBulkBar(); renderTasks(); }); });
+      document.getElementById('bulkRestoreBtn').addEventListener('click', () => { selectedIds.forEach(id => restoreTask(id)); selectedIds.clear(); updateBulkBar(); renderTasks(); });
+      document.getElementById('bulkDeleteBtn').addEventListener('click', () => { showConfirm('Delete Selected', 'Delete ' + selectedIds.size + ' selected tasks? This cannot be undone.', () => { selectedIds.forEach(id => deleteTask(id)); selectedIds.clear(); updateBulkBar(); renderTasks(); }); });
+      document.getElementById('confirmCancel').addEventListener('click', hideConfirm);
+      document.getElementById('confirmClose').addEventListener('click', hideConfirm);
+      document.getElementById('confirmAction').addEventListener('click', () => { if (confirmCallback) confirmCallback(); hideConfirm(); });
+      document.getElementById('confirmModal').addEventListener('click', (e) => { if (e.target === document.getElementById('confirmModal')) hideConfirm(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('confirmModal').classList.contains('visible')) hideConfirm(); });
     });
-    
-    loadTasks();
   </script>
 </body>
-</html>`);
-    return;
-  }
-  
-  res.writeHead(404);
-  res.end(JSON.stringify({ error: 'Not found' }));
+</html>`;
+
+// Create HTTP server
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-cache"
+  });
+  res.end(DASHBOARD_HTML);
 });
 
-server.listen(3000, () => {
-  console.log('🚀 TaskFlow Dashboard');
-  console.log('   Operations:', ["computMetrics","process","restorTasks","list","a","assignTasks","queryTasks","searchTasks","search","filterTasks","filterByStatus","viewTasks","archive","bulk","delete","edit"]);
-  console.log('   http://localhost:3000');
+server.listen(PORT, () => {
+  console.log(`TaskFlow server running at http://localhost:${PORT}/`);
+  console.log("Press Ctrl+C to stop");
 });
+
+export { server };

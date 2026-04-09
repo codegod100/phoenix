@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:16:52.579Z",
+  "generated_at": "2026-04-09T01:38:29.967Z",
   "bootstrap_state": "BOOTSTRAP_WARMING",
   "d_rate": 0,
   "d_rate_level": "TARGET",
   "d_rate_message": "D-rate 0.0% within target (≤5%)",
-  "node_count": 157,
+  "node_count": 179,
   "classification_stats": {
-    "A": 157,
+    "A": 179,
     "B": 0,
     "C": 0,
     "D": 0
@@ -430,40 +430,40 @@
       "source_file": "spec/tasks.md"
     },
     {
-      "canon_id": "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f",
-      "short_id": "node-1d9ff415",
+      "canon_id": "eb6fcdb56d144801868cf29e831e4dc71dc171571ff9b012753f00b7823d202c",
+      "short_id": "node-eb6fcdb5",
       "type": "REQUIREMENT",
-      "statement": "the dashboard must include a compact status bar showing key metrics inline",
-      "raw_text": "The dashboard must include a compact status bar showing key metrics inline",
+      "statement": "the dashboard must include an elegant analytics bar showing key metrics inline",
+      "raw_text": "The dashboard must include an elegant analytics bar showing key metrics inline",
       "confidence": 0.95,
       "source_clause_ids": [
-        "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f"
+        "eb6fcdb56d144801868cf29e831e4dc71dc171571ff9b012753f00b7823d202c"
       ],
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f",
-      "short_id": "node-06236ca2",
+      "canon_id": "c4e21e3e50799e099b0ccb5a0dbaa4d283b4506e6506debcd8b51fbb73dbfd4a",
+      "short_id": "node-c4e21e3e",
       "type": "REQUIREMENT",
-      "statement": "the status bar must render as a single horizontal bar below the header",
-      "raw_text": "The status bar must render as a single horizontal bar below the header",
+      "statement": "the status bar must render as a horizontal bar below the header with comfortable spacing",
+      "raw_text": "The status bar must render as a horizontal bar below the header with comfortable spacing",
       "confidence": 0.95,
       "source_clause_ids": [
-        "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f"
+        "c4e21e3e50799e099b0ccb5a0dbaa4d283b4506e6506debcd8b51fbb73dbfd4a"
       ],
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40",
-      "short_id": "node-e5d2dfbc",
+      "canon_id": "87f6aafe8c38c6fc20d722660ead0ba43d7d7d661eb5b2ef9bdd3a79f3c00507",
+      "short_id": "node-87f6aafe",
       "type": "REQUIREMENT",
-      "statement": "the status bar must be visually compact with max 48px height and minimal padding",
-      "raw_text": "The status bar must be visually compact with max 48px height and minimal padding",
+      "statement": "the status bar must have 56px height with generous vertical padding for visual breathing room",
+      "raw_text": "The status bar must have ~56px height with generous vertical padding for visual breathing room",
       "confidence": 0.95,
       "source_clause_ids": [
-        "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40"
+        "87f6aafe8c38c6fc20d722660ead0ba43d7d7d661eb5b2ef9bdd3a79f3c00507"
       ],
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md"
@@ -482,14 +482,14 @@
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f",
-      "short_id": "node-ec926319",
-      "type": "CONSTRAINT",
-      "statement": "the status bar must not consume vertical space like the previous metric cards design",
-      "raw_text": "The status bar must not consume vertical space like the previous metric cards design",
+      "canon_id": "e5a204e2c39e109274318a2c507303b5eb6f3585df345dc1f144c02372a1f284",
+      "short_id": "node-e5a204e2",
+      "type": "REQUIREMENT",
+      "statement": "the status bar must use a subtle surface0 background with rounded 8px corners for a modern cardlike appearance",
+      "raw_text": "The status bar must use a subtle surface0 background with rounded 8px corners for a modern card-like appearance",
       "confidence": 0.95,
       "source_clause_ids": [
-        "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f"
+        "e5a204e2c39e109274318a2c507303b5eb6f3585df345dc1f144c02372a1f284"
       ],
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md"
@@ -508,53 +508,92 @@
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410",
-      "short_id": "node-3fbf0135",
+      "canon_id": "f4e018445819ee3971e9f5ea4027087c81abfec89fc02333c9fd8d5350f72377",
+      "short_id": "node-f4e01844",
       "type": "REQUIREMENT",
-      "statement": "metrics must be displayed inline with simple separators such as bullet or pipe",
-      "raw_text": "Metrics must be displayed inline with simple separators such as bullet or pipe",
+      "statement": "each metric must be displayed as a pillshaped badge with surface1 background 6px 12px padding and 4px borderradius",
+      "raw_text": "Each metric must be displayed as a pill-shaped badge with surface1 background, 6px 12px padding, and 4px border-radius",
       "confidence": 0.95,
       "source_clause_ids": [
-        "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410"
+        "f4e018445819ee3971e9f5ea4027087c81abfec89fc02333c9fd8d5350f72377"
       ],
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521",
-      "short_id": "node-8394b999",
+      "canon_id": "ccb161d8da38b88cfdec513d5b1cbf6ac01f4f0176e6d093e0f9a07c1c0d9a53",
+      "short_id": "node-ccb161d8",
       "type": "REQUIREMENT",
-      "statement": "format example is 12 tasks 8 done 2 overdue 3 archived 67 completion rate",
-      "raw_text": "Format example is 12 tasks, 8 done, 2 overdue, 3 archived, 67% completion rate",
+      "statement": "metric values must use fontweight 600 semibold in ctptext color",
+      "raw_text": "Metric values must use font-weight 600 (semibold) in --ctp-text color",
       "confidence": 0.95,
       "source_clause_ids": [
-        "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521"
+        "ccb161d8da38b88cfdec513d5b1cbf6ac01f4f0176e6d093e0f9a07c1c0d9a53"
       ],
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00",
-      "short_id": "node-8f060fef",
+      "canon_id": "c8ea3a9e81a7c9bc047c656fd0ea110f1c795c93c8f6b8169209eb8c0c5bb2b9",
+      "short_id": "node-c8ea3a9e",
       "type": "REQUIREMENT",
-      "statement": "use subtle text colors with primary metric values in ctptext and labels or separators in ctpsubtext0",
-      "raw_text": "Use subtle text colors with primary metric values in --ctp-text and labels or separators in --ctp-subtext0",
+      "statement": "metric labels must use fontweight 400 in ctpsubtext0 color with a colon separator",
+      "raw_text": "Metric labels must use font-weight 400 in --ctp-subtext0 color with a colon separator",
       "confidence": 0.95,
       "source_clause_ids": [
-        "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00"
+        "c8ea3a9e81a7c9bc047c656fd0ea110f1c795c93c8f6b8169209eb8c0c5bb2b9"
       ],
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md"
     },
     {
-      "canon_id": "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a",
-      "short_id": "node-23d13da9",
-      "type": "CONSTRAINT",
-      "statement": "no emoji icons larger than the text itself no card backgrounds no hover effects",
-      "raw_text": "No emoji icons larger than the text itself, no card backgrounds, no hover effects",
+      "canon_id": "f680ef5ebce71ab378be6af8e09f5a8250d6d55f53418e1dc4e3341297e8a9ea",
+      "short_id": "node-f680ef5e",
+      "type": "REQUIREMENT",
+      "statement": "format example tasks 12 done 8 overdue 2 archived 3 rate 67",
+      "raw_text": "Format example: \"Tasks: 12\" \"Done: 8\" \"Overdue: 2\" \"Archived: 3\" \"Rate: 67%\"",
       "confidence": 0.95,
       "source_clause_ids": [
-        "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a"
+        "f680ef5ebce71ab378be6af8e09f5a8250d6d55f53418e1dc4e3341297e8a9ea"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "9605be0b8e2c6cb1e4453408de1a9f94953ab2318544bda3d96495e7affb1034",
+      "short_id": "node-9605be0b",
+      "type": "REQUIREMENT",
+      "statement": "badges must have 8px gap between them and subtle hover effect with surface2 background",
+      "raw_text": "Badges must have 8px gap between them and subtle hover effect with surface2 background",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "9605be0b8e2c6cb1e4453408de1a9f94953ab2318544bda3d96495e7affb1034"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "c24d1ac5b8c368c7edfd363dd4d8ca59757cfff1f3d8058892d283f4085ee073",
+      "short_id": "node-c24d1ac5",
+      "type": "REQUIREMENT",
+      "statement": "use consistent icon prefixes with fontsize matching text 085rem",
+      "raw_text": "Use consistent icon prefixes (📋 ✓ ⚠ 🗄 📊) with font-size matching text (0.85rem)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "15d411707ade7d5278376bc9cb1a925b5d5125b5fde965133a674cacbfba3832"
+      ],
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md"
+    },
+    {
+      "canon_id": "8d42c17a07a9e826137ccec4574d47a562d3fabb424fdb99cd6a9ee8936256d6",
+      "short_id": "node-8d42c17a",
+      "type": "DEFINITION",
+      "statement": "completion rate badge uses accent color 89b4fa for the percentage value to highlight success metric",
+      "raw_text": "Completion rate badge uses accent color (#89b4fa) for the percentage value to highlight success metric",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "8d42c17a07a9e826137ccec4574d47a562d3fabb424fdb99cd6a9ee8936256d6"
       ],
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md"
@@ -729,14 +768,14 @@
       "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "canon_id": "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
-      "short_id": "node-d36869b7",
+      "canon_id": "68b2d5f231d7af6bd6fd33c47f94a1ef9d9149aae06b3a945cecae0a879afb27",
+      "short_id": "node-68b2d5f2",
       "type": "REQUIREMENT",
-      "statement": "the page must display a compact header with the title taskflow with minimal vertical padding 32px height and larger text",
-      "raw_text": "The page must display a compact header with the title \"TaskFlow\" with minimal vertical padding ~32px height and larger text",
+      "statement": "the page must display a spacious header with the title taskflow with comfortable vertical padding 48px height centered content and larger text with fontweight 600",
+      "raw_text": "The page must display a spacious header with the title \"TaskFlow\" with comfortable vertical padding ~48px height, centered content, and larger text with font-weight 600",
       "confidence": 0.95,
       "source_clause_ids": [
-        "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975"
+        "68b2d5f231d7af6bd6fd33c47f94a1ef9d9149aae06b3a945cecae0a879afb27"
       ],
       "section": "Page Structure",
       "source_file": "spec/web-dashboard-base.md"
@@ -963,14 +1002,183 @@
       "source_file": "spec/web-dashboard-base.md"
     },
     {
-      "canon_id": "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd",
-      "short_id": "node-5ba9c276",
+      "canon_id": "8f5ee864ccd9e7ef708125db935214b0144f151ce8f6a8ba90dce755d42e1df4",
+      "short_id": "node-8f5ee864",
       "type": "REQUIREMENT",
-      "statement": "bulk selection checkboxes must appear on each task card for multiselect operations",
-      "raw_text": "Bulk selection checkboxes must appear on each task card for multi-select operations",
+      "statement": "the active tab must use a straight horizontal highlight line underneath the tab text",
+      "raw_text": "The active tab must use a straight horizontal highlight line underneath the tab text",
       "confidence": 0.95,
       "source_clause_ids": [
-        "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd"
+        "8f5ee864ccd9e7ef708125db935214b0144f151ce8f6a8ba90dce755d42e1df4"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "be8721be55cfdedaabf53fa2893bdd8b21325d81b8578994d1995729ef3567f4",
+      "short_id": "node-be8721be",
+      "type": "DEFINITION",
+      "statement": "the highlight line must be a 3px solid line using the primary accent color 89b4fa",
+      "raw_text": "The highlight line must be a 3px solid line using the primary accent color (#89b4fa)",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "be8721be55cfdedaabf53fa2893bdd8b21325d81b8578994d1995729ef3567f4"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "b3e81cef6081f47ade085574584271e41022e37e48ea0ce802652fe36bd52b88",
+      "short_id": "node-b3e81cef",
+      "type": "DEFINITION",
+      "statement": "the highlight line must span the full width of the tab button",
+      "raw_text": "The highlight line must span the full width of the tab button",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b3e81cef6081f47ade085574584271e41022e37e48ea0ce802652fe36bd52b88"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "91f627e610b4794b7ed7359fd8c74cb522023a8d07a32ae7adcb614cb0ac5619",
+      "short_id": "node-91f627e6",
+      "type": "DEFINITION",
+      "statement": "the highlight line must have no rounded corners or curved edges",
+      "raw_text": "The highlight line must have no rounded corners or curved edges",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "91f627e610b4794b7ed7359fd8c74cb522023a8d07a32ae7adcb614cb0ac5619"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "b2e88a7f1128cf4c19ca55d6d16fb592d4a66d721acba37d96d64c9cc8bf702a",
+      "short_id": "node-b2e88a7f",
+      "type": "CONSTRAINT",
+      "statement": "the tab button must use borderradius 0 to ensure perfectly straight edges",
+      "raw_text": "The tab button must use border-radius: 0 to ensure perfectly straight edges",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "b2e88a7f1128cf4c19ca55d6d16fb592d4a66d721acba37d96d64c9cc8bf702a"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "2bc7e5e88ba5e0b8d4ff63647393f8cc3df84d5bb676f1ca2a7e52ab87857b48",
+      "short_id": "node-2bc7e5e8",
+      "type": "CONSTRAINT",
+      "statement": "the highlight line must not use any boxshadow or gradient effects that could create a curved appearance",
+      "raw_text": "The highlight line must not use any box-shadow or gradient effects that could create a curved appearance",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "2bc7e5e88ba5e0b8d4ff63647393f8cc3df84d5bb676f1ca2a7e52ab87857b48"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "45293a7b83061cdd3a65155d172a75294386d16e3a38f18a838a5ce184302cab",
+      "short_id": "node-45293a7b",
+      "type": "REQUIREMENT",
+      "statement": "inactive tabs must show no underline or highlight",
+      "raw_text": "Inactive tabs must show no underline or highlight",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "45293a7b83061cdd3a65155d172a75294386d16e3a38f18a838a5ce184302cab"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "909445f046403c1fd87e25c9be3dd3fb2bbbe6ad3cf5e9bbe5142134d9679a25",
+      "short_id": "node-909445f0",
+      "type": "REQUIREMENT",
+      "statement": "the tab container must have a subtle bottom border separator line using surface0 color",
+      "raw_text": "The tab container must have a subtle bottom border separator line using surface0 color",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "909445f046403c1fd87e25c9be3dd3fb2bbbe6ad3cf5e9bbe5142134d9679a25"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "196bfc916d3f0b764650c862c47afed43f72f5a3739d7df88fb8c3205a67f3ba",
+      "short_id": "node-196bfc91",
+      "type": "DEFINITION",
+      "statement": "the tab highlight must animate with a 200ms transition when switching between tabs",
+      "raw_text": "The tab highlight must animate with a 200ms transition when switching between tabs",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "196bfc916d3f0b764650c862c47afed43f72f5a3739d7df88fb8c3205a67f3ba"
+      ],
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md"
+    },
+    {
+      "canon_id": "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26",
+      "short_id": "node-a6f0ad57",
+      "type": "REQUIREMENT",
+      "statement": "clicking anywhere on a task card shall toggle its selection state for multiselect operations",
+      "raw_text": "Clicking anywhere on a task card shall toggle its selection state for multi-select operations",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9",
+      "short_id": "node-f72241db",
+      "type": "REQUIREMENT",
+      "statement": "selected cards must display a prominent 3px solid blue 89b4fa left border indicator",
+      "raw_text": "Selected cards must display a prominent 3px solid blue (#89b4fa) left border indicator",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "7d96ab28ef5877bcf7b68160621ff53ea635e5586627441eda17cdff6fc3b41b",
+      "short_id": "node-7d96ab28",
+      "type": "REQUIREMENT",
+      "statement": "selected cards must use surface2 background color 585b70 to clearly distinguish from unselected cards",
+      "raw_text": "Selected cards must use surface2 background color (#585b70) to clearly distinguish from unselected cards",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7d96ab28ef5877bcf7b68160621ff53ea635e5586627441eda17cdff6fc3b41b"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3",
+      "short_id": "node-32dcf102",
+      "type": "REQUIREMENT",
+      "statement": "the card cursor must change to pointer on hover to indicate clickability",
+      "raw_text": "The card cursor must change to pointer on hover to indicate clickability",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "66b1f11ee00a0d7740176a2b4de490a7fceed7b4bce127cbd739d516bf00de1f",
+      "short_id": "node-66b1f11e",
+      "type": "REQUIREMENT",
+      "statement": "individual action buttons on cards edit archive delete must remain clickable without triggering card selection via stoppropagation",
+      "raw_text": "Individual action buttons on cards (edit, archive, delete) must remain clickable without triggering card selection via stopPropagation",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "66b1f11ee00a0d7740176a2b4de490a7fceed7b4bce127cbd739d516bf00de1f"
       ],
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md"
@@ -984,6 +1192,32 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd",
+      "short_id": "node-ca5a17a3",
+      "type": "DEFINITION",
+      "statement": "the selection state is tracked by addingremoving task ids from a selectedids array in javascript",
+      "raw_text": "The selection state is tracked by adding/removing task IDs from a selectedIds array in JavaScript",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "1a410f8a7c017a0f37968e45a1a7dc608c2714a4e3b2a7b76f14f7c49cb7b3a7",
+      "short_id": "node-1a410f8a",
+      "type": "DEFINITION",
+      "statement": "card selection visual feedback uses css class selected toggled on the card element",
+      "raw_text": "Card selection visual feedback uses CSS class 'selected' toggled on the card element",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "1a410f8a7c017a0f37968e45a1a7dc608c2714a4e3b2a7b76f14f7c49cb7b3a7"
       ],
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md"
@@ -1119,6 +1353,19 @@
       "source_file": "spec/web-dashboard-edit.md"
     },
     {
+      "canon_id": "2cbb70950a51c496ab86595836fa293c8a9a6bc704915fe733a576a9d2390cdf",
+      "short_id": "node-2cbb7095",
+      "type": "CONSTRAINT",
+      "statement": "create form inputs must use autocompleteoff attribute to disable browser autocomplete",
+      "raw_text": "Create form inputs must use autocomplete=\"off\" attribute to disable browser autocomplete",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "2cbb70950a51c496ab86595836fa293c8a9a6bc704915fe733a576a9d2390cdf"
+      ],
+      "section": "Create Task Form",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
       "canon_id": "56c320fc44633797ae3153f19cb1cb132c6e7095cdd82f0f0a80d350db28c9f4",
       "short_id": "node-56c320fc",
       "type": "REQUIREMENT",
@@ -1223,6 +1470,19 @@
       "source_file": "spec/web-dashboard-edit.md"
     },
     {
+      "canon_id": "f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7",
+      "short_id": "node-f2484cdf",
+      "type": "CONSTRAINT",
+      "statement": "form inputs must use autocompleteoff attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values",
+      "raw_text": "Form inputs must use autocomplete=\"off\" attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7"
+      ],
+      "section": "Edit Form Controls",
+      "source_file": "spec/web-dashboard-edit.md"
+    },
+    {
       "canon_id": "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663",
       "short_id": "node-8ecb8220",
       "type": "REQUIREMENT",
@@ -1314,14 +1574,14 @@
       "source_file": "spec/web-dashboard-integration.md"
     },
     {
-      "canon_id": "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638",
-      "short_id": "node-8a0f621e",
+      "canon_id": "b4dff0dae945af992378155679edd4cd4db3962a626109968a6af96c992157fb",
+      "short_id": "node-b4dff0da",
       "type": "REQUIREMENT",
-      "statement": "the bulk selection shall update task grid checkbox states and show or hide bulk action bar",
-      "raw_text": "The bulk selection shall update task grid checkbox states and show or hide bulk action bar",
+      "statement": "the bulk selection shall update task card visual selection states and show or hide bulk action bar",
+      "raw_text": "The bulk selection shall update task card visual selection states and show or hide bulk action bar",
       "confidence": 0.95,
       "source_clause_ids": [
-        "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638"
+        "b4dff0dae945af992378155679edd4cd4db3962a626109968a6af96c992157fb"
       ],
       "section": "Component Wiring",
       "source_file": "spec/web-dashboard-integration.md"
@@ -1842,6 +2102,32 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "98ba0fabf9fa320cb727d429f629e5209d0c07d9765a2ae9ff4d94a0d24e06c9",
+      "short_id": "node-98ba0fab",
+      "type": "REQUIREMENT",
+      "statement": "pressing the enter key while in any form field shall submit the form and save the task",
+      "raw_text": "Pressing the Enter key while in any form field shall submit the form and save the task",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "98ba0fabf9fa320cb727d429f629e5209d0c07d9765a2ae9ff4d94a0d24e06c9"
+      ],
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md"
+    },
+    {
+      "canon_id": "15db98bfbb1bce143846e2a0c429ead2d2ce31cf1bcbcc163463d850b25e48e9",
+      "short_id": "node-15db98bf",
+      "type": "CONSTRAINT",
+      "statement": "all modal form inputs must use autocompleteoff attribute to disable browser autocomplete",
+      "raw_text": "All modal form inputs must use autocomplete=\"off\" attribute to disable browser autocomplete",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "15db98bfbb1bce143846e2a0c429ead2d2ce31cf1bcbcc163463d850b25e48e9"
       ],
       "section": "Modal Requirements",
       "source_file": "spec/web-dashboard-integration.md"

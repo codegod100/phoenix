@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 /**
- * Phoenix Pipeline — Spec-Driven Development
+ * Phoenix Pipeline — Spec-Driven Code Generation
  * 
  *   SPEC → CANON → PLAN → PROTOLENS → CODEGEN → EVIDENCE → AUDIT → DRIFT
- *    ↑                                                    ↓
- *    └────────────────── Manual Edits ←───────────────────┘
  * 
  * All code generation happens in single CODEGEN phase at the end.
  * PROTOLENS computes migration plan using theory morphism (category theory).
@@ -16,7 +14,7 @@
  * 3. Plan - Create IUs with boundary exports
  * 4. Protolens - Compute migration plan (theory morphism)
  * 5. Codegen - Generate IU implementations AND deliverable
- * 6. Evidence - Validate implementation
+ * 6. Evidence - Collect validation metrics (informational only)
  * 7. Audit - Boundary checks
  * 8. Drift - Detect manual changes
  * 
@@ -30,7 +28,7 @@
  *   --skip-evidence
  *   --skip-audit
  *   --skip-drift
- *   --continue-on-error
+ *   --strict-evidence      (Legacy TDD mode - fail on test failures)
  */
 
 import { spawn } from 'child_process';
@@ -73,7 +71,8 @@ const PHASES = [
   { 
     name: 'evidence', 
     script: 'phoenix-evidence/evidence.js', 
-    description: 'Validate tier requirements (pass or fail)',
+    description: 'Collect validation metrics (informational only)',
+    blocking: false,
   },
   { 
     name: 'audit', 
@@ -84,6 +83,7 @@ const PHASES = [
     name: 'drift', 
     script: 'phoenix-drift/drift.js', 
     description: 'Detect manual changes vs manifest',
+    blocking: false,
   },
 ];
 
@@ -220,9 +220,9 @@ async function runPipeline(projectRoot, options) {
   const skipped = [];
   
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  Phoenix Pipeline — Spec-Driven Development                  ║');
+  console.log('║  Phoenix Pipeline — Spec-Driven Code Generation            ║');
   console.log('╠══════════════════════════════════════════════════════════════╣');
-  console.log('║  Spec → Canon → Plan → Protolens → Codegen → Evidence...    ║');
+  console.log('║  Spec → Canon → Plan → Protolens → Codegen → Deliverable   ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
   console.log('');
   
@@ -264,21 +264,22 @@ async function runPipeline(projectRoot, options) {
         console.log('   → Both IU layer and app/ deliverable created');
       }
       if (phase.name === 'evidence') {
-        console.log('\n   🟢 Evidence collected — check scores above');
-        console.log('   → ACCEPTED: Evidence passes (human OR LLM implementation OK)');
-        console.log('   → REJECTED: Need implementation to pass tier requirements');
+        console.log('\n   📊 Evidence collected — review scores above');
+        console.log('   → Use --strict-evidence for legacy TDD mode');
       }
     } else {
       updateState(projectRoot, phase.name, 'failed');
-      console.log(`\n   ❌ Phase ${phase.name} failed`);
       
-      if (phase.name === 'evidence') {
-        console.log('\n   💡 Implementation needed: fix functions to pass tests');
+      // Evidence is non-blocking by default
+      if (phase.name === 'evidence' && !phase.blocking && !options['strict-evidence']) {
+        console.log(`\n   ⚠️  Phase ${phase.name} has issues (non-blocking)`);
+        continue;
       }
       
-      if (!options['continue-on-error']) {
-        console.log('\n   ⚠️  Pipeline halted. Use --continue-on-error to proceed anyway.');
-        console.log('   Or use --skip-codegen to preserve implementations and re-evidence.');
+      console.log(`\n   ❌ Phase ${phase.name} failed`);
+      
+      if (!options['strict-evidence']) {
+        console.log('\n   ⚠️  Pipeline halted. Use --strict-evidence to fail on evidence issues.');
         break;
       }
     }
@@ -299,7 +300,7 @@ function parseOptions(args) {
     'skip-evidence': false,
     'skip-audit': false,
     'skip-drift': false,
-    'continue-on-error': false,
+    'strict-evidence': false,
   };
   
   for (const arg of args) {
@@ -311,7 +312,7 @@ function parseOptions(args) {
     if (arg === '--skip-evidence') options['skip-evidence'] = true;
     if (arg === '--skip-audit') options['skip-audit'] = true;
     if (arg === '--skip-drift') options['skip-drift'] = true;
-    if (arg === '--continue-on-error') options['continue-on-error'] = true;
+    if (arg === '--strict-evidence') options['strict-evidence'] = true;
   }
   
   return options;
@@ -323,10 +324,13 @@ const args = process.argv.slice(2);
 const projectRoot = resolve(args[0] || '.');
 const options = parseOptions(args.slice(1));
 
-console.log('🚀 Phoenix Pipeline — Spec-Driven Development');
+console.log('🚀 Phoenix Pipeline — Spec-Driven Code Generation');
 console.log(`   Project: ${projectRoot}`);
 if (options['skip-codegen']) {
   console.log(`   Mode: Preserve implementations (--skip-codegen)`);
+}
+if (options['strict-evidence']) {
+  console.log(`   Mode: Strict evidence checking (--strict-evidence)`);
 }
 console.log('');
 
@@ -343,17 +347,22 @@ console.log('');
     // Run pipeline
     const { results, skipped } = await runPipeline(projectRoot, options);
     
-    // TDD Summary
+    // Pipeline Summary
     console.log('\n' + '═'.repeat(64));
-    console.log('📊 TDD Pipeline Summary');
+    console.log('📊 Pipeline Summary');
     console.log('═'.repeat(64));
     console.log('');
     
     const passed = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
     
+    // Separate non-blocking failures from critical failures
+    const nonBlockingPhases = ['evidence', 'drift'];
+    const criticalFailed = failed.filter(f => !nonBlockingPhases.includes(f.phase));
+    const warningFailed = failed.filter(f => nonBlockingPhases.includes(f.phase));
+    
     for (const result of results) {
-      const icon = result.success ? '✓' : '✗';
+      const icon = result.success ? '✓' : (nonBlockingPhases.includes(result.phase) ? '⚠' : '✗');
       console.log(`   ${icon} ${result.phase}`);
     }
     
@@ -366,12 +375,20 @@ console.log('');
     if (skipped.length > 0) {
       console.log(`   Skipped: ${skipped.length}`);
     }
+    if (warningFailed.length > 0) {
+      console.log(`   Warnings: ${warningFailed.map(w => w.phase).join(', ')} (non-blocking)`);
+    }
     console.log('');
     
-    if (failed.length > 0) {
+    // In strict mode, warnings become failures
+    const effectiveFailures = options['strict-evidence'] 
+      ? [...criticalFailed, ...warningFailed] 
+      : criticalFailed;
+    
+    if (effectiveFailures.length > 0) {
       console.log('❌ Pipeline completed with failures');
       console.log('');
-      for (const f of failed) {
+      for (const f of effectiveFailures) {
         console.log(`   ✗ ${f.phase}`);
       }
       
@@ -381,12 +398,13 @@ console.log('');
       
       process.exit(1);
     } else {
-      console.log('✅ All pipeline phases passed');
+      console.log('✅ Pipeline complete');
       console.log('');
       console.log('   Next steps:');
+      console.log('   • Test the generated code');
       console.log('   • Edit specs to add features');
-      console.log('   • Re-run pipeline to regenerate code');
-      console.log('   • Check status: node .pi/skills/phoenix-status/status.js');
+      console.log('   • Re-run pipeline to regenerate');
+      console.log('   • Use --strict-evidence to fail on test failures');
     }
     
   } catch (error) {

@@ -1,0 +1,32 @@
+{
+  "waivers": [
+    {
+      "id": "server-ts-manual-edit",
+      "path": "src/generated/app/server.ts",
+      "reason": "Manual implementation of click-to-select card feature, tab design, and analytics bar improvements",
+      "approved_by": "manual-edit",
+      "date": "2026-04-08"
+    },
+    {
+      "id": "store-ts-traceability",
+      "path": "src/generated/app/store.ts", 
+      "reason": "Added @phoenix-iu traceability comment for Data Domain",
+      "approved_by": "manual-fix",
+      "date": "2026-04-08"
+    },
+    {
+      "id": "tab-domain-css-only",
+      "iu_id": "cf6962caff7e397d",
+      "reason": "Tab Domain is CSS-only IU - styles embedded in server.ts, no standalone files needed",
+      "approved_by": "design-decision",
+      "date": "2026-04-08"
+    },
+    {
+      "id": "web-dashboard-deliverable",
+      "iu_id": "web-dashboard-deliverable",
+      "reason": "Deliverable file (server.ts) uses special ID, not a standard IU",
+      "approved_by": "system",
+      "date": "2026-04-08"
+    }
+  ]
+}

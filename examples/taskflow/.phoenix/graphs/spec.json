@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:16:52.522Z",
-  "clause_count": 162,
+  "generated_at": "2026-04-09T01:38:29.917Z",
+  "clause_count": 184,
   "file_count": 9,
   "files": [
     "spec/analytics.md",
@@ -368,37 +368,37 @@
       "context_semhash": "5fd03ae2ebe5c2c7fd3eb9f3ae1690ddd3f0de6467edb1b132cce30f88e9d4c0"
     },
     {
-      "id": "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f",
+      "id": "eb6fcdb56d144801868cf29e831e4dc71dc171571ff9b012753f00b7823d202c",
       "type": "REQUIREMENT",
-      "text": "the dashboard must include a compact status bar showing key metrics inline",
-      "raw_text": "The dashboard must include a compact status bar showing key metrics inline",
+      "text": "the dashboard must include an elegant analytics bar showing key metrics inline",
+      "raw_text": "The dashboard must include an elegant analytics bar showing key metrics inline",
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 7,
-      "clause_semhash": "c5c0372606909077e415e9c6592207d1699061326679477d36c04a2862a8cffd",
-      "context_semhash": "d8d7695b6550cd0cdaa0c8e87dab83de8c894e8117cb2f1c75b825c94169ffd6"
+      "clause_semhash": "dc95846e9c20c7bd4510aeae0ea7d35bee648cd4a3124d755ee606a673793bdc",
+      "context_semhash": "0ac8a31565449a4d0ca970b964f9b67495b63011f746a27d8c503f958f82042f"
     },
     {
-      "id": "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f",
+      "id": "c4e21e3e50799e099b0ccb5a0dbaa4d283b4506e6506debcd8b51fbb73dbfd4a",
       "type": "REQUIREMENT",
-      "text": "the status bar must render as a single horizontal bar below the header",
-      "raw_text": "The status bar must render as a single horizontal bar below the header",
+      "text": "the status bar must render as a horizontal bar below the header with comfortable spacing",
+      "raw_text": "The status bar must render as a horizontal bar below the header with comfortable spacing",
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 8,
-      "clause_semhash": "512f2108e2d659caa53552601be08242755addb3076ebac1c66a6308d3225741",
-      "context_semhash": "60e359070b477090611fd7eb55cea1377bea667f89fc137c705cad94f9bfd544"
+      "clause_semhash": "9be2a3ecedbada3942e3ace8cc66e8bc41d5e863e49704533ffe36003b97ba53",
+      "context_semhash": "143886379fd7c26b2e7ecead060efe0e2b1e0ea5cd88eca07558da42d4c0ae2d"
     },
     {
-      "id": "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40",
+      "id": "87f6aafe8c38c6fc20d722660ead0ba43d7d7d661eb5b2ef9bdd3a79f3c00507",
       "type": "REQUIREMENT",
-      "text": "the status bar must be visually compact with max 48px height and minimal padding",
-      "raw_text": "The status bar must be visually compact with max 48px height and minimal padding",
+      "text": "the status bar must have 56px height with generous vertical padding for visual breathing room",
+      "raw_text": "The status bar must have ~56px height with generous vertical padding for visual breathing room",
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 9,
-      "clause_semhash": "cf86d0b62fed715ee32bf1190ef10770f0ee053a3e962cd913c6228b3a5f1d42",
-      "context_semhash": "e6e6b5f0503ab433b885530fb4f9c45f7b987fc2ba9251e2bd8cb24d0c442253"
+      "clause_semhash": "269c34373bfa1c6817635073a0adcd1cfca2f3feffbc30febcceb2295268c852",
+      "context_semhash": "079283b4ad8436a72d391fa97a5f0872fa8df64ad474e5def34a03ac8f6d1aaa"
     },
     {
       "id": "5e9d6248b4c495f8f5a2d27ca40ef82951bbf03e1dde46977b6f213f614dbcc2",
@@ -409,18 +409,18 @@
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 10,
       "clause_semhash": "2093e766086140fd597f1c855121cf9c86d6685edf72c8a12c5a60949a227b78",
-      "context_semhash": "2437089e3e286709cbf839e39db279f81d6ea5138630b2d4ba8e2c16535a32de"
+      "context_semhash": "4a100b27f71df9fbdd85965ebda412dde641909593bb3359c0e222aea69cb4f2"
     },
     {
-      "id": "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f",
-      "type": "CONSTRAINT",
-      "text": "the status bar must not consume vertical space like the previous metric cards design",
-      "raw_text": "The status bar must not consume vertical space like the previous metric cards design",
+      "id": "e5a204e2c39e109274318a2c507303b5eb6f3585df345dc1f144c02372a1f284",
+      "type": "REQUIREMENT",
+      "text": "the status bar must use a subtle surface0 background with rounded 8px corners for a modern cardlike appearance",
+      "raw_text": "The status bar must use a subtle surface0 background with rounded 8px corners for a modern card-like appearance",
       "section": "Status Bar Layout",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 11,
-      "clause_semhash": "ef9470f3df83a301dce2d5ac07435eab242af113d26334773279ae790bba0fda",
-      "context_semhash": "11288f8c85ce825dfff3121290b3bfefca6997b963609c28a06872839050acf9"
+      "clause_semhash": "b14a52fd69f0e4681f44f9179f44cab49c0fc75217a97ec64c306e272c195e15",
+      "context_semhash": "b25d546c54dbae1adec8d2fbb423f03cbdbec4d550d3f6defafaeb6a0817ec01"
     },
     {
       "id": "e5d9fbf05dfb89e997652537e35e81c92ca4cd34307312b413f9a9aef43a7658",
@@ -431,51 +431,84 @@
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 15,
       "clause_semhash": "96a62ffbf6d9213b673493aa2e30d04eef18968cdb281fcb59a6d12db3a877cf",
-      "context_semhash": "9c5c17a1532ae26f106791b10e8db7e9703351a93c9d5587a562efddf3afa85c"
+      "context_semhash": "d1ce356190e95647b58332873469a85ce47fadc54a57e5033246a63fb5723b49"
     },
     {
-      "id": "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410",
+      "id": "f4e018445819ee3971e9f5ea4027087c81abfec89fc02333c9fd8d5350f72377",
       "type": "REQUIREMENT",
-      "text": "metrics must be displayed inline with simple separators such as bullet or pipe",
-      "raw_text": "Metrics must be displayed inline with simple separators such as bullet or pipe",
+      "text": "each metric must be displayed as a pillshaped badge with surface1 background 6px 12px padding and 4px borderradius",
+      "raw_text": "Each metric must be displayed as a pill-shaped badge with surface1 background, 6px 12px padding, and 4px border-radius",
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 16,
-      "clause_semhash": "2ea57e8722b78d136c27f2f935373cc8ab264a861986e9bc05f8f79e736c1967",
-      "context_semhash": "96311b78e7e727fcbbfeb53fff5733668e64b528008cc56e7fc5f763b85e3a1c"
+      "clause_semhash": "f732deb3960cecb28006f69f23dfef75de683d6f7b055cb5613a3e86d8300d22",
+      "context_semhash": "cd457665f3e7fc8f11c9f850efc01079cd84bdcbf2a0d0e17616b007167c3860"
     },
     {
-      "id": "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521",
+      "id": "ccb161d8da38b88cfdec513d5b1cbf6ac01f4f0176e6d093e0f9a07c1c0d9a53",
       "type": "REQUIREMENT",
-      "text": "format example is 12 tasks 8 done 2 overdue 3 archived 67 completion rate",
-      "raw_text": "Format example is 12 tasks, 8 done, 2 overdue, 3 archived, 67% completion rate",
+      "text": "metric values must use fontweight 600 semibold in ctptext color",
+      "raw_text": "Metric values must use font-weight 600 (semibold) in --ctp-text color",
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 17,
-      "clause_semhash": "05ca39f04d0288e52acbaabd5a66f98a52978ca2fde81401f2312f2da7f7152b",
-      "context_semhash": "c548c7f15a1346d67a9154534078439ba50dc3439309857f9718a8f9d85e44e8"
+      "clause_semhash": "1a7d6cb90e6b91b6297f841fcc758c03bd9e3db6ee6c6da40fa6adea9e2701f6",
+      "context_semhash": "56338c160d434a568f69547e2162c1b51fdb065301112a935d006a0b93c235ac"
     },
     {
-      "id": "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00",
+      "id": "c8ea3a9e81a7c9bc047c656fd0ea110f1c795c93c8f6b8169209eb8c0c5bb2b9",
       "type": "REQUIREMENT",
-      "text": "use subtle text colors with primary metric values in ctptext and labels or separators in ctpsubtext0",
-      "raw_text": "Use subtle text colors with primary metric values in --ctp-text and labels or separators in --ctp-subtext0",
+      "text": "metric labels must use fontweight 400 in ctpsubtext0 color with a colon separator",
+      "raw_text": "Metric labels must use font-weight 400 in --ctp-subtext0 color with a colon separator",
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 18,
-      "clause_semhash": "3f53264bbacb76a04890ed4a57a2fb5685a8328c1bc13a11e55254b9e2f1fad5",
-      "context_semhash": "85b385e6b4f29ed2fbddcbf52cab82fc82bd93048561972a5b3e1cf26511807f"
+      "clause_semhash": "ac82d64fce4d505539bea66198f88ead210ac93b6b7f6d7e051f34fdd14d43fb",
+      "context_semhash": "3fac9ff75e5b0921a1302550e5b691425be87ca5ca17fd694ec0f75578f3aa96"
     },
     {
-      "id": "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a",
-      "type": "CONSTRAINT",
-      "text": "no emoji icons larger than the text itself no card backgrounds no hover effects",
-      "raw_text": "No emoji icons larger than the text itself, no card backgrounds, no hover effects",
+      "id": "f680ef5ebce71ab378be6af8e09f5a8250d6d55f53418e1dc4e3341297e8a9ea",
+      "type": "REQUIREMENT",
+      "text": "format example tasks 12 done 8 overdue 2 archived 3 rate 67",
+      "raw_text": "Format example: \"Tasks: 12\" \"Done: 8\" \"Overdue: 2\" \"Archived: 3\" \"Rate: 67%\"",
       "section": "Status Bar Metrics",
       "source_file": "spec/web-dashboard-analytics-bar.md",
       "line": 19,
-      "clause_semhash": "e235d0787adcbe37c83791b7aa35156dcd61285ce19817a7ed01be843f3981aa",
-      "context_semhash": "acd7335f92f2e077ea27fef4c960b16ce86ed70910002a9c4be3b6c30c8ac946"
+      "clause_semhash": "9dfdfe90bc5be66d97e98d08036a9b29e29401b8c2f503f22fb336ce4d70b70f",
+      "context_semhash": "5089ac9558937fd66cd4af51599facf8aa085e3f655f68f3bc5e255e5d168aa5"
+    },
+    {
+      "id": "9605be0b8e2c6cb1e4453408de1a9f94953ab2318544bda3d96495e7affb1034",
+      "type": "REQUIREMENT",
+      "text": "badges must have 8px gap between them and subtle hover effect with surface2 background",
+      "raw_text": "Badges must have 8px gap between them and subtle hover effect with surface2 background",
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md",
+      "line": 20,
+      "clause_semhash": "ad9b03941094562a0ead61fae49c21f0c67a2f8a74c21ad2693eafcc60a87639",
+      "context_semhash": "09daf3a493073b939eab17a85228c33dbef04cb59aa6a0e9e4b96e1d2c432962"
+    },
+    {
+      "id": "15d411707ade7d5278376bc9cb1a925b5d5125b5fde965133a674cacbfba3832",
+      "type": "REQUIREMENT",
+      "text": "use consistent icon prefixes      with fontsize matching text 085rem",
+      "raw_text": "Use consistent icon prefixes (📋 ✓ ⚠ 🗄 📊) with font-size matching text (0.85rem)",
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md",
+      "line": 21,
+      "clause_semhash": "2815433d29c7ee960c3d3cafd2a48548cc75d44bbe1960ab69ac70c1b0d9ceee",
+      "context_semhash": "c2fcae97a4bb540d814b7e252f4cd12677abc756aed04c7de024edb01e232644"
+    },
+    {
+      "id": "8d42c17a07a9e826137ccec4574d47a562d3fabb424fdb99cd6a9ee8936256d6",
+      "type": "DEFINITION",
+      "text": "completion rate badge uses accent color 89b4fa for the percentage value to highlight success metric",
+      "raw_text": "Completion rate badge uses accent color (#89b4fa) for the percentage value to highlight success metric",
+      "section": "Status Bar Metrics",
+      "source_file": "spec/web-dashboard-analytics-bar.md",
+      "line": 22,
+      "clause_semhash": "0de6133b88524cb42a41a791481cac6dec45cccd91e9703f3abcbe091cc8a0ed",
+      "context_semhash": "f444bad871cb84aedcac14c416723bf0a651ade340f9a2a0879fbcfe90f5131e"
     },
     {
       "id": "eb443327a877b7e3a462059e94fdd85254b3bdd24e47614888e33a5872bceae2",
@@ -484,9 +517,9 @@
       "raw_text": "The system must track total tasks created, completed, overdue, and archived",
       "section": "Metrics Calculation",
       "source_file": "spec/web-dashboard-analytics-bar.md",
-      "line": 23,
+      "line": 26,
       "clause_semhash": "4def7c0d27ac2e67a07a23fa1caaf29fe7f472e700538c3562ad83afa59d90bc",
-      "context_semhash": "949190227aeae42a942936fc3c12ee8b3fc6cd37ce19ff364a434cc2bfaf4a1f"
+      "context_semhash": "1c164566497282d9bef0057c3303f1e0e849286895a0d03409f831ca05f9d820"
     },
     {
       "id": "d069da158b6cd930e997377f90a2f96b40747e292b7480319cda3bfdae743933",
@@ -495,7 +528,7 @@
       "raw_text": "The system must calculate average task completion time in hours",
       "section": "Metrics Calculation",
       "source_file": "spec/web-dashboard-analytics-bar.md",
-      "line": 24,
+      "line": 27,
       "clause_semhash": "ff6a32d8fbd1c50633a57ee2ff668cca9fe2786ca70a6688a6bbef1ecf857176",
       "context_semhash": "ca19bddccfed87b3c8aed587d16c6fe365f6e4ba60ee6e58085861ea8de2729d"
     },
@@ -506,7 +539,7 @@
       "raw_text": "Metrics must be computable from an array of task records with no database dependency",
       "section": "Metrics Calculation",
       "source_file": "spec/web-dashboard-analytics-bar.md",
-      "line": 25,
+      "line": 28,
       "clause_semhash": "6fc5e40b24018fd8be052193f2219cdd53f48487a8239ed0b9680e7603eaac94",
       "context_semhash": "99d53d12dacb209140850eb10568a4e5287a636914987b2f262df5e13e89bc8f"
     },
@@ -643,15 +676,15 @@
       "context_semhash": "9dd76ab7fb30d484d56887738989c5b5bcb2d8d911cf4a21ca48534189dbaaa0"
     },
     {
-      "id": "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
+      "id": "68b2d5f231d7af6bd6fd33c47f94a1ef9d9149aae06b3a945cecae0a879afb27",
       "type": "REQUIREMENT",
-      "text": "the page must display a compact header with the title taskflow with minimal vertical padding 32px height and larger text",
-      "raw_text": "The page must display a compact header with the title \"TaskFlow\" with minimal vertical padding ~32px height and larger text",
+      "text": "the page must display a spacious header with the title taskflow with comfortable vertical padding 48px height centered content and larger text with fontweight 600",
+      "raw_text": "The page must display a spacious header with the title \"TaskFlow\" with comfortable vertical padding ~48px height, centered content, and larger text with font-weight 600",
       "section": "Page Structure",
       "source_file": "spec/web-dashboard-base.md",
       "line": 10,
-      "clause_semhash": "35883dfc0a933c1ac154782ebc19441e7b825cf9526cb0b0a388fd5d3bfedee6",
-      "context_semhash": "1d5cedb378a95b922e6d9414f948b3be7cfb0b3c32393b6c2725ee0d692d1a13"
+      "clause_semhash": "1d49471aa0ea9c8e96621d75ee5e4d39d3a2cfa6ddf54a74ae9d9deb4e45013e",
+      "context_semhash": "898b02e46c3f748e77f92733a9fef6aad178157c9d10a2aacef146afb830254e"
     },
     {
       "id": "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
@@ -662,7 +695,7 @@
       "source_file": "spec/web-dashboard-base.md",
       "line": 11,
       "clause_semhash": "77ffabbac59774d682eb69b1826702b98096f33312d642f26829d2c9e787b6d5",
-      "context_semhash": "22099317236cb0d0e93729fde08fe709801506415822e0deaa86598e9eba90b6"
+      "context_semhash": "d89d5e8380f8b9527e3976d27c8474fa784ffc53894fd97d32661f79f91b9d5f"
     },
     {
       "id": "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62",
@@ -852,15 +885,158 @@
       "context_semhash": "ef9d57401c289754bb871578be8d8bf59c1864c891e220779c7a3067d7ec6659"
     },
     {
-      "id": "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd",
+      "id": "8f5ee864ccd9e7ef708125db935214b0144f151ce8f6a8ba90dce755d42e1df4",
       "type": "REQUIREMENT",
-      "text": "bulk selection checkboxes must appear on each task card for multiselect operations",
-      "raw_text": "Bulk selection checkboxes must appear on each task card for multi-select operations",
+      "text": "the active tab must use a straight horizontal highlight line underneath the tab text",
+      "raw_text": "The active tab must use a straight horizontal highlight line underneath the tab text",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 38,
+      "clause_semhash": "d91d4cc51d136ebf2e2f0117f299de5d157b25fb10c78056efcdd31c75eb9bb6",
+      "context_semhash": "2dda9eeeea789af3225b98a425915ea5f22dd729fb7e186d71530654098eeb7c"
+    },
+    {
+      "id": "be8721be55cfdedaabf53fa2893bdd8b21325d81b8578994d1995729ef3567f4",
+      "type": "DEFINITION",
+      "text": "the highlight line must be a 3px solid line using the primary accent color 89b4fa",
+      "raw_text": "The highlight line must be a 3px solid line using the primary accent color (#89b4fa)",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 39,
+      "clause_semhash": "28a08e294a988e1a6d24ef4cba6a5c5dce6dc6f6a0e4efa55c98a60d8f3878dd",
+      "context_semhash": "129248653de89a6200328520e7b125f9a34f726de81c728c39d4a2a8137b138d"
+    },
+    {
+      "id": "b3e81cef6081f47ade085574584271e41022e37e48ea0ce802652fe36bd52b88",
+      "type": "DEFINITION",
+      "text": "the highlight line must span the full width of the tab button",
+      "raw_text": "The highlight line must span the full width of the tab button",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 40,
+      "clause_semhash": "26e117496d20808b8ac4a2ef8612e32e5c944ab4a0326e241a268221f346b379",
+      "context_semhash": "1a4638568b2c801c2d93a65b06d1c8e9734a5a0b79f8a389fecd218b7059152a"
+    },
+    {
+      "id": "91f627e610b4794b7ed7359fd8c74cb522023a8d07a32ae7adcb614cb0ac5619",
+      "type": "DEFINITION",
+      "text": "the highlight line must have no rounded corners or curved edges",
+      "raw_text": "The highlight line must have no rounded corners or curved edges",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 41,
+      "clause_semhash": "8d5895fb043539dff9726548a6c9496f4caba7854fab6ccdec53d5de1ee14365",
+      "context_semhash": "3c3fea8db699b18895db2b7696fe258adf0f21e362ba9aedc51748235a4e3ef4"
+    },
+    {
+      "id": "b2e88a7f1128cf4c19ca55d6d16fb592d4a66d721acba37d96d64c9cc8bf702a",
+      "type": "CONSTRAINT",
+      "text": "the tab button must use borderradius 0 to ensure perfectly straight edges",
+      "raw_text": "The tab button must use border-radius: 0 to ensure perfectly straight edges",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 42,
+      "clause_semhash": "f97aca65ca14e2942cb185fdf9fb00b03a3d34e4fb23ef5d86f49ce88754746a",
+      "context_semhash": "f8dbc77d531e366da9acba1c65fd29af1ce011dec0e75858ba745756992147db"
+    },
+    {
+      "id": "2bc7e5e88ba5e0b8d4ff63647393f8cc3df84d5bb676f1ca2a7e52ab87857b48",
+      "type": "CONSTRAINT",
+      "text": "the highlight line must not use any boxshadow or gradient effects that could create a curved appearance",
+      "raw_text": "The highlight line must not use any box-shadow or gradient effects that could create a curved appearance",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 43,
+      "clause_semhash": "e26f9b8bd68d9f71c154c80242849295879b62ebe727dc8cb454e16b16c3cc61",
+      "context_semhash": "58a0432d1376dc425fd66bc4fbf60f038637ffbcc64605d94035b3316c5ef272"
+    },
+    {
+      "id": "45293a7b83061cdd3a65155d172a75294386d16e3a38f18a838a5ce184302cab",
+      "type": "REQUIREMENT",
+      "text": "inactive tabs must show no underline or highlight",
+      "raw_text": "Inactive tabs must show no underline or highlight",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 44,
+      "clause_semhash": "3dc7aa934cd5569b3c2d4003baaabb82d05f816d88739cdf205ed2690cf74f5b",
+      "context_semhash": "daa6408cefeacbc3aff316b6b16717be586d57f956c118138f4adb08c28921dc"
+    },
+    {
+      "id": "909445f046403c1fd87e25c9be3dd3fb2bbbe6ad3cf5e9bbe5142134d9679a25",
+      "type": "REQUIREMENT",
+      "text": "the tab container must have a subtle bottom border separator line using surface0 color",
+      "raw_text": "The tab container must have a subtle bottom border separator line using surface0 color",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 45,
+      "clause_semhash": "cea98897b7ac789dbbe145bb2266439607bf62db33667af81853ed7cca7344b6",
+      "context_semhash": "de38132c76fa6d3dec7e450a9a499e15fcc9fe148dadf747a055120fe37968f1"
+    },
+    {
+      "id": "196bfc916d3f0b764650c862c47afed43f72f5a3739d7df88fb8c3205a67f3ba",
+      "type": "DEFINITION",
+      "text": "the tab highlight must animate with a 200ms transition when switching between tabs",
+      "raw_text": "The tab highlight must animate with a 200ms transition when switching between tabs",
+      "section": "Tab Navigation Design",
+      "source_file": "spec/web-dashboard-base.md",
+      "line": 46,
+      "clause_semhash": "ca7b0c801cc55eda7474681affabbbedea872fcd496cad63e4550ba5b98bd595",
+      "context_semhash": "148126191ed68890dfc47cd9e169616afe92ac671dc24ea85208f5f787e65be9"
+    },
+    {
+      "id": "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26",
+      "type": "REQUIREMENT",
+      "text": "clicking anywhere on a task card shall toggle its selection state for multiselect operations",
+      "raw_text": "Clicking anywhere on a task card shall toggle its selection state for multi-select operations",
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md",
       "line": 7,
-      "clause_semhash": "f39dc9278f173a50bc8bc79e71234839b3308b2afeef1e1846e94909b8f788d2",
-      "context_semhash": "944341fe36e9165d3b14d8b4b296fee37e4b7e0c3bdc568ae47fbd31bd544149"
+      "clause_semhash": "d9e17f9bc9cd1097249da5a12823f9dfb07db6c32646ccda06d683a7447983a8",
+      "context_semhash": "35e87e01b4709f31636d8e8b3c5d6fac3b5397bbc8928c55ee9f3cb69a44696d"
+    },
+    {
+      "id": "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9",
+      "type": "REQUIREMENT",
+      "text": "selected cards must display a prominent 3px solid blue 89b4fa left border indicator",
+      "raw_text": "Selected cards must display a prominent 3px solid blue (#89b4fa) left border indicator",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 8,
+      "clause_semhash": "87d5ef549d67cf1bd3b2d2ef267096326cae6a2176e7ef4968c90c47e9ac3dc1",
+      "context_semhash": "3f263494d5fb56bac8a032fe8193457915547544cc1922867610b55a53aaefa0"
+    },
+    {
+      "id": "7d96ab28ef5877bcf7b68160621ff53ea635e5586627441eda17cdff6fc3b41b",
+      "type": "REQUIREMENT",
+      "text": "selected cards must use surface2 background color 585b70 to clearly distinguish from unselected cards",
+      "raw_text": "Selected cards must use surface2 background color (#585b70) to clearly distinguish from unselected cards",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 9,
+      "clause_semhash": "334add76a3f16de8ddf4d0b1e192e0c35fa452553cbc55bf91e2d836030a1a5e",
+      "context_semhash": "87319e46b8a2b4d4949349a5d1d2be761a4a21e332de92c0bec04f608c1b6186"
+    },
+    {
+      "id": "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3",
+      "type": "REQUIREMENT",
+      "text": "the card cursor must change to pointer on hover to indicate clickability",
+      "raw_text": "The card cursor must change to pointer on hover to indicate clickability",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 10,
+      "clause_semhash": "ae1c7d9cd7a4ba90e04bcd1e4d7c805b79096101d279d83039abd4ba32981c05",
+      "context_semhash": "d208cd11c724da6394cfd7dda008f483b3d2cb82481e34a062a03ac118554025"
+    },
+    {
+      "id": "66b1f11ee00a0d7740176a2b4de490a7fceed7b4bce127cbd739d516bf00de1f",
+      "type": "REQUIREMENT",
+      "text": "individual action buttons on cards edit archive delete must remain clickable without triggering card selection via stoppropagation",
+      "raw_text": "Individual action buttons on cards (edit, archive, delete) must remain clickable without triggering card selection via stopPropagation",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 11,
+      "clause_semhash": "3629564c4c62803ade4c364ab7cbd9fdb0bcf4e37c7a0e7998e3dfda3f4f3c72",
+      "context_semhash": "b474df573d33c8e3338ed0c7df797c9c09dc2977db88fe18e5abdef7b3f7fcab"
     },
     {
       "id": "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
@@ -869,9 +1045,31 @@
       "raw_text": "The header must include a bulk action bar when tasks are selected including delete selected and archive selected",
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 8,
+      "line": 12,
       "clause_semhash": "e2debb665c834bc7a6986f9e0c4b9165ee45fd92cc131ce0f6b8b5dc6b339ea7",
-      "context_semhash": "04b6f149eeed8fac7d9ce6f49a6c262dec54a0b9e33f0bedfe42e7723cd99af3"
+      "context_semhash": "b46b94267f084db831e51bf90cbc4def00b87a1fddf2fe53fea8a5e22c513513"
+    },
+    {
+      "id": "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd",
+      "type": "DEFINITION",
+      "text": "the selection state is tracked by addingremoving task ids from a selectedids array in javascript",
+      "raw_text": "The selection state is tracked by adding/removing task IDs from a selectedIds array in JavaScript",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 13,
+      "clause_semhash": "ab2ebf4e4db6d628a396589faf4c7775e18c3a96f94fdc2326d223d6c9f88be1",
+      "context_semhash": "dcc0d0ea301a6be14b01455c7b02d4df49d37cdd542be0c77598da260b5f4cf4"
+    },
+    {
+      "id": "1a410f8a7c017a0f37968e45a1a7dc608c2714a4e3b2a7b76f14f7c49cb7b3a7",
+      "type": "DEFINITION",
+      "text": "card selection visual feedback uses css class selected toggled on the card element",
+      "raw_text": "Card selection visual feedback uses CSS class 'selected' toggled on the card element",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 14,
+      "clause_semhash": "8d8067e5d420923c7bcc56fa912f4e1825b7a6b36b6a653947a76fd120f38049",
+      "context_semhash": "82564a82a2c192f334fb24ff5bda23be3c53b751a24cb172bc43a273fe588792"
     },
     {
       "id": "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48",
@@ -880,9 +1078,9 @@
       "raw_text": "The system must support bulk operations including delete multiple, archive multiple, and reassign multiple",
       "section": "Bulk Actions",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 12,
+      "line": 18,
       "clause_semhash": "5f82bc0850b0776f29af6199cfab31a730fb525635a42db79f82590ff7af1dd1",
-      "context_semhash": "0bbfea55059a63d90b04ddd83421c3f1c98c6fb891833339aa2e472378302813"
+      "context_semhash": "6cb227e2ef1f59d03ff20e58fd8a34c1bd885ebda5419de766938343f60e446f"
     },
     {
       "id": "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939",
@@ -891,7 +1089,7 @@
       "raw_text": "The system must provide a function to bulk delete multiple tasks by ID list with confirmation modal",
       "section": "Bulk Actions",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 13,
+      "line": 19,
       "clause_semhash": "f0af91dff9e6939d469758b1ade8cd9956cf1b8509a8c687e47b45deb57c63f5",
       "context_semhash": "ec862344a09eb3cec5e29f5c4c6312f2d45e3dea900c1e16a32507de0045fc87"
     },
@@ -902,7 +1100,7 @@
       "raw_text": "Users must be able to delete tasks by their unique ID",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 17,
+      "line": 23,
       "clause_semhash": "93c22d15f65e55f0a066a5cff9e5edb847a0d927a4500e493c12e9ea9545ca34",
       "context_semhash": "5be0ccbeb56e8d2b1e89a552c1797db8090b4bb0f1b0796a8c1c53c1ce490278"
     },
@@ -913,7 +1111,7 @@
       "raw_text": "Each task card must have a delete button that opens a confirmation modal, not browser alert, before permanent removal",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 18,
+      "line": 24,
       "clause_semhash": "7a6dad3289fd4238c3c2f05e5e75489c77909b8cc0a5e03330c70c2dcbe5fbd6",
       "context_semhash": "26ca19361b03297ee7056079d23db177e335630f6c0f32696b3ab0d245060d26"
     },
@@ -924,7 +1122,7 @@
       "raw_text": "The delete button must use the danger color red and include a trash icon",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 19,
+      "line": 25,
       "clause_semhash": "46b5158b255933203b10e598c3a907b1bea513798d6abd93e5573394566ab125",
       "context_semhash": "8d97ce6f7a89fe21d31b263ea6709ae1e81ab724fd4c797ab10300137c4dba8d"
     },
@@ -935,7 +1133,7 @@
       "raw_text": "Deleted tasks must be removed from all filtered views and search results",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 20,
+      "line": 26,
       "clause_semhash": "1754730edc4dc7446fff2d189b078457632c5945d2bb28cd810becbdbe4fe1da",
       "context_semhash": "e06e845493bc8f82bcde91afb069db9af8484a048fba5ea93bc25799ae26f4b2"
     },
@@ -946,7 +1144,7 @@
       "raw_text": "All confirmation dialogs must be custom modal overlays, not browser confirm or alert popups",
       "section": "Confirmation Modal",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 24,
+      "line": 30,
       "clause_semhash": "558778a17c48d86081f9d1bcaa61ba0fd947af923b55cadf853cf62202ab36e2",
       "context_semhash": "3d188058f12321b7bbe480515d10634f42d84e197e5d6f74dcbc3dbbd1b32480"
     },
@@ -957,7 +1155,7 @@
       "raw_text": "Deleting a task must require confirmation via a custom modal dialog, not browser confirm or alert",
       "section": "Confirmation Modal",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 25,
+      "line": 31,
       "clause_semhash": "7a3d81fc13fa1ee3469781be18796d24ae6d518b036fce5df0a2b1695e42ec3d",
       "context_semhash": "bc7950f2c28762e8b52e69b360c64c4b8dcb6298a04ff59b63bee94469048662"
     },
@@ -984,15 +1182,26 @@
       "context_semhash": "169cc4ef25860dc5437c791ba6af7a853cdef57c2ef69c877d8bc5898001cc50"
     },
     {
+      "id": "2cbb70950a51c496ab86595836fa293c8a9a6bc704915fe733a576a9d2390cdf",
+      "type": "CONSTRAINT",
+      "text": "create form inputs must use autocompleteoff attribute to disable browser autocomplete",
+      "raw_text": "Create form inputs must use autocomplete=\"off\" attribute to disable browser autocomplete",
+      "section": "Create Task Form",
+      "source_file": "spec/web-dashboard-edit.md",
+      "line": 9,
+      "clause_semhash": "fe8512e515e269ef905cf701124c99963dac8839e0f9d130ebb373003f4953cd",
+      "context_semhash": "92adfe7a240b328c4c0b6c6b122eadf5a7a92d4fe179a487961185a49fb1352b"
+    },
+    {
       "id": "56c320fc44633797ae3153f19cb1cb132c6e7095cdd82f0f0a80d350db28c9f4",
       "type": "REQUIREMENT",
       "text": "each task card must have an edit button that replaces the card content with an edit form not a modal dialog",
       "raw_text": "Each task card must have an edit button that replaces the card content with an edit form, not a modal dialog",
       "section": "Inline Edit Form",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 12,
+      "line": 13,
       "clause_semhash": "f7a940c47f029f1060f0cf47774decf28e11c9adb320d46be6dc815465d1bc73",
-      "context_semhash": "5a2d7a092f3616c63753b86735971a581a3bb4a2f703681d2595609481484a51"
+      "context_semhash": "250231628df805cae37b03b05fe173ca2015854b2f17ed95e85d7a897c80028b"
     },
     {
       "id": "11d42093d9e4ad83156a93fb917dd3fcc601d864266d651960ced28fdd73c215",
@@ -1001,7 +1210,7 @@
       "raw_text": "The edit form must appear in place of the task card content and contain pre-populated fields for all editable properties",
       "section": "Inline Edit Form",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 13,
+      "line": 14,
       "clause_semhash": "0a2590ce6c517f0e4c188400ae47a8b87b222b28daed21521f30e8f51899753a",
       "context_semhash": "33ddf1204c56fed75add8a2e78ea8fb8aed1790bd4da2db97d7b29eb6ce3b7ed"
     },
@@ -1012,7 +1221,7 @@
       "raw_text": "The card content must be wrapped in a card-content div that can be hidden via CSS display property",
       "section": "Inline Edit Form",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 14,
+      "line": 15,
       "clause_semhash": "d14137e975a94c0624f4991e162ac83123a2376bea217202a1e9e8c9d5f4bc9a",
       "context_semhash": "52587b0bcde6b8632ba89c78ec075f8f3d02e404d30917d235f7a4df2afc0438"
     },
@@ -1023,7 +1232,7 @@
       "raw_text": "The edit form must be a sibling element to the card-content div, not nested inside it",
       "section": "Inline Edit Form",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 15,
+      "line": 16,
       "clause_semhash": "a26f593f34cfce19aacf68eb0e1c3259a74426f5b3b9dc85a1ca213b4f80be7c",
       "context_semhash": "c58a169ba5fee051709ce72a0b59cfa9d5f4f09ba35e9204861c705b7896150c"
     },
@@ -1034,7 +1243,7 @@
       "raw_text": "Clicking edit must hide the card-content div and show the edit-form div using inline style display toggling",
       "section": "Inline Edit Form",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 16,
+      "line": 17,
       "clause_semhash": "91f0ac4dddb34576a54856afb2543ca31ecf907747006cded28cbc1fe0f7ca61",
       "context_semhash": "a980a3d6f09ecab46a0a4c1022dfa750f6932068a083803e607af476b38ac9d7"
     },
@@ -1045,7 +1254,7 @@
       "raw_text": "The edit form must have save and cancel buttons with clear visual distinction",
       "section": "Edit Form Controls",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 20,
+      "line": 21,
       "clause_semhash": "6e09318281be1ddf391cc90f7c76703e68b3332ca948f356bfba177fe2bf2c40",
       "context_semhash": "3e5556d7374a6479e62a11ccb81fe4c7af1b1af2781f6ffbf140b529c16ef50a"
     },
@@ -1056,7 +1265,7 @@
       "raw_text": "Clicking cancel or saving must restore the task card view by hiding edit-form and showing card-content",
       "section": "Edit Form Controls",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 21,
+      "line": 22,
       "clause_semhash": "f48d11800658ac7a996d49dd7199d59b1e87ee839bb012950514e7a62a4d551b",
       "context_semhash": "722db1e61b694e7a307bc318c43ed3eb2b5fc1b11a460266d7575d2728e98e95"
     },
@@ -1067,9 +1276,20 @@
       "raw_text": "Users must be able to edit task properties including title, description, priority, deadline, and assignee",
       "section": "Edit Form Controls",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 22,
+      "line": 23,
       "clause_semhash": "74b760a686d914654a7344c1fab0da948bcad21db2200e539766b96d70631bd6",
       "context_semhash": "53065deed5dcff78c74a2996d70e57bd73d35df4c4c9829d481bfc91fb1fef1d"
+    },
+    {
+      "id": "f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7",
+      "type": "CONSTRAINT",
+      "text": "form inputs must use autocompleteoff attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values",
+      "raw_text": "Form inputs must use autocomplete=\"off\" attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values",
+      "section": "Edit Form Controls",
+      "source_file": "spec/web-dashboard-edit.md",
+      "line": 24,
+      "clause_semhash": "57dd20599bd70fe072bf10953f3d867c6b6430dc9194b8d2fef72ca64e780c84",
+      "context_semhash": "cae39fc052163612b28d0583c3e70d9b894b282c5a19241930d6de828286575a"
     },
     {
       "id": "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663",
@@ -1078,9 +1298,9 @@
       "raw_text": "Editing a task must update the updated_at timestamp automatically",
       "section": "Edit Persistence",
       "source_file": "spec/web-dashboard-edit.md",
-      "line": 26,
+      "line": 28,
       "clause_semhash": "2eccc81b68a7b3f5255faf3f35a7778dbeda739b36531a312904895459a0017a",
-      "context_semhash": "896b53ee381778b3731063ed9a5d08d598b896b8cbb0ff2b10da36fa08aeca34"
+      "context_semhash": "ae9b441abfcb5364eec431fd5c8007348d6e00434b6f219f60151489422e031e"
     },
     {
       "id": "93e388ff1c8a76fad9445f075c3fd9ea8efe04e9dd6e8cc9ef56a022a742312f",
@@ -1149,15 +1369,15 @@
       "context_semhash": "b85b4184280da31aaf088f9fdb9e4e1bc60b87e25c27fce04cb56b24d57d293c"
     },
     {
-      "id": "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638",
+      "id": "b4dff0dae945af992378155679edd4cd4db3962a626109968a6af96c992157fb",
       "type": "REQUIREMENT",
-      "text": "the bulk selection shall update task grid checkbox states and show or hide bulk action bar",
-      "raw_text": "The bulk selection shall update task grid checkbox states and show or hide bulk action bar",
+      "text": "the bulk selection shall update task card visual selection states and show or hide bulk action bar",
+      "raw_text": "The bulk selection shall update task card visual selection states and show or hide bulk action bar",
       "section": "Component Wiring",
       "source_file": "spec/web-dashboard-integration.md",
       "line": 13,
-      "clause_semhash": "b45809eae0541f26576655c59102c8a3bf257d789dd85600db60c127ff598f6a",
-      "context_semhash": "e0ba471c40d91049f1cd60328ff65ac61f22e354e5cb8d607a66ce9739c8b5d9"
+      "clause_semhash": "b407abcd63e8db0d3c426b8c9edbc7dc15fa9a1264524a4c705a37ed061f9332",
+      "context_semhash": "5f4db60b2f4aeeeaa2e34663637ef9382d02d56c9020702873cb15355f4fce76"
     },
     {
       "id": "09a6c7528b6310dba374140c53e37d97645c71ad77fa3b9d35be7b3bad5a6f9b",
@@ -1168,7 +1388,7 @@
       "source_file": "spec/web-dashboard-integration.md",
       "line": 14,
       "clause_semhash": "bf2adc12afe20b71994fa0cd894b0f69de42c30b13d794607e7f82e64d66ff66",
-      "context_semhash": "2791f157bb800d0cbdbdfb7ea779e4bf1e74bc8ebfecb8788ca09e3348f83b67"
+      "context_semhash": "31b70956f3e5d95143fc8c09cd043f4668e49e11468b22c3f4393cfa30783865"
     },
     {
       "id": "2623171ed71406b752f533e36d98a51aaeae33debc89a4ba03d89cd6ed7f7713",
@@ -1600,15 +1820,37 @@
       "context_semhash": "a6a860cad6c631cd8012c13da4ac8efd4899b1ce6d159b9d2aa9c91cf1491eae"
     },
     {
+      "id": "98ba0fabf9fa320cb727d429f629e5209d0c07d9765a2ae9ff4d94a0d24e06c9",
+      "type": "REQUIREMENT",
+      "text": "pressing the enter key while in any form field shall submit the form and save the task",
+      "raw_text": "Pressing the Enter key while in any form field shall submit the form and save the task",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 66,
+      "clause_semhash": "36bafa201fb061cb50e51ffc56dd4b798f352d7a6b9280ed5605f80bad77af0e",
+      "context_semhash": "f7683fd086ddd16432bf311735fe7a50fd4fe68c17264955a8086befba234b7d"
+    },
+    {
+      "id": "15db98bfbb1bce143846e2a0c429ead2d2ce31cf1bcbcc163463d850b25e48e9",
+      "type": "CONSTRAINT",
+      "text": "all modal form inputs must use autocompleteoff attribute to disable browser autocomplete",
+      "raw_text": "All modal form inputs must use autocomplete=\"off\" attribute to disable browser autocomplete",
+      "section": "Modal Requirements",
+      "source_file": "spec/web-dashboard-integration.md",
+      "line": 67,
+      "clause_semhash": "380c04e8a8eb953177b002b77d03ab9a6a48ddda488d5c998d34985917fddf1a",
+      "context_semhash": "8612ded79203c4b710b2d8f3d1cea9c1e0b88f950c6023e837e22c665d3f22c3"
+    },
+    {
       "id": "1195e2f9dc63ac5d4c567883d7d1f72eee36c83e62f22b6021c6ee86282a11a0",
       "type": "CONSTRAINT",
       "text": "no component shall render without reading current localstorage state",
       "raw_text": "No component shall render without reading current localStorage state",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 69,
+      "line": 71,
       "clause_semhash": "910c68a0e816a14204015da1051e5d123caac7471b73deae651555255fb9d451",
-      "context_semhash": "54c11e1a7246453579a130383c1d9ee4a93a1cf0a836f376fec9c179cae95a3b"
+      "context_semhash": "18108d0768da4a2b9c5469ede864e87355efe38971cad42bf93cee2dfb2fa013"
     },
     {
       "id": "6bb5fa7fddac5915409456f80480000012d837e22ca38090ad136c062adb0114",
@@ -1617,7 +1859,7 @@
       "raw_text": "No state change shall occur without updating localStorage first",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 70,
+      "line": 72,
       "clause_semhash": "e022dfc71035fe776e4aecd6599e51a861e0c9c5383d770f8026577aa89d6720",
       "context_semhash": "d843b9bcd3b269115a32b041790a8f818f8dc00f860900aafcb7cae66407a54a"
     },
@@ -1628,7 +1870,7 @@
       "raw_text": "Re-renders shall be synchronous following state updates",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 71,
+      "line": 73,
       "clause_semhash": "86478d2498dac775989a9184b8c0c2e3cd8d01e7dacbf0487ed3b70e231f2a1e",
       "context_semhash": "911bb63bb54900272ef5b06a733fd6e555a760eba5cdb60d6f926d7cf13778a6"
     },
@@ -1639,7 +1881,7 @@
       "raw_text": "All event handlers shall be attached on initial page load",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 72,
+      "line": 74,
       "clause_semhash": "ba6a1806e1baae468e2f2326a3e4b6569da04a25ba9f2b000bc422e91da5f186",
       "context_semhash": "36cf1259e56a7f11a750eeab4fa1d0539db49a208e0c92264f2b47f4d768cd28"
     },
@@ -1650,7 +1892,7 @@
       "raw_text": "Components shall not have external dependencies with all data from localStorage",
       "section": "Integration Invariants",
       "source_file": "spec/web-dashboard-integration.md",
-      "line": 73,
+      "line": 75,
       "clause_semhash": "070b606f0d310b94e851ab965bf5ba877eeb8f3638b21d98e00e8661f30a7d5b",
       "context_semhash": "85d01e62d31d11b6f0ebf665ab9073402c978f79e5507a17860eb3dd6d68029c"
     },

@@ -57,19 +57,22 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 
 ## Status Bar Layout
 
-- [node-1d9ff415] the dashboard must include a compact status bar showing key metrics inline
-- [node-06236ca2] the status bar must render as a single horizontal bar below the header
-- [node-e5d2dfbc] the status bar must be visually compact with max 48px height and minimal padding
+- [node-eb6fcdb5] the dashboard must include an elegant analytics bar showing key metrics inline
+- [node-c4e21e3e] the status bar must render as a horizontal bar below the header with comfortable spacing
+- [node-87f6aafe] the status bar must have 56px height with generous vertical padding for visual breathing room
 - [node-5e9d6248] the status bar must be centered horizontally and only as wide as its content not fullwidth
-- [node-ec926319] the status bar must not consume vertical space like the previous metric cards design
+- [node-e5a204e2] the status bar must use a subtle surface0 background with rounded 8px corners for a modern cardlike appearance
 
 ## Status Bar Metrics
 
 - [node-e5d9fbf0] the status bar must display total tasks count completed count overdue count archived count and completion rate percentage
-- [node-3fbf0135] metrics must be displayed inline with simple separators such as bullet or pipe
-- [node-8394b999] format example is 12 tasks 8 done 2 overdue 3 archived 67 completion rate
-- [node-8f060fef] use subtle text colors with primary metric values in ctptext and labels or separators in ctpsubtext0
-- [node-23d13da9] no emoji icons larger than the text itself no card backgrounds no hover effects
+- [node-f4e01844] each metric must be displayed as a pillshaped badge with surface1 background 6px 12px padding and 4px borderradius
+- [node-ccb161d8] metric values must use fontweight 600 semibold in ctptext color
+- [node-c8ea3a9e] metric labels must use fontweight 400 in ctpsubtext0 color with a colon separator
+- [node-f680ef5e] format example tasks 12 done 8 overdue 2 archived 3 rate 67
+- [node-9605be0b] badges must have 8px gap between them and subtle hover effect with surface2 background
+- [node-c24d1ac5] use consistent icon prefixes with fontsize matching text 085rem
+- [node-8d42c17a] completion rate badge uses accent color 89b4fa for the percentage value to highlight success metric
 
 ## Metrics Calculation
 
@@ -101,7 +104,7 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-e5812b6a] the dashboard must render a complete html page with inline css and javascript
 - [node-30d7c5ac] the page must be encoded in utf8 with proper charset meta tag
 - [node-bf3ef52e] the page must include a viewport meta tag for responsive scaling
-- [node-d36869b7] the page must display a compact header with the title taskflow with minimal vertical padding 32px height and larger text
+- [node-68b2d5f2] the page must display a spacious header with the title taskflow with comfortable vertical padding 48px height centered content and larger text with fontweight 600
 - [node-3b90fe00] the dashboard must use css custom properties for all catppuccin colors
 - [node-aab62f83] the layout must be responsive with single column on mobile and multicolumn grid on desktop
 
@@ -126,10 +129,28 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-2333b865] date picker days must have hover states and selected day highlighting using theme colors
 - [node-0e495d1e] date picker popover must use ctpsurface0 background with ctpsurface1 borders
 
+## Tab Navigation Design
+
+- [node-8f5ee864] the active tab must use a straight horizontal highlight line underneath the tab text
+- [node-be8721be] the highlight line must be a 3px solid line using the primary accent color 89b4fa
+- [node-b3e81cef] the highlight line must span the full width of the tab button
+- [node-91f627e6] the highlight line must have no rounded corners or curved edges
+- [node-b2e88a7f] the tab button must use borderradius 0 to ensure perfectly straight edges
+- [node-2bc7e5e8] the highlight line must not use any boxshadow or gradient effects that could create a curved appearance
+- [node-45293a7b] inactive tabs must show no underline or highlight
+- [node-909445f0] the tab container must have a subtle bottom border separator line using surface0 color
+- [node-196bfc91] the tab highlight must animate with a 200ms transition when switching between tabs
+
 ## Bulk Selection
 
-- [node-5ba9c276] bulk selection checkboxes must appear on each task card for multiselect operations
+- [node-a6f0ad57] clicking anywhere on a task card shall toggle its selection state for multiselect operations
+- [node-f72241db] selected cards must display a prominent 3px solid blue 89b4fa left border indicator
+- [node-7d96ab28] selected cards must use surface2 background color 585b70 to clearly distinguish from unselected cards
+- [node-32dcf102] the card cursor must change to pointer on hover to indicate clickability
+- [node-66b1f11e] individual action buttons on cards edit archive delete must remain clickable without triggering card selection via stoppropagation
 - [node-dd472043] the header must include a bulk action bar when tasks are selected including delete selected and archive selected
+- [node-ca5a17a3] the selection state is tracked by addingremoving task ids from a selectedids array in javascript
+- [node-1a410f8a] card selection visual feedback uses css class selected toggled on the card element
 
 ## Bulk Actions
 
@@ -152,6 +173,7 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 
 - [node-2e613816] the page must include a form to create new tasks with fields for title description priority dropdown and optional deadline date
 - [node-65cf841d] the create form must validate that title is nonempty before submission
+- [node-2cbb7095] create form inputs must use autocompleteoff attribute to disable browser autocomplete
 
 ## Inline Edit Form
 
@@ -166,6 +188,7 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-c3ae3e10] the edit form must have save and cancel buttons with clear visual distinction
 - [node-0b7df6f4] clicking cancel or saving must restore the task card view by hiding editform and showing cardcontent
 - [node-a5367452] users must be able to edit task properties including title description priority deadline and assignee
+- [node-f2484cdf] form inputs must use autocompleteoff attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values
 
 ## Edit Persistence
 
@@ -179,7 +202,7 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-72c4a2c4] the task grid shall display tasks from localstorage and pass click events to edit handlers
 - [node-a731f6b4] the inline edit form shall update localstorage and trigger task grid rerender on save
 - [node-a9bd9ecc] the archive tabs shall filter task grid display without page reload
-- [node-8a0f621e] the bulk selection shall update task grid checkbox states and show or hide bulk action bar
+- [node-b4dff0da] the bulk selection shall update task card visual selection states and show or hide bulk action bar
 - [node-09a6c752] the analytics bar shall recalculate on every localstorage change
 
 ## Event Flow
@@ -232,6 +255,8 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-fe95f87a] input padding shall be compact 6px vertical to reduce field heights
 - [node-8cebf2b0] when the modal opens the title input field shall receive immediate focus for rapid data entry
 - [node-987ca469] the title input shall use autofocus attribute or javascript focus call in the openmodal function
+- [node-98ba0fab] pressing the enter key while in any form field shall submit the form and save the task
+- [node-15db98bf] all modal form inputs must use autocompleteoff attribute to disable browser autocomplete
 
 ## Integration Invariants
 

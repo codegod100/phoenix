@@ -6,6 +6,7 @@ Inline task editing with in-place edit form.
 
 - REQUIREMENT: The page must include a form to create new tasks with fields for title, description, priority dropdown, and optional deadline date
 - CONSTRAINT: The create form must validate that title is non-empty before submission
+- CONSTRAINT: Create form inputs must use autocomplete="off" attribute to disable browser autocomplete
 
 ## Inline Edit Form
 
@@ -20,6 +21,7 @@ Inline task editing with in-place edit form.
 - REQUIREMENT: The edit form must have save and cancel buttons with clear visual distinction
 - REQUIREMENT: Clicking cancel or saving must restore the task card view by hiding edit-form and showing card-content
 - REQUIREMENT: Users must be able to edit task properties including title, description, priority, deadline, and assignee
+- CONSTRAINT: Form inputs must use autocomplete="off" attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values
 
 ## Edit Persistence
 

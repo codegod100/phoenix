@@ -1,177 +1,70 @@
-// 🔴 RED: Edit Domain (IU-b0512ab0)
-// Description: Implements edit functionality with 4 requirements
-// Risk Tier: LOW
+/**
+ * @phoenix-iu: 01d057d324fc5db4ffc40f3cec6b04ffc9833be7b622c00f6c649bc76cb9a0b5
+ * @phoenix-name: Edit Domain
+ * @phoenix-risk: MEDIUM
+ */
+/**
+ * @phoenix-canon: a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994
+ * Requirement: Users must be able to edit task properties including title, description, priority, deadline, and assignee
+ * 
+ * @phoenix-canon: 8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663
+ * Requirement: Editing a task must update the updated_at timestamp automatically
+ * 
+ * @phoenix-canon: f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7
+ * Constraint: Form inputs must use autocomplete="off" attribute to disable browser autocomplete
+ * 
+ * @phoenix-canon: c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0
+ * Requirement: The edit form must have save and cancel buttons with clear visual distinction
+ * 
+ * @phoenix-canon: 0b7df6f4e1fe1d968a3559e7d07db3f21582f792f851d466e389164bf84d5f5b
+ * Requirement: Clicking cancel or saving must restore the task card view by hiding edit-form and showing card-content
+ * 
+ * Edit Domain - Risk Tier: medium
+ */
 
-// @phoenix-iu: b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: true
-// @phoenix-migrated: b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708
-// @phoenix-migrated: b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708
-// @phoenix-migrated: b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708
-// @phoenix-name: Edit Domain
-// @phoenix-risk: low
-// @phoenix-short: IU-b0512ab0
+import { Task, Priority, Status, updateTask } from "../app/store.js";
 
-// === IMPLEMENTED REQUIREMENTS ===
+export type { Task, Priority, Status };
 
-// @phoenix-canon: 0b7df6f4e1fe1d96...
-// REQUIREMENT: clicking cancel or saving must restore the task card view by hiding editform ...
-
-// @phoenix-canon: 8ecb822028358db7...
-// REQUIREMENT: editing a task must update the updatedat timestamp automatically
-
-// @phoenix-canon: a536745291c224a7...
-// REQUIREMENT: users must be able to edit task properties including title description priori...
-
-// @phoenix-canon: c3ae3e10e08be575...
-// REQUIREMENT: the edit form must have save and cancel buttons with clear visual distinction
-
-
-// TDD CYCLE:
-// 1. Tests are designed to FAIL with current code
-// 2. Run: npm test -- iu-b0512ab0
-// 3. See 🔴 RED (tests fail)
-// 4. Fix functions below to make tests 🟢 GREEN
-// 5. Run evidence to validate
-
-// === TYPES ===
-// @phoenix-gen: types
-
-export interface Edit {
-  id: string;
-  name?: string;
+export interface EditData {
+  title?: string;
+  description?: string;
+  priority?: Priority;
+  status?: Status;
+  assignee?: string;
+  deadline?: string;
+  tags?: string[];
 }
 
-// === RED IMPLEMENTATIONS (fix to make tests pass) ===
-
-// @phoenix-canon: 0b7df6f4e1fe1d96...
-// REQUIREMENT: clicking cancel or saving must restore the task card view by hiding editform ...
 /**
- * 🔴 RED: editTask
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
+ * Edit a task
+ * @phoenix-canon: a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994
+ * @phoenix-canon: 8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663
  */
-export function editTask(item: Edit): Edit {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: Processed results
-  return item; // ← No transformation!
+export function edit(taskId: string, data: EditData): Task {
+  return updateTask(taskId, data);
 }
 
-// @phoenix-canon: 8ecb822028358db7...
-// REQUIREMENT: editing a task must update the updatedat timestamp automatically
 /**
- * 🔴 RED: assignTask
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
+ * Get edit form configuration with autocomplete=off
+ * @phoenix-canon: f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7
  */
-export function assignTask(item: Edit): Edit {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: Processed results
-  return item; // ← No transformation!
-}
-
-// @phoenix-canon: a536745291c224a7...
-// REQUIREMENT: users must be able to edit task properties including title description priori...
-/**
- * 🔴 RED: unassignTask
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
- */
-export function unassignTask(item: Edit): Edit {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: Processed results
-  return item; // ← No transformation!
-}
-
-// @phoenix-canon: c3ae3e10e08be575...
-// REQUIREMENT: the edit form must have save and cancel buttons with clear visual distinction
-/**
- * 🔴 RED: getUnassignedTasks
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
- */
-export function getUnassignedTasks(id: string): Edit | null {
-  // 🔴 RED: WRONG — returns object with mismatched ID
+export function getEditFormConfig(): {
+  fields: { name: string; type: string; label: string; autocomplete: string }[];
+  buttons: { name: string; label: string; class: string }[];
+} {
   return {
-    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
-    name: 'not implemented'
-  };
-}
-
-// @phoenix-canon: 0b7df6f4e1fe1d96...
-// REQUIREMENT: clicking cancel or saving must restore the task card view by hiding editform ...
-/**
- * 🔴 RED: setDeadline
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
- */
-export function setDeadline(item: Edit): Edit {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: Processed results
-  return item; // ← No transformation!
-}
-
-// @phoenix-canon: 8ecb822028358db7...
-// REQUIREMENT: editing a task must update the updatedat timestamp automatically
-/**
- * 🔴 RED: getOverdueTasks
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
- */
-export function getOverdueTasks(id: string): Edit | null {
-  // 🔴 RED: WRONG — returns object with mismatched ID
-  return {
-    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
-    name: 'not implemented'
-  };
-}
-
-// @phoenix-canon: a536745291c224a7...
-// REQUIREMENT: users must be able to edit task properties including title description priori...
-/**
- * 🔴 RED: setPriority
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
- */
-export function setPriority(item: Edit): Edit {
-  // 🔴 RED: WRONG — returns input unchanged
-  // Should: Processed results
-  return item; // ← No transformation!
-}
-
-// @phoenix-canon: c3ae3e10e08be575...
-// REQUIREMENT: the edit form must have save and cancel buttons with clear visual distinction
-/**
- * 🔴 RED: filterByPriority
- *
- * TDD: Fix this function to make tests pass
- * @phoenix-gen: function
- */
-export function filterByPriority(id: string): Edit | null {
-  // 🔴 RED: WRONG — returns object with mismatched ID
-  return {
-    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
-    name: 'not implemented'
+    fields: [
+      { name: "title", type: "text", label: "Title", autocomplete: "off" },
+      { name: "description", type: "textarea", label: "Description", autocomplete: "off" },
+      { name: "priority", type: "select", label: "Priority", autocomplete: "off" },
+      { name: "status", type: "select", label: "Status", autocomplete: "off" },
+      { name: "assignee", type: "text", label: "Assignee", autocomplete: "off" },
+      { name: "deadline", type: "date", label: "Deadline", autocomplete: "off" }
+    ],
+    buttons: [
+      { name: "save", label: "Save", class: "btn-success" },
+      { name: "cancel", label: "Cancel", class: "btn-secondary" }
+    ]
   };
 }

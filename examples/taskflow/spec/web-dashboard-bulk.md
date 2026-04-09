@@ -4,8 +4,14 @@ Bulk selection, bulk actions, and confirmation dialogs.
 
 ## Bulk Selection
 
-- REQUIREMENT: Bulk selection checkboxes must appear on each task card for multi-select operations
+- REQUIREMENT: Clicking anywhere on a task card shall toggle its selection state for multi-select operations
+- REQUIREMENT: Selected cards must display a prominent 3px solid blue (#89b4fa) left border indicator
+- REQUIREMENT: Selected cards must use surface2 background color (#585b70) to clearly distinguish from unselected cards
+- REQUIREMENT: The card cursor must change to pointer on hover to indicate clickability
+- REQUIREMENT: Individual action buttons on cards (edit, archive, delete) must remain clickable without triggering card selection via stopPropagation
 - REQUIREMENT: The header must include a bulk action bar when tasks are selected including delete selected and archive selected
+- DEFINITION: The selection state is tracked by adding/removing task IDs from a selectedIds array in JavaScript
+- DEFINITION: Card selection visual feedback uses CSS class 'selected' toggled on the card element
 
 ## Bulk Actions
 

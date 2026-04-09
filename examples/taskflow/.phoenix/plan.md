@@ -211,29 +211,29 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-92d0c760: Status Domain (HIGH)
+## IU-9042fe4f: Status Domain (HIGH)
 
-**Description:** Implements status functionality with 12 requirements
+**Description:** Implements status functionality with 15 requirements
 
-**Risk Tier:** high (12 requirements)
+**Risk Tier:** high (15 requirements)
 
 **Canonical Requirements:**
 - 04863c16775d...
-- 06236ca2480f...
-- 1d9ff4151b5a...
-- 23d13da966e4...
-- 3fbf0135a960...
 - 5e9d6248b4c4...
-- 8394b9997e08...
-- 8f060feffe64...
+- 87f6aafe8c38...
+- 8d42c17a07a9...
+- 9605be0b8e2c...
+- c24d1ac5b8c3...
+- c4e21e3e5079...
+- c8ea3a9e81a7...
+- ccb161d8da38...
 - dc96fbc84d80...
-- e5d2dfbce7cc...
-- ... and 2 more
+- ... and 5 more
 
 **Contract:**
 - Inputs: Configuration, Data inputs
-- Outputs: the status bar must render as a single horizontal bar below the header
-- Invariants: the status bar must be centered horizontally and only as wide as its content not fullwidth, the status bar must not consume vertical space like the previous metric cards design
+- Outputs: the status bar must render as a horizontal bar below the header with comfortable spacing
+- Invariants: the status bar must be centered horizontally and only as wide as its content not fullwidth
 
 **Output Files:**
 - `src/generated/status/index.ts`
@@ -285,7 +285,7 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-a329ef6c: Page Domain (HIGH)
+## IU-84d7fff4: Page Domain (HIGH)
 
 **Description:** Implements page functionality with 6 requirements
 
@@ -294,9 +294,9 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 **Canonical Requirements:**
 - 30d7c5acea64...
 - 3b90fe0067a3...
+- 68b2d5f231d7...
 - aab62f839329...
 - bf3ef52e9fb0...
-- d36869b76eb6...
 - e5812b6a5847...
 
 **Contract:**
@@ -385,17 +385,57 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-eb7c109e: Bulk Domain (LOW)
+## IU-cf6962ca: Tab Domain (MEDIUM)
 
-**Description:** Implements bulk functionality with 4 requirements
+**Description:** Implements tab functionality with 9 requirements
 
-**Risk Tier:** low (4 requirements)
+**Risk Tier:** medium (9 requirements)
 
 **Canonical Requirements:**
+- 196bfc916d3f...
+- 2bc7e5e88ba5...
+- 45293a7b8306...
+- 8f5ee864ccd9...
+- 909445f04640...
+- 91f627e610b4...
+- b2e88a7f1128...
+- b3e81cef6081...
+- be8721be55cf...
+
+**Contract:**
+- Inputs: Configuration, Data inputs
+- Outputs: Processed results, Side effects
+- Invariants: the highlight line must not use any boxshadow or gradient effects that could create a curved appearance
+
+**Output Files:**
+- `src/generated/tab/index.ts`
+- `src/generated/tab/__tests__/index.test.ts`
+
+**Evidence Required:**
+- typecheck
+- lint
+- boundary_validation
+- unit_tests
+
+---
+
+## IU-a9a3faf2: Bulk Domain (HIGH)
+
+**Description:** Implements bulk functionality with 10 requirements
+
+**Risk Tier:** high (10 requirements)
+
+**Canonical Requirements:**
+- 1a410f8a7c01...
+- 32dcf102d370...
 - 47e0a64ce995...
-- 5ba9c276d405...
+- 66b1f11ee00a...
 - 7580079c9863...
+- 7d96ab28ef58...
+- a6f0ad574ddd...
+- ca5a17a3dad3...
 - dd47204341c3...
+- f72241dbb301...
 
 **Contract:**
 - Inputs: Configuration, Data inputs
@@ -410,6 +450,9 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - typecheck
 - lint
 - boundary_validation
+- unit_tests
+- property_tests
+- threat_note
 
 ---
 
@@ -467,18 +510,19 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-8ae5c45f: Create Domain (LOW)
+## IU-a7184071: Create Domain (LOW)
 
-**Description:** Implements create functionality with 2 requirements
+**Description:** Implements create functionality with 3 requirements
 
-**Risk Tier:** low (2 requirements)
+**Risk Tier:** low (3 requirements)
 
 **Canonical Requirements:**
+- 2cbb70950a51...
 - 2e6138167683...
 - 65cf841d09b2...
 
 **Contract:**
-- Inputs: Configuration, Data inputs
+- Inputs: create form inputs must use autocompleteoff attribute to disable browser autocomplete
 - Outputs: Processed results, Side effects
 - Invariants: Valid state transitions only, Type safety maintained
 
@@ -525,20 +569,21 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-b0512ab0: Edit Domain (LOW)
+## IU-01d057d3: Edit Domain (MEDIUM)
 
-**Description:** Implements edit functionality with 4 requirements
+**Description:** Implements edit functionality with 5 requirements
 
-**Risk Tier:** low (4 requirements)
+**Risk Tier:** medium (5 requirements)
 
 **Canonical Requirements:**
 - 0b7df6f4e1fe...
 - 8ecb82202835...
 - a536745291c2...
 - c3ae3e10e08b...
+- f2484cdfd894...
 
 **Contract:**
-- Inputs: Configuration, Data inputs
+- Inputs: form inputs must use autocompleteoff attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values
 - Outputs: Processed results, Side effects
 - Invariants: Valid state transitions only, Type safety maintained
 
@@ -550,10 +595,11 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - typecheck
 - lint
 - boundary_validation
+- unit_tests
 
 ---
 
-## IU-a2326ea1: Component Domain (HIGH)
+## IU-413bea8f: Component Domain (HIGH)
 
 **Description:** Implements component functionality with 8 requirements
 
@@ -563,10 +609,10 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - 09a6c7528b63...
 - 3b3b6ce2da6d...
 - 72c4a2c45dc1...
-- 8a0f621ecff2...
 - 93e388ff1c8a...
 - a731f6b43208...
 - a9bd9ecc8c5b...
+- b4dff0dae945...
 - f20e473ea249...
 
 **Contract:**
@@ -692,14 +738,15 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-8c63f282: Modal Domain (HIGH)
+## IU-e0fdf2ac: Modal Domain (HIGH)
 
-**Description:** Implements modal functionality with 14 requirements
+**Description:** Implements modal functionality with 16 requirements
 
-**Risk Tier:** high (14 requirements)
+**Risk Tier:** high (16 requirements)
 
 **Canonical Requirements:**
 - 0fcd31ba2080...
+- 15db98bfbb1b...
 - 395c7bc1288d...
 - 5c212153a1ff...
 - 619c94741ca3...
@@ -708,11 +755,10 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - 90ee4a23b51c...
 - 954cf4092081...
 - 987ca469857b...
-- d9ecce2e6f7f...
-- ... and 4 more
+- ... and 6 more
 
 **Contract:**
-- Inputs: input padding shall be compact 6px vertical to reduce field heights, when the modal opens the title input field shall receive immediate focus for rapid data entry, the title input shall use autofocus attribute or javascript focus call in the openmodal function
+- Inputs: input padding shall be compact 6px vertical to reduce field heights, when the modal opens the title input field shall receive immediate focus for rapid data entry, the title input shall use autofocus attribute or javascript focus call in the openmodal function, all modal form inputs must use autocompleteoff attribute to disable browser autocomplete
 - Outputs: status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space, assignee and deadline fields shall render sidebyside in a twocolumn grid layout to save vertical space
 - Invariants: Valid state transitions only, Type safety maintained
 
@@ -818,6 +864,6 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ## Coverage Summary
 
-- Total canonical nodes: 157
-- Covered: 157
+- Total canonical nodes: 179
+- Covered: 179
 - Orphans: 0

@@ -1,49 +1,39 @@
 ---
 name: phoenix-codegen
-description: Unified code generator - generates IU implementations AND deliverable as single pipeline phase. Uses colimit to wire IUs together into working deliverable.
+description: Language-aware code generation orchestrator. Detects language from context, applies ThIU → ThLang theory morphism, generates language-specific instructions for agent.
 ---
 
 # Phoenix Codegen
 
-**Single phase that generates all code** - IU implementations AND deliverable.
+**Language-aware orchestrator** with theory morphisms.
+
+## Philosophy
+
+The skill does NOT generate code directly. Instead:
+1. **Detects** implementation language from project context
+2. **Selects** appropriate theory lens (ThIU → ThLang)
+3. **Applies** theory morphism to map IU constructs to language patterns
+4. **Generates** language-specific instruction for agent
+
+## Supported Languages
+
+| Variant | Detected By | Theory Lens |
+|---------|-------------|-------------|
+| `typescript-web` | package.json + dashboard/modal in spec | ThIU → ThTypeScriptWeb |
+| `typescript-api` | package.json (no web deps) | ThIU → ThTypeScriptAPI |
+| `python-fastapi` | requirements.txt / pyproject.toml | ThIU → ThPythonFastAPI |
+| `rust-axum` | Cargo.toml | ThIU → ThRustAxum |
+| `nix` | flake.nix | ThIU → ThNix |
 
 ## Pipeline Position
 
-Runs after `plan` phase, before `evidence`:
-
 ```
-ingest → canonicalize → plan → [CODEGEN] → evidence → audit → drift
+ingest → canonicalize → plan → protolens → [CODEGEN] → evidence → audit → drift
+                                      ↓
+                              language detection
+                              theory morphism
+                              instruction generation
 ```
-
-## What It Generates
-
-### 1. IU Implementations
-From each IU's `boundary.exports`:
-```typescript
-// src/generated/archive/index.ts
-export function getArchivedTasks(id: string): Archive | null
-export function archiveTask(item: Archive): Archive
-```
-
-### 2. Deliverable (that uses IUs)
-Imports from IUs and wires them together via colimit:
-```typescript
-// src/generated/app/server.ts
-import { getArchivedTasks, archiveTask } from '../archive/index.js';
-
-// API endpoint uses IU function
-app.get('/api/tasks/archived', (req, res) => {
-  const archived = getArchivedTasks(); // ← Calls IU implementation
-  res.json(archived);
-});
-```
-
-## How It Works
-
-1. **Load IUs** - Read `ius.json` with boundary exports
-2. **Compute colimit** - WASM GAT identifies shared operations
-3. **Generate IU files** - Each IU gets implementation file
-4. **Generate deliverable** - Imports from IUs, creates unified API
 
 ## Usage
 
@@ -51,31 +41,183 @@ app.get('/api/tasks/archived', (req, res) => {
 node .pi/skills/phoenix-codegen/codegen.js <project-path>
 ```
 
-## Output Structure
+## How It Works
 
-```
-src/generated/
-├── archive/index.ts          # IU implementation
-├── task/index.ts             # IU implementation
-├── ...                       # Other IUs
-└── app/
-    ├── server.ts             # Deliverable (uses IUs)
-    ├── store.ts              # Data layer (uses IUs)
-    └── .phoenix-deliverable.json  # Traceability
+### 1. Language Detection
+
+```javascript
+const lang = detectLanguage(projectPath, canonical, ius);
+// Returns: 'typescript-web', 'python-fastapi', etc.
 ```
 
-## Colimit Integration
+Detection order:
+1. Check for `package.json` → TypeScript
+2. Check for `Cargo.toml` → Rust  
+3. Check for `requirements.txt` → Python
+4. Check for `flake.nix` → Nix
+5. Fallback based on canonical (dashboard → web)
 
-The deliverable is the **colimit** of all IU theories:
-- Operations with same name (e.g., `getArchivedTasks`) are identified
-- Deliverable imports from canonical IU location
-- Single API surface composed from all domains
+### 2. Theory Morphism (ThIU → ThLang)
 
-## No Separate Regen/Deliverable
+Each language has a lens that maps:
 
-This replaces the old separate skills:
-- ❌ `phoenix-regen` (RED stubs)
-- ❌ `phoenix-deliverable` (just listed operations)
-- ✅ `phoenix-codegen` (working implementations + deliverable)
+```
+ThIU                  ThTypeScriptWeb
+────────────────────  ────────────────────────
+IU Export             Function signature
+  "archive"     →     export async function archive(): Promise<Task>
 
-All code generated in ONE phase at the end of the pipeline.
+IU Risk Tier          Async pattern
+  "high"        →     async function with Promise<T>
+
+Canonical Constraint  Implementation pattern
+  "autocompleteoff" → autocomplete="off" attribute
+  "Enter key"   →     keydown handler
+```
+
+### 3. Generated Artifacts
+
+**`codegen-instruction.md`** - Agent instruction with:
+- Language context (TypeScript, Python, etc.)
+- IU → Function mappings
+- Constraint → Implementation mappings
+- File structure guidance
+
+**`language-theory.json`** - Machine-readable theory mapping:
+```json
+{
+  "language": "typescript-web",
+  "iuMappings": [
+    {
+      "name": "Archive Domain",
+      "functions": [
+        {
+          "name": "archiveTask",
+          "signature": "export async function archiveTask(id: string): Promise<Task>",
+          "isAsync": true
+        }
+      ],
+      "components": {
+        "form": false,
+        "buttons": ["archive"],
+        "list": false
+      }
+    }
+  ]
+}
+```
+
+## Example: TypeScript Web
+
+Given IU:
+```json
+{
+  "name": "Edit Domain",
+  "boundary": { "exports": ["edit", "save"] },
+  "risk_tier": "high"
+}
+```
+
+Theory morphism produces:
+```typescript
+// Function signatures
+export async function edit(id: string): Promise<Task>;
+export async function save(data: TaskData): Promise<Task>;
+
+// UI components detected
+Form: true      // has "edit" or "save"
+Buttons: []     
+List: false
+```
+
+## Agent Instruction Structure
+
+```markdown
+# Phoenix Code Generation Instruction
+
+## Language Context
+**Detected Language:** TypeScript (Web)
+**Module System:** esm
+
+## Theory Mapping (ThIU → ThTypeScriptWeb)
+
+### IU → Language Function Mapping
+- Edit Domain (high):
+    - async edit(): Promise<any>
+    - async save(): Promise<any>
+
+### Constraint → Implementation Mapping
+- "autocompleteoff attribute" → autocomplete="off" on inputs
+- "Enter key submits form" → keydown event listener
+
+## Deliverable Structure
+**Server Framework:** Node.js native http
+**UI Pattern:** inline HTML/JS
+**State Management:** in-memory Map
+```
+
+## "Draw The Rest Of The Owl"
+
+```
+Pipeline Artifacts    Language      Theory Morphism    Agent
+      │                 │                │               │
+      ▼                 ▼                ▼               ▼
+┌──────────────┐   ┌────────┐      ┌──────────┐   ┌─────────┐
+│ canonical    │   │ Detect │      │ Apply    │   │ Agent   │
+│ requirements │──▶│ lang   │─────▶│ lens     │──▶│ reads   │
+└──────────────┘   └────────┘      └──────────┘   │ theory  │
+┌──────────────┐   ┌────────┐      ┌──────────┐   │ &       │
+│ IU exports   │   │ Select │      │ Map to   │   │ generates│
+└──────────────┘   │ lens   │      │ lang     │   │ code    │
+                   └────────┘      │ patterns │   └─────────┘
+                                    └──────────┘
+```
+
+## Adding New Languages
+
+Add to `language-registry.js`:
+
+```javascript
+export const LanguageVariant = {
+  // ... existing
+  GO_STD: 'go-std',
+};
+
+export const LanguageLenses = {
+  [LanguageVariant.GO_STD]: {
+    name: 'Go (std)',
+    extension: '.go',
+    moduleSystem: 'go-modules',
+    
+    iuToLang: {
+      function: (exportName) => ({
+        signature: `func ${exportName}(input Input) (Output, error)`,
+      }),
+      // ...
+    },
+    
+    fileStructure: {
+      iuDir: (domain) => `${domain}`,
+      iuIndex: 'index.go',
+      deliverableDir: 'cmd',
+      serverFile: 'main.go',
+    },
+    
+    constraints: {
+      'error handling': 'return (T, error) pattern',
+    },
+  },
+};
+```
+
+## No Templates, Just Theory
+
+❌ No hardcoded HTML in skill  
+❌ No language-specific logic in skill  
+❌ No file templates  
+
+✅ Pure theory mapping  
+✅ Language detection from context  
+✅ Agent generates from theory  
+
+The skill is a **theory morphism engine**, not a code generator.

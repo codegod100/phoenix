@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-08T22:16:52.660Z",
-  "iu_count": 26,
+  "generated_at": "2026-04-09T01:38:30.013Z",
+  "iu_count": 27,
   "coverage": {
-    "total_canon_nodes": 157,
-    "covered_canon_nodes": 157,
+    "total_canon_nodes": 179,
+    "covered_canon_nodes": 179,
     "orphan_canon_ids": []
   },
   "ius": [
@@ -523,38 +523,40 @@
       ]
     },
     {
-      "id": "92d0c760174e68f515de659e496bca750cd870996be1843ba8b96314383f95be",
-      "short_id": "IU-92d0c760",
+      "id": "9042fe4f437f6cc14ecb734ea5f25f7478a8725702d5fd517b429195384cfb2f",
+      "short_id": "IU-9042fe4f",
       "name": "Status Domain",
       "kind": "web-ui",
       "risk_tier": "high",
-      "description": "Implements status functionality with 12 requirements",
+      "description": "Implements status functionality with 15 requirements",
       "source_canon_ids": [
         "04863c16775d3737e0e987d41dbe4dae1b05795e9778fc80914ae6d33dddcde5",
-        "06236ca2480f22d79e55d3897d1fbf1452c587f55bba58cc01d3ff00a514d21f",
-        "1d9ff4151b5a5b10cca7d451c400e5c843b21190a8e405a30234cce11f4bfd7f",
-        "23d13da966e4563b98584e737c0ae5f19dc6ee81176874eb3a697e85ead0e69a",
-        "3fbf0135a9600a387d7676561212c31b9e2b63702f681a449256338d58fac410",
         "5e9d6248b4c495f8f5a2d27ca40ef82951bbf03e1dde46977b6f213f614dbcc2",
-        "8394b9997e084961310291dae157d88b4b21367769b8233c48ce6a01a9103521",
-        "8f060feffe64cbffad3795adf5a90b48d1c31c29c405dfb9d7eefe46b3802b00",
+        "87f6aafe8c38c6fc20d722660ead0ba43d7d7d661eb5b2ef9bdd3a79f3c00507",
+        "8d42c17a07a9e826137ccec4574d47a562d3fabb424fdb99cd6a9ee8936256d6",
+        "9605be0b8e2c6cb1e4453408de1a9f94953ab2318544bda3d96495e7affb1034",
+        "c24d1ac5b8c368c7edfd363dd4d8ca59757cfff1f3d8058892d283f4085ee073",
+        "c4e21e3e50799e099b0ccb5a0dbaa4d283b4506e6506debcd8b51fbb73dbfd4a",
+        "c8ea3a9e81a7c9bc047c656fd0ea110f1c795c93c8f6b8169209eb8c0c5bb2b9",
+        "ccb161d8da38b88cfdec513d5b1cbf6ac01f4f0176e6d093e0f9a07c1c0d9a53",
         "dc96fbc84d80cf0cfe1a8dc73708ba0ef09a6c20ab40c050757cdbb249a9c315",
-        "e5d2dfbce7cc632a2f2993a8097ec1118b42a2d0418d1138e523de287898bd40",
+        "e5a204e2c39e109274318a2c507303b5eb6f3585df345dc1f144c02372a1f284",
         "e5d9fbf05dfb89e997652537e35e81c92ca4cd34307312b413f9a9aef43a7658",
-        "ec926319c637eac449d0d0a21080b837fd7ca932b1dda995915b466d0133af2f"
+        "eb6fcdb56d144801868cf29e831e4dc71dc171571ff9b012753f00b7823d202c",
+        "f4e018445819ee3971e9f5ea4027087c81abfec89fc02333c9fd8d5350f72377",
+        "f680ef5ebce71ab378be6af8e09f5a8250d6d55f53418e1dc4e3341297e8a9ea"
       ],
       "contract": {
-        "description": "Implements status functionality with 12 requirements",
+        "description": "Implements status functionality with 15 requirements",
         "inputs": [
           "Configuration",
           "Data inputs"
         ],
         "outputs": [
-          "the status bar must render as a single horizontal bar below the header"
+          "the status bar must render as a horizontal bar below the header with comfortable spacing"
         ],
         "invariants": [
-          "the status bar must be centered horizontally and only as wide as its content not fullwidth",
-          "the status bar must not consume vertical space like the previous metric cards design"
+          "the status bar must be centered horizontally and only as wide as its content not fullwidth"
         ]
       },
       "output_path": "src/generated/status/index.ts",
@@ -682,8 +684,8 @@
       ]
     },
     {
-      "id": "a329ef6c591659d8928aa2e24fe484ab3bf96a7c56b3f838165d35b8a7bba08a",
-      "short_id": "IU-a329ef6c",
+      "id": "84d7fff4444e467ce261fbdafe6a926bf929dbfc01f9cdd0c49e8ed3dac7a77e",
+      "short_id": "IU-84d7fff4",
       "name": "Page Domain",
       "kind": "web-ui",
       "risk_tier": "high",
@@ -691,9 +693,9 @@
       "source_canon_ids": [
         "30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298",
         "3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3",
+        "68b2d5f231d7af6bd6fd33c47f94a1ef9d9149aae06b3a945cecae0a879afb27",
         "aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62",
         "bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f",
-        "d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975",
         "e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953"
       ],
       "contract": {
@@ -896,20 +898,98 @@
       ]
     },
     {
-      "id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
-      "short_id": "IU-eb7c109e",
-      "name": "Bulk Domain",
+      "id": "cf6962caff7e397d251009ef1c4f815369b02a37c0e7837de1b323120d3a6d1b",
+      "short_id": "IU-cf6962ca",
+      "name": "Tab Domain",
       "kind": "module",
-      "risk_tier": "low",
-      "description": "Implements bulk functionality with 4 requirements",
+      "risk_tier": "medium",
+      "description": "Implements tab functionality with 9 requirements",
       "source_canon_ids": [
-        "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48",
-        "5ba9c276d405edc1637a5113f6cd8ffc61496af4e14f09c834e2beb9b93386cd",
-        "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939",
-        "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad"
+        "196bfc916d3f0b764650c862c47afed43f72f5a3739d7df88fb8c3205a67f3ba",
+        "2bc7e5e88ba5e0b8d4ff63647393f8cc3df84d5bb676f1ca2a7e52ab87857b48",
+        "45293a7b83061cdd3a65155d172a75294386d16e3a38f18a838a5ce184302cab",
+        "8f5ee864ccd9e7ef708125db935214b0144f151ce8f6a8ba90dce755d42e1df4",
+        "909445f046403c1fd87e25c9be3dd3fb2bbbe6ad3cf5e9bbe5142134d9679a25",
+        "91f627e610b4794b7ed7359fd8c74cb522023a8d07a32ae7adcb614cb0ac5619",
+        "b2e88a7f1128cf4c19ca55d6d16fb592d4a66d721acba37d96d64c9cc8bf702a",
+        "b3e81cef6081f47ade085574584271e41022e37e48ea0ce802652fe36bd52b88",
+        "be8721be55cfdedaabf53fa2893bdd8b21325d81b8578994d1995729ef3567f4"
       ],
       "contract": {
-        "description": "Implements bulk functionality with 4 requirements",
+        "description": "Implements tab functionality with 9 requirements",
+        "inputs": [
+          "Configuration",
+          "Data inputs"
+        ],
+        "outputs": [
+          "Processed results",
+          "Side effects"
+        ],
+        "invariants": [
+          "the highlight line must not use any boxshadow or gradient effects that could create a curved appearance"
+        ]
+      },
+      "output_path": "src/generated/tab/index.ts",
+      "test_path": "src/generated/tab/__tests__/index.test.ts",
+      "dependencies": [],
+      "boundary_policy": {
+        "dependencies": {
+          "code": {
+            "allowed_ius": [],
+            "allowed_packages": [],
+            "forbidden_ius": [],
+            "forbidden_packages": [],
+            "forbidden_paths": [
+              "node_modules/external-ui-lib"
+            ]
+          },
+          "side_channels": {
+            "databases": [
+              "app.db"
+            ],
+            "queues": [],
+            "caches": [],
+            "config": [],
+            "external_apis": [],
+            "files": []
+          }
+        }
+      },
+      "evidence_policy": {
+        "required": [
+          "typecheck",
+          "lint",
+          "boundary_validation",
+          "unit_tests"
+        ]
+      },
+      "tags": [
+        "tab",
+        "core",
+        "medium-risk"
+      ]
+    },
+    {
+      "id": "a9a3faf254636c2c445aa68d36abbf16ac249c630734ada1578bddfbde9b846c",
+      "short_id": "IU-a9a3faf2",
+      "name": "Bulk Domain",
+      "kind": "web-ui",
+      "risk_tier": "high",
+      "description": "Implements bulk functionality with 10 requirements",
+      "source_canon_ids": [
+        "1a410f8a7c017a0f37968e45a1a7dc608c2714a4e3b2a7b76f14f7c49cb7b3a7",
+        "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3",
+        "47e0a64ce9951c1b0bd3c9544403a4d8c5e94ce12136f9fcc6c1eff0b237fd48",
+        "66b1f11ee00a0d7740176a2b4de490a7fceed7b4bce127cbd739d516bf00de1f",
+        "7580079c986349ede5efc38de66de4806065c9c395953c30a99e8d4f32024939",
+        "7d96ab28ef5877bcf7b68160621ff53ea635e5586627441eda17cdff6fc3b41b",
+        "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26",
+        "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd",
+        "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
+        "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9"
+      ],
+      "contract": {
+        "description": "Implements bulk functionality with 10 requirements",
         "inputs": [
           "Configuration",
           "Data inputs"
@@ -959,13 +1039,16 @@
         "required": [
           "typecheck",
           "lint",
-          "boundary_validation"
+          "boundary_validation",
+          "unit_tests",
+          "property_tests",
+          "threat_note"
         ]
       },
       "tags": [
         "bulk",
-        "core",
-        "low-risk"
+        "ui",
+        "high-risk"
       ]
     },
     {
@@ -1106,21 +1189,21 @@
       ]
     },
     {
-      "id": "8ae5c45f3147f2a03b6360b590933744f6cd4d48f7ddfe1cb44c24f0461deab0",
-      "short_id": "IU-8ae5c45f",
+      "id": "a71840711883fbadc80665b28f2172f7a65a116dee522018b85b0f88d9b9c527",
+      "short_id": "IU-a7184071",
       "name": "Create Domain",
       "kind": "module",
       "risk_tier": "low",
-      "description": "Implements create functionality with 2 requirements",
+      "description": "Implements create functionality with 3 requirements",
       "source_canon_ids": [
+        "2cbb70950a51c496ab86595836fa293c8a9a6bc704915fe733a576a9d2390cdf",
         "2e61381676836dee1acf7d2af57c6de6f850122c4c1c37a16893a4effbc91b95",
         "65cf841d09b215abbd9d4e43ae8b39c6f4d3468fea5683981fde61359b33cc71"
       ],
       "contract": {
-        "description": "Implements create functionality with 2 requirements",
+        "description": "Implements create functionality with 3 requirements",
         "inputs": [
-          "Configuration",
-          "Data inputs"
+          "create form inputs must use autocompleteoff attribute to disable browser autocomplete"
         ],
         "outputs": [
           "Processed results",
@@ -1242,23 +1325,23 @@
       ]
     },
     {
-      "id": "b0512ab0394066accc7d332c90e64b6a2b294a485320554f350cba41dd659708",
-      "short_id": "IU-b0512ab0",
+      "id": "01d057d324fc5db4ffc40f3cec6b04ffc9833be7b622c00f6c649bc76cb9a0b5",
+      "short_id": "IU-01d057d3",
       "name": "Edit Domain",
       "kind": "module",
-      "risk_tier": "low",
-      "description": "Implements edit functionality with 4 requirements",
+      "risk_tier": "medium",
+      "description": "Implements edit functionality with 5 requirements",
       "source_canon_ids": [
         "0b7df6f4e1fe1d968a3559e7d07db3f21582f792f851d466e389164bf84d5f5b",
         "8ecb822028358db7eaf7d82456ff77cee5d77f187efec60dccfe05b17159c663",
         "a536745291c224a7ee908f2f7672f69eff41d093e5df72ffe9e3baad822a1994",
-        "c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0"
+        "c3ae3e10e08be5758744246649d1bea7fdce031d31ac47369df8630f1a5de5e0",
+        "f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7"
       ],
       "contract": {
-        "description": "Implements edit functionality with 4 requirements",
+        "description": "Implements edit functionality with 5 requirements",
         "inputs": [
-          "Configuration",
-          "Data inputs"
+          "form inputs must use autocompleteoff attribute to disable browser autocomplete and prevent the browser from suggesting previously entered values"
         ],
         "outputs": [
           "Processed results",
@@ -1304,18 +1387,19 @@
         "required": [
           "typecheck",
           "lint",
-          "boundary_validation"
+          "boundary_validation",
+          "unit_tests"
         ]
       },
       "tags": [
         "edit",
         "core",
-        "low-risk"
+        "medium-risk"
       ]
     },
     {
-      "id": "a2326ea173747bc5745173ec09c3b70161ad8e3cd51f24d72b50498419fb2ec5",
-      "short_id": "IU-a2326ea1",
+      "id": "413bea8f7a19dc72b473d2f370b67fbd9e53acc35f7b6cc960478854101a6e02",
+      "short_id": "IU-413bea8f",
       "name": "Component Domain",
       "kind": "web-ui",
       "risk_tier": "high",
@@ -1324,10 +1408,10 @@
         "09a6c7528b6310dba374140c53e37d97645c71ad77fa3b9d35be7b3bad5a6f9b",
         "3b3b6ce2da6dcd2ad6576b630478b6e2bf372a5f9a5b8cc20224289d6822fe05",
         "72c4a2c45dc1edcf82869093e34ec8b75a8b643e78819281ccbfe9bce9ff5a68",
-        "8a0f621ecff296896c4fd634e42ebbfa60aef208bbc6e178861c152c74e7b638",
         "93e388ff1c8a76fad9445f075c3fd9ea8efe04e9dd6e8cc9ef56a022a742312f",
         "a731f6b43208397eaad60a9312cf10acd760afc578f3181cc364ed27e6235ae8",
         "a9bd9ecc8c5b5ccb2fa9e778f7d9262a084ffe9c4c91ab2821685de30589e9c4",
+        "b4dff0dae945af992378155679edd4cd4db3962a626109968a6af96c992157fb",
         "f20e473ea2499d65651a44132b03b7140287261031f24406c651baf7d13830d3"
       ],
       "contract": {
@@ -1612,14 +1696,15 @@
       ]
     },
     {
-      "id": "8c63f282c0dc78313f49ae39ae3f0ee3cd3ba60c929a8133c5ab66ee439773ed",
-      "short_id": "IU-8c63f282",
+      "id": "e0fdf2ac458f57d61ad4fe13b6a3be679fdd2fcd31b9237fa0cb2d6d50c84085",
+      "short_id": "IU-e0fdf2ac",
       "name": "Modal Domain",
       "kind": "web-ui",
       "risk_tier": "high",
-      "description": "Implements modal functionality with 14 requirements",
+      "description": "Implements modal functionality with 16 requirements",
       "source_canon_ids": [
         "0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
+        "15db98bfbb1bce143846e2a0c429ead2d2ce31cf1bcbcc163463d850b25e48e9",
         "395c7bc1288d60bee73add79a9237c959d6e1a64c01111e1f508ddfa1edb75da",
         "5c212153a1ffd3dd57f085eaf8fe049ce963f763f37be1369b60de2112a5b009",
         "619c94741ca3b11236958b276752ff590af3d4722456b9299ceb82aa8e910e88",
@@ -1628,6 +1713,7 @@
         "90ee4a23b51c2c1663357bef179083841a99c8abc7b3b89f5a92b34ca2fa1bcc",
         "954cf4092081abcd20a7f52aa9c1ec11c0f4a4ecf1cbcf0e38772076846f29bc",
         "987ca469857be4de06f969a4bc6b73d1b938bba46f774111aed03795cfe45716",
+        "98ba0fabf9fa320cb727d429f629e5209d0c07d9765a2ae9ff4d94a0d24e06c9",
         "d9ecce2e6f7f1eeb888fceb6546c5254af614d14ab2756ef4fa8855392f222c3",
         "d9f092d708b285051795a497231c6c734244708f5dc1762157bd7c8924457ca3",
         "de80ad85153501dce164739dd9883025675e7103428c424a6678f24452546df2",
@@ -1635,11 +1721,12 @@
         "fe95f87a26098233c2c922ca99c4d6bd8337ba08886bac19f03a9d87305cd7cc"
       ],
       "contract": {
-        "description": "Implements modal functionality with 14 requirements",
+        "description": "Implements modal functionality with 16 requirements",
         "inputs": [
           "input padding shall be compact 6px vertical to reduce field heights",
           "when the modal opens the title input field shall receive immediate focus for rapid data entry",
-          "the title input shall use autofocus attribute or javascript focus call in the openmodal function"
+          "the title input shall use autofocus attribute or javascript focus call in the openmodal function",
+          "all modal form inputs must use autocompleteoff attribute to disable browser autocomplete"
         ],
         "outputs": [
           "status and priority fields shall render sidebyside in a twocolumn grid layout to save vertical space",
