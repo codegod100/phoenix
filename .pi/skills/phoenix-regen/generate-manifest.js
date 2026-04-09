@@ -24,9 +24,18 @@ function findFiles(dir, baseDir, files = []) {
     const fullPath = join(dir, entry.name);
     const relPath = relative(baseDir, fullPath);
     
+    // Skip system directories and cache files
+    if (entry.name === '__pycache__' || entry.name === '.git' || entry.name === 'node_modules') {
+      continue;
+    }
+    if (entry.name.endsWith('.pyc') || entry.name.endsWith('.pyo')) {
+      continue;
+    }
+    
     if (entry.isDirectory()) {
       findFiles(fullPath, baseDir, files);
-    } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.js')) {
+    } else {
+      // Language-agnostic: include ALL files
       files.push(relPath);
     }
   }
@@ -50,7 +59,7 @@ if (!existsSync(generatedDir)) {
 const files = findFiles(generatedDir, projectRoot);
 
 if (files.length === 0) {
-  console.error('❌ No .ts/.js files found in src/generated/');
+  console.error('❌ No files found in src/generated/');
   process.exit(1);
 }
 
@@ -66,11 +75,25 @@ for (const filePath of files) {
   const hash = fileHash(content);
   const stats = statSync(fullPath);
   
-  // Try to extract IU ID from _phoenix export
-  const iuMatch = content.match(/iu_id:\s*['"]([^'"]+)['"]/);
+  // Extract IU ID from @phoenix-canon comments
+  // Pattern: @phoenix-canon: node-<hash> (where hash is the IU ID)
+  const iuMatches = [...content.matchAll(/@phoenix-canon:\s*(node-[a-f0-9]{8})/g)];
+  const uniqueIUs = [...new Set(iuMatches.map(m => m[1]))];
+  
+  // Extract canon IDs from @phoenix-canon comments
+  const canonMatches = [...content.matchAll(/@phoenix-canon:\s*([a-f0-9]{64})/g)];
+  const canonIds = [...new Set(canonMatches.map(m => m[1]))];
+  
+  // Also look for old-style iu_id patterns
+  const iuIdMatch = content.match(/iu_id:\s*['"]([^'"]+)['"]/);
+  if (iuIdMatch && !uniqueIUs.includes(iuIdMatch[1])) {
+    uniqueIUs.push(iuIdMatch[1]);
+  }
   
   manifest.files[filePath] = {
-    iu_id: iuMatch ? iuMatch[1] : null,
+    iu_id: uniqueIUs.length > 0 ? uniqueIUs[0] : null,
+    iu_ids: uniqueIUs,
+    canon_ids: canonIds,
     hash: hash,
     size: stats.size,
     generated_at: new Date().toISOString()

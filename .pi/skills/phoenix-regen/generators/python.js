@@ -1,6 +1,6 @@
 /**
  * Python Generator for Phoenix Regen
- * Generates RED (failing) Python/pytest code for TDD
+ * Generates clean implementations with auto-injected logging using theory morphisms
  */
 
 export function generateImpl(iu, config = {}) {
@@ -9,37 +9,46 @@ export function generateImpl(iu, config = {}) {
   const functions = extractFunctions(iu);
   const snakeName = toSnakeCase(iu.name);
 
-  lines.push(`# 🔴 RED: ${iu.name} (${iu.short_id})`);
+  // Read codegen instruction for logging requirements if available
+  const codegenInstruction = loadCodegenInstruction(config.projectRoot);
+  const loggingConfig = codegenInstruction?.logging || {};
+
+  lines.push(`# ✅ CLEAN: ${iu.name} (${iu.short_id})`);
   lines.push(`# Description: ${iu.description}`);
   lines.push(`# Risk Tier: ${iu.risk_tier.toUpperCase()}`);
-  lines.push('');
-  lines.push(`# TDD CYCLE:`);
-  lines.push(`# 1. Run: pytest test_${snakeName}.py -v`);
-  lines.push(`# 2. See 🔴 RED (tests fail)`);
-  lines.push(`# 3. Fix functions below to make tests GREEN`);
-  lines.push(`# 4. Run evidence to validate`);
+  lines.push(`# Generated: Theory morphism (ThIU → ThPython → ThCode + ThLog)`);
   lines.push('');
 
-  // Imports
-  lines.push('from dataclasses import dataclass');
-  lines.push('from typing import Optional, List');
+  // === IMPORTS ===
+  lines.push('# === IMPORTS ===');
+  lines.push('import logging');
+  lines.push('from dataclasses import dataclass, field');
+  lines.push('from typing import Optional, List, Dict, Any, Callable');
+  lines.push('from datetime import datetime');
+  lines.push('');
+  lines.push('logger = logging.getLogger(__name__)');
   lines.push('');
 
   // === TYPES (dataclasses) ===
   lines.push('# === TYPES ===');
   lines.push('');
-  lines.push('@dataclass');
+  lines.push('@dataclass(slots=True)');
   lines.push(`class ${className}:`);
+  lines.push(`    """${iu.description || className} data model.`);
+  lines.push('    ');
+  lines.push(`    REQUIREMENT: ${iu.source_canon_ids?.[0] || 'From spec'}`);
+  lines.push(`    """`);
   lines.push(`    id: str`);
   lines.push(`    name: Optional[str] = None`);
+  lines.push(`    created_at: datetime = field(default_factory=datetime.now)`);
   lines.push('');
 
-  // === RED IMPLEMENTATIONS ===
-  lines.push('# === RED IMPLEMENTATIONS (fix to make tests pass) ===');
+  // === CLEAN IMPLEMENTATIONS ===
+  lines.push('# === IMPLEMENTATIONS (fill in TODOs) ===');
   lines.push('');
 
   for (const func of functions) {
-    lines.push(...generateWrongFunction(func, className, iu));
+    lines.push(...generateCleanFunction(func, className, iu, loggingConfig));
     lines.push('');
   }
 
@@ -50,6 +59,7 @@ export function generateImpl(iu, config = {}) {
   lines.push(`    "iu_id": "${iu.id}",`);
   lines.push(`    "name": "${iu.name}",`);
   lines.push(`    "risk_tier": "${iu.risk_tier}",`);
+  lines.push(`    "generated_at": "${new Date().toISOString()}",`);
   lines.push('}');
   lines.push('');
 
@@ -57,38 +67,31 @@ export function generateImpl(iu, config = {}) {
 }
 
 export function generateTests(iu, implPath) {
+  // Optional: Generate minimal validation test
+  // This is NOT TDD - just validates the code structure
   const className = toPascalCase(iu.name);
-  const functions = extractFunctions(iu);
   const moduleName = toSnakeCase(iu.name);
 
   const lines = [];
 
-  lines.push(`# 🔴 RED: Tests designed to FAIL — fix implementation to pass`);
-  lines.push(`# ${iu.name} (${iu.short_id})`);
-  lines.push(`# Risk Tier: ${iu.risk_tier.toUpperCase()}`);
+  lines.push(`# ✅ Validation tests for ${iu.name} (${iu.short_id})`);
+  lines.push(`# These tests validate structure, not behavior`);
   lines.push('');
-  lines.push(`# TDD CYCLE:`);
-  lines.push(`# 1. pytest test_${moduleName}.py -v`);
-  lines.push(`# 2. 🔴 See RED (tests fail)`);
-  lines.push(`# 3. Fix ${moduleName}.py implementations`);
-  lines.push(`# 4. 🟢 See GREEN (tests pass)`);
+  lines.push(`from ${moduleName} import _phoenix, ${className}`);
   lines.push('');
-  lines.push(`import pytest`);
-  lines.push(`from ${moduleName} import _phoenix, ${className}, ${functions.map(f => f.name).join(', ')}`);
-  lines.push('');
-
-  // Traceability test (always passes)
-  lines.push('# 🟢 GREEN: Traceability (always passes)');
+  lines.push('# Traceability test (validates VCS identity)');
   lines.push('def test_traceability():');
+  lines.push('    """Verify Phoenix VCS traceability is present."""');
   lines.push('    assert _phoenix is not None');
   lines.push(`    assert _phoenix["iu_id"] == "${iu.id}"`);
+  lines.push(`    assert _phoenix["name"] == "${iu.name}"`);
   lines.push('');
-
-  // Failing tests for each function
-  for (const func of functions) {
-    lines.push(...generateFailingTest(func, className, iu));
-    lines.push('');
-  }
+  lines.push('# Structure validation (NOT behavior testing)');
+  lines.push('def test_model_structure():');
+  lines.push(`    """Verify ${className} can be instantiated."""`);
+  lines.push(`    instance = ${className}(id="test-123")`);
+  lines.push('    assert instance.id == "test-123"');
+  lines.push('');
 
   return lines.join('\n');
 }
@@ -98,22 +101,214 @@ export function getFileExtension() {
 }
 
 export function getTestFileExtension() {
-  return '_test.py';  // or test_*.py depending on convention
+  return { prefix: 'test_', suffix: '.py' };
 }
 
-export function getTestFilePrefix() {
-  return 'test_';  // pytest convention
+export function getTestFilePattern() {
+  return { prefix: 'test_', suffix: '.py' };
 }
 
-// === HELPERS ===
+export function isTemplateGenerator() {
+  return false;
+}
+
+// === MIGRATION SUPPORT ===
+
+export function migrateImpl(iu, oldCode, config = {}) {
+  // Simple migration: wrap old code with new traceability header
+  const lines = [];
+  const className = toPascalCase(iu.name);
+
+  lines.push(`# 🔄 MIGRATED: ${iu.name} (${iu.short_id})`);
+  lines.push(`# From: ${config.oldIuId || 'old IU'}`);
+  lines.push(`# Overlap: ${config.overlapRatio || 'unknown'}`);
+  lines.push('');
+
+  // Extract old implementation body (skip old traceability blocks)
+  const cleanedCode = oldCode.replace(
+    /# === PHOENIX VCS TRACEABILITY ===[\s\S]*?_phoenix = \{[\s\S]*?\}/,
+    ''
+  ).replace(
+    /# 🔴 RED:[\s\S]*?(?=# ===|$)/,
+    ''
+  );
+
+  lines.push(cleanedCode.trim());
+  lines.push('');
+
+  // Add new traceability
+  lines.push('# === PHOENIX VCS TRACEABILITY ===');
+  lines.push('# DO NOT REMOVE — Required for VCS tracking');
+  lines.push('_phoenix = {');
+  lines.push(`    "iu_id": "${iu.id}",`);
+  lines.push(`    "name": "${iu.name}",`);
+  lines.push(`    "risk_tier": "${iu.risk_tier}",`);
+  lines.push(`    "migrated_from": "${config.oldIuId || 'unknown'}",`);
+  lines.push(`    "migrated_at": "${new Date().toISOString()}",`);
+  lines.push('}');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// === HELPER FUNCTIONS ===
+
+function loadCodegenInstruction(projectRoot) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const instructionPath = path.join(projectRoot, '.phoenix', 'codegen-instruction.md');
+    if (!fs.existsSync(instructionPath)) {
+      return null;
+    }
+    const content = fs.readFileSync(instructionPath, 'utf-8');
+    // Parse logging section from instruction
+    const loggingMatch = content.match(/### Logging & Tracing Requirements[\s\S]*?(?=###|$)/);
+    if (loggingMatch) {
+      return { logging: { enabled: true, raw: loggingMatch[0] } };
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function extractFunctions(iu) {
+  const functions = [];
+
+  // Extract from boundary exports
+  if (iu.boundary?.exports) {
+    for (const exp of iu.boundary.exports) {
+      if (typeof exp === 'string') {
+        functions.push({
+          name: exp,
+          type: 'method',
+          params: [],
+          returns: 'None',
+        });
+      } else if (exp.type === 'function' || exp.type === 'method') {
+        functions.push({
+          name: exp.name,
+          type: exp.type,
+          params: exp.params || [],
+          returns: exp.returns || 'None',
+          description: exp.description || '',
+        });
+      }
+    }
+  }
+
+  // Fallback: infer from IU name if no exports
+  if (functions.length === 0) {
+    const baseName = toSnakeCase(iu.name);
+    functions.push({
+      name: `process_${baseName}`,
+      type: 'function',
+      params: [{ name: 'data', type: 'Any' }],
+      returns: 'Any',
+    });
+  }
+
+  return functions;
+}
+
+function generateCleanFunction(func, className, iu, loggingConfig) {
+  const lines = [];
+  const funcName = toSnakeCase(func.name);
+  const isMethod = func.type === 'method';
+  const selfParam = isMethod ? 'self' : '';
+
+  // Determine log prefix based on function name
+  const logPrefix = inferLogPrefix(funcName, iu.name);
+
+  // Docstring
+  lines.push(`def ${funcName}(${generateParams(func, selfParam)}):`);
+  lines.push(`    """${func.description || funcName + ' implementation.'}`);
+  lines.push('    ');
+  lines.push(`    REQUIREMENT: From ${iu.name} (${iu.short_id})`);
+  lines.push(`    """`);
+
+  // Traceability comment
+  const canonId = iu.source_canon_ids?.[0] || 'node-xxxx';
+  lines.push(`    # @phoenix-canon: ${canonId}`);
+
+  // Auto-injected logging (entry point)
+  if (isMethod) {
+    lines.push(`    logger.info(f"${logPrefix} ${funcName} called")`);
+  } else {
+    lines.push(`    logger.info(f"${logPrefix} ${funcName} called")`);
+  }
+
+  // State transition logging for special methods
+  if (funcName.includes('auth') && funcName.includes('completed')) {
+    lines.push(`    logger.info(f"${logPrefix} Auth completed, updating session")`);
+  }
+  if (funcName.includes('mount')) {
+    lines.push(`    logger.info(f"${logPrefix} Starting initialization")`);
+  }
+
+  // TODO placeholder
+  lines.push('    # TODO: Implement logic from requirements');
+  lines.push(`    # Source: ${iu.source_canon_ids?.join(', ') || 'spec'}`);
+
+  // Default return
+  if (func.returns && func.returns !== 'None') {
+    lines.push(`    return None  # TODO: Return ${func.returns}`);
+  }
+
+  return lines;
+}
+
+function generateParams(func, selfParam) {
+  const params = [];
+  if (selfParam) {
+    params.push(selfParam);
+  }
+  if (func.params) {
+    for (const p of func.params) {
+      params.push(`${p.name}: ${p.type || 'Any'}`);
+    }
+  }
+  return params.join(', ');
+}
+
+function inferLogPrefix(funcName, iuName) {
+  // Infer appropriate log prefix based on function name
+  if (funcName.includes('auth')) return '[AUTH]';
+  if (funcName.includes('mount')) return '[MOUNT]';
+  if (funcName.includes('save') || funcName.includes('load')) return '[IO]';
+  if (funcName.includes('connect') || funcName.includes('send')) return '[BROKER]';
+  if (funcName.includes('watch')) return '[REACTIVE]';
+  if (funcName.includes('on_')) return '[EVENT]';
+  if (funcName.includes('render') || funcName.includes('compose')) return '[UI]';
+  if (funcName.includes('state')) return '[STATE]';
+
+  // Fall back to IU name
+  const iuLower = iuName.toLowerCase();
+  if (iuLower.includes('auth')) return '[AUTH]';
+  if (iuLower.includes('broker')) return '[BROKER]';
+  if (iuLower.includes('ui')) return '[UI]';
+
+  return '[GENERAL]';
+}
+
+// === STRING UTILS ===
 
 function toPascalCase(str) {
   return str
     .replace(/[^a-zA-Z0-9]/g, ' ')
     .split(' ')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join('')
-    .replace(/Domain$/, '');
+    .join('');
+}
+
+function toKebabCase(str) {
+  return str
+    .replace(/[^a-zA-Z0-9]/g, ' ')
+    .split(' ')
+    .map(w => w.toLowerCase())
+    .join('-')
+    .replace(/-+$/, '');
 }
 
 function toSnakeCase(str) {
@@ -123,174 +318,4 @@ function toSnakeCase(str) {
     .map(w => w.toLowerCase())
     .join('_')
     .replace(/_+$/, '');
-}
-
-function toCamelCase(str) {
-  const pascal = toPascalCase(str);
-  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
-}
-
-function extractFunctions(iu) {
-  const functions = [];
-  const text = (iu.contract?.description || '') + ' ' + (iu.contract?.invariants?.join(' ') || '');
-
-  const patterns = [
-    { pattern: /\b(calculate|compute|derive|get|find|lookup)\w*\b/gi, type: 'query' },
-    { pattern: /\b(create|add|new|make)\w*\b/gi, type: 'create' },
-    { pattern: /\b(validate|verify|check|is_valid)\w*\b/gi, type: 'validate' },
-    { pattern: /\b(process|handle|update|transform|convert)\w*\b/gi, type: 'process' },
-    { pattern: /\b(delete|remove|clear)\w*\b/gi, type: 'delete' },
-    { pattern: /\b(list|get_all|enumerate)\w*\b/gi, type: 'list' },
-  ];
-
-  const seen = new Set();
-
-  for (const { pattern, type } of patterns) {
-    let match;
-    while ((match = pattern.exec(text)) !== null) {
-      const name = match[0].toLowerCase();
-      const snakeName = name.replace(/([A-Z])/g, '_$1').toLowerCase();
-      if (!seen.has(snakeName)) {
-        seen.add(snakeName);
-        functions.push({ name: snakeName, type, original: match[0] });
-      }
-    }
-  }
-
-  if (functions.length === 0) {
-    functions.push({
-      name: 'process',
-      type: 'process',
-      original: 'process'
-    });
-  }
-
-  return functions.slice(0, 4);
-}
-
-function generateWrongFunction(func, className, iu) {
-  const lines = [];
-
-  lines.push(`# 🔴 RED: ${func.original}`);
-  lines.push(`# TDD: Fix this function to make tests pass`);
-  lines.push(`def ${func.name}(item: ${className}) -> ${getReturnType(func.type, className)}:`);
-
-  const output = iu.contract?.outputs?.[0] || 'process the item';
-
-  switch (func.type) {
-    case 'validate':
-      lines.push(`    # 🔴 RED: WRONG — always returns False`);
-      lines.push(`    # Should validate: ${iu.contract?.invariants?.[0] || 'TBD'}`);
-      lines.push(`    return False  # ← Always false!`);
-      break;
-
-    case 'query':
-    case 'create':
-      lines.push(`    # 🔴 RED: WRONG — returns object with mismatched ID`);
-      lines.push(`    return ${className}(`);
-      lines.push(`        id=f"WRONG_{item.id}",  # ← Bug: adds 'WRONG_' prefix`);
-      lines.push(`        name="not implemented"`);
-      lines.push(`    )`);
-      break;
-
-    case 'list':
-      lines.push(`    # 🔴 RED: WRONG — returns empty list`);
-      lines.push(`    return []  # ← Should return actual list`);
-      break;
-
-    case 'delete':
-      lines.push(`    # 🔴 RED: WRONG — always returns False`);
-      lines.push(`    print(f"Delete called with: {item_id}")`);
-      lines.push(`    return False  # ← Should return True if deleted`);
-      break;
-
-    case 'process':
-    default:
-      lines.push(`    # 🔴 RED: WRONG — returns input unchanged`);
-      lines.push(`    # Should: ${output}`);
-      lines.push(`    return item  # ← No transformation!`);
-  }
-
-  return lines;
-}
-
-function getReturnType(funcType, className) {
-  switch (funcType) {
-    case 'validate':
-    case 'delete':
-      return 'bool';
-    case 'list':
-      return `List[${className}]`;
-    case 'query':
-    case 'create':
-      return `Optional[${className}]`;
-    case 'process':
-    default:
-      return className;
-  }
-}
-
-function generateFailingTest(func, className, iu) {
-  const lines = [];
-
-  lines.push(`# 🔴 RED: This test will FAIL until you fix ${func.name}()`);
-
-  switch (func.type) {
-    case 'validate':
-      lines.push(`def test_${func.name}_returns_true_for_valid():`);
-      lines.push(`    item = ${className}(id="123", name="Test")`);
-      lines.push(`    # 🔴 This FAILS because ${func.name} always returns False`);
-      lines.push(`    assert ${func.name}(item) is True`);
-      lines.push(`    # FIX: Return True when item is actually valid`);
-      break;
-
-    case 'query':
-      lines.push(`def test_${func.name}_returns_item_with_matching_id():`);
-      lines.push(`    item_id = "abc123"`);
-      lines.push(`    result = ${func.name}(${className}(id=item_id))`);
-      lines.push(`    # 🔴 This FAILS because ${func.name} returns 'WRONG_' + id`);
-      lines.push(`    assert result is not None`);
-      lines.push(`    assert result.id == item_id  # ← Will be 'WRONG_abc123'`);
-      lines.push(`    # FIX: Return item with ID matching the input`);
-      break;
-
-    case 'create':
-      lines.push(`def test_${func.name}_creates_item_with_given_id():`);
-      lines.push(`    item_id = "new123"`);
-      lines.push(`    result = ${func.name}(${className}(id=item_id))`);
-      lines.push(`    # 🔴 This FAILS because ${func.name} returns wrong ID`);
-      lines.push(`    assert result is not None`);
-      lines.push(`    assert result.id == item_id`);
-      lines.push(`    # FIX: Return created item with correct ID`);
-      break;
-
-    case 'list':
-      lines.push(`def test_${func.name}_returns_non_empty_list():`);
-      lines.push(`    result = ${func.name}()`);
-      lines.push(`    # 🔴 This FAILS because ${func.name} returns []`);
-      lines.push(`    assert len(result) > 0`);
-      lines.push(`    # FIX: Return actual items in the list`);
-      break;
-
-    case 'delete':
-      lines.push(`def test_${func.name}_returns_true_on_success():`);
-      lines.push(`    result = ${func.name}("some-id")`);
-      lines.push(`    # 🔴 This FAILS because ${func.name} returns False`);
-      lines.push(`    assert result is True`);
-      lines.push(`    # FIX: Return True when deletion succeeds`);
-      break;
-
-    case 'process':
-    default:
-      lines.push(`def test_${func.name}_transforms_input():`);
-      lines.push(`    input_item = ${className}(id="123", name="In")`);
-      lines.push(`    result = ${func.name}(input_item)`);
-      lines.push(`    # 🔴 This FAILS because ${func.name} returns input unchanged`);
-      lines.push(`    assert result is not input_item  # Should be new object`);
-      lines.push(`    # FIX: Actually transform/process the input`);
-      lines.push(`    # Then add: assert result.name == "Expected Output"`);
-      break;
-  }
-
-  return lines;
 }

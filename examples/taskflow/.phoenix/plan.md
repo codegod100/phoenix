@@ -419,11 +419,11 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ---
 
-## IU-a9a3faf2: Bulk Domain (HIGH)
+## IU-2c9a4a3e: Bulk Domain (HIGH)
 
-**Description:** Implements bulk functionality with 10 requirements
+**Description:** Implements bulk functionality with 11 requirements
 
-**Risk Tier:** high (10 requirements)
+**Risk Tier:** high (11 requirements)
 
 **Canonical Requirements:**
 - 1a410f8a7c01...
@@ -435,12 +435,13 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 - a6f0ad574ddd...
 - ca5a17a3dad3...
 - dd47204341c3...
-- f72241dbb301...
+- f060304bb46b...
+- ... and 1 more
 
 **Contract:**
 - Inputs: Configuration, Data inputs
 - Outputs: Processed results, Side effects
-- Invariants: Valid state transitions only, Type safety maintained
+- Invariants: cards must not display any left border highlight on hover only the cursor changes
 
 **Output Files:**
 - `src/generated/bulk/index.ts`
@@ -864,6 +865,6 @@ Planned from canonical requirements. Each IU groups related requirements by feat
 
 ## Coverage Summary
 
-- Total canonical nodes: 179
-- Covered: 179
+- Total canonical nodes: 180
+- Covered: 180
 - Orphans: 0

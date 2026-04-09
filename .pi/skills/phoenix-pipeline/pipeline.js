@@ -2,33 +2,39 @@
 /**
  * Phoenix Pipeline — Spec-Driven Code Generation
  * 
- *   SPEC → CANON → PLAN → PROTOLENS → CODEGEN → EVIDENCE → AUDIT → DRIFT
+ *   SPEC ──[μ_ingest]──► CLAUSE ──[μ_canon]──► CANON ──[μ_plan]──► IU ──[μ_codegen]──► CODE
  * 
- * All code generation happens in single CODEGEN phase at the end.
- * PROTOLENS computes migration plan using theory morphism (category theory).
- * The deliverable is generated along with IU implementations.
+ * Each arrow is a lensing morphism (structure-preserving theory map):
+ * - μ_ingest: ThSpec → ThClause (parsing lens)
+ * - μ_canon: ThClause → ThCanon (quotient lens - collapses duplicates)
+ * - μ_plan: ThCanon → ThIU (partition lens - groups by domain)
+ * - μ_codegen: ThIU → ThCode (generative lens - constructs implementations)
+ * 
+ * The composition μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest is a functor
+ * from specifications to code. GAT validation enforces mathematical correctness.
  * 
  * Phases:
- * 1. Ingest - Parse specs into clauses
- * 2. Canonicalize - Extract clean requirements
- * 3. Plan - Create IUs with boundary exports
- * 4. Protolens - Compute migration plan (theory morphism)
- * 5. Codegen - Generate IU implementations AND deliverable
- * 6. Evidence - Collect validation metrics (informational only)
- * 7. Audit - Boundary checks
- * 8. Drift - Detect manual changes
+ * 1. ingest      - μ_ingest: Parse specs into content-addressed clauses
+ * 2. canonicalize - μ_canon: Extract clean requirements, collapse duplicates
+ * 3. plan         - μ_plan: Group requirements into Implementation Units
+ * 4. codegen      - μ_codegen: Generate IU implementations
+ * 5. evidence     - Collect validation metrics
+ * 6. audit        - Validate architectural boundaries
+ * 7. drift        - Detect manual changes
+ * 8. gat          - Validate Generalized Algebraic Theory axioms
  * 
  * Usage: node .pi/skills/phoenix-pipeline/pipeline.js [project-root] [options]
  * Options:
  *   --skip-ingest
  *   --skip-canonicalize
  *   --skip-plan
- *   --skip-protolens      (Skip migration computation)
  *   --skip-codegen         (Preserve your implementations!)
  *   --skip-evidence
  *   --skip-audit
  *   --skip-drift
+ *   --skip-gat            (Skip GAT validation)
  *   --strict-evidence      (Legacy TDD mode - fail on test failures)
+ *   --strict-gat          (Fail pipeline on GAT axiom violations)
  */
 
 import { spawn } from 'child_process';
@@ -44,34 +50,28 @@ const PHASES = [
   { 
     name: 'ingest', 
     script: 'phoenix-ingest/ingest.js', 
-    description: 'Parse specs into content-addressed clauses',
+    description: 'μ_ingest: ThSpec → ThClause (lensing morphism)',
   },
   { 
     name: 'canonicalize', 
     script: 'phoenix-canonicalize/canonicalize.js', 
-    description: 'Extract clean requirements with traceability',
+    description: 'μ_canon: ThClause → ThCanon (quotient morphism)',
   },
   { 
     name: 'plan', 
     script: 'phoenix-plan/plan.js', 
-    description: 'Group requirements into Implementation Units',
-  },
-  { 
-    name: 'protolens', 
-    script: 'panproto/panproto.js', 
-    description: 'Compute migration plan (theory morphism)',
-    args: ['migrate'],
+    description: 'μ_plan: ThCanon → ThIU (partition morphism)',
   },
   { 
     name: 'codegen', 
     script: 'phoenix-codegen/codegen.js', 
-    description: 'Generate IU implementations and deliverable',
+    description: 'μ_codegen: ThIU → ThCode (generative morphism)',
     warning: '⚠️  DESTRUCTIVE: Overwrites src/generated/*. Edit with care!',
   },
   { 
     name: 'evidence', 
     script: 'phoenix-evidence/evidence.js', 
-    description: 'Collect validation metrics (informational only)',
+    description: 'Validate evidence tiers (informational only)',
     blocking: false,
   },
   { 
@@ -83,6 +83,12 @@ const PHASES = [
     name: 'drift', 
     script: 'phoenix-drift/drift.js', 
     description: 'Detect manual changes vs manifest',
+    blocking: false,
+  },
+  { 
+    name: 'gat', 
+    script: 'phoenix/validate-gat.js', 
+    description: 'Validate GAT axioms (mathematical enforcement)',
     blocking: false,
   },
 ];
@@ -138,81 +144,6 @@ function updateState(projectRoot, phase, status) {
   writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf-8');
 }
 
-// === PROTOLENS PHASE ===
-
-/**
- * Run panproto protolens phase to compute IU migration plan.
- * Uses theory morphism to determine which implementations can be lifted vs regenerated.
- */
-async function runProtolensPhase(projectRoot) {
-  const graphsDir = join(projectRoot, '.phoenix', 'graphs');
-  const manifestsDir = join(projectRoot, '.phoenix', 'manifests');
-  
-  const iusPath = join(graphsDir, 'ius.json');
-  const canonPath = join(graphsDir, 'canonical.json');
-  const manifestPath = join(manifestsDir, 'generated_manifest.json');
-  const migrationPath = join(graphsDir, 'iu-migration.json');
-  
-  // Check for previous state
-  const canonPrevPath = join(graphsDir, 'canonical-prev.json');
-  const iusPrevPath = join(graphsDir, 'ius-prev.json');
-  
-  // If no previous state, create a "regenerate all" migration plan
-  if (!existsSync(canonPrevPath) || !existsSync(iusPrevPath)) {
-    console.log('   📋 First run - no previous state to migrate from');
-    
-    if (existsSync(iusPath)) {
-      const ius = JSON.parse(readFileSync(iusPath, 'utf-8'));
-      const migration = {
-        timestamp: new Date().toISOString(),
-        first_run: true,
-        schema_changes: { added: [], removed: [], modified: [] },
-        ius: (ius.ius || []).map(iu => ({
-          new_iu_id: iu.id,
-          new_iu_name: iu.name,
-          old_iu_id: null,
-          strategy: 'regenerate',
-          reason: 'first_run_no_previous_state',
-        })),
-        summary: { migrate: 0, regenerate: ius.ius?.length || 0, unchanged: 0 },
-      };
-      
-      writeFileSync(migrationPath, JSON.stringify(migration, null, 2));
-      console.log(`   🎯 ${migration.summary.regenerate} IUs marked for fresh generation`);
-      return { success: true };
-    }
-    return { success: false, error: 'No IUs found' };
-  }
-  
-  // Run panproto migrate
-  const panprotoPath = join(__dirname, '..', 'panproto', 'panproto.js');
-  
-  return new Promise((resolve) => {
-    const child = spawn('node', [
-      panprotoPath,
-      'migrate',
-      '--old-canon', canonPrevPath,
-      '--new-canon', canonPath,
-      '--old-ius', iusPrevPath,
-      '--new-ius', iusPath,
-      '--manifest', manifestPath,
-      '--output', migrationPath,
-    ], {
-      stdio: 'inherit',
-      shell: false,
-    });
-    
-    child.on('close', (exitCode) => {
-      resolve({ success: exitCode === 0, exitCode: exitCode || 0 });
-    });
-    
-    child.on('error', (err) => {
-      console.error(`Error running protolens: ${err.message}`);
-      resolve({ success: false, exitCode: 1 });
-    });
-  });
-}
-
 // === PIPELINE EXECUTION ===
 
 async function runPipeline(projectRoot, options) {
@@ -222,7 +153,8 @@ async function runPipeline(projectRoot, options) {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║  Phoenix Pipeline — Spec-Driven Code Generation            ║');
   console.log('╠══════════════════════════════════════════════════════════════╣');
-  console.log('║  Spec → Canon → Plan → Protolens → Codegen → Deliverable   ║');
+  console.log('║  SPEC ──[μ_ingest]──► CLAUSE ──[μ_canon]──► CANON ──[μ_plan] ║');
+  console.log('║                    ──[μ_codegen]──► CODE                     ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
   console.log('');
   
@@ -242,13 +174,8 @@ async function runPipeline(projectRoot, options) {
     }
     console.log();
     
-    // Special handling for protolens phase
-    let result;
-    if (phase.name === 'protolens') {
-      result = await runProtolensPhase(projectRoot);
-    } else {
-      result = await runPhase(phase.script, projectRoot, phase.args || []);
-    }
+    // Run the phase
+    const result = await runPhase(phase.script, projectRoot, phase.args || []);
     
     results.push({
       phase: phase.name,
@@ -295,24 +222,26 @@ function parseOptions(args) {
     'skip-ingest': false,
     'skip-canonicalize': false,
     'skip-plan': false,
-    'skip-protolens': false,
     'skip-codegen': false,
     'skip-evidence': false,
     'skip-audit': false,
     'skip-drift': false,
+    'skip-gat': false,
     'strict-evidence': false,
+    'strict-gat': false,
   };
   
   for (const arg of args) {
     if (arg === '--skip-ingest') options['skip-ingest'] = true;
     if (arg === '--skip-canonicalize') options['skip-canonicalize'] = true;
     if (arg === '--skip-plan') options['skip-plan'] = true;
-    if (arg === '--skip-protolens') options['skip-protolens'] = true;
     if (arg === '--skip-codegen') options['skip-codegen'] = true;
     if (arg === '--skip-evidence') options['skip-evidence'] = true;
     if (arg === '--skip-audit') options['skip-audit'] = true;
     if (arg === '--skip-drift') options['skip-drift'] = true;
+    if (arg === '--skip-gat') options['skip-gat'] = true;
     if (arg === '--strict-evidence') options['strict-evidence'] = true;
+    if (arg === '--strict-gat') options['strict-gat'] = true;
   }
   
   return options;

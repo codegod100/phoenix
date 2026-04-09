@@ -157,6 +157,9 @@ The plan phase **extracts operations from requirement text** using GENERIC patte
 | "X must be filterable by Y" | `filterByY` |
 | "searchable by X" | `search` |
 | "sortable by X" | `sortBy` |
+| "must use a custom X component" | `renderX`, `getXHTML` |
+| "X must display Y" | `renderY` |
+| "X picker/calendar/modal must" | `renderX`, `showX`, `hideX` |
 
 **Derived from canonical requirements only** — no config, no hardcoding. The verb "archive" in your spec becomes the function `archive`, "query archived tasks" becomes `queryArchivedTasks`, etc.
 

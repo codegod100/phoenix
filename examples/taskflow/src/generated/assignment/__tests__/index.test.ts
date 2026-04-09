@@ -1,14 +1,44 @@
+// 🔴 RED: Tests designed to FAIL — fix implementation to pass
+// Assignment Domain (IU-013287c8)
+// Risk Tier: LOW
+
+// @phoenix-iu: 013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026
+// @phoenix-name: Assignment Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-013287c8
+
+// TDD CYCLE:
+// 1. npm test -- iu-013287c8
+// 2. 🔴 See RED (tests fail)
+// 3. Fix ../index.ts implementations
+// 4. 🟢 See GREEN (tests pass)
+
+import { describe, it, expect } from 'vitest';
 import { assignTasks, queryTasks } from '../index.js';
 
-describe('assignTasks', () => {
-  it('should be implemented', () => {
-    expect(typeof assignTasks).toBe('function');
+describe('Assignment Domain', () => {
+  // 🟢 GREEN: Traceability (always passes)
+  it('has phoenix traceability comments', () => {
+    // Read the impl file and check for @phoenix-iu comment
+    const fs = require('fs');
+    const path = require('path');
+    const implPath = path.join(__dirname, '..', 'index.ts');
+    const impl = fs.readFileSync(implPath, 'utf-8');
+    expect(impl).toMatch(/@phoenix-iu:.*013287c893c1bba6/);
   });
-});
 
-describe('queryTasks', () => {
-  it('should be implemented', () => {
-    expect(typeof queryTasks).toBe('function');
+  // 🔴 RED: assignTasks should transform input
+  it('assignTasks processes assignment', () => {
+    const item: Assignment = { id: '1', name: 'test' };
+    const result = assignTasks(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
   });
-});
 
+  // 🔴 RED: queryTasks should transform input
+  it('queryTasks processes assignment', () => {
+    const item: Assignment = { id: '1', name: 'test' };
+    const result = queryTasks(item);
+    expect(result).not.toBe(item); // 🔴 Currently returns same object
+  });
+
+});

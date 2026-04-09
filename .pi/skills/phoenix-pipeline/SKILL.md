@@ -24,6 +24,49 @@ SPEC → CANON → PLAN → PROTOLENS → CODEGEN → EVIDENCE → AUDIT → DRI
 7. **Audit** - Check architectural boundaries
 8. **Drift** - Detect manual changes vs manifest
 
+## Phoenix State Directory (`.phoenix/`)
+
+**NEVER delete `.phoenix/` between normal pipeline runs.** Phoenix is **incremental by design**.
+
+The `.phoenix/` directory contains:
+- `graphs/canonical.json` - Content-addressed requirements (expensive to rebuild)
+- `graphs/ius.json` - Implementation Unit boundaries
+- `manifests/` - Generated file hashes for drift detection
+- `state.json` - Pipeline state tracking
+
+### Correct Usage
+
+```bash
+# Just run the pipeline - it detects spec changes automatically
+node .pi/skills/phoenix-pipeline/pipeline.js /path/to/project
+
+# Skip phases when specs haven't changed
+node .pi/skills/phoenix-pipeline/pipeline.js /path/to/project --skip-ingest
+```
+
+### When to Reset (Rare)
+
+Only delete `.phoenix/` for:
+- **Corrupted state** (rare - usually indicated by parse errors)
+- **Changing canonicalization algorithm** (major version upgrade)
+- **Force full rebuild** (debugging/troubleshooting)
+
+```bash
+# Cold start - only when necessary!
+rm -rf /path/to/project/.phoenix
+node .pi/skills/phoenix-pipeline/pipeline.js /path/to/project
+```
+
+### Why Deleting is Harmful
+
+Deleting `.phoenix/` forces a **cold start**:
+- Re-ingests all specs from scratch (slow for large projects)
+- Re-canonicalizes all requirements (loses edit history context)
+- Re-plans all IUs (destroys boundary optimization)
+- Loses drift detection baseline (false positives on next run)
+
+**The pipeline already checks file mtimes and content hashes. Let it do its job.**
+
 ## Default Mode (Non-Blocking)
 
 By default, the pipeline completes successfully even if tests fail or drift is detected:
@@ -76,6 +119,20 @@ node .pi/skills/phoenix-pipeline/pipeline.js examples/taskflow
 # → "Regenerating 3 of 25 IUs..."
 # → Other 22 IUs preserve implementations
 ```
+
+## Post-Pipeline Verification (Agent Task)
+
+After the pipeline completes, an agent should perform smoketest verification:
+
+### Smoketest Steps
+1. **Kill any existing server** on the configured port (usually 8080)
+2. **Start the generated server**: `node src/generated/app/server.ts`
+3. **Wait for server ready** (poll HTTP endpoint until 200 response or timeout)
+4. **Verify response**: Check that the page loads and contains expected content
+5. **Kill the server**: Stop the process after verification
+
+### Why This Is Agent-Level
+The smoketest requires runtime verification that cannot be captured in static files. The agent interprets the pipeline output, starts the server, and verifies it works. This is the "draw the rest of the owl" principle - the skill provides the instruction, the agent does the work.
 
 ## Pipeline Options
 

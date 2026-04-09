@@ -10,6 +10,7 @@ export const LanguageVariant = {
   TYPESCRIPT_API: 'typescript-api', 
   PYTHON_FASTAPI: 'python-fastapi',
   PYTHON_FLASK: 'python-flask',
+  PYTHON_TEXTUAL: 'python-textual',
   RUST_AXUM: 'rust-axum',
   GO_STD: 'go-std',
   NIX: 'nix',
@@ -106,7 +107,7 @@ export const LanguageLenses = {
       iuIndex: 'index.ts',
       deliverableDir: 'api',
       serverFile: 'server.ts',
-      routesFile: 'routes.ts',
+      storeFile: 'routes.ts',
     },
     
     constraints: {
@@ -145,12 +146,144 @@ export const LanguageLenses = {
       iuIndex: '__init__.py',
       deliverableDir: 'app',
       serverFile: 'main.py',
-      modelsFile: 'models.py',
+      storeFile: 'models.py',
     },
     
     constraints: {
       'input validation': 'Pydantic models',
       'type safety': 'Python 3.10+ with strict typing',
+    },
+  },
+
+  [LanguageVariant.PYTHON_TEXTUAL]: {
+    name: 'Python (Textual TUI)',
+    extension: '.py',
+    moduleSystem: 'commonjs',
+    
+    // Extract exports from IU name and canonical requirements
+    extractExports: (iu, canonicalNodes) => {
+      const exports = [];
+      const domain = iu.name.toLowerCase().replace(/\s+domain$/, '');
+      
+      // Add main widget class based on domain name
+      const widgetClass = domain.charAt(0).toUpperCase() + domain.slice(1).replace(/-(\w)/g, (_, c) => c.toUpperCase()) + 'Widget';
+      exports.push({
+        type: 'widget',
+        name: widgetClass,
+        classPattern: `class ${widgetClass}(Widget)`,
+        description: `Main widget for ${iu.name}`,
+      });
+      
+      // Add data model class
+      const modelClass = domain.charAt(0).toUpperCase() + domain.slice(1).replace(/-(\w)/g, (_, c) => c.toUpperCase()) + 'State';
+      exports.push({
+        type: 'model',
+        name: modelClass,
+        classPattern: `@dataclass(slots=True)\\nclass ${modelClass}`,
+        description: `Data model for ${iu.name}`,
+      });
+      
+      // Derive methods from requirements
+      if (iu.source_canon_ids && canonicalNodes) {
+        for (const canonId of iu.source_canon_ids) {
+          const node = canonicalNodes.find(n => n.id === canonId);
+          if (node && node.statement) {
+            const stmt = node.statement.toLowerCase();
+            
+            // Extract method name from "shall" statements
+            let methodName = null;
+            if (stmt.includes('shall support') || stmt.includes('shall provide')) {
+              const match = stmt.match(/shall\s+(?:support|provide|implement)\s+([\w\s]+?)(?:\s+via|\s+using|\s+with|$)/);
+              if (match) {
+                methodName = match[1].trim()
+                  .replace(/\s+/g, '_')
+                  .replace(/[^a-z0-9_]/g, '')
+                  .substring(0, 30);
+              }
+            }
+            
+            // Specific patterns for common requirements
+            if (stmt.includes('oauth') || stmt.includes('authentication')) {
+              exports.push({ type: 'method', name: 'start_oauth_flow', signature: 'def start_oauth_flow(self, handle: str) -> AuthResult' });
+              exports.push({ type: 'method', name: 'poll_auth_result', signature: 'def poll_auth_result(self, session_id: str) -> Optional[AuthResult]' });
+            }
+            if (stmt.includes('session') && (stmt.includes('cache') || stmt.includes('restore'))) {
+              exports.push({ type: 'method', name: 'save_session', signature: 'def save_session(self) -> None' });
+              exports.push({ type: 'method', name: 'restore_session', signature: 'def restore_session(self, path: str) -> bool' });
+            }
+            if (stmt.includes('format') && stmt.includes('message')) {
+              exports.push({ type: 'method', name: 'format_message', signature: 'def format_message(self, sender: str, text: str) -> Text' });
+              exports.push({ type: 'method', name: 'format_nick', signature: 'def format_nick(self, nick: str) -> Text' });
+            }
+            if (stmt.includes('display') || stmt.includes('render') || stmt.includes('show')) {
+              exports.push({ type: 'method', name: 'compose', signature: 'def compose(self) -> ComposeResult' });
+              exports.push({ type: 'method', name: 'render', signature: 'def render(self) -> RenderableType' });
+            }
+            if (stmt.includes('keyboard') || stmt.includes('shortcut') || stmt.includes('binding')) {
+              exports.push({ type: 'binding', name: 'BINDINGS', signature: '[Binding(key, action, description)]' });
+            }
+            if (stmt.includes('reactive') || stmt.includes('state') || stmt.includes('watch')) {
+              exports.push({ type: 'reactive', name: 'state', signature: 'state: reactive[StateType] = reactive(StateType())' });
+            }
+            
+            // Add generic method if we extracted one
+            if (methodName && !exports.find(e => e.name === methodName)) {
+              exports.push({
+                type: 'method',
+                name: methodName,
+                signature: `def ${methodName}(self) -> None`,
+                description: node.statement.substring(0, 60),
+              });
+            }
+          }
+        }
+      }
+      
+      return exports;
+    },
+    
+    iuToLang: {
+      function: (exportName) => ({
+        signature: `def ${exportName}(self) -> None`,
+        asyncSignature: `async def ${exportName}(self) -> None`,
+        methodPattern: 'Instance method on Widget/App class',
+      }),
+      
+      interface: (name, fields) => ({
+        declaration: `@dataclass(slots=True)\nclass ${name}:\n${fields.map(f => `    ${f.name}: ${f.type}`).join('\n')}`,
+      }),
+      
+      // TUI components from IU exports
+      component: (iuName, exports) => ({
+        widget: exports.includes('display') || exports.includes('render') || exports.includes('compose'),
+        screen: exports.includes('screen') || exports.includes('push_screen'),
+        reactive: exports.includes('state') || exports.includes('watch'),
+        bindings: exports.filter(e => ['key', 'shortcut', 'action'].some(k => e.includes(k))),
+      }),
+      
+      deliverable: {
+        serverFramework: 'None (TUI application)',
+        uiPattern: 'Textual widgets with CSS styling',
+        stateManagement: 'reactive attributes on Widget classes',
+      },
+    },
+    
+    fileStructure: {
+      iuDir: (domain) => `${domain.replace(/-/g, '_')}`,
+      iuIndex: '__init__.py',
+      deliverableDir: 'widgets',
+      serverFile: 'app.py',
+      storeFile: 'models.py',
+    },
+    
+    constraints: {
+      'keyboard shortcut': '@Binding(key, action, description) decorator',
+      'reactive state': 'textual.reactive.reactive() decorator',
+      'async event': 'async def with @on(EventType) decorator',
+      'css styling': 'Textual CSS with widget IDs and classes',
+      'widget compose': 'compose() method yielding child widgets',
+      'dataclass model': '@dataclass(slots=True) for data classes',
+      'watch_state lifecycle': 'watch_state() MUST check is_mounted before accessing child widgets: if not self.is_mounted: return',
     },
   },
   
@@ -268,15 +401,48 @@ export function detectLanguage(projectPath, canonical, ius, fs = null) {
     }
   }
   
+  // Check for requirements.txt or pyproject.toml (Python) - BEFORE Rust for hybrid projects
+  if (existsSync(join(projectPath, 'requirements.txt')) || 
+      existsSync(join(projectPath, 'pyproject.toml'))) {
+    
+    // Check if it's a Textual TUI app
+    try {
+      const pyprojectPath = join(projectPath, 'pyproject.toml');
+      const requirementsPath = join(projectPath, 'requirements.txt');
+      let deps = '';
+      
+      if (existsSync(pyprojectPath)) {
+        const content = readFileSync(pyprojectPath, 'utf8');
+        deps = content;
+      } else if (existsSync(requirementsPath)) {
+        deps = readFileSync(requirementsPath, 'utf8');
+      }
+      
+      // Check for Textual dependency
+      if (deps.includes('textual')) {
+        return LanguageVariant.PYTHON_TEXTUAL;
+      }
+      
+      // Check for FastAPI
+      if (deps.includes('fastapi')) {
+        return LanguageVariant.PYTHON_FASTAPI;
+      }
+      
+      // Check for Flask
+      if (deps.includes('flask')) {
+        return LanguageVariant.PYTHON_FLASK;
+      }
+      
+    } catch {
+      // Fall through to default Python
+    }
+    
+    return LanguageVariant.PYTHON_FASTAPI;
+  }
+  
   // Check for Cargo.toml (Rust)
   if (existsSync(join(projectPath, 'Cargo.toml'))) {
     return LanguageVariant.RUST_AXUM;
-  }
-  
-  // Check for requirements.txt or pyproject.toml (Python)
-  if (existsSync(join(projectPath, 'requirements.txt')) || 
-      existsSync(join(projectPath, 'pyproject.toml'))) {
-    return LanguageVariant.PYTHON_FASTAPI;
   }
   
   // Check for flake.nix (Nix)

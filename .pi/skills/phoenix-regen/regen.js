@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /**
- * Phoenix Regen - Language-Agnostic RED (failing) Code Generator
+ * Phoenix Regen - Theory-Driven Code Generator
  *
- * TDD Philosophy:
- * 1. Generate code with WRONG implementations (RED — tests fail)
- * 2. Human or LLM fixes implementations (GREEN — tests pass)
- * 3. Evidence validates the GREEN state
+ * Theory Morphism Philosophy:
+ * 1. Read codegen-instruction.md (ThIU → ThLang theory mapping)
+ * 2. Apply theory morphism to generate clean implementations
+ * 3. Auto-inject logging from ThLog morphism
+ * 4. Generated code is ready to use (with TODOs for unimplemented logic)
  *
  * Language Agnostic:
- * - Pluggable generators for any language (TypeScript, Python, Nix, Rust, etc.)
+ * - Pluggable generators for any language (Python, TypeScript, Nix, Rust, etc.)
  * - Auto-detects target language from IU config, project config, or file extension
- * - Falls back to TypeScript by default
+ * - Falls back to Python by default (for Textual TUI projects)
  *
  * Usage: node .pi/skills/phoenix-regen/regen.js [project-root] [iu-id] [--lang=python]
  */
@@ -99,9 +100,9 @@ function resolveOutputDir(projectRoot, lang, iu) {
 
   // Language-specific defaults
   const defaults = {
+    python: 'src/generated',
     typescript: 'src/generated',
     javascript: 'src/generated',
-    python: 'src',
     nix: '.',
     rust: 'src',
     go: '.',
@@ -323,9 +324,9 @@ async function regenerate(projectRoot, options = {}) {
       // REGENERATE: Generate fresh stubs
       else {
         if (strategy === 'migrate') {
-          console.log(`   🔴 ${iu.short_id}: ${iu.name} (regenerate - no old implementation to migrate)`);
+          console.log(`   📝 ${iu.short_id}: ${iu.name} (regenerate - no old implementation to migrate)`);
         } else {
-          console.log(`   🔴 ${iu.short_id}: ${iu.name} (regenerate${migrationEntry ? ` - ${migrationEntry.reason}` : ''})`);
+          console.log(`   📝 ${iu.short_id}: ${iu.name} (regenerate${migrationEntry ? ` - ${migrationEntry.reason}` : ''})`);
         }
         
         // Generate implementation
@@ -441,7 +442,7 @@ function parseArgs(args) {
 
 function showHelp() {
   console.log(`
-🚀 Phoenix Regen — Language-Agnostic TDD Code Generator
+🚀 Phoenix Regen — Theory-Driven Code Generator
 
 Usage:
   node .pi/skills/phoenix-regen/regen.js [project-root] [iu-id] [options]
@@ -469,7 +470,7 @@ Language Detection:
   1. IU's target_language field
   2. Project's .phoenix/config.json targetLanguage
   3. Existing file extensions
-  4. Default: typescript
+  4. Default: python
 `);
 }
 
@@ -511,7 +512,7 @@ async function main() {
 
   const projectRoot = resolve(options.projectRoot);
 
-  console.log('🚀 Phoenix Regen — Language-Agnostic TDD');
+  console.log('🚀 Phoenix Regen — Theory-Driven Code Generator');
   console.log(`   Project: ${projectRoot}`);
 
   if (options.iuFilter) {
@@ -560,15 +561,14 @@ async function main() {
     }
     
     if (result.generated.length > 0) {
-      console.log('🔴 Generated RED code (tests will fail):');
+      console.log('📝 Generated clean implementations (ready to use):');
       console.log('');
 
       for (const [lang, items] of Object.entries(byLang)) {
         console.log(`   [${lang.toUpperCase()}]`);
         for (const gen of items) {
-          console.log(`   🔴 ${gen.short_id}: ${gen.iu}`);
+          console.log(`   📝 ${gen.short_id}: ${gen.iu}`);
           console.log(`      Impl: ${gen.impl}`);
-          console.log(`      Test: ${gen.test}`);
           console.log('');
         }
       }
@@ -582,10 +582,10 @@ async function main() {
       console.log('');
     }
 
-    console.log('📋 TDD Next Steps:');
-    console.log('   1. Run tests — See 🔴 RED (tests fail)');
-    console.log('   2. Fix implementations in generated files');
-    console.log('   3. Re-run tests — See 🟢 GREEN (tests pass)');
+    console.log('📋 Next Steps:');
+    console.log('   1. Review generated code in src/generated/');
+    console.log('   2. Fill in TODO sections for unimplemented logic');
+    console.log('   3. Check auto-injected logging with your log viewer');
     console.log('   4. Run: node .pi/skills/phoenix-evidence/evidence.js .');
     console.log('');
     console.log(`✅ Manifest: ${result.manifestPath}`);

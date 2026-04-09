@@ -1,43 +1,48 @@
-/**
- * @phoenix-iu: f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676
- * @phoenix-name: Data Domain
- * @phoenix-risk: HIGH
- */
-/**
- * @phoenix-canon: 900da6bbb6abdd66d83efe4b9162e74c6bcc540811e4639a2908fe1199a1b02b
- * Requirement: Tasks must persist in browser localStorage and survive page refreshes
- * 
- * @phoenix-canon: b5ce30f01710bee3d6e9ad93784345656aff05b0ebab96700d6921b59b7ec00d
- * Requirement: The dashboard must immediately display all tasks from localStorage on page load
- * 
- * Data Domain - Risk Tier: high
- */
+// 🔴 RED: Data Domain (IU-f5ffe871)
+// Description: Implements data functionality with 2 requirements
+// Risk Tier: HIGH
 
-export {
-  // Re-export all data functions from store
-  getAllTasks,
-  getTaskById,
-  createTask,
-  updateTask,
-  deleteTask,
-  archiveTask,
-  restoreTask,
-  getArchivedTasks,
-  getOverdueTasks,
-  searchTasks,
-  filterTasks,
-  assignTask,
-  getMetrics,
-  getTeamMetrics,
-  bulkDelete,
-  bulkArchive,
-  bulkRestore,
-  bulkAssign,
-  setDeadline,
-  seedData,
-  type Task,
-  type Priority,
-  type Status,
-  type Metrics,
-  type TeamMetrics
-} from "../app/store.js";
+// @phoenix-iu: f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676
+// @phoenix-name: Data Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-f5ffe871
+
+// === IMPLEMENTED REQUIREMENTS ===
+
+// @phoenix-canon: 900da6bbb6abdd66...
+// REQUIREMENT: tasks must persist in browser localstorage and survive page refreshes
+
+// @phoenix-canon: b5ce30f01710bee3...
+// REQUIREMENT: the dashboard must immediately display all tasks from localstorage on page lo...
+
+
+// TDD CYCLE:
+// 1. Tests are designed to FAIL with current code
+// 2. Run: npm test -- iu-f5ffe871
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
+// 5. Run evidence to validate
+
+// === TYPES ===
+// @phoenix-gen: types
+
+export interface Data {
+  id: string;
+  name?: string;
+}
+
+// === RED IMPLEMENTATIONS (fix to make tests pass) ===
+
+// @phoenix-canon: 900da6bbb6abdd66...
+// REQUIREMENT: tasks must persist in browser localstorage and survive page refreshes
+/**
+ * 🔴 RED: process
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function process(item: Data): Data {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: Processed results
+  return item; // ← No transformation!
+}

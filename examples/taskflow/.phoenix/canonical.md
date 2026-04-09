@@ -147,6 +147,7 @@ Generated from spec files. Each requirement has a unique hash-based ID.
 - [node-f72241db] selected cards must display a prominent 3px solid blue 89b4fa left border indicator
 - [node-7d96ab28] selected cards must use surface2 background color 585b70 to clearly distinguish from unselected cards
 - [node-32dcf102] the card cursor must change to pointer on hover to indicate clickability
+- [node-f060304b] cards must not display any left border highlight on hover only the cursor changes
 - [node-66b1f11e] individual action buttons on cards edit archive delete must remain clickable without triggering card selection via stoppropagation
 - [node-dd472043] the header must include a bulk action bar when tasks are selected including delete selected and archive selected
 - [node-ca5a17a3] the selection state is tracked by addingremoving task ids from a selectedids array in javascript

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-09T01:38:30.173Z",
+  "timestamp": "2026-04-09T04:30:43.938Z",
   "schema_changes": {
     "added": [
       "CanonId:0fcd31ba2080926c3dda3dda53f4c2af5b68916c3812975d265c9f66efc3cf03",
@@ -47,6 +47,7 @@
       "CanonId:debbb758555928d4db912869626579ae1da0b5618ad7c9420add2a77384d4759",
       "CanonId:e5a204e2c39e109274318a2c507303b5eb6f3585df345dc1f144c02372a1f284",
       "CanonId:eb6fcdb56d144801868cf29e831e4dc71dc171571ff9b012753f00b7823d202c",
+      "CanonId:f060304bb46b3f340153a8afd203f030ae6d26516d52c2f37c96acd1f0516e05",
       "CanonId:f2484cdfd8945abae50e8b306a557b69f720d0c3ee4ca9fd7f31635b2bfba3b7",
       "CanonId:f4e018445819ee3971e9f5ea4027087c81abfec89fc02333c9fd8d5350f72377",
       "CanonId:f680ef5ebce71ab378be6af8e09f5a8250d6d55f53418e1dc4e3341297e8a9ea",
@@ -69,6 +70,7 @@
       "ClauseId:68b2d5f231d7af6bd6fd33c47f94a1ef9d9149aae06b3a945cecae0a879afb27",
       "ClauseId:6e2403b97c6f54c754722f6d95fb61f7ef743a282b5822ca057e3467b5a06fc2",
       "ClauseId:7141acc2b75a7411f97e438bc2b580fee10dc208ec792643072dcadc2de37bb8",
+      "ClauseId:7ccfbd5a5d1e9a875347456b6dc8f92185a9eba2109af10620d37afb49a6e01b",
       "ClauseId:7d96ab28ef5877bcf7b68160621ff53ea635e5586627441eda17cdff6fc3b41b",
       "ClauseId:87f6aafe8c38c6fc20d722660ead0ba43d7d7d661eb5b2ef9bdd3a79f3c00507",
       "ClauseId:8cebf2b058433012aaed4e42b48410f92078bbad5386e1960130d20b51f7add3",
@@ -287,13 +289,13 @@
       "new_output_path": null
     },
     {
-      "new_iu_id": "a9a3faf254636c2c445aa68d36abbf16ac249c630734ada1578bddfbde9b846c",
+      "new_iu_id": "2c9a4a3e68e3c3fc767f00b60b8de69c74a559fff2c96f41aeee71962edd9f39",
       "new_iu_name": "Bulk Domain",
       "old_iu_id": "eb7c109efd2e8536a1907c465ae44edde146f1d822d0a3d376546cd1feca72c6",
       "old_iu_name": "Bulk Domain",
-      "overlap_ratio": 0.3,
+      "overlap_ratio": 0.2727272727272727,
       "strategy": "migrate",
-      "reason": "partial_overlap_30%_review_needed",
+      "reason": "partial_overlap_27%_review_needed",
       "old_impl_path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/bulk/index.ts",
       "old_test_path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/bulk/__tests__/index.test.ts",
       "new_output_path": null

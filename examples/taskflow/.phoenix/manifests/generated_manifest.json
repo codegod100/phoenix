@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-09T01:38:01.297503Z",
+  "generated_at": "2026-04-09T01:51:47.602053Z",
   "files": {
     "src/generated/metrics/index.ts": {
       "iu_id": "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624",
@@ -305,42 +305,42 @@
     "29eaf5668c0afbf2b769208fd17f84ced496eb6a0f13e1e54df2d3691d300624": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/metrics/index.ts",
-        "hash": "a32710092ba3a36abc337fa868014b8cccd489c38c324446009398278def608c",
-        "generated_at": "2026-04-08T19:50:59.830Z",
+        "hash": "accbc27631637ca0fa9abcb44b24828c5c70b23d1a87b65fad01f6984efa457c",
+        "generated_at": "2026-04-09T01:48:00.768Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/metrics/__tests__/index.test.ts",
-        "hash": "06c466e60b4ec6fd9cb041bba524ad4233c46dba2e992707634631030a8af8e7",
-        "generated_at": "2026-04-08T19:50:59.830Z",
+        "hash": "cf93365bad0b74af433c56b50125fa05d1645b01142f69f359c2717c8cd2f4b3",
+        "generated_at": "2026-04-09T01:48:00.769Z",
         "language": "typescript"
       }
     },
     "7cce149b135824bc8b6f060046f0731ce1f983a325ed1d93b2271e736127e143": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/priority/index.ts",
-        "hash": "b89c8472b52f91d0f8fa5db5a3fc98a93001307f7e376b376eb16b902e0c64a5",
-        "generated_at": "2026-04-08T19:50:59.833Z",
+        "hash": "f783a93842b83ea15675b967d5c12fce1134cb3231113aa70bc50e32972a4437",
+        "generated_at": "2026-04-09T01:48:00.774Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/priority/__tests__/index.test.ts",
-        "hash": "9ec869e492cfbdfadb59ab2f6da3584ebdb84f1feb65fe23d3c22d53f253d7fb",
-        "generated_at": "2026-04-08T19:50:59.833Z",
+        "hash": "351c954e8ad4cc420eb382e8db323420c774fed1fe9a73b647ccdb12a4e36784",
+        "generated_at": "2026-04-09T01:48:00.774Z",
         "language": "typescript"
       }
     },
     "169b3c51a6e13ea8b494cd34f7ab734949573f0d68ed447b981fa276a306dddf": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/team/index.ts",
-        "hash": "1c72125314ba70637b2348b71e997e6c7cf5703eb1b8483551090ab733535510",
-        "generated_at": "2026-04-08T19:50:59.834Z",
+        "hash": "1ce7ba68bf2dca9c13e002439a209726122dd162e03e13552a0a923c51a60bc3",
+        "generated_at": "2026-04-09T01:48:00.776Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/team/__tests__/index.test.ts",
-        "hash": "acfc9f17418ebb67aefe36c507849cef0e6324eb073e86d5e81733633b3015e8",
-        "generated_at": "2026-04-08T19:50:59.834Z",
+        "hash": "3e91d2b981f79d4557fa2aa6c381e3b50f4269871b76543810e1a0ca551c38cf",
+        "generated_at": "2026-04-09T01:48:00.776Z",
         "language": "typescript"
       }
     },
@@ -361,42 +361,42 @@
     "013287c893c1bba6be09bfff5263b29ac7909c11fd7fa3bff7780919f8570026": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/assignment/index.ts",
-        "hash": "1c358d6fe949e25c7b17d593ae503099d1fbd165a691a78bdae59f74a26bc971",
-        "generated_at": "2026-04-08T19:50:59.837Z",
+        "hash": "dc66c1dc810a2d0642cdfbd9c7dccc2b0fba837b41ebfd5e85e86975a122abc3",
+        "generated_at": "2026-04-09T01:48:00.780Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/assignment/__tests__/index.test.ts",
-        "hash": "68af927a356b337332ac273072447347b7622427d1af6f2567aa80b3154b516c",
-        "generated_at": "2026-04-08T19:50:59.837Z",
+        "hash": "cba5e7835d32cff22659f806ab9dd5f2415f54a62805b91785efd14f365b1f51",
+        "generated_at": "2026-04-09T01:48:00.780Z",
         "language": "typescript"
       }
     },
     "5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/search/index.ts",
-        "hash": "b6e3b835a0884c86b4082532afdd8538b2782920a522453d1d446ce646a1eea5",
-        "generated_at": "2026-04-08T19:50:59.838Z",
+        "hash": "9e60f1458a9090e1730afddb8592161c479d2a1ce2c0245a34d4b2dc29388fe3",
+        "generated_at": "2026-04-09T01:48:00.782Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/search/__tests__/index.test.ts",
-        "hash": "88111f2f5aa7615637163cb0ddaf76ec3138a513f81638de9ab43c3c47597c3c",
-        "generated_at": "2026-04-08T19:50:59.838Z",
+        "hash": "36465f93b59242158c76097378cdabfde01a7cc407bc2eadd22d82869a1652a8",
+        "generated_at": "2026-04-09T01:48:00.782Z",
         "language": "typescript"
       }
     },
     "fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/deadline/index.ts",
-        "hash": "efb2c449ab5d53f27f8f1570edb3625dce1e2be54bcbfe5c69d73b68f1a52d8b",
-        "generated_at": "2026-04-08T19:50:59.839Z",
+        "hash": "459a4c93a85e22a681fa2e6b3a82b0bdf621860a8405398c758677a0ec38f3e9",
+        "generated_at": "2026-04-09T01:48:00.784Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/deadline/__tests__/index.test.ts",
-        "hash": "41a6cc70151042b184c9d30a812a892b181f0e0940d95f337e5594011122ef8d",
-        "generated_at": "2026-04-08T19:50:59.839Z",
+        "hash": "3d5e63b925a0ad03101762651009837520a019050d10f21d3643e0187d3725b2",
+        "generated_at": "2026-04-09T01:48:00.784Z",
         "language": "typescript"
       }
     },
@@ -417,14 +417,14 @@
     "fc1780770cf0e4875acfd0c016e8bb347bead2ba1f254b36d6c01057f4ae2844": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/archive/index.ts",
-        "hash": "1916a7c8ca48320eeac39b7eb3bb8becbd3a5c59d04fd65523c7610a8de4b7a0",
-        "generated_at": "2026-04-08T19:50:59.841Z",
+        "hash": "cf7b02ac991beb7f72fa452bc174d6df2242228fd928cae067fb51e64e6af7da",
+        "generated_at": "2026-04-09T01:48:00.788Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/archive/__tests__/index.test.ts",
-        "hash": "a99c6d79ae6faa79220135bc24a9a22e2fa42570393493e82d36c3a6d9783ba7",
-        "generated_at": "2026-04-08T19:50:59.841Z",
+        "hash": "2b6e04c79e991cead3ba31f6f5a36300d136493689e7b1510e87bebeec66ede2",
+        "generated_at": "2026-04-09T01:48:00.788Z",
         "language": "typescript"
       }
     },
@@ -445,28 +445,28 @@
     "f56c1390c9aa63a575c0cdd0949d9dcd609dacc3c189d44e1e640f3f9244aa64": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/catppuccin/index.ts",
-        "hash": "fed5bd8377f9e76ab92ccadf3a95729177a4fe4f7ee94acd889deec6f329af63",
-        "generated_at": "2026-04-08T19:50:59.843Z",
+        "hash": "fd2d71324f09b70ce443628d03debcdf476bbcedae13b63967ab8da6aaaf0d76",
+        "generated_at": "2026-04-09T01:48:00.792Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/catppuccin/__tests__/index.test.ts",
-        "hash": "28ba938adfca16fe303fb2220ba728008fd68e630539a54115cc3b335e59d77b",
-        "generated_at": "2026-04-08T19:50:59.843Z",
+        "hash": "f6368c1bffa7580bad782f06d4c417c8ec009ea651f7e8d7f50a92f1ab11651f",
+        "generated_at": "2026-04-09T01:48:00.792Z",
         "language": "typescript"
       }
     },
     "e9b69935bcb821300653dcd028025f27a298f3d860ef6c15a58dd52fb6c23d67": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/base/index.ts",
-        "hash": "0cd71c2e5b28b01ad61d426aba1164981b78a074ab10e90acdfed0a074d46ddc",
-        "generated_at": "2026-04-08T19:50:59.844Z",
+        "hash": "ab972937052da2ac74cad2a1c0ded7e9674a2d2e927060955b613b67535cead6",
+        "generated_at": "2026-04-09T01:48:00.795Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/base/__tests__/index.test.ts",
-        "hash": "a93bbe87648ed0dd1e7090b29ee01ec2311533b8400739bac9bdb8e3fc32b3ca",
-        "generated_at": "2026-04-08T19:50:59.844Z",
+        "hash": "8d68044777b37caf438370fa69103515fe1990f01e143b6da7c21fc31999ed75",
+        "generated_at": "2026-04-09T01:48:00.795Z",
         "language": "typescript"
       }
     },
@@ -487,14 +487,14 @@
     "12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/delete/index.ts",
-        "hash": "5aa2813676499e522f250044f44182e2df6adf81f96ede4ec8d902598a5b914f",
-        "generated_at": "2026-04-08T19:50:59.846Z",
+        "hash": "f05733a7cf9681ac8622694940e86ef1a28c4ffb553473c8159ea4ed6eddafc1",
+        "generated_at": "2026-04-09T01:48:00.801Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/delete/__tests__/index.test.ts",
-        "hash": "abdc6824192057abf1bda25f024bd7ce2bc39a8118e6380a2cb7e77e71ca77a3",
-        "generated_at": "2026-04-08T19:50:59.846Z",
+        "hash": "4e784e1cf393f5bb0bb4d8e771825a4459d9982fbaa14443e2e4850c09b4cc93",
+        "generated_at": "2026-04-09T01:48:00.801Z",
         "language": "typescript"
       }
     },
@@ -502,13 +502,13 @@
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/confirmation/index.ts",
         "hash": "36a1837ab25e1abe712e89fcb46b5e7342d9048a29b9a2fe3313be6993218b65",
-        "generated_at": "2026-04-08T19:50:59.847Z",
+        "generated_at": "2026-04-09T01:48:00.803Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/confirmation/__tests__/index.test.ts",
         "hash": "0859fafc05e9c4d246c9f07c04fa4c066a837a3da55a602d4281b18a71d72322",
-        "generated_at": "2026-04-08T19:50:59.847Z",
+        "generated_at": "2026-04-09T01:48:00.803Z",
         "language": "typescript"
       }
     },
@@ -530,13 +530,13 @@
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/inline/index.ts",
         "hash": "c117e323d26e6cebe70457c1a133f8bc795084fbbc9ea6aa9d6b0161e1c75be9",
-        "generated_at": "2026-04-08T19:50:59.849Z",
+        "generated_at": "2026-04-09T01:48:00.808Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/inline/__tests__/index.test.ts",
         "hash": "fb7f4b4e41524b5ae8dddf5b03976b68ca760cf053b6039c925a7d33cf260ff2",
-        "generated_at": "2026-04-08T19:50:59.849Z",
+        "generated_at": "2026-04-09T01:48:00.808Z",
         "language": "typescript"
       }
     },
@@ -571,42 +571,42 @@
     "c73fdbc477cf950ac18a4022f311ffa3fdb0af432b1a7ad5e2e247fba680c665": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/event/index.ts",
-        "hash": "99546a0952f3cc2eefac97ab62cc1d878841f47c3f30b1be64a5994477935b20",
-        "generated_at": "2026-04-08T19:50:59.851Z",
+        "hash": "022f2507e1b13ff11fceb8660b5a107ccc0477621cc9236edac282440e2707c3",
+        "generated_at": "2026-04-09T01:48:00.814Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/event/__tests__/index.test.ts",
-        "hash": "054332ebd4d564393b7ab0a6ff9d489c6f56eeadf235f68b515733b1bc17ff8f",
-        "generated_at": "2026-04-08T19:50:59.851Z",
+        "hash": "c55bb57b8c51203f525019f1ccd3bd3d3b55f61e5441be7f3adcd20ba2333b11",
+        "generated_at": "2026-04-09T01:48:00.814Z",
         "language": "typescript"
       }
     },
     "b25d38068f5a68a7e72a54568159d1e595758e1fbc22e51d023dd441e230607a": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/state/index.ts",
-        "hash": "48f8113fbc91e812004381768364ec365192177b3669ccf89a7f0cb0a07be488",
-        "generated_at": "2026-04-08T19:50:59.852Z",
+        "hash": "1ff6833ba878e51f81e43128188459986b847581f86b92c0dc9e33146c550715",
+        "generated_at": "2026-04-09T01:48:00.816Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/state/__tests__/index.test.ts",
-        "hash": "a13d49ae0261e74d971880aa03ca9e4f6dc1fb65b82ceee66a716a94391628b2",
-        "generated_at": "2026-04-08T19:50:59.852Z",
+        "hash": "cb645d0b4c3d4b66463ddc8be8863043b9078ee19449470273c92dee0ae02734",
+        "generated_at": "2026-04-09T01:48:00.816Z",
         "language": "typescript"
       }
     },
     "fa4c83036ec9c9a9dc5d827a93eb8e8e6683bdb93cd99c0bd5a730ef789481e7": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/ui/index.ts",
-        "hash": "cd98d9ea828f5dc7028a78e21766e1e036dc594691feb26cd89a6ebcfe292328",
-        "generated_at": "2026-04-08T19:50:59.853Z",
+        "hash": "4c9207d198e360d824890fd7c037094c36dd5bfa712b7dd54df8f8f91b368dfa",
+        "generated_at": "2026-04-09T01:48:00.818Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/ui/__tests__/index.test.ts",
-        "hash": "401afb338bc5652151935421dcecb37f187ae6b1f7493131908c6d569b8469a2",
-        "generated_at": "2026-04-08T19:50:59.853Z",
+        "hash": "ebe23d74de57a0c219d9ef36cd3547cdaa7c7862c3a36cfda17aafa9dd996bc2",
+        "generated_at": "2026-04-09T01:48:00.818Z",
         "language": "typescript"
       }
     },
@@ -614,27 +614,27 @@
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/integration/index.ts",
         "hash": "c5c0cb6ee38e9b359b1837e9debe3c1aaa91c3f03404034774c08e7e47020e4b",
-        "generated_at": "2026-04-08T19:50:59.854Z",
+        "generated_at": "2026-04-09T01:48:00.822Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/integration/__tests__/index.test.ts",
         "hash": "0a4b0ba8233a97c1d6e389067ab36cb90a6e02346d284a74fea81e1d91e3c5c8",
-        "generated_at": "2026-04-08T19:50:59.854Z",
+        "generated_at": "2026-04-09T01:48:00.822Z",
         "language": "typescript"
       }
     },
     "2ff32cc95412bbebb3de93d8ad7403ec968c3cc1ecc1dfb6ec9ebd609fb3a9e7": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/overdue/index.ts",
-        "hash": "d1369f2e28e125064ac4e88c0c7ffe631d4e859c0c59cfe90771f0b745cf8d3a",
-        "generated_at": "2026-04-08T19:50:59.855Z",
+        "hash": "66f6a615f0ab4647f0f5953a829f253ec3c97938f4d2f410603398ca43dd5315",
+        "generated_at": "2026-04-09T01:48:00.823Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/overdue/__tests__/index.test.ts",
-        "hash": "27e735d60500581e8ed4f1d4dec8cdaf82fa8b61b536ef6f98ec8dd59d67e2f8",
-        "generated_at": "2026-04-08T19:50:59.855Z",
+        "hash": "6e761130dd558c1da2be9ac2d582817b12511b6ac64e57c46500acab9d918c82",
+        "generated_at": "2026-04-09T01:48:00.823Z",
         "language": "typescript"
       }
     },
@@ -642,35 +642,35 @@
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/data/index.ts",
         "hash": "2cf52f2b6cd68e0f0ca94701b17905aef525a6924ff86ca430ffab10c9b5621b",
-        "generated_at": "2026-04-08T19:50:59.858Z",
+        "generated_at": "2026-04-09T01:48:00.825Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/data/__tests__/index.test.ts",
         "hash": "1863e51706dd111805044666996b5a6affbdbc36b677a79915f56601a2d4a007",
-        "generated_at": "2026-04-08T19:50:59.858Z",
+        "generated_at": "2026-04-09T01:48:00.825Z",
         "language": "typescript"
       }
     },
     "d46cdcd2f55a1f02afe06966ada179610c0017e78c69fe29ba144f9f3f4b4ab5": {
       "impl": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/task/index.ts",
-        "hash": "9a912e3eef36bce3ab99b30faf2208dd528f1174bee02c8f45d87289bb466795",
-        "generated_at": "2026-04-08T19:50:59.836Z",
+        "hash": "8271478a1c37ea19a1c5692d93e23d9dc92c4639c2b6a9d30ffaaa0b6dd311f1",
+        "generated_at": "2026-04-09T01:48:00.778Z",
         "language": "typescript"
       },
       "test": {
         "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/task/__tests__/index.test.ts",
-        "hash": "5f8714239c7fa41dbb364bc2ea891158a8ad04fa26f55a29844ae2bb41048bb8",
-        "generated_at": "2026-04-08T19:50:59.836Z",
+        "hash": "236b456836fabce8408f0ded7604459db7616df4df203b0fc32a1d17ae5ba2a8",
+        "generated_at": "2026-04-09T01:48:00.778Z",
         "language": "typescript"
       }
     },
     "src/generated/app/server.ts": {
       "iu_id": "web-dashboard-deliverable",
-      "hash": "9622fb1cd71b59b99fad4b4848978d4a8e171ecb129e1925191c6439ef22792e",
-      "size": 36601,
-      "generated_at": "2026-04-09T01:37:49.908974Z"
+      "hash": "a07d9a7580923834a6d9580f34d616c2135d97594bd9396e0de8538041f400a3",
+      "size": 45701,
+      "generated_at": "2026-04-09T01:51:47.602033Z"
     },
     "src/generated/app/store.ts": {
       "iu_id": "f5ffe871e50a8aa8f46509df8c4b2f3b68d72df61e1504d5df80b11ffd792676",
@@ -689,6 +689,118 @@
       "hash": "ea1d5863151a892e27b7755cc3cf5b5f094baf86e7b918df5c76ac136c238ea9",
       "size": 162,
       "generated_at": "2026-04-09T01:37:49.909094Z"
+    },
+    "9042fe4f437f6cc14ecb734ea5f25f7478a8725702d5fd517b429195384cfb2f": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/status/index.ts",
+        "hash": "238a8b2887068ca5a0a2ba7eb478fd1f7b22ca40d1f7c51483906f610010df8c",
+        "generated_at": "2026-04-09T01:48:00.786Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/status/__tests__/index.test.ts",
+        "hash": "56fb683ae03938fe475a7239f0b91cb56962ad68b73377dd0f1c641806139da5",
+        "generated_at": "2026-04-09T01:48:00.786Z",
+        "language": "typescript"
+      }
+    },
+    "84d7fff4444e467ce261fbdafe6a926bf929dbfc01f9cdd0c49e8ed3dac7a77e": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/page/index.ts",
+        "hash": "66869bc150958cb8bff3b1f690fe614e2a0d0a8fe727bd7d9153b2c72c568a38",
+        "generated_at": "2026-04-09T01:48:00.790Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/page/__tests__/index.test.ts",
+        "hash": "01c54f436530a6e4152eea173d9a513494a1e0285df99e12b7f77e618d760739",
+        "generated_at": "2026-04-09T01:48:00.790Z",
+        "language": "typescript"
+      }
+    },
+    "cf6962caff7e397d251009ef1c4f815369b02a37c0e7837de1b323120d3a6d1b": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/tab/index.ts",
+        "hash": "66d2ce72d2066b6a3298f5289d9f908cf641d7104aecfb60e9d75a023345818a",
+        "generated_at": "2026-04-09T01:48:00.797Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/tab/__tests__/index.test.ts",
+        "hash": "871ec7b220ea568203c5c56e83aa96188e32e7ea992c28fe9a45b99a420816d5",
+        "generated_at": "2026-04-09T01:48:00.797Z",
+        "language": "typescript"
+      }
+    },
+    "2c9a4a3e68e3c3fc767f00b60b8de69c74a559fff2c96f41aeee71962edd9f39": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/bulk/index.ts",
+        "hash": "ffbbd23f4f31453dce45a586fb6f963598679784118b2e4dbc98c82418989cc2",
+        "generated_at": "2026-04-09T01:48:00.799Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/bulk/__tests__/index.test.ts",
+        "hash": "1d586edff85e48bf19ef4d08621e85885499ae1742fa7530e2108c1fc2a93c36",
+        "generated_at": "2026-04-09T01:48:00.799Z",
+        "language": "typescript"
+      }
+    },
+    "a71840711883fbadc80665b28f2172f7a65a116dee522018b85b0f88d9b9c527": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/create/index.ts",
+        "hash": "74f39c83ab407677c85d563baa8582699e8a8dd09a310285bd04044e6755e9cc",
+        "generated_at": "2026-04-09T01:48:00.805Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/create/__tests__/index.test.ts",
+        "hash": "bfb6841863768ceec90046e80582805cbb2b135c71f2d1450afbd8662aec1942",
+        "generated_at": "2026-04-09T01:48:00.805Z",
+        "language": "typescript"
+      }
+    },
+    "01d057d324fc5db4ffc40f3cec6b04ffc9833be7b622c00f6c649bc76cb9a0b5": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/edit/index.ts",
+        "hash": "2539145685f4545bf066de932ad94a6be719a8e92e2e87f08dc1741f972b7199",
+        "generated_at": "2026-04-09T01:48:00.810Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/edit/__tests__/index.test.ts",
+        "hash": "daf7434d1bf220475d1b664582e5ed0fee70bd132a0556c858aeed7d3e154c1e",
+        "generated_at": "2026-04-09T01:48:00.810Z",
+        "language": "typescript"
+      }
+    },
+    "413bea8f7a19dc72b473d2f370b67fbd9e53acc35f7b6cc960478854101a6e02": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/component/index.ts",
+        "hash": "cf75d7b6e49157575120718e0633ade3e2fc6eda3aaf328e6b1bab4abf315914",
+        "generated_at": "2026-04-09T01:48:00.812Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/component/__tests__/index.test.ts",
+        "hash": "2c9fecad7c8436ef62849c6033287b6193a0e157abc8665654c8867efb8fc26c",
+        "generated_at": "2026-04-09T01:48:00.812Z",
+        "language": "typescript"
+      }
+    },
+    "e0fdf2ac458f57d61ad4fe13b6a3be679fdd2fcd31b9237fa0cb2d6d50c84085": {
+      "impl": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/modal/index.ts",
+        "hash": "a69ed140971587ec7a5c4b820a21da7a72643736d6b201ee024f15ed6848d2db",
+        "generated_at": "2026-04-09T01:48:00.820Z",
+        "language": "typescript"
+      },
+      "test": {
+        "path": "/home/nandi/code/phoenix/examples/taskflow/src/generated/modal/__tests__/index.test.ts",
+        "hash": "5ebde300d985cc5f7f9ee66296e1a02ec8e3ad892643192e37215043a8acc448",
+        "generated_at": "2026-04-09T01:48:00.820Z",
+        "language": "typescript"
+      }
     }
   }
 }

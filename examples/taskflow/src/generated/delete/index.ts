@@ -1,63 +1,54 @@
-/**
- * @phoenix-iu: 12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec
- * @phoenix-name: Delete Domain
- * @phoenix-risk: LOW
- */
-/**
- * @phoenix-canon: 0ca3fa4b087995c9e4aa1cccfe1d8a53c88e4e1d5f2cd42bcabf805cc16050bb
- * Requirement: Users must be able to delete tasks by their unique ID
- * 
- * @phoenix-canon: 4c4897891d89254e0afba437fd21549f7f782e3bf8c70026a341e26faa976d46
- * Requirement: Each task card must have a delete button that opens a confirmation modal, not browser alert
- * 
- * @phoenix-canon: c37ac43e5c7fbb2f71ed9cf3f121411ebe752a7fd5032b2de2d099056c7c01d0
- * Requirement: The delete button must use the danger color red and include a trash icon
- * 
- * @phoenix-canon: d612bbc65b30fddc3fcf82f2e88429442c975b2c04c6688f77f810fda7710cb9
- * Requirement: Deleted tasks must be removed from all filtered views and search results
- * 
- * Delete Domain - Risk Tier: low
- */
+// 🔴 RED: Delete Domain (IU-12c44af6)
+// Description: Implements delete functionality with 4 requirements
+// Risk Tier: LOW
 
-import { deleteTask, Task } from "../app/store.js";
+// @phoenix-iu: 12c44af604f1ae2de162c4c6b280539f2c133255d96ed18e32bfbe535eb87fec
+// @phoenix-name: Delete Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-12c44af6
 
-export type { Task };
+// === IMPLEMENTED REQUIREMENTS ===
 
-/**
- * Delete a task by ID
- * @phoenix-canon: 0ca3fa4b087995c9e4aa1cccfe1d8a53c88e4e1d5f2cd42bcabf805cc16050bb
- * @phoenix-canon: d612bbc65b30fddc3fcf82f2e88429442c975b2c04c6688f77f810fda7710cb9
- */
-export function deleteTaskById(taskId: string): boolean {
-  return deleteTask(taskId);
+// @phoenix-canon: 0ca3fa4b087995c9...
+// REQUIREMENT: users must be able to delete tasks by their unique id
+
+// @phoenix-canon: 4c4897891d89254e...
+// REQUIREMENT: each task card must have a delete button that opens a confirmation modal not ...
+
+// @phoenix-canon: c37ac43e5c7fbb2f...
+// REQUIREMENT: the delete button must use the danger color red and include a trash icon
+
+// @phoenix-canon: d612bbc65b30fddc...
+// REQUIREMENT: deleted tasks must be removed from all filtered views and search results
+
+
+// TDD CYCLE:
+// 1. Tests are designed to FAIL with current code
+// 2. Run: npm test -- iu-12c44af6
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
+// 5. Run evidence to validate
+
+// === TYPES ===
+// @phoenix-gen: types
+
+export interface Delete {
+  id: string;
+  name?: string;
 }
 
-/**
- * Alias for deleteTaskById
- */
-export function deleteFn(taskId: string): boolean {
-  return deleteTask(taskId);
-}
+// === RED IMPLEMENTATIONS (fix to make tests pass) ===
 
+// @phoenix-canon: 0ca3fa4b087995c9...
+// REQUIREMENT: users must be able to delete tasks by their unique id
 /**
- * Get delete confirmation text
- * @phoenix-canon: 4c4897891d89254e0afba437fd21549f7f782e3bf8c70026a341e26faa976d46
+ * 🔴 RED: delete
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
-export function getDeleteConfirmation(task: Task): { title: string; message: string } {
-  return {
-    title: "Delete Task",
-    message: `Are you sure you want to delete "${task.title}"? This action cannot be undone.`
-  };
-}
-
-/**
- * Get delete button configuration
- * @phoenix-canon: c37ac43e5c7fbb2f71ed9cf3f121411ebe752a7fd5032b2de2d099056c7c01d0
- */
-export function getDeleteButtonConfig(): { icon: string; cssClass: string; ariaLabel: string } {
-  return {
-    icon: "🗑️",
-    cssClass: "btn-danger btn-sm",
-    ariaLabel: "Delete task"
-  };
+export function delete_(id: string): boolean {
+  // 🔴 RED: WRONG — always returns false
+  // Should delete the item and return success
+  return false;
 }

@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-09T01:38:29.917Z",
-  "clause_count": 184,
+  "generated_at": "2026-04-09T04:30:43.651Z",
+  "clause_count": 185,
   "file_count": 9,
   "files": [
     "spec/analytics.md",
@@ -1028,15 +1028,26 @@
       "context_semhash": "d208cd11c724da6394cfd7dda008f483b3d2cb82481e34a062a03ac118554025"
     },
     {
+      "id": "7ccfbd5a5d1e9a875347456b6dc8f92185a9eba2109af10620d37afb49a6e01b",
+      "type": "CONSTRAINT",
+      "text": "cards must not display any left border highlight on hover  only the cursor changes",
+      "raw_text": "Cards must NOT display any left border highlight on hover - only the cursor changes",
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md",
+      "line": 11,
+      "clause_semhash": "3595a0929fae2edec1571334df5de54acb01ff56042f4a30684755b440148a5a",
+      "context_semhash": "1253d1347f2f59f7f4257caf1151e0774f2a3a540a70431ac5235b89acf292eb"
+    },
+    {
       "id": "66b1f11ee00a0d7740176a2b4de490a7fceed7b4bce127cbd739d516bf00de1f",
       "type": "REQUIREMENT",
       "text": "individual action buttons on cards edit archive delete must remain clickable without triggering card selection via stoppropagation",
       "raw_text": "Individual action buttons on cards (edit, archive, delete) must remain clickable without triggering card selection via stopPropagation",
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 11,
+      "line": 12,
       "clause_semhash": "3629564c4c62803ade4c364ab7cbd9fdb0bcf4e37c7a0e7998e3dfda3f4f3c72",
-      "context_semhash": "b474df573d33c8e3338ed0c7df797c9c09dc2977db88fe18e5abdef7b3f7fcab"
+      "context_semhash": "7629464a9aa0a0521e7db0067e911b995614d5a024492b831cfa095a35c5495d"
     },
     {
       "id": "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
@@ -1045,7 +1056,7 @@
       "raw_text": "The header must include a bulk action bar when tasks are selected including delete selected and archive selected",
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 12,
+      "line": 13,
       "clause_semhash": "e2debb665c834bc7a6986f9e0c4b9165ee45fd92cc131ce0f6b8b5dc6b339ea7",
       "context_semhash": "b46b94267f084db831e51bf90cbc4def00b87a1fddf2fe53fea8a5e22c513513"
     },
@@ -1056,7 +1067,7 @@
       "raw_text": "The selection state is tracked by adding/removing task IDs from a selectedIds array in JavaScript",
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 13,
+      "line": 14,
       "clause_semhash": "ab2ebf4e4db6d628a396589faf4c7775e18c3a96f94fdc2326d223d6c9f88be1",
       "context_semhash": "dcc0d0ea301a6be14b01455c7b02d4df49d37cdd542be0c77598da260b5f4cf4"
     },
@@ -1067,7 +1078,7 @@
       "raw_text": "Card selection visual feedback uses CSS class 'selected' toggled on the card element",
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 14,
+      "line": 15,
       "clause_semhash": "8d8067e5d420923c7bcc56fa912f4e1825b7a6b36b6a653947a76fd120f38049",
       "context_semhash": "82564a82a2c192f334fb24ff5bda23be3c53b751a24cb172bc43a273fe588792"
     },
@@ -1078,7 +1089,7 @@
       "raw_text": "The system must support bulk operations including delete multiple, archive multiple, and reassign multiple",
       "section": "Bulk Actions",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 18,
+      "line": 19,
       "clause_semhash": "5f82bc0850b0776f29af6199cfab31a730fb525635a42db79f82590ff7af1dd1",
       "context_semhash": "6cb227e2ef1f59d03ff20e58fd8a34c1bd885ebda5419de766938343f60e446f"
     },
@@ -1089,7 +1100,7 @@
       "raw_text": "The system must provide a function to bulk delete multiple tasks by ID list with confirmation modal",
       "section": "Bulk Actions",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 19,
+      "line": 20,
       "clause_semhash": "f0af91dff9e6939d469758b1ade8cd9956cf1b8509a8c687e47b45deb57c63f5",
       "context_semhash": "ec862344a09eb3cec5e29f5c4c6312f2d45e3dea900c1e16a32507de0045fc87"
     },
@@ -1100,7 +1111,7 @@
       "raw_text": "Users must be able to delete tasks by their unique ID",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 23,
+      "line": 24,
       "clause_semhash": "93c22d15f65e55f0a066a5cff9e5edb847a0d927a4500e493c12e9ea9545ca34",
       "context_semhash": "5be0ccbeb56e8d2b1e89a552c1797db8090b4bb0f1b0796a8c1c53c1ce490278"
     },
@@ -1111,7 +1122,7 @@
       "raw_text": "Each task card must have a delete button that opens a confirmation modal, not browser alert, before permanent removal",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 24,
+      "line": 25,
       "clause_semhash": "7a6dad3289fd4238c3c2f05e5e75489c77909b8cc0a5e03330c70c2dcbe5fbd6",
       "context_semhash": "26ca19361b03297ee7056079d23db177e335630f6c0f32696b3ab0d245060d26"
     },
@@ -1122,7 +1133,7 @@
       "raw_text": "The delete button must use the danger color red and include a trash icon",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 25,
+      "line": 26,
       "clause_semhash": "46b5158b255933203b10e598c3a907b1bea513798d6abd93e5573394566ab125",
       "context_semhash": "8d97ce6f7a89fe21d31b263ea6709ae1e81ab724fd4c797ab10300137c4dba8d"
     },
@@ -1133,7 +1144,7 @@
       "raw_text": "Deleted tasks must be removed from all filtered views and search results",
       "section": "Delete Operations",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 26,
+      "line": 27,
       "clause_semhash": "1754730edc4dc7446fff2d189b078457632c5945d2bb28cd810becbdbe4fe1da",
       "context_semhash": "e06e845493bc8f82bcde91afb069db9af8484a048fba5ea93bc25799ae26f4b2"
     },
@@ -1144,7 +1155,7 @@
       "raw_text": "All confirmation dialogs must be custom modal overlays, not browser confirm or alert popups",
       "section": "Confirmation Modal",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 30,
+      "line": 31,
       "clause_semhash": "558778a17c48d86081f9d1bcaa61ba0fd947af923b55cadf853cf62202ab36e2",
       "context_semhash": "3d188058f12321b7bbe480515d10634f42d84e197e5d6f74dcbc3dbbd1b32480"
     },
@@ -1155,7 +1166,7 @@
       "raw_text": "Deleting a task must require confirmation via a custom modal dialog, not browser confirm or alert",
       "section": "Confirmation Modal",
       "source_file": "spec/web-dashboard-bulk.md",
-      "line": 31,
+      "line": 32,
       "clause_semhash": "7a3d81fc13fa1ee3469781be18796d24ae6d518b036fce5df0a2b1695e42ec3d",
       "context_semhash": "bc7950f2c28762e8b52e69b360c64c4b8dcb6298a04ff59b63bee94469048662"
     },

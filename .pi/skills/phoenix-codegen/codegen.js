@@ -103,27 +103,61 @@ function inferDeliverableType(canonical) {
  * Maps IU constructs to language-specific patterns
  */
 function applyTheoryMorphism(ctx) {
-  const { iuToLang, fileStructure, constraints } = ctx.langLens;
+  const { iuToLang, fileStructure, constraints, extractExports } = ctx.langLens;
   
   // Map each IU to language-specific constructs
   const iuMappings = ctx.ius.map(iu => {
     const domain = iu.name.toLowerCase().replace(/\s+domain$/, '').replace(/\s+/g, '-');
-    const exports = iu.boundary?.exports || [];
+    
+    // Try to extract exports from language-specific logic, fall back to boundary.exports
+    let exports = [];
+    if (extractExports) {
+      exports = extractExports(iu, ctx.canonical.nodes);
+    } else {
+      // Legacy: use boundary.exports
+      exports = (iu.boundary?.exports || []).map(name => ({ type: 'function', name }));
+    }
     
     // Map exports to language functions
-    const functions = exports.map(exp => {
-      const pattern = iuToLang.function(exp);
+    const functions = exports.filter(e => e.type === 'function' || e.type === 'method').map(exp => {
+      if (exp.signature) {
+        return {
+          name: exp.name,
+          signature: exp.signature,
+          asyncSignature: exp.signature.replace('def ', 'async def '),
+          isAsync: exp.name.includes('async') || exp.name.includes('poll') || exp.name.includes('start'),
+          description: exp.description || '',
+        };
+      }
+      const pattern = iuToLang.function(exp.name);
       return {
-        name: exp,
+        name: exp.name,
         signature: pattern.signature,
         asyncSignature: pattern.asyncSignature,
-        isAsync: iu.risk_tier === 'high' || exp.includes('Task'),
+        isAsync: iu.risk_tier === 'high' || exp.name.includes('Task'),
+        description: exp.description || '',
       };
     });
     
+    // Map class exports (widgets, models, etc.)
+    const classes = exports.filter(e => e.type === 'widget' || e.type === 'model' || e.type === 'class').map(exp => ({
+      name: exp.name,
+      type: exp.type,
+      pattern: exp.classPattern || `class ${exp.name}`,
+      description: exp.description || '',
+    }));
+    
+    // Map reactive exports
+    const reactiveExports = exports.filter(e => e.type === 'reactive' || e.type === 'binding').map(exp => ({
+      name: exp.name,
+      type: exp.type,
+      pattern: exp.signature || exp.pattern,
+      description: exp.description || '',
+    }));
+    
     // Detect UI components if applicable
     const components = iuToLang.component 
-      ? iuToLang.component(iu.name, exports)
+      ? iuToLang.component(iu.name, exports.map(e => e.name))
       : null;
     
     return {
@@ -137,6 +171,8 @@ function applyTheoryMorphism(ctx) {
         test: fileStructure.iuTest,
       },
       functions,
+      classes,
+      reactiveExports,
       components,
       canonIds: iu.source_canon_ids || [],
     };
@@ -180,11 +216,42 @@ function applyTheoryMorphism(ctx) {
  */
 function generateLanguageInstruction(ctx, langTheory) {
   const iuSummary = langTheory.iuMappings.map(iu => {
-    const funcs = iu.functions.map(f => 
-      `    - ${f.isAsync ? 'async ' : ''}${f.name}(): ${f.isAsync ? 'Promise<any>' : 'any'}`
-    ).join('\n');
-    return `- ${iu.name} (${iu.riskTier}):\n${funcs || '    (no exports)'}`;
-  }).join('\n');
+    let lines = [];
+    lines.push(`- ${iu.name} (${iu.riskTier}):`);
+    
+    // Classes (widgets, models)
+    if (iu.classes && iu.classes.length > 0) {
+      lines.push('  Classes:');
+      for (const cls of iu.classes) {
+        lines.push(`    - ${cls.type.toUpperCase()}: ${cls.name}`);
+        if (cls.description) lines.push(`      (${cls.description})`);
+      }
+    }
+    
+    // Functions/methods
+    if (iu.functions && iu.functions.length > 0) {
+      lines.push('  Functions:');
+      for (const f of iu.functions) {
+        const sig = f.isAsync && f.asyncSignature ? f.asyncSignature : f.signature;
+        lines.push(`    - ${sig}`);
+        if (f.description) lines.push(`      # ${f.description}`);
+      }
+    }
+    
+    // Reactive exports
+    if (iu.reactiveExports && iu.reactiveExports.length > 0) {
+      lines.push('  Reactive:');
+      for (const r of iu.reactiveExports) {
+        lines.push(`    - ${r.type.toUpperCase()}: ${r.name}`);
+      }
+    }
+    
+    if (!iu.classes?.length && !iu.functions?.length && !iu.reactiveExports?.length) {
+      lines.push('    (no exports derived from requirements)');
+    }
+    
+    return lines.join('\n');
+  }).join('\n\n');
   
   const constraintSummary = langTheory.constraintMappings.map(c => 
     `- ${c.matchedPattern || 'UNMATCHED'}: "${c.statement.slice(0, 50)}..." → ${c.implementation}`
@@ -216,31 +283,148 @@ ${constraintSummary}
 **UI Pattern:** ${langTheory.deliverable.patterns.uiPattern}  
 **State Management:** ${langTheory.deliverable.patterns.stateManagement}
 
-**Output Files:**
-- \`${join(ctx.outputDir, langTheory.deliverable.dir, langTheory.deliverable.serverFile)}\`
-- \`${join(ctx.outputDir, langTheory.deliverable.dir, langTheory.deliverable.storeFile)}\`
+**Output Structure:**
+\`\`\`
+src/generated/
+├── __init__.py                    # Module exports
+├── models.py                      # Data classes (@dataclass(slots=True))
+├── app.py                         # Main Textual App with @Binding keyboard shortcuts
+└── widgets/                       # Textual widget modules
+    ├── __init__.py
+    ├── sidebar.py                 # BufferSidebar widget
+    ├── message_list.py            # MessageList widget
+    ├── message_item.py            # MessageItem widget
+    ├── thread_panel.py            # ThreadPanel widget
+    ├── user_list.py               # UserList widget
+    ├── input_bar.py               # InputBar widget
+    ├── emoji_picker.py            # EmojiPicker widget
+    ├── debug_panel.py             # DebugPanel widget
+    ├── loading_overlay.py         # LoadingOverlay widget
+    └── context_menu.py            # ContextMenu widget
+\`\`\`
+
+**File Responsibilities:**
+- \`models.py\`: All @dataclass(slots=True) data models for 34 IUs
+- \`app.py\`: Main FreeQApp class with compose(), keyboard @Binding, reactive state
+- \`widgets/*.py\`: Individual Textual widgets with compose(), CSS, event handlers
 
 ## Your Task
 
-1. **Read the full canonical.json** at: \`${join(ctx.projectPath, '.phoenix', 'graphs', 'canonical.json')}\`
-2. **Read the language theory** at: \`${join(ctx.projectPath, '.phoenix', 'language-theory.json')}\`
-3. **Generate code in ${langTheory.languageName}** in: \`${ctx.outputDir}\`
+Generate a complete Textual TUI application by implementing all 34 IUs from the theory mapping above.
 
-### Requirements
+### Step 1: Data Models (${langTheory.iuMappings.length} IUs)
+Create \`src/generated/models.py\` with all data classes:
+- For each IU, create a @dataclass(slots=True) model
+- Include fields derived from the "Classes" section above
+- Include traceability: \`# @phoenix-canon: <iu-id>\`
 
-- Implement ALL IU functions using the mapped signatures above
-- Apply ALL canonical constraints using the mapped implementations
-- Follow ${langTheory.languageName} idioms and best practices
-- Include traceability comments: \`// @phoenix-canon: <canon-id>\`
-- Use ${langTheory.moduleSystem} module system
+### Step 2: Widget Classes
+Create widget files in \`src/generated/widgets/\`:
+- Each widget is a Textual \`Widget\` subclass
+- Implement \`compose()\` method yielding child widgets
+- Add CSS styling with \`DEFAULT_CSS\`
+- Implement methods from "Functions" section above
+- Add reactive state with \`textual.reactive.reactive()\`
+- Add keyboard bindings with \`@Binding\` decorator
+- **CRITICAL:** Any \`watch_state()\` method must start with:
+  \`\`\`python
+  def watch_state(self, state):
+      if not self.is_mounted:
+          return
+      # ... rest of method
+  \`\`\`
 
-### Language-Specific Patterns
+### Step 3: Main App
+Create \`src/generated/app.py\`:
+- Main \`FreeQApp(App)\` class
+- \`compose()\` method mounting all widgets
+- Global keyboard shortcuts (Ctrl+C, Ctrl+L, etc.)
+- Event handling with \`@on(EventType)\` decorators
+- Connect to domain logic in models
 
-${Object.entries(ctx.langLens.constraints).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
+### Traceability Requirements
+- Every class must have: \`# @phoenix-canon: <iu-id>\`
+- Every method must have: \`# @phoenix-canon: <canon-node-id>\`
+- Include IU name in docstrings
 
-## Output
+### Logging & Tracing Requirements (AUTO-INJECTED)
 
-Generate complete, working ${langTheory.languageName} code. No TODOs for core functionality.
+**Every method must include automatic logging for traceability:**
+
+1. **Method Entry Logging:**
+   - First line of every method (after traceability comment) must log entry
+   - Use structured prefix based on domain: \`[AUTH]\`, \`[UI]\`, \`[BROKER]\`, \`[MOUNT]\`, etc.
+   - Include key parameter values (not sensitive data like full tokens)
+   
+   Example:
+   \`\`\`python
+   def on_auth_screen_auth_completed(self, event: AuthCompleted) -> None:
+       # @phoenix-canon: node-2c760e46
+       logger.info(f"[AUTH] AuthCompleted received for handle={event.handle}")
+       # ... method implementation
+   \`\`\`
+
+2. **State Transition Logging:**
+   - Log all critical state changes (authenticated=True/False, connected/disconnected)
+   - Use format: \`logger.info(f"[DOMAIN] State changed: {old} -> {new}")\`
+   
+   Example:
+   \`\`\`python
+   self.app_state.session.authenticated = True
+   logger.info(f"[AUTH] Session authenticated: handle={event.handle}")
+   \`\`\`
+
+3. **Lifecycle Event Logging:**
+   - \`on_mount()\`: Log "[MOUNT] Starting {widget/app} initialization"
+   - \`compose()\`: Log "[UI] Composing {widget} layout"
+   - \`watch_*()\`: Log "[REACTIVE] {property} changed from {old} to {new}"
+   - Event handlers: Log "[EVENT] {EventType} received"
+
+4. **Auto-Login Specific Logging (CRITICAL):**
+   - \`[AUTH-MOUNT] Starting on_mount, checking for saved credentials...\`
+   - \`[AUTH-MOUNT] load_saved_credentials returned: {True|False}\`
+   - \`[AUTH-MOUNT] Saved credentials found, attempting auto-login\`
+   - \`[AUTH-MOUNT] Session set: handle={h}, auth={auth}\`
+   - \`[AUTH-MOUNT] Auto-login complete, main UI should be visible\`
+   - \`[AUTH-MOUNT] No saved credentials found OR load failed, showing AuthScreen\`
+
+5. **Error & Warning Logging:**
+   - All error paths must log with \`logger.error()\` or \`logger.warning()\`
+   - Include exception details: \`logger.error(f"[DOMAIN] Operation failed: {e}")\`
+
+6. **Success Logging:**
+   - Key operations should log success: \`logger.info("[DOMAIN] Operation completed successfully")\`
+   - Credential save: \`logger.info("[AUTH] Credentials saved for auto-login")\`
+   - File operations: \`logger.info("[IO] File saved: {path}")\`
+
+**Log Prefix Standards:**
+- \`[AUTH]\` - Authentication flow (login, tokens, sessions)
+- \`[AUTH-MOUNT]\` - Auth specifically in on_mount() auto-login
+- \`[UI]\` - UI rendering, widget composition
+- \`[MOUNT]\` - Widget/app lifecycle (on_mount, on_unmount)
+- \`[REACTIVE]\` - Reactive state changes (watch_* methods)
+- \`[EVENT]\` - Event handling
+- \`[BROKER]\` - Broker communication
+- \`[IO]\` - File/network operations
+- \`[STATE]\` - App state changes
+- \`[ERROR]\` - Error conditions (use logger.error)
+
+### Language Patterns to Apply
+${Object.entries(ctx.langLens.constraints).map(([k, v]) => `- **${k}**: ${v}`).join('\n')}
+
+### Reference Files
+- Canonical requirements: \`${join(ctx.projectPath, '.phoenix', 'graphs', 'canonical.json')}\`
+- Language theory: \`${join(ctx.projectPath, '.phoenix', 'language-theory.json')}\`
+- Output directory: \`${ctx.outputDir}\`
+
+## Success Criteria
+
+- [ ] All 34 IUs have corresponding code
+- [ ] All functions from theory mapping are implemented
+- [ ] Textual app can be imported without errors
+- [ ] Traceability comments present on all major elements
+- [ ] No circular imports
+- [ ] Follows Textual best practices (reactive state, compose, CSS)
 
 ---
 Generated: ${new Date().toISOString()}

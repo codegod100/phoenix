@@ -111,6 +111,12 @@
           "signature": "export function a(input: any): any",
           "asyncSignature": "export async function a(input: any): Promise<any>",
           "isAsync": true
+        },
+        {
+          "name": "renderA",
+          "signature": "export function renderA(input: any): any",
+          "asyncSignature": "export async function renderA(input: any): Promise<any>",
+          "isAsync": true
         }
       ],
       "components": {
@@ -270,7 +276,14 @@
         "index": "index.ts",
         "test": "__tests__/index.test.ts"
       },
-      "functions": [],
+      "functions": [
+        {
+          "name": "renderTasks",
+          "signature": "export function renderTasks(input: any): any",
+          "asyncSignature": "export async function renderTasks(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
       "components": {
         "form": false,
         "buttons": [],
@@ -323,6 +336,12 @@
           "signature": "export function archive(input: any): any",
           "asyncSignature": "export async function archive(input: any): Promise<any>",
           "isAsync": true
+        },
+        {
+          "name": "renderStatus",
+          "signature": "export function renderStatus(input: any): any",
+          "asyncSignature": "export async function renderStatus(input: any): Promise<any>",
+          "isAsync": true
         }
       ],
       "components": {
@@ -355,7 +374,14 @@
         "index": "index.ts",
         "test": "__tests__/index.test.ts"
       },
-      "functions": [],
+      "functions": [
+        {
+          "name": "renderHeader",
+          "signature": "export function renderHeader(input: any): any",
+          "asyncSignature": "export async function renderHeader(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
       "components": {
         "form": false,
         "buttons": [],
@@ -408,7 +434,56 @@
         "index": "index.ts",
         "test": "__tests__/index.test.ts"
       },
-      "functions": [],
+      "functions": [
+        {
+          "name": "renderDatepicker",
+          "signature": "export function renderDatepicker(input: any): any",
+          "asyncSignature": "export async function renderDatepicker(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "getDatepickerHTML",
+          "signature": "export function getDatepickerHTML(input: any): any",
+          "asyncSignature": "export async function getDatepickerHTML(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "renderGrid",
+          "signature": "export function renderGrid(input: any): any",
+          "asyncSignature": "export async function renderGrid(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "showDatepicker",
+          "signature": "export function showDatepicker(input: any): any",
+          "asyncSignature": "export async function showDatepicker(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "hideDatepicker",
+          "signature": "export function hideDatepicker(input: any): any",
+          "asyncSignature": "export async function hideDatepicker(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "renderPickerpopover",
+          "signature": "export function renderPickerpopover(input: any): any",
+          "asyncSignature": "export async function renderPickerpopover(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "showPickerpopover",
+          "signature": "export function showPickerpopover(input: any): any",
+          "asyncSignature": "export async function showPickerpopover(input: any): Promise<any>",
+          "isAsync": true
+        },
+        {
+          "name": "hidePickerpopover",
+          "signature": "export function hidePickerpopover(input: any): any",
+          "asyncSignature": "export async function hidePickerpopover(input: any): Promise<any>",
+          "isAsync": true
+        }
+      ],
       "components": {
         "form": false,
         "buttons": [],
@@ -456,7 +531,7 @@
       ]
     },
     {
-      "id": "a9a3faf254636c2c445aa68d36abbf16ac249c630734ada1578bddfbde9b846c",
+      "id": "2c9a4a3e68e3c3fc767f00b60b8de69c74a559fff2c96f41aeee71962edd9f39",
       "name": "Bulk Domain",
       "domain": "bulk",
       "riskTier": "high",
@@ -466,6 +541,12 @@
         "test": "__tests__/index.test.ts"
       },
       "functions": [
+        {
+          "name": "render3px",
+          "signature": "export function render3px(input: any): any",
+          "asyncSignature": "export async function render3px(input: any): Promise<any>",
+          "isAsync": true
+        },
         {
           "name": "bulk",
           "signature": "export function bulk(input: any): any",
@@ -495,6 +576,7 @@
         "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26",
         "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd",
         "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
+        "f060304bb46b3f340153a8afd203f030ae6d26516d52c2f37c96acd1f0516e05",
         "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9"
       ]
     },
@@ -894,6 +976,11 @@
     },
     {
       "statement": "the highlight line must not use any boxshadow or gradient effects that could create a curved appearance",
+      "matchedPattern": null,
+      "implementation": "manual review needed"
+    },
+    {
+      "statement": "cards must not display any left border highlight on hover only the cursor changes",
       "matchedPattern": null,
       "implementation": "manual review needed"
     },

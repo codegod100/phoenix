@@ -1,6 +1,6 @@
 /**
  * TypeScript Generator for Phoenix Regen
- * Generates RED (failing) TypeScript/Vitest code for TDD
+ * Generates clean TypeScript implementations using theory morphisms
  * 
  * Uses language-agnostic comment-based IU tracking:
  *   // @phoenix-iu: <iu_id>
@@ -46,9 +46,10 @@ export function generateImpl(iu, config = {}) {
   const canonMap = loadCanonicalData(config.projectRoot || '.');
 
   // Header with IU traceability
-  lines.push(`// 🔴 RED: ${iu.name} (${iu.short_id})`);
+  lines.push(`// ✅ CLEAN: ${iu.name} (${iu.short_id})`);
   lines.push(`// Description: ${iu.description}`);
   lines.push(`// Risk Tier: ${iu.risk_tier.toUpperCase()}`);
+  lines.push(`// Generated: Theory morphism (ThIU → ThTypeScript → ThCode + ThLog)`);
   lines.push('');
   
   // Language-agnostic IU tracking via comments
@@ -74,12 +75,12 @@ export function generateImpl(iu, config = {}) {
     lines.push('');
   }
   
-  lines.push(`// TDD CYCLE:`);
-  lines.push(`// 1. Tests are designed to FAIL with current code`);
-  lines.push(`// 2. Run: npm test -- ${iu.short_id.toLowerCase()}`);
-  lines.push(`// 3. See 🔴 RED (tests fail)`);
-  lines.push(`// 4. Fix functions below to make tests 🟢 GREEN`);
-  lines.push(`// 5. Run evidence to validate`);
+  lines.push('');
+
+  // === IMPORTS ===
+  lines.push('// === IMPORTS ===');
+  lines.push('');
+  lines.push("import { logger } from './logger'; // Auto-injected logging");
   lines.push('');
 
   // === TYPES ===
@@ -92,8 +93,8 @@ export function generateImpl(iu, config = {}) {
   lines.push('}');
   lines.push('');
 
-  // === RED IMPLEMENTATIONS ===
-  lines.push('// === RED IMPLEMENTATIONS (fix to make tests pass) ===');
+  // === CLEAN IMPLEMENTATIONS ===
+  lines.push('// === IMPLEMENTATIONS (fill in TODOs) ===');
   lines.push('');
 
   for (const func of functions) {
@@ -101,7 +102,7 @@ export function generateImpl(iu, config = {}) {
     const canonId = iu.source_canon_ids?.[functions.indexOf(func) % iu.source_canon_ids.length];
     const canon = canonId ? canonMap.get(canonId) : null;
     
-    lines.push(...generateWrongFunction(func, domainName, iu, canon));
+    lines.push(...generateCleanFunction(func, domainName, iu, canon));
     lines.push('');
   }
 
@@ -114,9 +115,8 @@ export function generateTests(iu, implPath) {
 
   const lines = [];
 
-  lines.push(`// 🔴 RED: Tests designed to FAIL — fix implementation to pass`);
-  lines.push(`// ${iu.name} (${iu.short_id})`);
-  lines.push(`// Risk Tier: ${iu.risk_tier.toUpperCase()}`);
+  lines.push(`// ✅ Validation tests for ${iu.name} (${iu.short_id})`);
+  lines.push(`// These tests validate structure, not behavior`);
   lines.push('');
   
   // Language-agnostic IU traceability in tests too
@@ -128,12 +128,6 @@ export function generateTests(iu, implPath) {
   }));
   lines.push('');
   
-  lines.push(`// TDD CYCLE:`);
-  lines.push(`// 1. npm test -- ${iu.short_id.toLowerCase()}`);
-  lines.push(`// 2. 🔴 See RED (tests fail)`);
-  lines.push(`// 3. Fix ../index.ts implementations`);
-  lines.push(`// 4. 🟢 See GREEN (tests pass)`);
-  lines.push('');
   lines.push(`import { describe, it, expect } from 'vitest';`);
 
   // Import functions only (no _phoenix - we use comment-based traceability)
@@ -147,7 +141,7 @@ export function generateTests(iu, implPath) {
   lines.push(`describe('${iu.name}', () => {`);
 
   // Traceability test via comment parsing (language-agnostic)
-  lines.push('  // 🟢 GREEN: Traceability (always passes)');
+  lines.push('  // Traceability validation (structure only)');
   lines.push("  it('has phoenix traceability comments', () => {");
   lines.push("    // Read the impl file and check for @phoenix-iu comment");
   lines.push("    const fs = require('fs');");
@@ -158,9 +152,12 @@ export function generateTests(iu, implPath) {
   lines.push('  });');
   lines.push('');
 
-  // Failing tests for each function
+  // Structure validation tests (NOT behavior)
   for (const func of functions) {
-    lines.push(...generateFailingTest(func, domainName, iu));
+    lines.push(`  // Structure validation for ${func.name}`);
+    lines.push(`  it('has ${func.name} function', () => {`);
+    lines.push(`    expect(typeof ${func.name}).toBe('function');`);
+    lines.push('  });');
     lines.push('');
   }
 
@@ -178,298 +175,180 @@ export function getTestFileExtension() {
   return '.test.ts';
 }
 
-/**
- * Migrate implementation from old IU to new IU
- * Updates traceability comments while preserving implementation
- */
+export function getTestFilePattern() {
+  return { subdir: '__tests__', suffix: '.test.ts' };
+}
+
+export function isTemplateGenerator() {
+  return false;
+}
+
+// === MIGRATION SUPPORT ===
+
 export function migrateImpl(iu, oldCode, config = {}) {
-  const domainName = toPascalCase(iu.name);
+  // Parse old phoenix comments
+  const oldTrace = parsePhoenixComments(oldCode);
   
-  // Try to extract implementation body using traceability utilities
-  let implementationBody = extractImplementationBody(oldCode);
+  const lines = [];
+  lines.push(`// 🔄 MIGRATED: ${iu.name} (${iu.short_id})`);
+  lines.push(`// From: ${config.oldIuId || oldTrace.iu || 'old IU'}`);
+  lines.push(`// Overlap: ${config.overlapRatio || 'unknown'}`);
+  lines.push('');
   
-  if (!implementationBody) {
-    // No implementation section found, treat as new
-    console.log(`      ⚠️  No implementation section in old code, generating fresh stub`);
-    return generateImpl(iu, config);
-  }
-  
-  // Update phoenix comments in the implementation
-  const newInfo = {
+  // Update traceability comments while preserving implementation
+  const newTrace = {
     iu: iu.id,
     name: iu.name,
     risk: iu.risk_tier,
     shortId: iu.short_id,
-    migrated: config.oldIuId,
   };
   
-  const migratedCode = updatePhoenixComments(oldCode, newInfo);
-  
-  // If we successfully updated comments, use that result
-  // Otherwise fall back to wrapping the body
-  if (migratedCode && migratedCode !== oldCode) {
-    return migratedCode;
-  }
-  
-  // Fallback: wrap the extracted body with new header
-  const lines = [];
-  lines.push(`// 🔄 MIGRATED: ${iu.name} (${iu.short_id})`);
-  lines.push(`// Description: ${iu.description}`);
-  lines.push(`// Risk Tier: ${iu.risk_tier.toUpperCase()}`);
-  if (config.oldIuId) {
-    lines.push(`// Migrated from: ${config.oldIuId.slice(0, 16)}...`);
-  }
-  if (config.overlapRatio) {
-    lines.push(`// Canonical overlap: ${Math.round(config.overlapRatio * 100)}%`);
-  }
-  lines.push('');
-  lines.push(formatPhoenixComments(newInfo));
-  lines.push('');
-  lines.push(`// TDD CYCLE:`);
-  lines.push(`// 1. Tests are designed to FAIL with current code`);
-  lines.push(`// 2. Run: npm test -- ${iu.short_id.toLowerCase()}`);
-  lines.push(`// 3. See 🔴 RED (tests fail)`);
-  lines.push(`// 4. Fix functions below to make tests 🟢 GREEN`);
-  lines.push(`// 5. Run evidence to validate`);
-  lines.push('');
-  
-  // Clean up old headers from the body
-  implementationBody = implementationBody.replace(/^\/\/ (🔴 RED|🔄 MIGRATED):.*\n/g, '');
-  implementationBody = implementationBody.replace(/^\/\/ @phoenix-.*\n/g, '');
-  
-  lines.push(implementationBody);
+  const updatedCode = updatePhoenixComments(oldCode, newTrace);
+  lines.push(updatedCode);
   
   return lines.join('\n');
 }
 
-// === HELPERS ===
+// === HELPER FUNCTIONS ===
+
+function extractFunctions(iu) {
+  const functions = [];
+
+  // Extract from boundary exports
+  if (iu.boundary?.exports) {
+    for (const exp of iu.boundary.exports) {
+      if (typeof exp === 'string') {
+        functions.push({
+          name: exp,
+          type: 'function',
+          params: [],
+          returns: 'void',
+        });
+      } else if (exp.type === 'function' || exp.type === 'method') {
+        functions.push({
+          name: exp.name,
+          type: exp.type,
+          params: exp.params || [],
+          returns: exp.returns || 'void',
+          description: exp.description || '',
+        });
+      }
+    }
+  }
+
+  // Fallback: infer from IU name if no exports
+  if (functions.length === 0) {
+    const baseName = toCamelCase(iu.name);
+    functions.push({
+      name: `process${baseName}`,
+      type: 'function',
+      params: [{ name: 'data', type: 'unknown' }],
+      returns: 'unknown',
+    });
+  }
+
+  return functions;
+}
+
+function generateCleanFunction(func, domainName, iu, canon) {
+  const lines = [];
+  const isAsync = func.name.includes('load') || func.name.includes('fetch') || func.name.includes('async');
+  const returnType = func.returns || (isAsync ? 'Promise<void>' : 'void');
+
+  // Determine log prefix
+  const logPrefix = inferLogPrefix(func.name, iu.name);
+
+  // JSDoc with canon reference
+  lines.push(`/**`);
+  if (func.description) {
+    lines.push(` * ${func.description}`);
+    lines.push(` *`);
+  }
+  if (canon) {
+    lines.push(` * REQUIREMENT: ${canon.statement.slice(0, 80)}${canon.statement.length > 80 ? '...' : ''}`);
+    lines.push(` * @phoenix-canon: ${canon.canon_id || canon.id}`);
+    lines.push(` *`);
+  } else if (iu.source_canon_ids?.[0]) {
+    lines.push(` * @phoenix-canon: ${iu.source_canon_ids[0]}`);
+    lines.push(` *`);
+  }
+  lines.push(` * @phoenix-iu: ${iu.id.slice(0, 16)}...`);
+  lines.push(` */`);
+
+  // Function signature
+  const asyncKeyword = isAsync ? 'async ' : '';
+  const params = func.params?.map(p => `${p.name}: ${p.type || 'unknown'}`).join(', ') || '';
+  lines.push(`export ${asyncKeyword}function ${func.name}(${params}): ${returnType} {`);
+
+  // Auto-injected logging
+  lines.push(`  console.log('${logPrefix} ${func.name} called');`);
+  
+  // Special logging for lifecycle/auth methods
+  if (func.name.includes('auth') && func.name.includes('completed')) {
+    lines.push(`  console.log('${logPrefix} Auth completed, updating session');`);
+  }
+  if (func.name.includes('mount')) {
+    lines.push(`  console.log('${logPrefix} Starting initialization');`);
+  }
+
+  // TODO placeholder
+  lines.push(`  // TODO: Implement logic from requirements`);
+  lines.push(`  // Source: ${iu.source_canon_ids?.join(', ') || 'spec'}`);
+
+  // Default return
+  if (returnType !== 'void' && returnType !== 'Promise<void>') {
+    if (isAsync) {
+      lines.push(`  return Promise.resolve(null); // TODO: Implement`);
+    } else {
+      lines.push(`  return null as any; // TODO: Implement`);
+    }
+  }
+
+  lines.push(`}`);
+
+  return lines;
+}
+
+function inferLogPrefix(funcName, iuName) {
+  // Infer appropriate log prefix based on function name
+  if (funcName.includes('auth')) return '[AUTH]';
+  if (funcName.includes('mount')) return '[MOUNT]';
+  if (funcName.includes('save') || funcName.includes('load')) return '[IO]';
+  if (funcName.includes('connect') || funcName.includes('send')) return '[BROKER]';
+  if (funcName.includes('watch')) return '[REACTIVE]';
+  if (funcName.includes('on')) return '[EVENT]';
+  if (funcName.includes('render') || funcName.includes('compose')) return '[UI]';
+  if (funcName.includes('state')) return '[STATE]';
+
+  // Fall back to IU name
+  const iuLower = iuName.toLowerCase();
+  if (iuLower.includes('auth')) return '[AUTH]';
+  if (iuLower.includes('broker')) return '[BROKER]';
+  if (iuLower.includes('ui')) return '[UI]';
+
+  return '[GENERAL]';
+}
+
+// === STRING UTILS ===
 
 function toPascalCase(str) {
   return str
     .replace(/[^a-zA-Z0-9]/g, ' ')
     .split(' ')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join('')
-    .replace(/Domain$/, '');
-}
-
-// JavaScript/TypeScript reserved words that can't be used as function names
-const RESERVED_WORDS = new Set([
-  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
-  'delete', 'do', 'else', 'enum', 'export', 'extends', 'false', 'finally',
-  'for', 'function', 'if', 'implements', 'import', 'in', 'instanceof',
-  'interface', 'let', 'new', 'null', 'package', 'private', 'protected',
-  'public', 'return', 'static', 'super', 'switch', 'this', 'throw', 'true',
-  'try', 'typeof', 'var', 'void', 'while', 'with', 'yield'
-]);
-
-/**
- * Escape reserved words by appending underscore
- */
-function escapeReserved(name) {
-  return RESERVED_WORDS.has(name) ? name + '_' : name;
+    .join('');
 }
 
 function toCamelCase(str) {
   const pascal = toPascalCase(str);
-  const camel = pascal.charAt(0).toLowerCase() + pascal.slice(1);
-  return escapeReserved(camel);
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
-function extractFunctions(iu) {
-  // Use boundary.exports if available (from updated plan phase)
-  // These are already camelCase function names extracted from requirements
-  if (iu.boundary?.exports && iu.boundary.exports.length > 0) {
-    return iu.boundary.exports
-      .filter(name => name && name.length > 2) // Filter out artifacts like "a", "is"
-      .filter(name => /^[a-z][a-zA-Z0-9]*$/.test(name)) // Valid camelCase identifier
-      .slice(0, 10) // Max 10 functions per IU
-      .map(name => ({
-        name: escapeReserved(name), // Just escape reserved words, preserve case
-        type: inferFunctionType(name),
-        original: name
-      }));
-  }
-
-  // Fallback: extract from contract description (old method)
-  const functions = [];
-  const text = (iu.contract?.description || '') + ' ' + (iu.contract?.invariants?.join(' ') || '');
-
-  const patterns = [
-    { pattern: /\b(calculate|compute|derive|get|find|lookup)\w*\b/gi, type: 'query' },
-    { pattern: /\b(validate|check|verify|ensure|confirm)\w*\b/gi, type: 'validate' },
-    { pattern: /\b(create|add|insert|new)\w*\b/gi, type: 'create' },
-    { pattern: /\b(update|modify|edit|change|set)\w*\b/gi, type: 'update' },
-    { pattern: /\b(delete|remove|clear|drop)\w*\b/gi, type: 'delete' },
-    { pattern: /\b(list|getAll|findAll|select)\w*\b/gi, type: 'list' },
-    { pattern: /\b(process|handle|execute|run|perform)\w*\b/gi, type: 'process' },
-  ];
-
-  const seen = new Set();
-  for (const { pattern, type } of patterns) {
-    const matches = text.matchAll(pattern);
-    for (const match of matches) {
-      const name = toCamelCase(match[0]);
-      if (!seen.has(name)) {
-        seen.add(name);
-        functions.push({ name, type, original: match[0] });
-      }
-    }
-  }
-
-  // Ensure at least one function
-  if (functions.length === 0) {
-    functions.push({ name: escapeReserved('process'), type: 'process', original: 'process' });
-  }
-
-  return functions.slice(0, 5);
-}
-
-/**
- * Infer function type from name for RED stub generation
- */
-function inferFunctionType(name) {
-  const lower = name.toLowerCase();
-  if (lower.includes('get') || lower.includes('find') || lower.includes('list') || lower.includes('lookup')) {
-    return 'query';
-  }
-  if (lower.includes('validate') || lower.includes('check') || lower.includes('verify') || lower.includes('confirm')) {
-    return 'validate';
-  }
-  if (lower.includes('create') || lower.includes('add') || lower.includes('insert') || lower.includes('new')) {
-    return 'create';
-  }
-  if (lower.includes('update') || lower.includes('modify') || lower.includes('edit') || lower.includes('set')) {
-    return 'update';
-  }
-  if (lower.includes('delete') || lower.includes('remove') || lower.includes('clear') || lower.includes('drop')) {
-    return 'delete';
-  }
-  if (lower.includes('archive') || lower.includes('restore')) {
-    return 'update'; // Archive/restore are update operations
-  }
-  if (lower.includes('filter') || lower.includes('search') || lower.includes('sort')) {
-    return 'query';
-  }
-  return 'process';
-}
-
-function generateWrongFunction(func, domainName, iu, canon = null) {
-  const lines = [];
-
-  // Add canonical traceability if available
-  if (canon) {
-    lines.push(formatCanonComment(canon.canon_id || canon.id, canon.statement, canon.type));
-  }
-  
-  lines.push(`/**`);
-  lines.push(` * 🔴 RED: ${func.original}`);
-  lines.push(` *`);
-  lines.push(` * TDD: Fix this function to make tests pass`);
-  lines.push(` * @phoenix-gen: function`);
-  lines.push(` */`);
-
-  const output = iu.contract?.outputs?.[0] || 'process the item';
-
-  switch (func.type) {
-    case 'validate':
-      lines.push(`export function ${func.name}(item: ${domainName}): boolean {`);
-      lines.push(`  // 🔴 RED: WRONG — always returns false`);
-      lines.push(`  // Should validate: ${iu.contract?.invariants?.[0] || 'TBD'}`);
-      lines.push(`  return false;`);
-      lines.push('}');
-      break;
-
-    case 'query':
-    case 'create':
-      lines.push(`export function ${func.name}(id: string): ${domainName} | null {`);
-      lines.push(`  // 🔴 RED: WRONG — returns object with mismatched ID`);
-      lines.push(`  return {`);
-      lines.push(`    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix`);
-      lines.push(`    name: 'not implemented'`);
-      lines.push(`  };`);
-      lines.push('}');
-      break;
-
-    case 'list':
-      lines.push(`export function ${func.name}(): ${domainName}[] {`);
-      lines.push(`  // 🔴 RED: WRONG — returns empty array`);
-      lines.push(`  return []; // ← Should return actual list`);
-      lines.push('}');
-      break;
-
-    case 'delete':
-      lines.push(`export function ${func.name}(id: string): boolean {`);
-      lines.push(`  // 🔴 RED: WRONG — always returns false`);
-      lines.push(`  // Should delete the item and return success`);
-      lines.push(`  return false;`);
-      lines.push('}');
-      break;
-
-    case 'update':
-      lines.push(`export function ${func.name}(item: ${domainName}): ${domainName} {`);
-      lines.push(`  // 🔴 RED: WRONG — returns input unchanged`);
-      lines.push(`  // Should: ${output}`);
-      lines.push(`  return item; // ← No transformation!`);
-      lines.push('}');
-      break;
-
-    default:
-      lines.push(`export function ${func.name}(item: ${domainName}): ${domainName} {`);
-      lines.push(`  // 🔴 RED: WRONG — returns input unchanged`);
-      lines.push(`  // Should: ${output}`);
-      lines.push(`  return item; // ← No transformation!`);
-      lines.push('}');
-  }
-
-  return lines;
-}
-
-function generateFailingTest(func, domainName, iu) {
-  const lines = [];
-
-  switch (func.type) {
-    case 'validate':
-      lines.push(`  // 🔴 RED: ${func.name} should validate items`);
-      lines.push(`  it('${func.name} validates ${domainName.toLowerCase()}', () => {`);
-      lines.push(`    const item: ${domainName} = { id: '1', name: 'test' };`);
-      lines.push(`    expect(${func.name}(item)).toBe(true); // 🔴 Currently returns false`);
-      lines.push('  });');
-      break;
-
-    case 'query':
-    case 'create':
-      lines.push(`  // 🔴 RED: ${func.name} should return correct data`);
-      lines.push(`  it('${func.name} returns ${domainName.toLowerCase()} by id', () => {`);
-      lines.push(`    const result = ${func.name}('test-id');`);
-      lines.push(`    expect(result).not.toBeNull();`);
-      lines.push(`    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'`);
-      lines.push('  });');
-      break;
-
-    case 'list':
-      lines.push(`  // 🔴 RED: ${func.name} should return non-empty list`);
-      lines.push(`  it('${func.name} returns list of ${domainName.toLowerCase()}', () => {`);
-      lines.push(`    const result = ${func.name}();`);
-      lines.push(`    expect(result.length).toBeGreaterThan(0); // 🔴 Currently returns []`);
-      lines.push('  });');
-      break;
-
-    case 'delete':
-      lines.push(`  // 🔴 RED: ${func.name} should delete and return success`);
-      lines.push(`  it('${func.name} deletes ${domainName.toLowerCase()}', () => {`);
-      lines.push(`    expect(${func.name}('test-id')).toBe(true); // 🔴 Currently returns false`);
-      lines.push('  });');
-      break;
-
-    default:
-      lines.push(`  // 🔴 RED: ${func.name} should transform input`);
-      lines.push(`  it('${func.name} processes ${domainName.toLowerCase()}', () => {`);
-      lines.push(`    const item: ${domainName} = { id: '1', name: 'test' };`);
-      lines.push(`    const result = ${func.name}(item);`);
-      lines.push(`    expect(result).not.toBe(item); // 🔴 Currently returns same object`);
-      lines.push('  });');
-  }
-
-  return lines;
+function toKebabCase(str) {
+  return str
+    .replace(/[^a-zA-Z0-9]/g, ' ')
+    .split(' ')
+    .map(w => w.toLowerCase())
+    .join('-')
+    .replace(/-+$/, '');
 }

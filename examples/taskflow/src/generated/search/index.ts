@@ -1,71 +1,104 @@
-/**
- * @phoenix-iu: 5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f
- * @phoenix-name: Search Domain
- * @phoenix-risk: LOW
- */
-/**
- * @phoenix-canon: 49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06
- * Requirement: Tasks must be searchable by title substring (case-insensitive)
- * 
- * @phoenix-canon: d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057
- * Requirement: Tasks must be filterable by status, priority, assignee, and archived state
- * 
- * @phoenix-canon: d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f
- * Requirement: Search results must be sorted by priority (critical first) then by created_at
- * 
- * @phoenix-canon: fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed
- * Constraint: An empty search query must return all tasks
- * 
- * Search Domain - Risk Tier: low
- */
+// 🔴 RED: Search Domain (IU-5d746ac1)
+// Description: Implements search functionality with 4 requirements
+// Risk Tier: LOW
 
-import {
-  Task,
-  Priority,
-  Status,
-  searchTasks,
-  filterTasks
-} from "../app/store.js";
+// @phoenix-iu: 5d746ac1128920d75ba29eea92baea4de98f5db5e30d13c28589bfefe5ca019f
+// @phoenix-name: Search Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-5d746ac1
 
-export type { Task, Priority, Status };
+// === IMPLEMENTED REQUIREMENTS ===
 
-/**
- * Search tasks by query string
- * @phoenix-canon: 49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06
- * @phoenix-canon: fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed
- */
-export async function searchTasksFn(query: string): Promise<Task[]> {
-  return searchTasks(query);
+// @phoenix-canon: 49a95edd719e1d20...
+// REQUIREMENT: tasks must be searchable by title substring caseinsensitive
+
+// @phoenix-canon: d162133ca6cb92ab...
+// REQUIREMENT: search results must be sorted by priority critical first then by createdat
+
+// @phoenix-canon: d87a8adb9feac0dd...
+// REQUIREMENT: tasks must be filterable by status priority assignee and archived state
+
+// @phoenix-canon: fa9e6c9a18b3b575...
+// CONSTRAINT: an empty search query must return all tasks
+
+
+// TDD CYCLE:
+// 1. Tests are designed to FAIL with current code
+// 2. Run: npm test -- iu-5d746ac1
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
+// 5. Run evidence to validate
+
+// === TYPES ===
+// @phoenix-gen: types
+
+export interface Search {
+  id: string;
+  name?: string;
 }
 
+// === RED IMPLEMENTATIONS (fix to make tests pass) ===
+
+// @phoenix-canon: 49a95edd719e1d20...
+// REQUIREMENT: tasks must be searchable by title substring caseinsensitive
 /**
- * Search function (sync version)
- * @phoenix-canon: 49a95edd719e1d20d9ee59928f417b9a3753b0fa0d5789f0831714cc82b40d06
- * @phoenix-canon: fa9e6c9a18b3b575d8da78af91b7e601c92394e61d84aaf66e208bdca073f7ed
+ * 🔴 RED: searchTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
-export function search(query: string): Task[] {
-  return searchTasks(query);
+export function searchTasks(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }
 
+// @phoenix-canon: d162133ca6cb92ab...
+// REQUIREMENT: search results must be sorted by priority critical first then by createdat
 /**
- * Filter tasks by criteria
- * @phoenix-canon: d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057
- * @phoenix-canon: d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f
+ * 🔴 RED: search
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
-export async function filterTasksFn(options: {
-  status?: Status;
-  priority?: Priority;
-  assignee?: string;
-  archived?: boolean;
-}): Promise<Task[]> {
-  return filterTasks(options);
+export function search(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }
 
+// @phoenix-canon: d87a8adb9feac0dd...
+// REQUIREMENT: tasks must be filterable by status priority assignee and archived state
 /**
- * Filter by status (sync version)
- * @phoenix-canon: d87a8adb9feac0dda93fef7932e161d59275ce5886931b29101af1c100e0b057
- * @phoenix-canon: d162133ca6cb92ab0fb842b24f0793460485e4762d59b748a613165343e7592f
+ * 🔴 RED: filterTasks
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
-export function filterByStatus(status: Status): Task[] {
-  return filterTasks({ status, archived: false });
+export function filterTasks(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
+}
+
+// @phoenix-canon: fa9e6c9a18b3b575...
+// CONSTRAINT: an empty search query must return all tasks
+/**
+ * 🔴 RED: filterByStatus
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
+ */
+export function filterByStatus(id: string): Search | null {
+  // 🔴 RED: WRONG — returns object with mismatched ID
+  return {
+    id: 'WRONG_' + id, // ← Bug: adds 'WRONG_' prefix
+    name: 'not implemented'
+  };
 }

@@ -1,14 +1,37 @@
-import { list, a } from '../index.js';
+// 🔴 RED: Tests designed to FAIL — fix implementation to pass
+// Deadline Domain (IU-fa4e979e)
+// Risk Tier: LOW
 
-describe('list', () => {
-  it('should be implemented', () => {
-    expect(typeof list).toBe('function');
+// @phoenix-iu: fa4e979e652ff75351003d30304eb1f655f37613ccc7d9fd13bc1207b8cab44e
+// @phoenix-name: Deadline Domain
+// @phoenix-risk: low
+// @phoenix-short: IU-fa4e979e
+
+// TDD CYCLE:
+// 1. npm test -- iu-fa4e979e
+// 2. 🔴 See RED (tests fail)
+// 3. Fix ../index.ts implementations
+// 4. 🟢 See GREEN (tests pass)
+
+import { describe, it, expect } from 'vitest';
+import { list } from '../index.js';
+
+describe('Deadline Domain', () => {
+  // 🟢 GREEN: Traceability (always passes)
+  it('has phoenix traceability comments', () => {
+    // Read the impl file and check for @phoenix-iu comment
+    const fs = require('fs');
+    const path = require('path');
+    const implPath = path.join(__dirname, '..', 'index.ts');
+    const impl = fs.readFileSync(implPath, 'utf-8');
+    expect(impl).toMatch(/@phoenix-iu:.*fa4e979e652ff753/);
   });
-});
 
-describe('a', () => {
-  it('should be implemented', () => {
-    expect(typeof a).toBe('function');
+  // 🔴 RED: list should return correct data
+  it('list returns deadline by id', () => {
+    const result = list('test-id');
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe('test-id'); // 🔴 Currently 'WRONG_test-id'
   });
-});
 
+});

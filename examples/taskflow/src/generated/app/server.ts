@@ -144,6 +144,105 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     .form-group select:focus,
     .form-group textarea:focus { outline: none; border-color: var(--ctp-blue); }
     .form-group textarea { min-height: 50px; resize: vertical; }
+    
+    /* Custom Date Picker Styles */
+    .date-picker-wrapper { position: relative; }
+    .date-picker-input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--ctp-surface1);
+      border-radius: 6px;
+      background: var(--ctp-surface1);
+      color: var(--ctp-text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .date-picker-input:focus { outline: none; border-color: var(--ctp-blue); }
+    .date-picker-calendar {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: var(--ctp-surface0);
+      border: 1px solid var(--ctp-surface1);
+      border-radius: 8px;
+      padding: 12px;
+      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .date-picker-calendar.visible { display: block; }
+    .date-picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .date-picker-nav {
+      background: var(--ctp-surface1);
+      border: none;
+      color: var(--ctp-text);
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .date-picker-nav:hover { background: var(--ctp-surface2); }
+    .date-picker-month-year {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .date-picker-month-year select {
+      background: var(--ctp-surface1);
+      border: 1px solid var(--ctp-surface1);
+      color: var(--ctp-text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .date-picker-month-year select:focus { outline: none; border-color: var(--ctp-blue); }
+    .date-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .date-picker-day-header {
+      font-size: 0.75rem;
+      color: var(--ctp-subtext0);
+      padding: 4px;
+      font-weight: 600;
+    }
+    .date-picker-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--ctp-text);
+      transition: background-color 0.15s;
+    }
+    .date-picker-day:hover { background: var(--ctp-surface2); }
+    .date-picker-day.selected {
+      background: var(--ctp-blue);
+      color: var(--ctp-crust);
+      font-weight: 600;
+    }
+    .date-picker-day.other-month { color: var(--ctp-overlay0); }
+    .date-picker-day.today {
+      border: 1px solid var(--ctp-blue);
+    }
+    
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     button {
       cursor: pointer;
@@ -172,10 +271,16 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       border-radius: 8px;
       padding: 16px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, border-left-color 0.2s, background-color 0.2s;
       position: relative;
+      cursor: pointer;
+      border-left: 3px solid transparent;
     }
     .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+    .task-card.selected {
+      border-left-color: var(--ctp-blue);
+      background: var(--ctp-surface2);
+    }
     .task-card.overdue { border: 2px solid var(--ctp-red); }
     .task-card.archived { opacity: 0.7; }
     .task-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -196,23 +301,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     .task-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: var(--ctp-subtext0); margin-bottom: 12px; }
     .task-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .task-actions button { padding: 4px 10px; font-size: 0.8rem; }
-    .task-card {
-      position: relative;
-      cursor: pointer;
-      border-left: 3px solid transparent;
-      transition: border-left-color 0.2s, background-color 0.2s;
-    }
-    .task-card:hover { border-left-color: var(--ctp-surface1); }
-    .task-card.selected {
-      border-left-color: var(--ctp-blue);
-      background: var(--ctp-surface2);
-    }
-    .task-card .card-content {
-      pointer-events: none;
-    }
-    .task-card .task-actions {
-      pointer-events: auto;
-    }
     .bulk-action-bar {
       display: none;
       position: fixed;
@@ -315,7 +403,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           </div>
           <div class="form-group">
             <label for="createDeadline">Deadline</label>
-            <input type="date" id="createDeadline" name="deadline" autocomplete="off">
+            <input type="text" id="createDeadline" name="deadline" class="date-picker-input" autocomplete="off" placeholder="Select date...">
           </div>
         </div>
         <div class="form-group">
@@ -497,6 +585,151 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     
+    // Custom Date Picker Component
+    let activeDatePicker = null;
+    
+    function createDatePicker(inputId, onSelect) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      
+      // Wrap input in date picker wrapper
+      const wrapper = document.createElement('div');
+      wrapper.className = 'date-picker-wrapper';
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      input.classList.add('date-picker-input');
+      input.readOnly = true;
+      input.placeholder = 'Select date...';
+      
+      // Create calendar
+      const calendar = document.createElement('div');
+      calendar.className = 'date-picker-calendar';
+      calendar.id = inputId + '-calendar';
+      calendar.innerHTML = '<div class="date-picker-header"><button class="date-picker-nav" data-dir="-1">&lt;</button><div class="date-picker-month-year"><select class="month-select"></select><select class="year-select"></select></div><button class="date-picker-nav" data-dir="1">&gt;</button></div><div class="date-picker-grid"><div class="date-picker-day-header">Su</div><div class="date-picker-day-header">Mo</div><div class="date-picker-day-header">Tu</div><div class="date-picker-day-header">We</div><div class="date-picker-day-header">Th</div><div class="date-picker-day-header">Fr</div><div class="date-picker-day-header">Sa</div></div>';
+      wrapper.appendChild(calendar);
+      
+      let currentDate = new Date();
+      let selectedDate = input.value ? new Date(input.value) : null;
+      
+      function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        // Update month/year selects
+        const monthSelect = calendar.querySelector('.month-select');
+        const yearSelect = calendar.querySelector('.year-select');
+        
+        monthSelect.innerHTML = ['January','February','March','April','May','June','July','August','September','October','November','December']
+          .map((m, i) => '<option value="' + i + '"' + (i === month ? ' selected' : '') + '>' + m + '</option>').join('');
+        
+        const currentYear = new Date().getFullYear();
+        yearSelect.innerHTML = Array.from({length: 10}, (_, i) => currentYear - 5 + i)
+          .map(y => '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>').join('');
+        
+        // Clear existing days
+        const existingDays = calendar.querySelectorAll('.date-picker-day');
+        existingDays.forEach(d => d.remove());
+        
+        // Render days
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+        const grid = calendar.querySelector('.date-picker-grid');
+        
+        // Previous month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+          const day = document.createElement('div');
+          day.className = 'date-picker-day other-month';
+          day.textContent = daysInPrevMonth - i;
+          grid.appendChild(day);
+        }
+        
+        // Current month days
+        const today = new Date();
+        for (let i = 1; i <= daysInMonth; i++) {
+          const day = document.createElement('div');
+          day.className = 'date-picker-day';
+          day.textContent = i;
+          
+          if (selectedDate && selectedDate.getDate() === i && 
+              selectedDate.getMonth() === month && 
+              selectedDate.getFullYear() === year) {
+            day.classList.add('selected');
+          }
+          
+          if (today.getDate() === i && today.getMonth() === month && today.getFullYear() === year) {
+            day.classList.add('today');
+          }
+          
+          day.addEventListener('click', () => {
+            selectedDate = new Date(year, month, i);
+            input.value = selectedDate.toISOString().split('T')[0];
+            hideDatePicker();
+            if (onSelect) onSelect(selectedDate);
+          });
+          
+          grid.appendChild(day);
+        }
+        
+        // Next month days
+        const remainingCells = 42 - (firstDay + daysInMonth);
+        for (let i = 1; i <= remainingCells; i++) {
+          const day = document.createElement('div');
+          day.className = 'date-picker-day other-month';
+          day.textContent = i;
+          grid.appendChild(day);
+        }
+      }
+      
+      function showDatePicker() {
+        if (activeDatePicker && activeDatePicker !== calendar) {
+          activeDatePicker.classList.remove('visible');
+        }
+        activeDatePicker = calendar;
+        calendar.classList.add('visible');
+        renderCalendar();
+      }
+      
+      function hideDatePicker() {
+        calendar.classList.remove('visible');
+        if (activeDatePicker === calendar) activeDatePicker = null;
+      }
+      
+      // Event listeners
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showDatePicker();
+      });
+      
+      calendar.querySelectorAll('.date-picker-nav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dir = parseInt(btn.dataset.dir);
+          currentDate.setMonth(currentDate.getMonth() + dir);
+          renderCalendar();
+        });
+      });
+      
+      calendar.querySelector('.month-select').addEventListener('change', (e) => {
+        e.stopPropagation();
+        currentDate.setMonth(parseInt(e.target.value));
+        renderCalendar();
+      });
+      
+      calendar.querySelector('.year-select').addEventListener('change', (e) => {
+        e.stopPropagation();
+        currentDate.setFullYear(parseInt(e.target.value));
+        renderCalendar();
+      });
+      
+      // Close when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+          hideDatePicker();
+        }
+      });
+    }
+    
     function renderStatusBar() {
       const metrics = getMetrics();
       document.getElementById('metricTotal').textContent = metrics.total;
@@ -519,7 +752,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       const validTransitions = { open: [{ status: 'in_progress', label: 'Start' }], in_progress: [{ status: 'review', label: 'Submit for Review' }, { status: 'open', label: 'Back to Open' }], review: [{ status: 'done', label: 'Complete' }, { status: 'in_progress', label: 'Back to Progress' }], done: [{ status: 'open', label: 'Reopen' }] };
       const transitions = validTransitions[task.status] || [];
       const transitionButtons = transitions.map(t => '<button class="btn-secondary btn-sm transition-btn" data-task-id="' + task.id + '" data-status="' + t.status + '">' + t.label + '</button>').join('');
-      div.innerHTML = '<div class="card-content"><div class="task-header"><span class="task-title">' + escapeHtml(task.title) + '</span></div><div class="task-badges"><span class="badge ' + priorityColors[task.priority] + '">' + task.priority + '</span><span class="badge ' + statusColors[task.status] + '">' + task.status.replace('_', ' ') + '</span>' + (task.archived ? '<span class="badge badge-status-archived">archived</span>' : '') + (isOverdue ? '<span class="badge badge-overdue">OVERDUE</span>' : '') + '</div><p class="task-description">' + escapeHtml(task.description) + '</p><div class="task-meta">' + (task.assignee ? '<span>👤 ' + escapeHtml(task.assignee) + '</span>' : '') + (task.deadline ? '<span>📅 ' + formatDate(task.deadline) + '</span>' : '') + (task.tags.length ? '<span>🏷️ ' + task.tags.join(', ') + '</span>' : '') + '</div><div class="task-actions">' + transitionButtons + '<button class="btn-secondary btn-sm edit-btn" data-task-id="' + task.id + '">Edit</button>' + (!task.archived ? '<button class="btn-secondary btn-sm archive-btn" data-task-id="' + task.id + '">Archive</button>' : '') + (task.archived ? '<button class="btn-secondary btn-sm restore-btn" data-task-id="' + task.id + '">Restore</button>' : '') + '<button class="btn-danger btn-sm delete-btn" data-task-id="' + task.id + '">Delete</button></div></div><div class="edit-form" id="edit-form-' + task.id + '"><div class="form-group"><label>Title</label><input type="text" class="edit-title" value="' + escapeHtml(task.title) + '" autocomplete="off"></div><div class="form-group"><label>Description</label><textarea class="edit-description" rows="2" autocomplete="off">' + escapeHtml(task.description) + '</textarea></div><div class="form-row"><div class="form-group"><label>Priority</label><select class="edit-priority" autocomplete="off"><option value="low" ' + (task.priority === 'low' ? 'selected' : '') + '>Low</option><option value="medium" ' + (task.priority === 'medium' ? 'selected' : '') + '>Medium</option><option value="high" ' + (task.priority === 'high' ? 'selected' : '') + '>High</option><option value="critical" ' + (task.priority === 'critical' ? 'selected' : '') + '>Critical</option></select></div><div class="form-group"><label>Status</label><select class="edit-status" autocomplete="off"><option value="open" ' + (task.status === 'open' ? 'selected' : '') + '>Open</option><option value="in_progress" ' + (task.status === 'in_progress' ? 'selected' : '') + '>In Progress</option><option value="review" ' + (task.status === 'review' ? 'selected' : '') + '>Review</option><option value="done" ' + (task.status === 'done' ? 'selected' : '') + '>Done</option></select></div></div><div class="form-row"><div class="form-group"><label>Assignee</label><input type="text" class="edit-assignee" value="' + escapeHtml(task.assignee || '') + '" autocomplete="off"></div><div class="form-group"><label>Deadline</label><input type="date" class="edit-deadline" value="' + (task.deadline || '') + '"></div></div><div class="task-actions"><button class="btn-success btn-sm save-edit-btn" data-task-id="' + task.id + '">Save</button><button class="btn-secondary btn-sm cancel-edit-btn" data-task-id="' + task.id + '">Cancel</button></div></div>';
+      div.innerHTML = '<div class="card-content"><div class="task-header"><span class="task-title">' + escapeHtml(task.title) + '</span></div><div class="task-badges"><span class="badge ' + priorityColors[task.priority] + '">' + task.priority + '</span><span class="badge ' + statusColors[task.status] + '">' + task.status.replace('_', ' ') + '</span>' + (task.archived ? '<span class="badge badge-status-archived">archived</span>' : '') + (isOverdue ? '<span class="badge badge-overdue">OVERDUE</span>' : '') + '</div><p class="task-description">' + escapeHtml(task.description) + '</p><div class="task-meta">' + (task.assignee ? '<span>👤 ' + escapeHtml(task.assignee) + '</span>' : '') + (task.deadline ? '<span>📅 ' + formatDate(task.deadline) + '</span>' : '') + (task.tags.length ? '<span>🏷️ ' + task.tags.join(', ') + '</span>' : '') + '</div><div class="task-actions">' + transitionButtons + '<button class="btn-secondary btn-sm edit-btn" data-task-id="' + task.id + '">Edit</button>' + (!task.archived ? '<button class="btn-secondary btn-sm archive-btn" data-task-id="' + task.id + '">Archive</button>' : '') + (task.archived ? '<button class="btn-secondary btn-sm restore-btn" data-task-id="' + task.id + '">Restore</button>' : '') + '<button class="btn-danger btn-sm delete-btn" data-task-id="' + task.id + '">Delete</button></div></div><div class="edit-form" id="edit-form-' + task.id + '"><div class="form-group"><label>Title</label><input type="text" class="edit-title" value="' + escapeHtml(task.title) + '" autocomplete="off"></div><div class="form-group"><label>Description</label><textarea class="edit-description" rows="2" autocomplete="off">' + escapeHtml(task.description) + '</textarea></div><div class="form-row"><div class="form-group"><label>Priority</label><select class="edit-priority" autocomplete="off"><option value="low" ' + (task.priority === 'low' ? 'selected' : '') + '>Low</option><option value="medium" ' + (task.priority === 'medium' ? 'selected' : '') + '>Medium</option><option value="high" ' + (task.priority === 'high' ? 'selected' : '') + '>High</option><option value="critical" ' + (task.priority === 'critical' ? 'selected' : '') + '>Critical</option></select></div><div class="form-group"><label>Status</label><select class="edit-status" autocomplete="off"><option value="open" ' + (task.status === 'open' ? 'selected' : '') + '>Open</option><option value="in_progress" ' + (task.status === 'in_progress' ? 'selected' : '') + '>In Progress</option><option value="review" ' + (task.status === 'review' ? 'selected' : '') + '>Review</option><option value="done" ' + (task.status === 'done' ? 'selected' : '') + '>Done</option></select></div></div><div class="form-row"><div class="form-group"><label>Assignee</label><input type="text" class="edit-assignee" value="' + escapeHtml(task.assignee || '') + '" autocomplete="off"></div><div class="form-group"><label>Deadline</label><input type="text" class="edit-deadline date-picker-input" id="edit-deadline-' + task.id + '" value="' + (task.deadline || '') + '" placeholder="Select date..."></div></div><div class="task-actions"><button class="btn-success btn-sm save-edit-btn" data-task-id="' + task.id + '">Save</button><button class="btn-secondary btn-sm cancel-edit-btn" data-task-id="' + task.id + '">Cancel</button></div></div>';
       
       // Click card to toggle selection
       div.addEventListener('click', (e) => {
@@ -591,6 +824,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       seedData();
       renderTasks();
       document.getElementById('createTitle').focus();
+      
+      // Initialize custom date pickers
+      createDatePicker('createDeadline', (date) => {
+        console.log('Selected deadline:', date.toISOString().split('T')[0]);
+      });
       document.getElementById('tabActive').addEventListener('click', () => {
         currentTab = 'active';
         document.getElementById('tabActive').classList.add('active');
@@ -631,6 +869,10 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           const card = document.querySelector('[data-task-id="' + taskId + '"]');
           card.querySelector('.card-content').classList.add('hidden');
           card.querySelector('.edit-form').classList.add('visible');
+          // Initialize custom date picker for this edit form
+          setTimeout(() => {
+            createDatePicker('edit-deadline-' + taskId);
+          }, 0);
         }
         if (target.classList.contains('cancel-edit-btn')) {
           const taskId = target.dataset.taskId;

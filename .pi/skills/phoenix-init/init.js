@@ -10,7 +10,7 @@
  * Usage: node .pi/skills/phoenix-init/init.js [project-root]
  */
 
-import { mkdirSync, writeFileSync, existsSync } from 'fs';
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'fs';
 import { resolve, join } from 'path';
 
 const STARTER_SPEC = `# Project Specification

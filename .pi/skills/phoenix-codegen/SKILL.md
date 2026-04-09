@@ -32,7 +32,67 @@ ingest → canonicalize → plan → protolens → [CODEGEN] → evidence → au
                                       ↓
                               language detection
                               theory morphism
+                         logging injection morphism
                               instruction generation
+```
+
+## Automatic Logging Injection (ThIU → ThCode + ThLog)
+
+Phoenix codegen now includes an **automatic logging morphism** that injects traceability logging into all generated code:
+
+### Logging Morphism
+
+```
+ThIU → ThLang → ThCode
+                    ↓
+              [ThLog Injection]
+                    ↓
+              Code with auto-logging
+```
+
+### Injected Logging Patterns
+
+The codegen instruction includes requirements for the agent to add:
+
+1. **Method Entry Logging** - Every method logs entry with domain prefix
+2. **State Transition Logging** - Critical state changes logged  
+3. **Lifecycle Logging** - on_mount, compose, watch_* events
+4. **Auto-Login Specific** - [AUTH-MOUNT] prefixed debug logs
+5. **Error Logging** - All error paths log with logger.error()
+6. **Success Logging** - Key operations confirm completion
+
+### Log Prefix Standards
+
+| Prefix | Domain |
+|--------|--------|
+| `[AUTH]` | Authentication flow |
+| `[AUTH-MOUNT]` | Auto-login in on_mount |
+| `[UI]` | UI rendering |
+| `[MOUNT]` | Widget lifecycle |
+| `[REACTIVE]` | State changes |
+| `[EVENT]` | Event handling |
+| `[BROKER]` | Broker comms |
+| `[IO]` | File/network |
+| `[STATE]` | App state |
+
+### Example Generated Code
+
+```python
+def on_auth_screen_auth_completed(self, event: AuthCompleted) -> None:
+    # @phoenix-canon: node-2c760e46
+    logger.info(f"[AUTH] AuthCompleted received for handle={event.handle}")
+    
+    # 1. Update session state
+    self.app_state.session.handle = event.handle
+    self.app_state.session.authenticated = True
+    logger.info(f"[AUTH] Session authenticated: handle={event.handle}")
+    
+    # 1a. Save credentials
+    saved = self._save_credentials(...)
+    if saved:
+        logger.info("[AUTH] Credentials saved for auto-login")
+    else:
+        logger.warning("[AUTH] Failed to save credentials")
 ```
 
 ## Usage

@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-09T01:38:29.967Z",
+  "generated_at": "2026-04-09T04:30:43.729Z",
   "bootstrap_state": "BOOTSTRAP_WARMING",
   "d_rate": 0,
   "d_rate_level": "TARGET",
   "d_rate_message": "D-rate 0.0% within target (≤5%)",
-  "node_count": 179,
+  "node_count": 180,
   "classification_stats": {
-    "A": 179,
+    "A": 180,
     "B": 0,
     "C": 0,
     "D": 0
@@ -1166,6 +1166,19 @@
       "confidence": 0.95,
       "source_clause_ids": [
         "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3"
+      ],
+      "section": "Bulk Selection",
+      "source_file": "spec/web-dashboard-bulk.md"
+    },
+    {
+      "canon_id": "f060304bb46b3f340153a8afd203f030ae6d26516d52c2f37c96acd1f0516e05",
+      "short_id": "node-f060304b",
+      "type": "CONSTRAINT",
+      "statement": "cards must not display any left border highlight on hover only the cursor changes",
+      "raw_text": "Cards must NOT display any left border highlight on hover - only the cursor changes",
+      "confidence": 0.95,
+      "source_clause_ids": [
+        "7ccfbd5a5d1e9a875347456b6dc8f92185a9eba2109af10620d37afb49a6e01b"
       ],
       "section": "Bulk Selection",
       "source_file": "spec/web-dashboard-bulk.md"

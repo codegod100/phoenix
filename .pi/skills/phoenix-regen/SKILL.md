@@ -1,27 +1,29 @@
 ---
 name: phoenix-regen
-description: Language-agnostic code generator from Implementation Units. Generates RED (failing) code stubs for TDD in any language. Pluggable generator system supports TypeScript, Python, Nix, and custom languages.
+description: Language-agnostic code generator from Implementation Units using theory morphisms. Generates clean implementations with automatic logging injection.
 ---
 
-# Phoenix Regen — Language-Agnostic Code Generator
+# Phoenix Regen — Theory-Driven Code Generator
 
-Generate **RED** (failing) code from Implementation Units for **Test-Driven Development** in any programming language.
+Generate **clean implementations** from Implementation Units using **theory morphisms** (ThIU → ThLang → ThCode).
 
-> **Phoenix is language-agnostic.** The pipeline generates stubs; you or an LLM implement to make them GREEN.
+> **Phoenix is language-agnostic.** Theory morphisms map IU constructs to language-specific patterns with automatic logging injection.
 
 ## Language Support
 
 ### Built-in Generators
 
-| Language | Extension | Test Framework | Status |
-|----------|-----------|----------------|--------|
-| **TypeScript** | `.ts` | Vitest | ✅ |
-| **Python** | `.py` | pytest | ✅ |
-| **Nix** | `.nix` | nix-build | ✅ |
+| Language | Extension | Status |
+|----------|-----------|--------|
+| **Python** | `.py` | ✅ |
+| **TypeScript** | `.ts` | ✅ |
+| **Nix** | `.nix` | ✅ |
+| **Rust** | `.rs` | 🚧 |
+| **Go** | `.go` | 🚧 |
 
 ### Easy to Add
 
-Create custom generators for: Rust, Go, Java, Kotlin, Swift, Ruby, Elixir, Haskell, etc.
+Create custom generators for: Java, Kotlin, Swift, Ruby, Elixir, Haskell, etc.
 
 ## How It Works
 
@@ -30,17 +32,25 @@ Implementation Unit (IU)
     ↓
 Detect/Select Language
     ↓
-Load Generator
+Load Generator with Theory Lens
     ↓
-Generate RED Code (intentionally wrong)
+Apply Theory Morphism (ThIU → ThLang → ThCode)
     ↓
-Tests FAIL (RED)
+Generate Clean Code with Auto-Logging
     ↓
-You or LLM implements
-    ↓
-Tests PASS (GREEN)
-    ↓
-Evidence validates
+Code Ready for Use
+```
+
+## Theory Morphism Chain
+
+```
+ThSpec ──[μ_ingest]──► ThClause ──[μ_canon]──► ThCanon ──[μ_plan]──► ThIU
+                                                                           ↓
+ThCode ◄──[μ_codegen]────────────────────────────────────────────────────────┘
+      ↓
+[ThLog Injection] ←── from codegen instruction
+      ↓
+Generated Code (with logging)
 ```
 
 ## Usage
@@ -61,11 +71,11 @@ node .pi/skills/phoenix-regen/regen.js IU-ec4737a7
 # Force Python for all IUs
 node .pi/skills/phoenix-regen/regen.js --lang=python
 
+# Force TypeScript
+node .pi/skills/phoenix-regen/regen.js --lang=typescript
+
 # Force Nix
 node .pi/skills/phoenix-regen/regen.js --lang=nix
-
-# Force TypeScript (default)
-node .pi/skills/phoenix-regen/regen.js --lang=typescript
 ```
 
 ### List Available Generators
@@ -79,7 +89,7 @@ node .pi/skills/phoenix-regen/regen.js --list-languages
 1. **IU's `target_language` field** — explicit per-IU override
 2. **Project config** — `.phoenix/config.json` `targetLanguage`
 3. **Existing file extensions** — detect from `iu.output_path`
-4. **Default** — `typescript`
+4. **Default** — `python` (for Textual TUI projects)
 
 ## Per-IU Language Configuration
 
@@ -101,59 +111,75 @@ Create `.phoenix/config.json`:
 ```json
 {
   "targetLanguage": "python",
-  "outputDir": "src"
+  "outputDir": "src/generated"
 }
 ```
 
 ## Generated Output Structure
 
-### TypeScript (Default)
+### Python (Textual TUI)
 
 ```
 src/generated/
-├── domain/
-│   ├── index.ts           # Implementation with RED stubs
-│   └── __tests__/
-│       └── index.test.ts  # Failing tests
+├── __init__.py           # Module exports
+├── models.py             # @dataclass models
+├── app.py                # Main Textual App
+└── widgets/              # Textual widgets
+    ├── __init__.py
+    ├── sidebar.py
+    ├── message_list.py
+    └── ...
 ```
 
-### Python
+### TypeScript
 
 ```
-src/
-├── domain.py              # Implementation with RED stubs
-└── test_domain.py         # Failing tests (pytest)
+src/generated/
+├── models.ts             # Interface definitions
+├── app.ts                # Main application
+└── components/           # UI components
+    ├── index.ts
+    └── ...
 ```
 
 ### Nix
 
 ```
 ./
-├── domain.nix             # Nix expression with RED stubs
-└── domain.test.nix        # Nix build tests
+├── flake.nix             # Nix flake
+└── ...
 ```
 
-## RED Code Philosophy
+## Clean Code Philosophy
 
-Every generated function is **intentionally wrong**:
+Every generated function is a **clean implementation skeleton**:
 
-```typescript
-// 🔴 RED: Always returns false (will fail "should return true" test)
-export function validate(item: Item): boolean {
-  return false;
-}
-
-// 🔴 RED: Returns input unchanged (will fail "should transform" test)
-export function process(item: Item): Item {
-  return item; // No transformation!
-}
+```python
+# ✅ CLEAN: Proper structure with auto-injected logging
+def on_auth_screen_auth_completed(self, event: AuthCompleted) -> None:
+    # @phoenix-canon: node-2c760e46
+    logger.info(f"[AUTH] AuthCompleted received for handle={event.handle}")
+    
+    # 1. Update session state
+    self.app_state.session.handle = event.handle
+    self.app_state.session.did = event.did
+    self.app_state.session.authenticated = True
+    logger.info(f"[AUTH] Session authenticated: handle={event.handle}")
+    
+    # TODO: Implement remaining logic
+    pass
 ```
 
-**Why?** TDD requires tests to fail first. RED proves the tests work.
+**Features:**
+- Complete function signatures from IU boundary exports
+- Auto-injected logging (from ThLog morphism)
+- Traceability comments (`# @phoenix-canon: node-xxx`)
+- Structured TODOs for unimplemented logic
+- Phoenix VCS identity block
 
 ### Function Generation from Boundary Exports
 
-When the plan phase extracts operations from requirements (populating `iu.boundary.exports`), the TypeScript generator creates specific function stubs matching those names:
+When the plan phase extracts operations from requirements (populating `iu.boundary.exports`), the generator creates specific function stubs matching those names:
 
 ```json
 // IU with boundary exports
@@ -166,22 +192,56 @@ When the plan phase extracts operations from requirements (populating `iu.bounda
 
 Generates:
 
-```typescript
-// 🔴 RED: queryData - extracted from "provide function to query data"
-export function queryData(id: string): Data | null {
-  return {
-    id: 'WRONG_' + id,  // ← Bug: wrong ID
-    name: 'not implemented'
-  };
-}
-
-// 🔴 RED: filterByStatus - extracted from "must be filterable by status"
-export function filterByStatus(status: string): Data[] {
-  return []; // ← Bug: returns empty
-}
+```python
+# ✅ CLEAN: queryData - extracted from "provide function to query data"
+def query_data(self, query: str) -> List[Data]:
+    """Query data from storage.
+    
+    REQUIREMENT: The system MUST provide function to query data.
+    """
+    # @phoenix-canon: node-xxx
+    logger.info(f"[IO] query_data called with query={query}")
+    # TODO: Implement query logic
+    return []
 ```
 
-**Benefit:** Functions are named exactly as requirements specify, creating explicit traceability from spec text → function name → test case.
+**Benefit:** Functions are named exactly as requirements specify, creating explicit traceability from spec text → function name → implementation.
+
+## Automatic Logging Injection
+
+The generator reads the `codegen-instruction.md` and injects logging requirements:
+
+### Log Prefix Standards (Auto-Injected)
+
+| Prefix | Domain | Example |
+|--------|--------|---------|
+| `[AUTH]` | Authentication | `logger.info(f"[AUTH] User {handle} authenticated")` |
+| `[AUTH-MOUNT]` | Auto-login | `logger.info("[AUTH-MOUNT] Auto-login complete")` |
+| `[UI]` | UI rendering | `logger.info("[UI] Composing sidebar layout")` |
+| `[MOUNT]` | Lifecycle | `logger.info("[MOUNT] Widget initialized")` |
+| `[REACTIVE]` | State changes | `logger.info("[REACTIVE] buffers changed")` |
+| `[EVENT]` | Event handling | `logger.info("[EVENT] AuthCompleted received")` |
+| `[BROKER]` | Broker comms | `logger.info("[BROKER] Message sent")` |
+| `[IO]` | File/network | `logger.info("[IO] Saved to {path}")` |
+| `[STATE]` | App state | `logger.info("[STATE] Connected")` |
+
+### Example Auto-Injected Logging
+
+```python
+def on_mount(self):
+    # @phoenix-canon: node-0a5f52d4
+    logger.info("[MOUNT] Starting on_mount initialization")
+    
+    saved_creds = self.load_saved_credentials()
+    logger.info(f"[AUTH-MOUNT] load_saved_credentials returned: {saved_creds is not None}")
+    
+    if saved_creds:
+        logger.info("[AUTH-MOUNT] Saved credentials found, attempting auto-login")
+        self.app_state.session.authenticated = True
+        logger.info(f"[AUTH-MOUNT] Session set: handle={saved_creds.get('handle')}, auth=True")
+        # ...
+        logger.info("[AUTH-MOUNT] Auto-login complete, main UI should be visible")
+```
 
 ## Creating Custom Generators
 
@@ -194,38 +254,21 @@ export function generateImpl(iu, config) {
   const name = toSnakeCase(iu.name);
 
   return `
-// 🔴 RED: ${iu.name}
+// ✅ CLEAN: ${iu.name}
 pub struct ${toPascalCase(iu.name)} {
     id: String,
+    // TODO: Add fields from IU requirements
 }
 
-// 🔴 RED: Wrong implementation
-pub fn process(item: &${toPascalCase(iu.name)}) -> ${toPascalCase(iu.name)} {
-    item.clone() // ← Returns unchanged
-}
-
-// Traceability
-pub const _phoenix: PhoenixMeta = PhoenixMeta {
-    iu_id: "${iu.id}",
-    name: "${iu.name}",
-    risk_tier: "${iu.risk_tier}",
-};
-`;
-}
-
-export function generateTests(iu, implPath) {
-  return `
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_process_transforms() {
-        let input = Item { id: "123".to_string() };
-        let result = process(&input);
-        // 🔴 This FAILS — process returns unchanged
-        assert_ne!(result.id, input.id);
+impl ${toPascalCase(iu.name)} {
+    pub fn new(id: &str) -> Self {
+        log::info!("[MOUNT] Creating new {}", "${iu.name}");
+        Self {
+            id: id.to_string(),
+        }
     }
+    
+    // TODO: Implement methods from IU boundary exports
 }
 `;
 }
@@ -235,179 +278,89 @@ export function getFileExtension() {
 }
 
 export function getTestFilePattern() {
-  return { suffix: '_test.rs', subdir: 'tests' };
+  return { prefix: 'test_', suffix: '.rs' };
 }
 ```
 
-### Generator Interface
-
-Every generator must export:
-
-| Function | Returns | Purpose |
-|----------|---------|---------|
-| `generateImpl(iu, config)` | `string` | RED implementation code |
-| `generateTests(iu, implPath)` | `string` | Failing test code |
-| `getFileExtension()` | `string` | File extension (e.g., `.rs`) |
-| `getTestFilePattern()` | `object\|string` | Test file naming convention |
-
-### Test File Pattern Format
-
-```javascript
-// With subdirectory (TypeScript-style)
-{ suffix: '.test.ts', subdir: '__tests__' }
-// → src/generated/domain/__tests__/index.test.ts
-
-// With prefix (Python-style)
-{ prefix: 'test_', suffix: '.py', subdir: null }
-// → src/test_domain.py
-
-// Simple suffix only
-'.test.rs'
-// → src/generated/domain.test.rs
-```
-
-## Traceability
-
-Every generated file includes VCS metadata:
-
-### TypeScript
-```typescript
-export const _phoenix = {
-  iu_id: 'ec4737a7...',
-  name: 'Dashboard Page',
-  risk_tier: 'high',
-} as const;
-```
-
-### Python
-```python
-_phoenix = {
-    "iu_id": "ec4737a7...",
-    "name": "Dashboard Page",
-    "risk_tier": "high",
-}
-```
-
-### Nix
-```nix
-_phoenix = {
-  iu_id = "ec4737a7...";
-  name = "Dashboard Page";
-  risk_tier = "high";
-};
-```
-
-## Manifest Updates
-
-Records generated artifacts with language info:
+Register in `.phoenix/config.json`:
 
 ```json
 {
-  "files": {
-    "ec4737a7...": {
-      "impl": {
-        "path": "src/generated/flake.nix",
-        "hash": "a1b2c3d4...",
-        "language": "nix"
-      },
-      "test": {
-        "path": "src/generated/flake.test.nix",
-        "hash": "e5f6g7h8...",
-        "language": "nix"
-      }
-    }
+  "generators": {
+    "rust": "./generators/rust.js"
   }
 }
 ```
 
-## Selective Regeneration
+## Traceability
 
-When specs change, only affected IUs regenerate:
+Every generated file includes Phoenix VCS identity:
+
+```python
+# === PHOENIX VCS TRACEABILITY ===
+# DO NOT REMOVE — Required for VCS tracking
+_phoenix = {
+    "iu_id": "ec4737a7671a24d2c859604470556a65e34e7a700615fa11f18bf5e3d4e5ea88",
+    "name": "Dashboard Page",
+    "risk_tier": "high",
+    "generated_at": "2026-01-09T12:34:56Z",
+}
+```
+
+The `_phoenix` object enables:
+- **Drift detection**: Compare generated vs. actual code
+- **Impact analysis**: Find code affected by spec changes
+- **Version tracking**: Know which IU generated each file
+
+## Evidence Integration
+
+After implementing the generated stubs:
 
 ```bash
-# Check which IUs need regeneration
-node .pi/skills/phoenix-cascade/cascade.js invalidate node-a1b2c3d4
+# Run evidence collection
+node .pi/skills/phoenix-evidence/evidence.js ./my-project
 
-# Only regenerate affected IUs (preserves implementations in others)
-node .pi/skills/phoenix-regen/regen.js IU-a1b2c3d4
+# Evidence validates:
+# - All IUs have corresponding code
+# - Tests exist (if configured)
+# - Traceability comments present
 ```
 
-## Quality Gates (Evidence Phase)
-
-Regen generates RED code. Evidence validates GREEN:
-
-| Tier | Required Evidence |
-|------|-------------------|
-| low | typecheck, lint, boundary |
-| medium | + unit_tests |
-| high | + property_tests |
-| critical | + static_analysis, human_signoff |
-
-Evidence collection runs in `phoenix-evidence`.
-
-## Examples
-
-### Generate Nix Flake
-
-```bash
-# Set language to nix
-node .pi/skills/phoenix-regen/regen.js examples/nix --lang=nix
-
-# Output: src/generated/flake.nix (RED stub)
-# Output: src/generated/flake.test.nix (failing test)
-```
-
-### Generate Python Module
-
-```bash
-node .pi/skills/phoenix-regen/regen.js examples/ml --lang=python
-
-# Output: src/model.py
-# Output: test_model.py
-```
-
-## Next Steps
-
-After regen:
-
-1. **See RED**: Run tests to verify they fail
-2. **Implement**: Fix RED stubs (you or LLM)
-3. **See GREEN**: Re-run tests to verify they pass
-4. **Evidence**: Run `node .pi/skills/phoenix-evidence/evidence.js .`
-5. **Audit**: Run `node .pi/skills/phoenix-audit/audit.js`
-
-## Troubleshooting
-
-### Unknown Language Error
+## Workflow
 
 ```
-Unknown language: rust
-No generator found for 'rust'.
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   SPEC       │   │   CANON      │   │     IU       │   │    CODE      │
+│  (Markdown)  │──▶│  (Nodes)     │──▶│  (Exports)   │──▶│  (Generated) │
+└──────────────┘   └──────────────┘   └──────────────┘   └──────────────┘
+      │                  │                  │                  │
+      ▼                  ▼                  ▼                  ▼
+   μ_ingest          μ_canon           μ_plan          μ_codegen
+                                                      + μ_log_inject
 ```
 
-**Fix**: Create `.phoenix/generators/rust.js` or use built-in language.
+1. **Write spec** → Requirements in Markdown
+2. **Run pipeline** → μ_ingest → μ_canon → μ_plan → μ_codegen + μ_log_inject
+3. **Regenerate** → Clean code with auto-logging
+4. **Implement** → Fill in TODO sections
+5. **Collect evidence** → Validate implementation
+6. **Drift check** → Ensure spec/code alignment
 
-### Generator Missing Function
+## Philosophy
 
-```
-Generator for 'python' is missing required functions: generateTests
-```
+> **Theory morphisms drive code generation.**
+>
+> ThIU (Implementation Units) → ThLang (Language constructs) → ThCode (Generated code) + ThLog (Auto-injected logging)
+>
+> Not TDD. Not RED stubs. Clean, traceable, loggable code from the start.
 
-**Fix**: Ensure generator exports all required functions.
+---
 
-## Language-Specific Notes
+## Migration from TDD/RED Mode
 
-### TypeScript
-- Uses Vitest for tests
-- Generates interfaces for types
-- ESM output with `.js` imports
+If you have existing RED-generated code:
 
-### Python
-- Uses pytest for tests
-- Generates dataclasses for types
-- snake_case naming convention
-
-### Nix
-- Uses nix-build for "tests"
-- Generates attribute sets for types
-- kebab-case file naming
+1. The new generator will preserve your implementations
+2. Logging will be added to new/modified methods
+3. Run drift detection to find gaps
+4. Regenerate to fill missing implementations

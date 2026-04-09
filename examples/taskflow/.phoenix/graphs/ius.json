@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generated_at": "2026-04-09T01:38:30.013Z",
+  "generated_at": "2026-04-09T04:30:43.776Z",
   "iu_count": 27,
   "coverage": {
-    "total_canon_nodes": 179,
-    "covered_canon_nodes": 179,
+    "total_canon_nodes": 180,
+    "covered_canon_nodes": 180,
     "orphan_canon_ids": []
   },
   "ius": [
@@ -283,7 +283,8 @@
         "exports": [
           "restorTasks",
           "list",
-          "a"
+          "a",
+          "renderA"
         ]
       },
       "evidence_policy": {
@@ -585,6 +586,11 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "renderTasks"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -664,7 +670,8 @@
         "exports": [
           "viewTasks",
           "queryTasks",
-          "archive"
+          "archive",
+          "renderStatus"
         ]
       },
       "evidence_policy": {
@@ -737,6 +744,11 @@
             "files": []
           }
         }
+      },
+      "boundary": {
+        "exports": [
+          "renderHeader"
+        ]
       },
       "evidence_policy": {
         "required": [
@@ -881,6 +893,18 @@
           }
         }
       },
+      "boundary": {
+        "exports": [
+          "renderDatepicker",
+          "getDatepickerHTML",
+          "renderGrid",
+          "showDatepicker",
+          "hideDatepicker",
+          "renderPickerpopover",
+          "showPickerpopover",
+          "hidePickerpopover"
+        ]
+      },
       "evidence_policy": {
         "required": [
           "typecheck",
@@ -970,12 +994,12 @@
       ]
     },
     {
-      "id": "a9a3faf254636c2c445aa68d36abbf16ac249c630734ada1578bddfbde9b846c",
-      "short_id": "IU-a9a3faf2",
+      "id": "2c9a4a3e68e3c3fc767f00b60b8de69c74a559fff2c96f41aeee71962edd9f39",
+      "short_id": "IU-2c9a4a3e",
       "name": "Bulk Domain",
       "kind": "web-ui",
       "risk_tier": "high",
-      "description": "Implements bulk functionality with 10 requirements",
+      "description": "Implements bulk functionality with 11 requirements",
       "source_canon_ids": [
         "1a410f8a7c017a0f37968e45a1a7dc608c2714a4e3b2a7b76f14f7c49cb7b3a7",
         "32dcf102d370de6478a02b9a7a09838f83dbed25095932982b8ad0c03f3483b3",
@@ -986,10 +1010,11 @@
         "a6f0ad574dddf1ee8a1fc3fdea4dc3944b6114d59f024eec2cdb9617dd9d8a26",
         "ca5a17a3dad34b91e7589747da79eb06fed8c5433aa89f4d256e990b98ea1fbd",
         "dd47204341c34d5a722b2130d7b8de517ce15a20845e13b16e70ea5ecebda7ad",
+        "f060304bb46b3f340153a8afd203f030ae6d26516d52c2f37c96acd1f0516e05",
         "f72241dbb301e9ff90fc9fcf47892a3e34a95b8d1fb1e090f571d8f81acdf1b9"
       ],
       "contract": {
-        "description": "Implements bulk functionality with 10 requirements",
+        "description": "Implements bulk functionality with 11 requirements",
         "inputs": [
           "Configuration",
           "Data inputs"
@@ -999,8 +1024,7 @@
           "Side effects"
         ],
         "invariants": [
-          "Valid state transitions only",
-          "Type safety maintained"
+          "cards must not display any left border highlight on hover only the cursor changes"
         ]
       },
       "output_path": "src/generated/bulk/index.ts",
@@ -1031,6 +1055,7 @@
       },
       "boundary": {
         "exports": [
+          "render3px",
           "bulk",
           "a"
         ]

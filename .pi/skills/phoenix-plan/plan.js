@@ -129,6 +129,30 @@ function extractOperationsFromRequirements(requirements) {
     if (searchMatch) {
       operations.add('search');
     }
+    
+    // Pattern: "must use a [custom] X component" (component-oriented)
+    const componentUseMatch = text.match(/must use (?:a |an )?(?:custom )?(\w+(?:\s+\w+)*) component/);
+    if (componentUseMatch) {
+      const componentName = componentUseMatch[1].replace(/\s+/g, '');
+      operations.add(`render${capitalize(componentName)}`);
+      operations.add(`get${capitalize(componentName)}HTML`);
+    }
+    
+    // Pattern: "X must display Y" (display/render oriented)
+    const displayMatch = text.match(/(\w+) must display (?:a |an )?(?:\w+\s+)?(\w+)/);
+    if (displayMatch) {
+      const thing = displayMatch[2].replace(/\s+/g, '');
+      operations.add(`render${capitalize(thing)}`);
+    }
+    
+    // Pattern: "X picker must" / "X calendar must" (component with functionality)
+    const pickerMatch = text.match(/(\w+\s+(?:picker|calendar|modal|dropdown|popover)) must/);
+    if (pickerMatch) {
+      const componentName = pickerMatch[1].replace(/\s+/g, '');
+      operations.add(`render${capitalize(componentName)}`);
+      operations.add(`show${capitalize(componentName)}`);
+      operations.add(`hide${capitalize(componentName)}`);
+    }
   }
   
   return Array.from(operations);

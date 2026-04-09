@@ -22,6 +22,7 @@ This instruction includes a theory morphism that maps Implementation Units to Ty
     - async restorTasks(): Promise<any>
     - async list(): Promise<any>
     - async a(): Promise<any>
+    - async renderA(): Promise<any>
 - Assignment Domain (low):
     - async assignTasks(): Promise<any>
     - async queryTasks(): Promise<any>
@@ -34,20 +35,29 @@ This instruction includes a theory morphism that maps Implementation Units to Ty
     - list(): any
     - a(): any
 - Status Domain (high):
-    (no exports)
+    - async renderTasks(): Promise<any>
 - Archive Domain (high):
     - async viewTasks(): Promise<any>
     - async queryTasks(): Promise<any>
     - async archive(): Promise<any>
+    - async renderStatus(): Promise<any>
 - Page Domain (high):
-    (no exports)
+    - async renderHeader(): Promise<any>
 - Catppuccin Domain (medium):
     (no exports)
 - Base Domain (high):
-    (no exports)
+    - async renderDatepicker(): Promise<any>
+    - async getDatepickerHTML(): Promise<any>
+    - async renderGrid(): Promise<any>
+    - async showDatepicker(): Promise<any>
+    - async hideDatepicker(): Promise<any>
+    - async renderPickerpopover(): Promise<any>
+    - async showPickerpopover(): Promise<any>
+    - async hidePickerpopover(): Promise<any>
 - Tab Domain (medium):
     (no exports)
 - Bulk Domain (high):
+    - async render3px(): Promise<any>
     - async bulk(): Promise<any>
     - async a(): Promise<any>
 - Delete Domain (low):
@@ -88,6 +98,7 @@ This instruction includes a theory morphism that maps Implementation Units to Ty
 - UNMATCHED: "no theme toggle or system preference detection cat..." → manual review needed
 - UNMATCHED: "the tab button must use borderradius 0 to ensure p..." → manual review needed
 - UNMATCHED: "the highlight line must not use any boxshadow or g..." → manual review needed
+- UNMATCHED: "cards must not display any left border highlight o..." → manual review needed
 - UNMATCHED: "the create form must validate that title is nonemp..." → manual review needed
 - autocompleteoff attribute: "create form inputs must use autocompleteoff attrib..." → autocomplete="off" on input elements
 - autocompleteoff attribute: "form inputs must use autocompleteoff attribute to ..." → autocomplete="off" on input elements
@@ -134,5 +145,5 @@ This instruction includes a theory morphism that maps Implementation Units to Ty
 Generate complete, working TypeScript (Web) code. No TODOs for core functionality.
 
 ---
-Generated: 2026-04-09T01:38:30.216Z
+Generated: 2026-04-09T04:29:21.290Z
 Language Variant: typescript-web

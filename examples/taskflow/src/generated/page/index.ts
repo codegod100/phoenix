@@ -1,58 +1,60 @@
-/**
- * @phoenix-iu: 84d7fff4444e467ce261fbdafe6a926bf929dbfc01f9cdd0c49e8ed3dac7a77e
- * @phoenix-name: Page Domain
- * @phoenix-risk: HIGH
- */
-/**
- * @phoenix-canon: e5812b6a584792edc9967face4977a6bda2ada84f731d38b55b3c49dd7e7d953
- * Requirement: The dashboard must render a complete HTML page with inline CSS and JavaScript
- * 
- * @phoenix-canon: 30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298
- * Requirement: The page must be encoded in UTF-8 with proper charset meta tag
- * 
- * @phoenix-canon: bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f
- * Requirement: The page must include a viewport meta tag for responsive scaling
- * 
- * @phoenix-canon: d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975
- * Requirement: The page must display a compact header with the title "TaskFlow"
- * 
- * @phoenix-canon: 3b90fe0067a3d588c01a9d4a5ace94162874cdf14455ff6b93bfa97f6a618fc3
- * Requirement: The dashboard must use CSS custom properties for all Catppuccin colors
- * 
- * @phoenix-canon: aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62
- * Requirement: The layout must be responsive with single column on mobile and multi-column grid on desktop
- * 
- * Page Domain - Risk Tier: high
- */
+// 🔴 RED: Page Domain (IU-84d7fff4)
+// Description: Implements page functionality with 6 requirements
+// Risk Tier: HIGH
 
-export interface PageMetadata {
-  title: string;
-  charset: string;
-  viewport: string;
+// @phoenix-iu: 84d7fff4444e467ce261fbdafe6a926bf929dbfc01f9cdd0c49e8ed3dac7a77e
+// @phoenix-name: Page Domain
+// @phoenix-risk: high
+// @phoenix-short: IU-84d7fff4
+
+// === IMPLEMENTED REQUIREMENTS ===
+
+// @phoenix-canon: 30d7c5acea649f28...
+// REQUIREMENT: the page must be encoded in utf8 with proper charset meta tag
+
+// @phoenix-canon: 3b90fe0067a3d588...
+// REQUIREMENT: the dashboard must use css custom properties for all catppuccin colors
+
+// @phoenix-canon: 68b2d5f231d7af6b...
+// REQUIREMENT: the page must display a spacious header with the title taskflow with comforta...
+
+// @phoenix-canon: aab62f8393294f55...
+// REQUIREMENT: the layout must be responsive with single column on mobile and multicolumn gr...
+
+// @phoenix-canon: bf3ef52e9fb03378...
+// REQUIREMENT: the page must include a viewport meta tag for responsive scaling
+
+// @phoenix-canon: e5812b6a584792ed...
+// REQUIREMENT: the dashboard must render a complete html page with inline css and javascript
+
+
+// TDD CYCLE:
+// 1. Tests are designed to FAIL with current code
+// 2. Run: npm test -- iu-84d7fff4
+// 3. See 🔴 RED (tests fail)
+// 4. Fix functions below to make tests 🟢 GREEN
+// 5. Run evidence to validate
+
+// === TYPES ===
+// @phoenix-gen: types
+
+export interface Page {
+  id: string;
+  name?: string;
 }
 
-/**
- * Get page metadata
- * @phoenix-canon: 30d7c5acea649f28567d0b0bab67bf416b751712003faf6dae0add36ae400298
- * @phoenix-canon: bf3ef52e9fb03378f76e12d2fde4d4af6be22c90abd90b9b5d6b6f9d6ac30f6f
- * @phoenix-canon: d36869b76eb6ad786ca12371d8af3d24848b70e1a31dccc514d4e882d37c9975
- */
-export function getPageMetadata(): PageMetadata {
-  return {
-    title: "TaskFlow",
-    charset: "UTF-8",
-    viewport: "width=device-width, initial-scale=1.0"
-  };
-}
+// === RED IMPLEMENTATIONS (fix to make tests pass) ===
 
+// @phoenix-canon: 30d7c5acea649f28...
+// REQUIREMENT: the page must be encoded in utf8 with proper charset meta tag
 /**
- * Get responsive breakpoints
- * @phoenix-canon: aab62f8393294f551e2d98155d4ef2893025d963e051fcb203947a147a425d62
+ * 🔴 RED: renderHeader
+ *
+ * TDD: Fix this function to make tests pass
+ * @phoenix-gen: function
  */
-export function getResponsiveConfig(): { mobile: string; tablet: string; desktop: string } {
-  return {
-    mobile: "(max-width: 768px)",
-    tablet: "(min-width: 769px) and (max-width: 1024px)",
-    desktop: "(min-width: 1025px)"
-  };
+export function renderHeader(item: Page): Page {
+  // 🔴 RED: WRONG — returns input unchanged
+  // Should: the dashboard must render a complete html page with inline css and javascript
+  return item; // ← No transformation!
 }
