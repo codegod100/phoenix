@@ -863,6 +863,11 @@ async fn cmd_pipeline_single(
     println!("   {} clauses → {} canons ({} dups) → {} IUs", 
         total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
     
+    // Generate flake.nix for Rust projects (before stub check so it always runs)
+    if lang == "rust" {
+        generate_flake_nix(output_dir, &canon_graph.nodes).await?;
+    }
+    
     if stub {
         // STUB MODE: Print IUs and their output files, but don't invoke codegen
         println!("   STUB: {} IUs planned", iu_graph.ius.len());
@@ -876,7 +881,7 @@ async fn cmd_pipeline_single(
             println!("        Clauses: {} canons", iu.source_canon_ids.len());
         }
         
-        // Still return empty code_files so the function completes
+        // Exit early in stub mode
         return Ok(());
     }
     
@@ -998,11 +1003,6 @@ async fn cmd_pipeline_single(
         }).collect(),
     };
     manifest.save(output_dir)?;
-    
-    // Generate project configuration files based on detected requirements
-    if lang == "rust" {
-        generate_flake_nix(output_dir, &canon_graph.nodes).await?;
-    }
     
     println!("✓ Generated {}", code_files.iter().map(|f| f.path.clone()).collect::<Vec<_>>().join(", "));
     
