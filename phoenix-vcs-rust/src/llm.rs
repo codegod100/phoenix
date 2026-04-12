@@ -203,18 +203,14 @@ fn build_generation_prompt(request: &CodeGenRequest) -> String {
     
     format!(r#"You are a CODE GENERATOR ONLY. Your entire response must be valid {} code.
 
-CRITICAL RULES:
-1. NO explanations
-2. NO thinking or reasoning  
-3. NO markdown formatting (no ```)
-4. NO numbered lists
-5. NO emojis
-6. NO analysis text
-7. START IMMEDIATELY with: {} phoenix: iu_id = "{}"
-8. Generate EXACTLY what the spec shows - NO additional modules or files
-9. THIN WRAPPER only - do NOT add config, error, models, services modules
-10. SINGLE file - all code must be self-contained
-11. NO `mod xxx;` declarations that reference external files
+ABSOLUTE RULES - VIOLATION = INVALID OUTPUT:
+1. NO explanations, NO reasoning, NO markdown ```, NO numbered lists, NO emojis
+2. START with: {} phoenix: iu_id = "{}"
+3. FORBIDDEN: Any line containing `mod ` or `pub mod` - these cause compile errors
+4. FORBIDDEN: Multiple files or modules - ONLY ONE self-contained file
+5. FORBIDDEN: Extra boilerplate (config, error, models, services, utils, types modules)
+6. Generate EXACTLY what the spec code block shows - no additions, no creativity
+7. All code must be inline in a single file - no external references
 
 Module: {}
 IU ID: {}
@@ -222,7 +218,7 @@ IU ID: {}
 Requirements:
 {}{}
 
-OUTPUT ONLY CODE. NOTHING ELSE."#,
+OUTPUT ONLY RAW CODE. ZERO TEXT BEFORE/AFTER."#,
         request.language,
         comment_prefix,
         request.iu_id,
@@ -247,6 +243,11 @@ fn clean_code_response(code: &str, _language: &str) -> String {
         // Skip markdown fences
         if trimmed.starts_with("```") {
             continue;
+        }
+        
+        // FORBIDDEN: Any module declaration
+        if trimmed.starts_with("pub mod ") || trimmed.starts_with("mod ") {
+            continue; // Skip mod declarations entirely
         }
         
         // Detect phoenix header - this marks the REAL start
