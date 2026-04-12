@@ -680,7 +680,8 @@ async fn cmd_pipeline(
     
     if llm {
         let llm_config = crate::llm::LlmConfig::default();
-        println!("🤖 LLM Mode: Using Fireworks API ({}) for intelligent code generation", llm_config.model);
+        let full_url = format!("{}/chat/completions", llm_config.api_base);
+        println!("🤖 LLM Mode: Using {} ({}) for intelligent code generation", full_url, llm_config.model);
         println!();
     }
     
@@ -751,7 +752,8 @@ async fn cmd_pipeline(
         }
         
         println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — LLM Mode");
-        println!("   Generating code with Fireworks API ({})...", llm_config.model);
+        let full_url = format!("{}/chat/completions", llm_config.api_base);
+        println!("   Generating code with {} ({})...", full_url, llm_config.model);
         
         for (i, iu) in iu_graph.ius.iter().enumerate() {
             print!("   [{}/{}] Generating {}...", i + 1, iu_graph.ius.len(), iu.name);
