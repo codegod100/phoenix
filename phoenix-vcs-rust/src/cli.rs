@@ -786,6 +786,9 @@ async fn cmd_pipeline_multi(
 ) -> Result<()> {
     info!("Running Phoenix multi-language pipeline...");
     
+    // Clean generated directory before building to avoid cruft buildup
+    clean_generated_dir(project_root).await?;
+    
     // Load all specs first to detect languages
     let specs_dir = project_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
@@ -1202,6 +1205,33 @@ async fn cmd_reverse(
     println!("   2. Refine requirements to be more precise");
     println!("   3. Run: phoenix-vcs pipeline    # Generate code from specs");
     println!("   4. Compare: phoenix-vcs drift   # Check spec→code alignment");
+    
+    Ok(())
+}
+
+/// Clean the generated directory to avoid cruft buildup from previous builds
+async fn clean_generated_dir(project_root: &Path) -> Result<()> {
+    let generated_dir = project_root.join("src").join("generated");
+    
+    if generated_dir.exists() {
+        let mut entries = tokio::fs::read_dir(&generated_dir).await?;
+        let mut count = 0;
+        
+        while let Some(entry) = entries.next_entry().await? {
+            let path = entry.path();
+            if path.is_file() {
+                tokio::fs::remove_file(&path).await?;
+                count += 1;
+            }
+        }
+        
+        if count > 0 {
+            println!("   🧹 Cleaned {} old files from src/generated/", count);
+        }
+    } else {
+        // Create the directory if it doesn't exist
+        tokio::fs::create_dir_all(&generated_dir).await?;
+    }
     
     Ok(())
 }
