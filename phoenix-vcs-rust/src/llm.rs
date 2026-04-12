@@ -24,7 +24,7 @@ impl Default for LlmConfig {
             model: "accounts/fireworks/routers/kimi-k2p5-turbo".to_string(),
             api_key: std::env::var("FIREWORKS_API_KEY").ok(),
             max_tokens: 4096,
-            temperature: 0.2,
+            temperature: 0.0, // Maximum determinism, reduce reasoning output
         }
     }
 }
@@ -163,28 +163,30 @@ fn build_generation_prompt(request: &CodeGenRequest) -> String {
             .join("\n")
     };
     
-    format!(r#"You are a code generator. Output ONLY valid {} code. No explanations. No markdown. No numbered lists. No emojis.
+    format!(r#"You are a CODE GENERATOR ONLY. Your entire response must be valid {} code.
+
+CRITICAL RULES:
+1. NO explanations
+2. NO thinking or reasoning  
+3. NO markdown formatting (no ```)
+4. NO numbered lists
+5. NO emojis
+6. NO analysis text
+7. START IMMEDIATELY with: # phoenix: iu_id = "{}"
+8. Then docstring, then imports, then implementation
 
 Module: {}
 IU ID: {}
 
-Requirements to implement:
+Requirements:
 {}
 
-OUTPUT RULES:
-1. First line MUST be: # phoenix: iu_id = "{}"
-2. Second line: """Docstring with requirements."""
-3. Then: imports
-4. Then: actual implementations
-5. Use type hints
-6. NO other text before or after code
-
-OUTPUT CODE NOW:"#,
+OUTPUT ONLY CODE. NOTHING ELSE."#,
         request.language,
+        request.iu_id,
         request.module_name,
         request.iu_id,
         req_list,
-        request.iu_id,
     )
 }
 
