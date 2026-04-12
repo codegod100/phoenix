@@ -437,7 +437,10 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
     // For Python TUI project: create specific structure
     let mut ius = Vec::new();
     
-    if target_language == "python" {
+    // Normalize target language for comparison
+    let lang = target_language.to_lowercase().trim().to_string();
+    
+    if lang == "python" || lang == "py" {
         // Python only needs the TUI app - it imports from freeq_pyo3
         let contract = "Textual TUI application that imports IRCClient and ATProtoAuth from freeq_pyo3 module".to_string();
         let iu_id = iu_id("app", &contract, &[]);
@@ -451,10 +454,12 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
                 .map(|n| n.id.clone())
                 .collect(),
             risk_tier: determine_risk_tier(&canon_output.nodes),
-            target_language: "python".to_string(),
+            target_language: target_language.to_string(),
             output_files: vec!["src/app.py".to_string()],
         });
-    } else if target_language == "rust" {
+        
+        println!("   🎯 Simplified Python architecture: 1 IU (TUI app importing from freeq_pyo3)");
+    } else if lang == "rust" || lang == "rs" {
         // Rust/PyO3 project: create PyO3 wrapper module
         // This wraps freeq-sdk for Python consumption
         let contract = "PyO3 bindings wrapping freeq-sdk IRCClient and ATProtoAuth for Python".to_string();
@@ -469,9 +474,11 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
                 .map(|n| n.id.clone())
                 .collect(),
             risk_tier: determine_risk_tier(&canon_output.nodes),
-            target_language: "rust".to_string(),
+            target_language: target_language.to_string(),
             output_files: vec!["src/lib.rs".to_string()],
         });
+        
+        println!("   🎯 Simplified Rust architecture: 1 IU (PyO3 wrapper for freeq-sdk)");
     } else {
         // Fallback: create domain-based IUs for other languages
         for (domain_key, group_nodes) in groups {
