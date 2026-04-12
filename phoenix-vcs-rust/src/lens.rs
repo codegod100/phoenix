@@ -669,7 +669,12 @@ fn generate_code(iu: &IU) -> String {
 }
 
 /// Generate code using LLM (async version for actual intelligent generation)
-pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig) -> anyhow::Result<String> {
+pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig, all_ius: Option<&[IU]>) -> anyhow::Result<String> {
+    // Special handling for integration app IU
+    if iu.name == "app" {
+        return generate_app_integration_with_llm(iu, config, all_ius).await;
+    }
+    
     // Extract actual requirement lines from the contract
     // The contract format is "Implements N requirements: req1; req2; ..."
     // We want to parse out just the requirement statements
@@ -697,6 +702,35 @@ pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig) -> 
         module_name: iu.name.clone(),
         iu_id: iu.iu_id.clone(),
         context: None,
+    };
+    
+    crate::llm::generate_code_with_llm(&request, config).await
+}
+
+/// Generate integration app using LLM
+async fn generate_app_integration_with_llm(iu: &IU, config: &crate::llm::LlmConfig, all_ius: Option<&[IU]>) -> anyhow::Result<String> {
+    let module_names: Vec<String> = all_ius.map(|ius| {
+        ius.iter()
+            .filter(|i| i.name != "app")
+            .map(|i| i.name.clone())
+            .collect()
+    }).unwrap_or_default();
+    
+    let context = format!(
+        "This is the MAIN APPLICATION ENTRY POINT.\n\nIt must integrate these {} modules:\n{}\n\nGenerate a main App class that:\n1. Imports all the above modules\n2. Initializes their managers in __init__\n3. Has start() and stop() methods\n4. Has a main_loop() method\n5. Has if __name__ == '__main__': entry point\n6. Returns int from main() for exit codes",
+        module_names.len(),
+        module_names.join(", ")
+    );
+    
+    let request = crate::llm::CodeGenRequest {
+        requirements: vec![
+            "Create integrated application entry point".to_string(),
+            format!("Wire together modules: {}", module_names.join(", ")),
+        ],
+        language: iu.target_language.clone(),
+        module_name: "app".to_string(),
+        iu_id: iu.iu_id.clone(),
+        context: Some(context),
     };
     
     crate::llm::generate_code_with_llm(&request, config).await

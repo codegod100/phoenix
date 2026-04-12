@@ -758,7 +758,7 @@ async fn cmd_pipeline(
         for (i, iu) in iu_graph.ius.iter().enumerate() {
             print!("   [{}/{}] Generating {}...", i + 1, iu_graph.ius.len(), iu.name);
             
-            match crate::lens::generate_code_with_llm(iu, &llm_config).await {
+            match crate::lens::generate_code_with_llm(iu, &llm_config, Some(&iu_graph.ius)).await {
                 Ok(generated_code) => {
                     let hash = crate::identity::file_hash(&generated_code);
                     let path = iu.output_files.first()

@@ -327,7 +327,50 @@ pub async fn plan_implementation_units(
         });
     }
     
+    // Create integration IU that wires all modules together
+    let integration_iu = create_integration_iu(&ius, target_language);
+    ius.push(integration_iu);
+    
     Ok(PlanOutput { ius })
+}
+
+/// Create an Integration IU that wires all modules together into a working app
+fn create_integration_iu(domain_ius: &[ImplementationUnit], target_language: &str) -> ImplementationUnit {
+    let module_names: Vec<String> = domain_ius.iter()
+        .map(|iu| iu.name.to_lowercase().replace("-", "_"))
+        .collect();
+    
+    let ext = match target_language {
+        "rust" => "rs",
+        "typescript" => "ts",
+        "python" => "py",
+        _ => "rs",
+    };
+    
+    let contract = format!(
+        "Integration module wiring {} domain modules into a unified application: {}",
+        domain_ius.len(),
+        module_names.join(", ")
+    );
+    
+    let name = "app".to_string();
+    let canon_ids: Vec<String> = domain_ius.iter()
+        .flat_map(|iu| iu.source_canon_ids.clone())
+        .take(5) // Just reference a few for the hash
+        .collect();
+    
+    let iu_id = crate::identity::iu_id(&name, &contract, &canon_ids);
+    
+    ImplementationUnit {
+        iu_id,
+        name,
+        contract,
+        source_canon_ids: canon_ids,
+        risk_tier: crate::evidence::RiskTier::High, // Integration is high risk
+        target_language: target_language.to_string(),
+        output_files: vec![format!("src/generated/app.{}", ext)],
+        //entry_point: true,
+    }
 }
 
 fn extract_domain(statement: &str) -> String {
@@ -428,7 +471,7 @@ pub async fn generate_code(
             _ => output_dir.join(format!("{}.rs", iu.name)),
         };
         
-        let code = generate_skeleton_code(iu);
+        let code = generate_skeleton_code(iu, Some(ius));
         tokio::fs::write(&file_path, &code).await?;
         
         files.push(GeneratedFile {
@@ -442,13 +485,137 @@ pub async fn generate_code(
     Ok(CodegenOutput { files })
 }
 
-fn generate_skeleton_code(iu: &ImplementationUnit) -> String {
+fn generate_skeleton_code(iu: &ImplementationUnit, all_ius: Option<&[ImplementationUnit]>) -> String {
+    // Check if this is the integration app IU
+    if iu.name == "app" {
+        return generate_integration_code(iu, all_ius);
+    }
+    
     match iu.target_language.as_str() {
         "rust" => generate_rust_skeleton(iu),
         "typescript" | "ts" => generate_typescript_skeleton(iu),
         "python" | "py" => generate_python_skeleton(iu),
         _ => generate_rust_skeleton(iu),
     }
+}
+
+/// Generate integration code that wires all modules together
+fn generate_integration_code(iu: &ImplementationUnit, all_ius: Option<&[ImplementationUnit]>) -> String {
+    let lang = iu.target_language.as_str();
+    
+    // Get all domain module names (excluding the app itself)
+    let module_names: Vec<String> = all_ius.map(|ius| {
+        ius.iter()
+            .filter(|i| i.name != "app")
+            .map(|i| i.name.to_lowercase().replace("-", "_"))
+            .collect()
+    }).unwrap_or_default();
+    
+    match lang {
+        "python" | "py" => generate_python_app(iu, &module_names),
+        "rust" => generate_rust_app(iu, &module_names),
+        "typescript" | "ts" => generate_typescript_app(iu, &module_names),
+        _ => generate_python_app(iu, &module_names),
+    }
+}
+
+fn generate_python_app(iu: &ImplementationUnit, module_names: &[String]) -> String {
+    let imports = module_names.iter()
+        .map(|name| format!("from .{} import *", name))
+        .collect::<Vec<_>>()
+        .join("\n");
+    
+    let init_calls = module_names.iter()
+        .map(|name| {
+            let class_name = name.split('_').map(|s| {
+                let mut chars = s.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            }).collect::<String>();
+            format!(
+                "        # Initialize {}\n        self.{}_manager = {}Manager()",
+                name, name, class_name
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    
+    format!(
+        r#"# phoenix: iu_id = "{}"
+"""
+Integrated Application Entry Point
+Wires together all domain modules into a unified IRC client.
+"""
+
+{}
+
+
+class App:
+    """Main application class integrating all modules."""
+    
+    def __init__(self):
+        """Initialize all domain managers."""
+{}
+        self.running = False
+    
+    def start(self) -> None:
+        """Start the application."""
+        self.running = True
+        print("🚀 IRC Client started")
+        self._main_loop()
+    
+    def stop(self) -> None:
+        """Stop the application."""
+        self.running = False
+        print("👋 IRC Client stopped")
+    
+    def _main_loop(self) -> None:
+        """Main application loop."""
+        while self.running:
+            # TODO: Implement actual IRC connection handling
+            pass
+    
+    def health_check(self) -> dict:
+        """Check health of all modules."""
+        return {{
+            "status": "healthy",
+            "modules": {{}}
+        }}
+
+
+def main() -> int:
+    """Application entry point."""
+    app = App()
+    try:
+        app.start()
+        return 0
+    except KeyboardInterrupt:
+        app.stop()
+        return 0
+    except Exception as e:
+        print(f"❌ Error: {{e}}")
+        return 1
+
+
+if __name__ == "__main__":
+    exit(main())
+"#,
+        iu.iu_id,
+        imports,
+        init_calls
+    )
+}
+
+fn generate_rust_app(_iu: &ImplementationUnit, _module_names: &[String]) -> String {
+    // TODO: Generate Rust integrated app
+    generate_rust_skeleton(_iu)
+}
+
+fn generate_typescript_app(_iu: &ImplementationUnit, _module_names: &[String]) -> String {
+    // TODO: Generate TypeScript integrated app
+    generate_typescript_skeleton(_iu)
 }
 
 fn generate_rust_skeleton(iu: &ImplementationUnit) -> String {
