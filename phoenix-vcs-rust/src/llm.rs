@@ -193,6 +193,14 @@ fn build_generation_prompt(request: &CodeGenRequest) -> String {
         String::new()
     };
     
+    // Determine the correct comment syntax for the target language
+    let comment_prefix = match request.language.as_str() {
+        "rust" => "//",
+        "typescript" => "//",
+        "python" => "#",
+        _ => "#",  // Default to Python-style
+    };
+    
     format!(r#"You are a CODE GENERATOR ONLY. Your entire response must be valid {} code.
 
 CRITICAL RULES:
@@ -202,7 +210,7 @@ CRITICAL RULES:
 4. NO numbered lists
 5. NO emojis
 6. NO analysis text
-7. START IMMEDIATELY with: # phoenix: iu_id = "{}"
+7. START IMMEDIATELY with: {} phoenix: iu_id = "{}"
 8. Then docstring, then imports, then implementation
 
 Module: {}
@@ -213,6 +221,7 @@ Requirements:
 
 OUTPUT ONLY CODE. NOTHING ELSE."#,
         request.language,
+        comment_prefix,
         request.iu_id,
         request.module_name,
         request.iu_id,
@@ -238,7 +247,11 @@ fn clean_code_response(code: &str, _language: &str) -> String {
         }
         
         // Detect phoenix header - this marks the REAL start
-        if trimmed.starts_with("# phoenix:") || (trimmed.starts_with("# ") && trimmed.contains("iu_id")) {
+        // Support both Python (#) and Rust (//) style comments
+        let is_phoenix_header = trimmed.starts_with("# phoenix:") 
+            || trimmed.starts_with("// phoenix:")
+            || ((trimmed.starts_with("# ") || trimmed.starts_with("// ")) && trimmed.contains("iu_id"));
+        if is_phoenix_header {
             if found_phoenix_header {
                 // Second header found - this means new file started, stop here
                 break;
