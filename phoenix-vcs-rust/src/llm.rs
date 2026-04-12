@@ -1,6 +1,6 @@
 //! LLM Integration for Intelligent Code Generation
 //!
-//! Uses Fireworks API with deepseek-v3p2 to generate actual implementations
+//! Uses Fireworks API with minimax-m2p7 to generate actual implementations
 //! from Phoenix requirements.
 
 use anyhow::{Result, Context};
@@ -21,7 +21,7 @@ impl Default for LlmConfig {
     fn default() -> Self {
         Self {
             api_base: "https://api.fireworks.ai/inference/v1".to_string(),
-            model: "accounts/fireworks/models/deepseek-v3p2".to_string(),
+            model: "accounts/fireworks/models/minimax-m2p7".to_string(),
             api_key: std::env::var("FIREWORKS_API_KEY").ok(),
             max_tokens: 4096,
             temperature: 0.0, // Maximum determinism, reduce reasoning output
