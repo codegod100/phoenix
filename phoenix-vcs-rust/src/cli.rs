@@ -785,19 +785,7 @@ async fn cmd_pipeline_multi(
     
     // Run pipeline for each language
     for lang in &languages {
-        // Determine output directory: rust code goes to pyo3/ subdirectory if it exists
-        let output_dir = if lang == "rust" {
-            let pyo3_dir = project_root.join("pyo3");
-            if pyo3_dir.exists() {
-                pyo3_dir.as_path()
-            } else {
-                project_root
-            }
-        } else {
-            project_root
-        };
-        
-        if let Err(e) = cmd_pipeline_single(output_dir, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
+        if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
             println!("⚠️  {} failed: {}", lang, e);
         }
     }
