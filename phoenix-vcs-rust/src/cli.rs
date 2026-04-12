@@ -679,7 +679,8 @@ async fn cmd_pipeline(
     println!();
     
     if llm {
-        println!("🤖 LLM Mode: Using Fireworks API (kimi-k2p5-turbo) for intelligent code generation");
+        let model_name = config.model.clone();
+        println!("🤖 LLM Mode: Using Fireworks API ({}) for intelligent code generation", model_name);
         println!();
     }
     
@@ -750,7 +751,8 @@ async fn cmd_pipeline(
         }
         
         println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — LLM Mode");
-        println!("   Generating code with Fireworks API (kimi-k2p5-turbo)...");
+        let model_short = llm_config.model.split('/').last().unwrap_or("LLM");
+        println!("   Generating code with Fireworks API ({})...", model_short);
         
         for (i, iu) in iu_graph.ius.iter().enumerate() {
             print!("   [{}/{}] Generating {}...", i + 1, iu_graph.ius.len(), iu.name);

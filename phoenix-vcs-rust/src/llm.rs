@@ -1,6 +1,6 @@
 //! LLM Integration for Intelligent Code Generation
 //!
-//! Uses Fireworks API with kimi-k2p5-turbo to generate actual implementations
+//! Uses Fireworks API with deepseek-v3p2 to generate actual implementations
 //! from Phoenix requirements.
 
 use anyhow::{Result, Context};
