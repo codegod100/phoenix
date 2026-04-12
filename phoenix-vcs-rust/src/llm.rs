@@ -192,10 +192,10 @@ OUTPUT CODE NOW:"#,
 fn clean_code_response(code: &str, _language: &str) -> String {
     let code = code.trim();
     
-    // First pass: look for actual code block
     let lines: Vec<&str> = code.lines().collect();
     let mut code_lines = Vec::new();
-    let mut found_code_start = false;
+    let mut found_phoenix_header = false;
+    let mut in_analysis_block = false;
     
     for line in &lines {
         let trimmed = line.trim();
@@ -205,53 +205,68 @@ fn clean_code_response(code: &str, _language: &str) -> String {
             continue;
         }
         
-        // Detect actual code start - look for Python/Rust/TypeScript patterns
-        let is_definitely_code = trimmed.starts_with("# phoenix:")
-            || trimmed.starts_with("# ") && trimmed.contains("iu_id")
-            || trimmed.starts_with("import ")
-            || trimmed.starts_with("from ")
-            || trimmed.starts_with("class ")
-            || trimmed.starts_with("def ")
-            || trimmed.starts_with("mod ")  // Rust
-            || trimmed.starts_with("pub ")  // Rust
-            || trimmed.starts_with("fn ")   // Rust
-            || trimmed.starts_with("use ")  // Rust
-            || trimmed.starts_with("export ") // TS
-            || trimmed.starts_with("const ")
-            || trimmed.starts_with("let ")
-            || trimmed.starts_with("type ")
-            || trimmed.starts_with("interface ");
+        // Detect phoenix header - this marks the REAL start
+        if trimmed.starts_with("# phoenix:") || (trimmed.starts_with("# ") && trimmed.contains("iu_id")) {
+            if found_phoenix_header {
+                // Second header found - this means new file started, stop here
+                break;
+            }
+            found_phoenix_header = true;
+            code_lines.push(*line);
+            continue;
+        }
         
-        // Detect definitely NOT code (analysis/thinking)
-        let is_analysis = trimmed.starts_with(|c: char| c.is_ascii_digit())  // "1." "2." etc
+        // If we haven't found the header yet, skip everything
+        if !found_phoenix_header {
+            continue;
+        }
+        
+        // Detect analysis/thinking patterns (even after code started)
+        let is_analysis = trimmed.starts_with(|c: char| c.is_ascii_digit() && c != '0')  // "1." but not "0.x"
+            || trimmed.starts_with("For ")
+            || trimmed.starts_with("One ")
+            || trimmed.starts_with("Actually,")
+            || trimmed.starts_with("So ")
             || trimmed.starts_with("Let me")
             || trimmed.starts_with("I'll ")
             || trimmed.starts_with("Here ")
             || trimmed.starts_with("Additional")
-            || trimmed.starts_with("- ")  // Bullet points
+            || trimmed.starts_with("Note:")
+            || trimmed.starts_with("But ")
+            || trimmed.starts_with("Wait,")
+            || trimmed.starts_with("Hmm,")
+            || trimmed.starts_with("Looking")
+            || trimmed.starts_with("This ")
+            || trimmed.starts_with("That ")
+            || trimmed.starts_with("However,")
+            || trimmed.starts_with("Alternatively,")
+            || trimmed.starts_with("- ")  // Bullet points outside docstrings
             || trimmed.starts_with("* ")
-            || trimmed.starts_with("• ")
             || trimmed.contains("🔴")
             || trimmed.contains("🟢")
             || trimmed.contains("🔵")
             || trimmed.contains("⚠️")
             || trimmed.contains("✅")
-            || trimmed.contains("❌");
+            || trimmed.contains("❌")
+            || trimmed.contains("I should")
+            || trimmed.contains("I think")
+            || trimmed.contains("I need")
+            || trimmed.contains("I was")
+            || trimmed.contains("I am")
+            || trimmed.contains("I'");  // I'll, I'm, etc.
         
-        if is_definitely_code {
-            found_code_start = true;
-            code_lines.push(*line);
-        } else if found_code_start && !is_analysis {
-            // Once we're in code mode, keep lines unless clearly analysis
-            // Allow empty lines, indented lines, closing braces, etc.
-            code_lines.push(*line);
+        if is_analysis {
+            // Skip this analysis line
+            continue;
         }
-        // Otherwise skip (analysis before code starts)
+        
+        // This looks like actual code, keep it
+        code_lines.push(*line);
     }
     
     let result = code_lines.join("\n").trim().to_string();
     
-    // If we got nothing, return original (maybe it was already clean)
+    // If we got nothing, return original
     if result.is_empty() {
         code.to_string()
     } else {
