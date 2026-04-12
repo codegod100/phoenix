@@ -1238,13 +1238,196 @@ async fn clean_generated_dir(project_root: &Path) -> Result<()> {
 
 /// Generate project-wide flake.nix based on all specs
 async fn generate_project_flake(project_root: &Path, all_specs_content: &str) -> Result<()> {
-    // Determine what packages are needed from all specs
-    let needs_rust = all_specs_content.contains("[rust]") || all_specs_content.contains("[pyo3]");
-    let needs_python = all_specs_content.contains("[python]");
-    let needs_tls = all_specs_content.to_lowercase().contains("tls") || all_specs_content.to_lowercase().contains("ssl");
-    let needs_pyo3 = all_specs_content.to_lowercase().contains("pyo3");
+    // Detect project name from spec
+    let project_name = all_specs_content.lines()
+        .find(|l| l.contains("id = \"dev.") || l.contains("name = \""))
+        .and_then(|l| {
+            if let Some(start) = l.find('"') {
+                if let Some(end) = l.rfind('"') {
+                    return Some(l[start+1..end].to_string());
+                }
+            }
+            None
+        })
+        .unwrap_or_else(|| "phoenix-project".to_string());
     
-    // Build packages list dynamically based on detected needs
+    // Detect if this has a flake.packages section (new format)
+    let has_packages = all_specs_content.contains("flake = {") && 
+                       all_specs_content.contains("packages = {");
+    
+    let flake_content = if has_packages {
+        // Generate full flake with packages, apps, devShells
+        generate_full_flake(&project_name, all_specs_content)
+    } else {
+        // Generate simple devShell only (legacy format)
+        generate_simple_flake(all_specs_content)
+    };
+    
+    // Write flake.nix to project root
+    let flake_path = project_root.join("flake.nix");
+    tokio::fs::write(&flake_path, flake_content).await?;
+    
+    if has_packages {
+        println!("   📦 Generated flake.nix with packages, apps, and devShell");
+    } else {
+        println!("   📦 Generated flake.nix (devShell only)");
+    }
+    
+    Ok(())
+}
+
+/// Generate a full flake with packages, apps, and devShells
+fn generate_full_flake(project_name: &str, spec_content: &str) -> String {
+    // Extract build inputs from spec
+    let needs_rust = spec_content.contains("rust = [") || spec_content.contains("rustc");
+    let needs_python = spec_content.contains("python = [") || spec_content.contains("python312");
+    let needs_maturin = spec_content.contains("maturin");
+    let needs_openssl = spec_content.contains("openssl");
+    
+    // Build the inputs section
+    let mut build_inputs = vec![];
+    
+    if needs_rust {
+        build_inputs.push("rust-bin.stable.latest.default");
+    }
+    if needs_python {
+        build_inputs.push("python312");
+        build_inputs.push("python312Packages.pip");
+        if needs_maturin {
+            build_inputs.push("python312Packages.maturin");
+        }
+    }
+    if needs_openssl {
+        build_inputs.push("openssl");
+        build_inputs.push("pkg-config");
+    }
+    
+    let inputs_str = build_inputs.iter()
+        .map(|i| format!("            {}\n", i))
+        .collect::<String>();
+    
+    format!(r#"{{
+  description = "{} - Generated from Phoenix spec";
+
+  inputs = {{
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay.url = "github:oxalica/rust-overlay";
+  }};
+
+  outputs = {{ self, nixpkgs, flake-utils, rust-overlay }}:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        overlays = [ (import rust-overlay) ];
+        pkgs = import nixpkgs {{ inherit system overlays; }};
+      in
+      {{
+        # Packages you can build with `nix build`
+        packages = {{
+          # Default package - the complete application
+          default = pkgs.stdenv.mkDerivation {{
+            pname = "{}";
+            version = "0.1.0";
+            src = ./.;
+            
+            nativeBuildInputs = with pkgs; [
+{}
+            ];
+            
+            buildPhase = ''
+              cd pyo3
+              maturin build --release
+              cd ..
+            '';
+            
+            installPhase = ''
+              mkdir -p $out/bin $out/lib
+              cp pyo3/target/wheels/*.whl $out/lib/ || true
+              
+              # Create wrapper script
+              cat > $out/bin/{} <<'EOF'
+#!/usr/bin/env bash
+PYTHONPATH="$out/lib:$PYTHONPATH" python3 -c "from freeq_pyo3 import *; import app; app.main()" "$@"
+EOF
+              chmod +x $out/bin/{}
+            '';
+          }};
+          
+          # PyO3 module only
+          pyo3 = pkgs.stdenv.mkDerivation {{
+            pname = "{}-pyo3";
+            version = "0.1.0";
+            src = ./.;
+            nativeBuildInputs = with pkgs; [ cargo rustc maturin python312 ];
+            buildPhase = ''
+              cd pyo3 && maturin build --release
+            '';
+            installPhase = ''
+              mkdir -p $out
+              cp target/wheels/*.whl $out/
+            '';
+          }};
+        }};
+        
+        # Apps you can run with `nix run`
+        apps = {{
+          default = {{
+            type = "app";
+            program = "${{self.packages.{{system}}.default}}/bin/{}";
+          }};
+          
+          dev = {{
+            type = "app";
+            program = let
+              devScript = pkgs.writeShellScriptBin "{}-dev" ''
+                export RUST_LOG=debug
+                export PYTHONPATH="./pyo3:./src:$PYTHONPATH"
+                python3 -m freeq "$@"
+              '';
+            in "${{devScript}}/bin/{}-dev";
+          }};
+        }};
+        
+        # Development shell with `nix develop`
+        devShells.default = pkgs.mkShell {{
+          inputsFrom = [ self.packages.{{system}}.default ];
+          
+          packages = with pkgs; [
+            # Dev tools
+            just
+            gdb
+            strace
+          ];
+          
+          shellHook = ''
+            echo "🔥 {} dev shell"
+            echo "Commands:"
+            echo "  nix build          - Build the application"
+            echo "  nix run            - Run the application"
+            echo "  nix run .#dev     - Run with debug logging"
+            echo "  just build         - Quick build with maturin"
+            echo "  just test          - Run tests"
+          '';
+        }};
+      }});
+}}
+"#,
+        project_name, project_name,
+        inputs_str,
+        project_name, project_name,
+        project_name,
+        project_name, project_name,
+        project_name
+    )
+}
+
+/// Generate simple devShell-only flake (legacy format)
+fn generate_simple_flake(spec_content: &str) -> String {
+    let needs_rust = spec_content.contains("[rust]") || spec_content.contains("[pyo3]");
+    let needs_python = spec_content.contains("[python]");
+    let needs_tls = spec_content.to_lowercase().contains("tls") || spec_content.to_lowercase().contains("ssl");
+    let needs_pyo3 = spec_content.to_lowercase().contains("pyo3");
+    
     let mut packages = vec![];
     
     if needs_rust {
@@ -1252,40 +1435,21 @@ async fn generate_project_flake(project_root: &Path, all_specs_content: &str) ->
     }
     
     if needs_pyo3 {
-        packages.extend(vec!["maturin", "python"]);
+        packages.extend(vec!["maturin", "python312"]);
     } else if needs_python {
-        packages.push("python");
+        packages.push("python312");
     }
     
     if needs_tls {
-        packages.extend(vec!["openssl", "openssl.dev", "pkg-config"]);
+        packages.extend(vec!["openssl", "pkg-config"]);
     }
     
-    // Build the packages section
     let packages_str = packages.iter()
         .map(|p| format!("            {}\n", p))
         .collect::<String>();
     
-    // Build env vars
-    let mut env_vars = vec![];
-    if needs_pyo3 {
-        env_vars.push(("PYO3_PYTHON", r#""${python}/bin/python""#));
-    }
-    if needs_tls {
-        env_vars.extend(vec![
-            ("OPENSSL_DIR", r#""${pkgs.openssl.dev}""#),
-            ("OPENSSL_LIB_DIR", r#""${pkgs.openssl.out}/lib""#),
-            ("PKG_CONFIG_PATH", r#""${pkgs.openssl.dev}/lib/pkgconfig""#),
-        ]);
-    }
-    
-    let env_str = env_vars.iter()
-        .map(|(k, v)| format!("            {} = {};\n", k, v))
-        .collect::<String>();
-    
-    // Generate flake - generic structure, no app-specific hardcoding
-    let flake = format!(r#"{{
-  description = "Generated development environment from specs";
+    format!(r#"{{
+  description = "Phoenix development environment";
 
   inputs = {{
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -1295,36 +1459,17 @@ async fn generate_project_flake(project_root: &Path, all_specs_content: &str) ->
   outputs = {{ self, nixpkgs, flake-utils }}:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${{system}};
-        python = pkgs.python312;
+        pkgs = nixpkgs.legacyPackages.{{system}};
       in
       {{
         devShells.default = pkgs.mkShell {{
           buildInputs = with pkgs; [
-{packages}          ];
-
-          env = {{
-{env}          }};
-
-          shellHook = ''
-            echo "Development shell from specs"
-          '';
+{}
+          ];
         }};
       }});
 }}
 "#,
-        packages = packages_str,
-        env = env_str
-    );
-    
-    // Write flake.nix to project root
-    let flake_path = project_root.join("flake.nix");
-    tokio::fs::write(&flake_path, flake).await?;
-    
-    println!("   📦 Generated flake.nix from specs:");
-    for pkg in packages {
-        println!("      + {}", pkg);
-    }
-    
-    Ok(())
+        packages_str
+    )
 }
