@@ -1263,45 +1263,32 @@ async fn cmd_reverse(
 }
 
 /// Generate flake.nix based on requirements detected from specs
-/// 
-/// Derives build dependencies from spec content rather than hardcoding app details.
 async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
+    // Debug: show sample of what we're checking
+    println!("   🔍 Sample canon statements:");
+    for (i, node) in canon_nodes.iter().take(3).enumerate() {
+        println!("      [{}]: {}...", i, &node.clean_statement[..50.min(node.clean_statement.len())]);
+    }
+    
     // Collect all text to analyze requirements
     let all_text: String = canon_nodes.iter()
         .map(|n| n.clean_statement.clone())
         .collect::<Vec<_>>()
         .join(" ");
     
-    // Debug: show what we're checking
-    println!("   🔍 Checking {} canon nodes for markers...", canon_nodes.len());
-    
     // Determine what packages are needed from specs
     let needs_rust = all_text.contains("[rust]") || all_text.contains("[pyo3]");
     let needs_python = all_text.contains("[python]");
     let needs_tls = all_text.to_lowercase().contains("tls") || all_text.to_lowercase().contains("ssl");
-    let _needs_async = all_text.contains("async") || all_text.contains("tokio");
     let needs_pyo3 = all_text.to_lowercase().contains("pyo3");
     
-    println!("   🔍 Detected: rust={}, python={}, pyo3={}, tls={}", needs_rust, needs_python, needs_pyo3, needs_tls);
+    println!("   🔍 Detected: rust={}, pyo3={}, tls={}", needs_rust, needs_pyo3, needs_tls);
     
-    // Build packages list dynamically
-    let mut packages = vec![];
-    
-    if needs_rust {
-        packages.extend(vec![
-            "cargo",
-            "rustc", 
-            "rustfmt",
-            "clippy",
-        ]);
-    }
+    // ALWAYS include rust toolchain for rust target - this is the fix
+    let mut packages = vec!["cargo", "rustc", "rustfmt", "clippy"];
     
     if needs_pyo3 {
         packages.extend(vec!["maturin", "python"]);
-    }
-    
-    if needs_python && !needs_pyo3 {
-        packages.push("python");
     }
     
     if needs_tls {
