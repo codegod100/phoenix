@@ -158,10 +158,6 @@ pub enum Commands {
         #[arg(long)]
         stub: bool,
         
-        /// Output directory for Rust code (if different from project root)
-        #[arg(long)]
-        rust_output: Option<PathBuf>,
-        
         /// Skip ingest phase
         #[arg(long)]
         skip_ingest: bool,
@@ -275,8 +271,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { stub, rust_output, skip_ingest, skip_canonicalize, skip_plan, verify } => {
-            cmd_pipeline_multi(&cli.project_root, rust_output.as_deref(), stub, skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline_multi(&cli.project_root, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -758,7 +754,6 @@ fn detect_all_languages(content: &str) -> Vec<String> {
 /// Run pipeline for all detected languages
 async fn cmd_pipeline_multi(
     project_root: &Path,
-    _rust_output: Option<&Path>,  // Kept for backward compatibility
     stub: bool,
     skip_ingest: bool,
     skip_canonicalize: bool,
@@ -802,28 +797,11 @@ async fn cmd_pipeline_multi(
         println!("▶ Language {}/{}: {}", i + 1, languages.len(), lang);
         println!("══════════════════════════════════════════════════════════════");
         
-        // Determine output dir by convention:
-        // - rust → pyo3/ subdirectory if it exists
-        // - python → project_root
-        let output_dir_buf: std::path::PathBuf;
-        let output_dir = if lang == "rust" {
-            let pyo3_dir = project_root.join("pyo3");
-            if pyo3_dir.exists() {
-                println!("   📦 Using pyo3/ subdirectory for Rust output (convention)");
-                output_dir_buf = pyo3_dir;
-                output_dir_buf.as_path()
-            } else {
-                project_root
-            }
-        } else {
-            project_root
-        };
-        
         if stub {
             println!("   📝 STUB MODE: IU generation only (no LLM codegen)");
         }
         
-        if let Err(e) = cmd_pipeline_single(output_dir, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
+        if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
             println!("⚠️  Pipeline for {} failed: {}", lang, e);
         }
         println!();
@@ -1086,11 +1064,6 @@ async fn cmd_pipeline_single(
     };
     manifest.save(output_dir)?;
     
-    // Generate project configuration files based on detected requirements
-    if target_language == "rust" {
-        generate_flake_nix(output_dir, &canon_output.nodes).await?;
-    }
-    
     println!();
     println!("══════════════════════════════════════════════════════════════");
     println!("Pipeline Complete!");
@@ -1280,87 +1253,6 @@ async fn cmd_reverse(
     println!("   2. Refine requirements to be more precise");
     println!("   3. Run: phoenix-vcs pipeline    # Generate code from specs");
     println!("   4. Compare: phoenix-vcs drift   # Check spec→code alignment");
-    
-    Ok(())
-}
-
-/// Generate a standard flake.nix for PyO3 projects
-/// 
-/// Hard-coded dependencies that cover the typical use case:
-/// - Rust toolchain (cargo, rustc)
-/// - PyO3/maturin for Python bindings
-/// - OpenSSL for TLS connections
-/// - Python for the TUI
-async fn generate_flake_nix(output_dir: &Path, _canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
-    let flake = r#"{
-  description = "FreeQ PyO3 module";
-
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-  };
-
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        python = pkgs.python312;
-      in
-      {
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # Rust toolchain
-            cargo
-            rustc
-            rustfmt
-            clippy
-            
-            # PyO3 / maturin
-            maturin
-            python
-            
-            # TLS/OpenSSL
-            openssl
-            openssl.dev
-            pkg-config
-          ];
-
-          env = {
-            PYO3_PYTHON = "${python}/bin/python";
-            OPENSSL_DIR = "${pkgs.openssl.dev}";
-            OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
-            PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
-          };
-
-          shellHook = ''
-            echo "FreeQ PyO3 dev shell"
-            echo ""
-            echo "Commands:"
-            echo "  maturin develop  # Build PyO3 module"
-            echo "  python src/app.py  # Run TUI"
-          '';
-        };
-
-        apps.default = {
-          type = "app";
-          program = toString (pkgs.writeShellScript "freeq-dev" ''
-            export OPENSSL_DIR="${pkgs.openssl.dev}"
-            export OPENSSL_LIB_DIR="${pkgs.openssl.out}/lib"
-            export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
-            cd ${self}
-            ${pkgs.maturin}/bin/maturin develop --manifest-path pyo3/Cargo.toml
-            exec ${python}/bin/python src/app.py
-          '');
-        };
-      });
-}
-"#;
-    
-    // Write flake.nix
-    let flake_path = output_dir.join("flake.nix");
-    tokio::fs::write(&flake_path, flake).await?;
-    
-    println!("   📦 Generated flake.nix");
     
     Ok(())
 }
