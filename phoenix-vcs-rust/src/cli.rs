@@ -735,6 +735,7 @@ fn detect_all_languages(content: &str) -> Vec<String> {
     
     for line in content.lines() {
         let trimmed = line.trim();
+        // Markdown-style markers
         if trimmed == "[rust]" || (trimmed.starts_with("##") && trimmed.contains("[rust]")) {
             has_rust = true;
         }
@@ -744,6 +745,20 @@ fn detect_all_languages(content: &str) -> Vec<String> {
         if trimmed == "[pyo3]" || (trimmed.starts_with("##") && trimmed.contains("[pyo3]")) {
             has_pyo3 = true;
             has_rust = true; // pyo3 implies rust
+        }
+        
+        // NCL-style language declarations
+        if trimmed.contains("language") && trimmed.contains("=") {
+            if trimmed.contains("\"rust\"") || trimmed.contains("'rust'") {
+                has_rust = true;
+            }
+            if trimmed.contains("\"python\"") || trimmed.contains("'python'") {
+                has_python = true;
+            }
+            if trimmed.contains("\"pyo3\"") || trimmed.contains("'pyo3'") {
+                has_pyo3 = true;
+                has_rust = true;
+            }
         }
     }
     
@@ -858,7 +873,7 @@ async fn cmd_pipeline_single(
         }
     }
     
-    println!("{}: {} → {} code", lang, if llm_available { "LLM" } else { "skeleton" });
+    println!("{}: {} → code", lang, if llm_available { "LLM" } else { "skeleton" });
     
     if llm_available {
         println!("   LLM: {}", full_url);

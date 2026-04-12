@@ -61,7 +61,7 @@ struct ExtractedItem {
     docs: Vec<String>,
     file_path: PathBuf,
     line_start: usize,
-    line_end: usize,
+    _line_end: usize,
     is_public: bool,
     parameters: Vec<String>,
     return_type: Option<String>,
@@ -74,6 +74,7 @@ enum ItemKind {
     Struct,
     Enum,
     Trait,
+    #[allow(dead_code)]  // Reserved for future use
     Impl,
 }
 
@@ -653,7 +654,7 @@ fn generate_clauses(
                 source_file: item.file_path.to_string_lossy().to_string(),
                 line_number: item.line_start,
                 item_name: item.name.clone(),
-                item_kind: format!("{:?}", item.kind),
+                _item_kind: format!("{:?}", item.kind),
             });
         }
     }
@@ -850,5 +851,5 @@ struct GeneratedClause {
     source_file: String,
     line_number: usize,
     item_name: String,
-    item_kind: String,
+    _item_kind: String,
 }
