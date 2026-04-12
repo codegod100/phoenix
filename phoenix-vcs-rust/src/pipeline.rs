@@ -336,86 +336,155 @@ pub struct CanonicalOutput {
 
 /// Canonical requirement node
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct CanonNode {
-    pub id: String,
-    pub node_type: CanonNodeType,
-    pub clean_statement: String,
-    pub derived_from: Vec<String>,
-    pub depends_on: Vec<String>,
-    pub d_rate: f64,
-    pub confidence: f64,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub enum CanonNodeType {
-    #[serde(rename = "requirement")]
-    Requirement,
-    #[serde(rename = "constraint")]
-    Constraint,
-    #[serde(rename = "definition")]
-    Definition,
-    #[serde(rename = "assumption")]
-    Assumption,
-    #[serde(rename = "scenario")]
-    Scenario,
-    #[serde(rename = "pipeline_upgrade")]
-    PipelineUpgrade,
-}
-
-/// μ_plan: Group canonical nodes into Implementation Units
+/// μ_plan: Partition canonical nodes into Implementation Units
 ///
-/// Input: Canonical nodes
-/// Output: IU boundaries with dependency graphs
-pub async fn plan_implementation_units(
-    nodes: Vec<CanonNode>,
-    target_language: &str,
-) -> Result<PlanOutput> {
-    // Simple partitioning: group by section/domain
+/// Creates language-specific IUs based on the architecture:
+/// - Python: Only TUI code (interface, app) - imports from freeq_pyo3
+/// - Rust/PyO3: Only PyO3 wrappers - wraps freeq-sdk
+pub async fn plan_ius(canon_output: &CanonOutput, target_language: &str) -> Result<PlanOutput> {
+    use petgraph::graph::{DiGraph, NodeIndex};
+    use petgraph::algo::toposort;
+    
+    // Build dependency graph from canon nodes
+    let mut graph = DiGraph::<CanonNode, ()>::new();
+    let mut id_to_idx: HashMap<String, NodeIndex> = HashMap::new();
+    
+    for node in &canon_output.nodes {
+        let idx = graph.add_node(node.clone());
+        id_to_idx.insert(node.id.clone(), idx);
+    }
+    
+    // Add edges based on cross-references in statements
+    for (id, idx) in &id_to_idx {
+        if let Some(node) = graph.node_weight(*idx) {
+            for other_id in canon_output.nodes.iter().map(|n| &n.id) {
+                if id != other_id && node.clean_statement.contains(&other_id[..8.min(other_id.len())]) {
+                    if let Some(&other_idx) = id_to_idx.get(other_id) {
+                        graph.add_edge(*idx, other_idx, ());
+                    }
+                }
+            }
+        }
+    }
+    
+    // Topological sort gives us a valid processing order
+    let topo_order = toposort(&graph, None)
+        .map_err(|e| anyhow::anyhow!("Cycle detected in canon graph: {:?}", e))?;
+    
+    // Group nodes by domain AND language marker
     let mut groups: HashMap<String, Vec<CanonNode>> = HashMap::new();
     
-    // In a real implementation, this would use ML or heuristics
-    // For now, use simple domain-based grouping
-    for node in nodes {
-        let domain = extract_domain(&node.clean_statement);
-        groups.entry(domain).or_default().push(node);
+    for idx in topo_order {
+        if let Some(node) = graph.node_weight(idx) {
+            // Determine domain from content
+            let domain = extract_domain(&node.clean_statement);
+            
+            // For Python: only include nodes marked with [python]
+            // For Rust: only include nodes marked with [rust] or [pyo3]
+            let should_include = match target_language {
+                "python" => {
+                    // Only python clauses or interface-related
+                    node.clean_statement.contains("[python]") || 
+                    node.clean_statement.contains("interface") ||
+                    node.clean_statement.contains("widget") ||
+                    node.clean_statement.contains("TUI") ||
+                    domain == "interface"
+                }
+                "rust" => {
+                    // rust clauses, pyo3 clauses, or NOT pure python
+                    node.clean_statement.contains("[rust]") ||
+                    node.clean_statement.contains("[pyo3]") ||
+                    (!node.clean_statement.contains("[python]") && 
+                     !node.clean_statement.contains("widget") &&
+                     !node.clean_statement.contains("TUI"))
+                }
+                _ => true, // include all for other languages
+            };
+            
+            if should_include {
+                let key = format!("{}_{}", domain, target_language);
+                groups.entry(key).or_default().push(node.clone());
+            }
+        }
     }
     
+    // For Python TUI project: create specific structure
     let mut ius = Vec::new();
-    for (domain, group_nodes) in groups {
-        if group_nodes.is_empty() {
-            continue;
-        }
-        
-        let canon_ids: Vec<String> = group_nodes.iter().map(|n| n.id.clone()).collect();
-        let name = format!("{}", domain);
-        let contract = generate_contract(&group_nodes);
-        
-        let iu_id = iu_id(&name, &contract, &canon_ids);
-        
-        let ext = match target_language {
-            "rust" => "rs",
-            "typescript" => "ts",
-            "python" => "py",
-            _ => "rs",
-        };
+    
+    if target_language == "python" {
+        // Python only needs the TUI app - it imports from freeq_pyo3
+        let contract = "Textual TUI application that imports IRCClient and ATProtoAuth from freeq_pyo3 module".to_string();
+        let iu_id = iu_id("app", &contract, &[]);
         
         ius.push(ImplementationUnit {
-            iu_id: iu_id.clone(),
-            name: name.clone(),
+            iu_id,
+            name: "app".to_string(),
             contract,
-            source_canon_ids: canon_ids.clone(),
-            risk_tier: determine_risk_tier(&group_nodes),
-            target_language: target_language.to_string(),
-            output_files: vec![format!("src/generated/{}.{}", 
-                name.to_lowercase().replace("-", "_"),
-                ext
-            )],
+            source_canon_ids: canon_output.nodes.iter()
+                .filter(|n| n.clean_statement.contains("[python]") || n.clean_statement.contains("interface"))
+                .map(|n| n.id.clone())
+                .collect(),
+            risk_tier: determine_risk_tier(&canon_output.nodes),
+            target_language: "python".to_string(),
+            output_files: vec!["src/app.py".to_string()],
         });
+    } else if target_language == "rust" {
+        // Rust/PyO3 project: create PyO3 wrapper module
+        // This wraps freeq-sdk for Python consumption
+        let contract = "PyO3 bindings wrapping freeq-sdk IRCClient and ATProtoAuth for Python".to_string();
+        let iu_id = iu_id("lib", &contract, &[]);
+        
+        ius.push(ImplementationUnit {
+            iu_id,
+            name: "lib".to_string(),
+            contract,
+            source_canon_ids: canon_output.nodes.iter()
+                .filter(|n| n.clean_statement.contains("[rust]") || n.clean_statement.contains("[pyo3]"))
+                .map(|n| n.id.clone())
+                .collect(),
+            risk_tier: determine_risk_tier(&canon_output.nodes),
+            target_language: "rust".to_string(),
+            output_files: vec!["src/lib.rs".to_string()],
+        });
+    } else {
+        // Fallback: create domain-based IUs for other languages
+        for (domain_key, group_nodes) in groups {
+            if group_nodes.is_empty() {
+                continue;
+            }
+            
+            let domain = domain_key.trim_end_matches(format!("_{}", target_language).as_str());
+            let canon_ids: Vec<String> = group_nodes.iter().map(|n| n.id.clone()).collect();
+            let name = format!("{}", domain);
+            let contract = generate_contract(&group_nodes);
+            
+            let iu_id = iu_id(&name, &contract, &canon_ids);
+            
+            let ext = match target_language {
+                "rust" => "rs",
+                "typescript" => "ts",
+                "python" => "py",
+                _ => "rs",
+            };
+            
+            ius.push(ImplementationUnit {
+                iu_id: iu_id.clone(),
+                name: name.clone(),
+                contract,
+                source_canon_ids: canon_ids.clone(),
+                risk_tier: determine_risk_tier(&group_nodes),
+                target_language: target_language.to_string(),
+                output_files: vec![format!("src/generated/{}.{}", 
+                    name.to_lowercase().replace("-", "_"),
+                    ext
+                )],
+            });
+        }
+        
+        // Create integration IU that wires all modules together
+        let integration_iu = create_integration_iu(&ius, target_language);
+        ius.push(integration_iu);
     }
-    
-    // Create integration IU that wires all modules together
-    let integration_iu = create_integration_iu(&ius, target_language);
-    ius.push(integration_iu);
     
     Ok(PlanOutput { ius })
 }

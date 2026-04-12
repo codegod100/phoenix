@@ -154,6 +154,10 @@ pub enum Commands {
     
     /// Run the spec-to-code generation pipeline (generates for all language markers found)
     Pipeline {
+        /// Only generate IUs and print plan, don't invoke LLM codegen (for testing)
+        #[arg(long)]
+        stub: bool,
+        
         /// Output directory for Rust code (if different from project root)
         #[arg(long)]
         rust_output: Option<PathBuf>,
@@ -271,8 +275,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { rust_output, skip_ingest, skip_canonicalize, skip_plan, verify } => {
-            cmd_pipeline_multi(&cli.project_root, rust_output.as_deref(), skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Commands::Pipeline { stub, rust_output, skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline_multi(&cli.project_root, rust_output.as_deref(), stub, skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -755,6 +759,7 @@ fn detect_all_languages(content: &str) -> Vec<String> {
 async fn cmd_pipeline_multi(
     project_root: &Path,
     rust_output: Option<&Path>,
+    stub: bool,
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
@@ -804,7 +809,11 @@ async fn cmd_pipeline_multi(
             project_root
         };
         
-        if let Err(e) = cmd_pipeline_single(output_dir, project_root, lang, skip_ingest, skip_canonicalize, skip_plan, verify).await {
+        if stub {
+            println!("   📝 STUB MODE: IU generation only (no LLM codegen)");
+        }
+        
+        if let Err(e) = cmd_pipeline_single(output_dir, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
             println!("⚠️  Pipeline for {} failed: {}", lang, e);
         }
         println!();
@@ -822,6 +831,7 @@ async fn cmd_pipeline_single(
     output_dir: &Path,
     specs_root: &Path,
     lang: &str,
+    stub: bool,
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
@@ -923,6 +933,24 @@ async fn cmd_pipeline_single(
     
     // Generate code (either via LLM or standard codegen)
     let mut code_files = Vec::new();
+    
+    if stub {
+        // STUB MODE: Print IUs and their output files, but don't invoke codegen
+        println!("\n▶ Phase 4: STUB MODE (skipping μ_codegen)");
+        println!("   Would generate {} Implementation Units:", iu_graph.ius.len());
+        
+        for (i, iu) in iu_graph.ius.iter().enumerate() {
+            let output_path = iu.output_files.first()
+                .cloned()
+                .unwrap_or_else(|| format!("src/generated/{}.rs", iu.name));
+            println!("   [{}/{}] {} → {}", i + 1, iu_graph.ius.len(), iu.name, output_path);
+            println!("        IU ID: {}...", &iu.iu_id[..16]);
+            println!("        Clauses: {} canons", iu.source_canon_ids.len());
+        }
+        
+        // Still return empty code_files so the function completes
+        return Ok(());
+    }
     
     if llm_available {
         // Use LLM for intelligent code generation
