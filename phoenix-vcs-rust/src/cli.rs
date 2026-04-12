@@ -152,8 +152,12 @@ pub enum Commands {
         bare: bool,
     },
     
-    /// Run the spec-to-code generation pipeline (auto-detects language from spec markers)
+    /// Run the spec-to-code generation pipeline (auto-detects language from spec markers, or use --lang to override)
     Pipeline {
+        /// Target language for generated code (auto-detected if not specified)
+        #[arg(short, long)]
+        lang: Option<String>,
+        
         /// Skip ingest phase
         #[arg(long)]
         skip_ingest: bool,
@@ -267,8 +271,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { skip_ingest, skip_canonicalize, skip_plan, verify } => {
-            cmd_pipeline(&cli.project_root, skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline(&cli.project_root, lang.as_deref(), skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -746,6 +750,7 @@ fn detect_target_language(content: &str) -> String {
 
 async fn cmd_pipeline(
     project_root: &Path,
+    lang_override: Option<&str>,
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
@@ -775,8 +780,8 @@ async fn cmd_pipeline(
         }
     }
     
-    // Auto-detect target language from spec content
-    let lang = detect_target_language(&combined_content);
+    // Auto-detect target language from spec content, or use override if provided
+    let lang = lang_override.map(|l| l.to_string()).unwrap_or_else(|| detect_target_language(&combined_content));
     
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║  Phoenix Pipeline — Spec-Driven Code Generation              ║");
@@ -786,7 +791,11 @@ async fn cmd_pipeline(
     println!("╚══════════════════════════════════════════════════════════════╝");
     println!();
     
-    println!("🎯 Auto-detected language: {} (from spec markers)", lang);
+    if lang_override.is_some() {
+        println!("🎯 Target language: {} (user specified)", lang);
+    } else {
+        println!("🎯 Auto-detected language: {} (from spec markers)", lang);
+    }
     println!("🧮 Mathematical Foundation:");
     println!("   Pipeline as composed lens: μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest");
     println!("   Source theory: ThSpec");
