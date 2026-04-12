@@ -758,7 +758,7 @@ fn detect_all_languages(content: &str) -> Vec<String> {
 /// Run pipeline for all detected languages
 async fn cmd_pipeline_multi(
     project_root: &Path,
-    rust_output: Option<&Path>,
+    _rust_output: Option<&Path>,  // Kept for backward compatibility
     stub: bool,
     skip_ingest: bool,
     skip_canonicalize: bool,
@@ -802,9 +802,19 @@ async fn cmd_pipeline_multi(
         println!("▶ Language {}/{}: {}", i + 1, languages.len(), lang);
         println!("══════════════════════════════════════════════════════════════");
         
-        // Use rust_output for rust language, project_root for others
-        let output_dir = if lang == "rust" && rust_output.is_some() {
-            rust_output.unwrap()
+        // Determine output dir by convention:
+        // - rust → pyo3/ subdirectory if it exists
+        // - python → project_root
+        let output_dir_buf: std::path::PathBuf;
+        let output_dir = if lang == "rust" {
+            let pyo3_dir = project_root.join("pyo3");
+            if pyo3_dir.exists() {
+                println!("   📦 Using pyo3/ subdirectory for Rust output (convention)");
+                output_dir_buf = pyo3_dir;
+                output_dir_buf.as_path()
+            } else {
+                project_root
+            }
         } else {
             project_root
         };
