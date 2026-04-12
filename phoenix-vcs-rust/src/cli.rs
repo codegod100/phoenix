@@ -773,6 +773,7 @@ async fn cmd_pipeline(
     let spec = crate::lens::SpecDocument {
         content: combined_content,
         path: specs_dir.to_string_lossy().to_string(),
+        target_language: lang.to_string(),
     };
     
     // Run through the lens
@@ -964,6 +965,7 @@ async fn cmd_verify_laws(_project_root: &Path, lang: &str) -> Result<()> {
             let spec = crate::lens::SpecDocument {
                 content: "## Test\n- REQUIREMENT: System shall validate input\n- CONSTRAINT: Max 100ms latency\n".to_string(),
                 path: "test.md".to_string(),
+                target_language: "rust".to_string(),
             };
             crate::lens::verify_lens_laws(&lens, &spec)
         })),
@@ -1044,6 +1046,7 @@ async fn cmd_verify_laws(_project_root: &Path, lang: &str) -> Result<()> {
     let spec = crate::lens::SpecDocument {
         content: "## Auth\n- REQUIREMENT: System shall validate passwords\n- CONSTRAINT: Use bcrypt hashing\n".to_string(),
         path: "test.md".to_string(),
+        target_language: lang.to_string(),
     };
     let result = crate::lens::verify_lens_laws(&pipeline_lens, &spec);
     

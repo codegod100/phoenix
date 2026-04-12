@@ -163,7 +163,11 @@ pub fn ingest_lens() -> Lens<SpecDocument, ClauseGraph> {
                 .collect::<Vec<_>>()
                 .join("\n");
             
-            SpecDocument { content, path: comp.provenance.first().map(|p| p.source_file.clone()).unwrap_or_default() }
+            SpecDocument { 
+                content, 
+                path: comp.provenance.first().map(|p| p.source_file.clone()).unwrap_or_default(),
+                target_language: comp.metadata.get("target_lang").cloned().unwrap_or_else(|| "rust".to_string()),
+            }
         }),
         name: "μ_ingest",
         src_theory: "ThSpec",
@@ -545,22 +549,48 @@ pub struct LensVerification {
 pub struct SpecDocument {
     pub content: String,
     pub path: String,
+    pub target_language: String, // e.g., "rust", "python"
 }
 
 impl SpecDocument {
     fn parse_clauses(&self) -> (Vec<Clause>, Vec<Provenance>) {
-        // Parse markdown into clauses
+        // Parse markdown into clauses with language marker support
         let mut clauses = Vec::new();
         let mut provenance = Vec::new();
         
         let lines: Vec<&str> = self.content.lines().collect();
         let mut current_section = String::new();
+        let mut current_marker: Option<String> = None;
         
-        println!("    🔍 Parsing {} lines of content", lines.len());
+        // Determine relevant markers for target language
+        let relevant_markers: Vec<&str> = match self.target_language.as_str() {
+            "rust" => vec!["rust", "pyo3"],
+            "python" | "py" => vec!["python"],
+            _ => vec![&self.target_language],
+        };
+        
+        println!("    🔍 Parsing {} lines for target: {}", lines.len(), self.target_language);
         
         for (i, line) in lines.iter().enumerate() {
-            if line.starts_with("## ") {
+            // Track language markers
+            if line.trim() == "[rust]" || line.trim().starts_with("##") && line.contains("[rust]") {
+                current_marker = Some("rust".to_string());
+                continue;
+            }
+            if line.trim() == "[python]" || line.trim().starts_with("##") && line.contains("[python]") {
+                current_marker = Some("python".to_string());
+                continue;
+            }
+            if line.trim() == "[pyo3]" || line.trim().starts_with("##") && line.contains("[pyo3]") {
+                current_marker = Some("pyo3".to_string());
+                continue;
+            }
+            
+            // Track sections
+            if line.starts_with("## ") && !line.contains('[') {
                 current_section = line.trim_start_matches("## ").trim().to_string();
+                current_marker = None; // Reset marker at new section
+                continue;
             }
             
             let patterns = [
@@ -578,31 +608,54 @@ impl SpecDocument {
                     let normalized = normalize_text(&raw_text);
                     let id = crate::identity::canon_id(&normalized);
                     
-                    let clause = Clause {
-                        id: id.clone(),
-                        clause_type: *clause_type,
-                        text: normalized.clone(),
-                        raw_text: raw_text.clone(),
-                        section: current_section.clone(),
-                        source_file: self.path.clone(),
-                        line: i + 1,
-                        clause_semhash: sha256(&format!("clause:{}", normalized)),
-                        context_semhash: sha256(&format!("section:{};text:{}", 
-                            current_section, normalized)),
-                    };
-                    
-                    provenance.push(Provenance {
-                        canon_id: id,
-                        source_file: self.path.clone(),
-                        line_number: i + 1,
+                    // Determine effective marker
+                    let effective_marker = current_marker.clone().or_else(|| {
+                        if current_section.to_lowercase().contains("rust") ||
+                           current_section.to_lowercase().contains("sdk") {
+                            Some("rust".to_string())
+                        } else if current_section.to_lowercase().contains("python") ||
+                                  current_section.to_lowercase().contains("tui") {
+                            Some("python".to_string())
+                        } else {
+                            None
+                        }
                     });
                     
-                    clauses.push(clause);
+                    // Check if clause should be included
+                    let should_include = match &effective_marker {
+                        None => true,
+                        Some(m) => relevant_markers.contains(&m.as_str()),
+                    };
+                    
+                    if should_include {
+                        let clause = Clause {
+                            id: id.clone(),
+                            clause_type: *clause_type,
+                            text: normalized.clone(),
+                            raw_text: raw_text.clone(),
+                            section: current_section.clone(),
+                            source_file: self.path.clone(),
+                            line: i + 1,
+                            clause_semhash: sha256(&format!("clause:{}", normalized)),
+                            context_semhash: sha256(&format!("section:{};text:{}", 
+                                current_section, normalized)),
+                            language_marker: effective_marker,
+                        };
+                        
+                        provenance.push(Provenance {
+                            canon_id: id,
+                            source_file: self.path.clone(),
+                            line_number: i + 1,
+                        });
+                        
+                        clauses.push(clause);
+                    }
+                    break;
                 }
             }
         }
         
-        println!("    ✅ Found {} clauses", clauses.len());
+        println!("    ✅ Found {} matching clauses", clauses.len());
         
         (clauses, provenance)
     }

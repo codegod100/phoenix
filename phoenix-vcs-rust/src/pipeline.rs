@@ -34,13 +34,15 @@ pub struct StageStatus {
 /// μ_ingest: Parse specifications into content-addressed clauses
 ///
 /// Input: Markdown files in `specs/` directory
-/// Output: Clauses with canon IDs (semantic hashes)
-pub async fn ingest_specs(project_root: impl AsRef<Path>) -> Result<IngestOutput> {
+/// Output: Clauses with canon IDs (semantic hashes) filtered by target language
+pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> Result<IngestOutput> {
     let specs_dir = project_root.as_ref().join("specs");
     
     if !specs_dir.exists() {
         anyhow::bail!("No specs/ directory found. Create one with .md files.");
     }
+    
+    println!("🎯 Target language: {}", target_lang);
     
     let mut clauses = Vec::new();
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
@@ -51,13 +53,32 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>) -> Result<IngestOutput
         if path.extension().and_then(|e| e.to_str()) == Some("md") {
             file_count += 1;
             let content = tokio::fs::read_to_string(&path).await?;
-            let file_clauses = parse_markdown_clauses(&content, &path);
-            println!("   📄 {}: {} clauses", path.file_name().unwrap().to_string_lossy(), file_clauses.len());
+            let file_clauses = parse_markdown_clauses(&content, &path, target_lang);
+            let marker_info = if file_clauses.is_empty() {
+                "(no matching clauses)".to_string()
+            } else {
+                let rust_count = file_clauses.iter().filter(|c| c.language_marker.as_deref() == Some("rust")).count();
+                let py_count = file_clauses.iter().filter(|c| c.language_marker.as_deref() == Some("python")).count();
+                let pyo3_count = file_clauses.iter().filter(|c| c.language_marker.as_deref() == Some("pyo3")).count();
+                let unmarked = file_clauses.iter().filter(|c| c.language_marker.is_none()).count();
+                let parts: Vec<String> = [
+                    (rust_count > 0).then(|| format!("{} rust", rust_count)),
+                    (py_count > 0).then(|| format!("{} python", py_count)),
+                    (pyo3_count > 0).then(|| format!("{} pyo3", pyo3_count)),
+                    (unmarked > 0).then(|| format!("{} unmarked", unmarked)),
+                ].into_iter().flatten().collect();
+                if parts.is_empty() {
+                    format!("{} clauses", file_clauses.len())
+                } else {
+                    format!("{} clauses ({})", file_clauses.len(), parts.join(", "))
+                }
+            };
+            println!("   📄 {}: {}", path.file_name().unwrap().to_string_lossy(), marker_info);
             clauses.extend(file_clauses);
         }
     }
     
-    println!("   📁 Scanned {} files, found {} total clauses", file_count, clauses.len());
+    println!("   📁 Scanned {} files, found {} matching clauses", file_count, clauses.len());
     
     Ok(IngestOutput {
         clauses,
@@ -65,22 +86,62 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>) -> Result<IngestOutput
     })
 }
 
-/// Parse markdown content into clauses
-fn parse_markdown_clauses(content: &str, source_path: &Path) -> Vec<Clause> {
+/// Parse markdown content into clauses with language marker detection
+fn parse_markdown_clauses(content: &str, source_path: &Path, target_lang: &str) -> Vec<Clause> {
     let mut clauses = Vec::new();
     let lines: Vec<&str> = content.lines().collect();
     let mut current_section = String::new();
     let mut prev_hash = String::new();
+    let mut current_marker: Option<String> = None;
+    let mut in_code_block = false;
+    let mut code_block_lang = String::new();
+    
+    // Determine which markers are relevant for target language
+    let relevant_markers: Vec<&str> = match target_lang {
+        "rust" => vec!["rust", "pyo3"],
+        "python" | "py" => vec!["python"],
+        _ => vec![target_lang],
+    };
     
     for (i, line) in lines.iter().enumerate() {
-        // Track sections
-        if line.starts_with("## ") {
-            current_section = line.trim_start_matches("## ").trim().to_string();
+        // Track language markers: [rust], [python], [pyo3]
+        if line.trim() == "[rust]" || line.trim().starts_with("##") && line.contains("[rust]") {
+            current_marker = Some("rust".to_string());
+            continue;
+        }
+        if line.trim() == "[python]" || line.trim().starts_with("##") && line.contains("[python]") {
+            current_marker = Some("python".to_string());
+            continue;
+        }
+        if line.trim() == "[pyo3]" || line.trim().starts_with("##") && line.contains("[pyo3]") {
+            current_marker = Some("pyo3".to_string());
             continue;
         }
         
-        // Parse requirement/contraint/definition/assumption/scenario lines
-        // Format: "- REQUIREMENT: Text here"
+        // Track code blocks for language detection
+        if line.trim().starts_with("```") {
+            if in_code_block {
+                in_code_block = false;
+                code_block_lang.clear();
+            } else {
+                in_code_block = true;
+                code_block_lang = line.trim().trim_start_matches("```").trim().to_string();
+                // Update marker based on code block language
+                if !code_block_lang.is_empty() && code_block_lang != "toml" && code_block_lang != "json" {
+                    current_marker = Some(code_block_lang.clone());
+                }
+            }
+            continue;
+        }
+        
+        // Track sections
+        if line.starts_with("## ") && !line.contains('[') {
+            current_section = line.trim_start_matches("## ").trim().to_string();
+            current_marker = None; // Reset marker at new section
+            continue;
+        }
+        
+        // Parse requirement/constraint/definition/assumption/scenario lines
         let patterns = [
             ("REQUIREMENT", ClauseType::Requirement),
             ("CONSTRAINT", ClauseType::Constraint),
@@ -98,19 +159,43 @@ fn parse_markdown_clauses(content: &str, source_path: &Path) -> Vec<Clause> {
                 let clause_hash = clause_semhash(&normalized);
                 let context_hash = context_semhash(&normalized, &[&current_section], &prev_hash, "");
                 
-                clauses.push(Clause {
-                    id,
-                    clause_type: *clause_type,
-                    text: normalized.clone(),
-                    raw_text,
-                    section: current_section.clone(),
-                    source_file: source_path.to_string_lossy().to_string(),
-                    line: i + 1,
-                    clause_semhash: clause_hash.clone(),
-                    context_semhash: context_hash,
+                // Determine effective marker for this clause
+                let effective_marker = current_marker.clone().or_else(|| {
+                    // Infer from section name
+                    if current_section.to_lowercase().contains("rust") || 
+                       current_section.to_lowercase().contains("sdk") {
+                        Some("rust".to_string())
+                    } else if current_section.to_lowercase().contains("python") ||
+                              current_section.to_lowercase().contains("tui") {
+                        Some("python".to_string())
+                    } else {
+                        None
+                    }
                 });
                 
+                // Check if clause should be included for target language
+                let should_include = match &effective_marker {
+                    None => true, // No marker = include for all
+                    Some(m) => relevant_markers.contains(&m.as_str()),
+                };
+                
+                if should_include {
+                    clauses.push(Clause {
+                        id: id.clone(),
+                        clause_type: *clause_type,
+                        text: normalized.clone(),
+                        raw_text: raw_text.clone(),
+                        section: current_section.clone(),
+                        source_file: source_path.to_string_lossy().to_string(),
+                        line: i + 1,
+                        clause_semhash: clause_hash.clone(),
+                        context_semhash: context_hash,
+                        language_marker: effective_marker,
+                    });
+                }
+                
                 prev_hash = clause_hash;
+                break; // Only match one pattern per line
             }
         }
     }
@@ -160,6 +245,7 @@ pub struct Clause {
     pub line: usize,
     pub clause_semhash: String,
     pub context_semhash: String,
+    pub language_marker: Option<String>, // e.g., "rust", "python", "pyo3"
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -743,7 +829,7 @@ pub async fn run_pipeline(
     // Phase 1: Ingest
     println!("▶ Phase: INGEST");
     println!("   μ_ingest: ThSpec → ThClause (lensing morphism)");
-    let ingest_output = ingest_specs(project_root).await?;
+    let ingest_output = ingest_specs(project_root, target_language).await?;
     let clauses_count = ingest_output.clauses.len();
     println!("   ✓ Parsed {} clauses", clauses_count);
     

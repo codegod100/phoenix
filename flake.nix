@@ -67,6 +67,15 @@
             bun
             nodejs_22
             typescript
+
+            # Rust toolchain for phoenix-vcs-rust
+            cargo
+            rustc
+            rustfmt
+            clippy
+            rust-analyzer
+            pkg-config
+            openssl
             
             # Development tools
             git
@@ -87,9 +96,15 @@
             
             echo "Available commands:"
             echo "  phoenix <command>    - Run Phoenix CLI from local checkout"
-            echo "  bun run build        - Build the project"
-            echo "  bun run test         - Run tests"
+            echo "  bun run build        - Build the TypeScript project"
+            echo "  bun run test         - Run TypeScript tests"
             echo "  bun run dev          - Run CLI in dev mode"
+            echo ""
+            echo "Rust toolchain (for phoenix-vcs-rust):"
+            echo "  cargo build          - Build the Rust project"
+            echo "  cargo test           - Run Rust tests"
+            echo "  cargo run -- status  - Run Rust CLI"
+            echo "  rust-analyzer        - LSP server"
             echo ""
             echo "Project root: $PHOENIX_DEV_ROOT"
             echo "Phoenix CLI runs from: $PHOENIX_DEV_ROOT/src/cli.ts"
