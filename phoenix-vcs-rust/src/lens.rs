@@ -287,59 +287,107 @@ pub fn canonicalize_lens() -> Lens<ClauseGraph, CanonGraph> {
 /// Forward: Partition canonical nodes into Implementation Units
 /// Backward: Decompose IUs back to canonical nodes
 ///
-/// This is a partition lens - each canon node belongs to exactly one IU.
+/// For PyO3 architecture:
+/// - Python: Only TUI app (imports from freeq_pyo3)
+/// - Rust: Only PyO3 wrapper (wraps freeq-sdk)
 pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
     Lens {
         get: Box::new(move |canon| {
-            // Partition by domain
-            let mut groups: HashMap<String, Vec<&CanonNode>> = HashMap::new();
-            for node in &canon.nodes {
-                let domain = extract_domain(&node.clean_statement);
-                groups.entry(domain).or_default().push(node);
-            }
-            
+            let lang = target_language.to_lowercase().trim().to_string();
             let mut ius = Vec::new();
-            for (domain, nodes) in groups {
-                let canon_ids: Vec<String> = nodes.iter().map(|n| n.id.clone()).collect();
-                let name = format!("{}", domain);
-                let contract = format!(
-                    "Implements {} requirements: {}",
-                    nodes.len(),
-                    nodes.iter().map(|n| n.clean_statement.clone()).collect::<Vec<_>>().join("; ")
-                );
+            
+            if lang == "python" || lang == "py" {
+                // Python TUI: Single app that imports from freeq_pyo3
+                let python_nodes: Vec<&CanonNode> = canon.nodes.iter()
+                    .filter(|n| n.clean_statement.contains("[python]") || n.clean_statement.contains("interface"))
+                    .collect();
                 
-                let iu_id = crate::identity::iu_id(&name, &contract, &canon_ids);
-                
-                let ext = match target_language {
-                    "rust" => "rs",
-                    "typescript" => "ts",
-                    "python" => "py",
-                    _ => "rs",
-                };
+                let canon_ids: Vec<String> = python_nodes.iter().map(|n| n.id.clone()).collect();
+                let contract = "Textual TUI application importing IRCClient/ATProtoAuth from freeq_pyo3".to_string();
+                let iu_id = crate::identity::iu_id("app", &contract, &canon_ids);
                 
                 ius.push(IU {
-                    iu_id: iu_id.clone(),
-                    name,
+                    iu_id,
+                    name: "app".to_string(),
                     contract,
                     source_canon_ids: canon_ids,
-                    risk_tier: determine_risk_tier(&nodes),
+                    risk_tier: determine_risk_tier(&python_nodes),
                     target_language: target_language.to_string(),
-                    output_files: vec![format!("src/generated/{}.{}", 
-                        domain.to_lowercase().replace("-", "_"),
-                        ext
-                    )],
+                    output_files: vec!["src/app.py".to_string()],
                 });
+                
+                println!("   🎯 Simplified Python: 1 IU (TUI → freeq_pyo3)");
+            } else if lang == "rust" || lang == "rs" {
+                // Rust PyO3: Single lib wrapping freeq-sdk
+                let rust_nodes: Vec<&CanonNode> = canon.nodes.iter()
+                    .filter(|n| n.clean_statement.contains("[rust]") || n.clean_statement.contains("[pyo3]"))
+                    .collect();
+                
+                let canon_ids: Vec<String> = rust_nodes.iter().map(|n| n.id.clone()).collect();
+                let contract = "PyO3 bindings wrapping freeq-sdk for Python".to_string();
+                let iu_id = crate::identity::iu_id("lib", &contract, &canon_ids);
+                
+                ius.push(IU {
+                    iu_id,
+                    name: "lib".to_string(),
+                    contract,
+                    source_canon_ids: canon_ids,
+                    risk_tier: determine_risk_tier(&rust_nodes),
+                    target_language: target_language.to_string(),
+                    output_files: vec!["src/lib.rs".to_string()],
+                });
+                
+                println!("   🎯 Simplified Rust: 1 IU (PyO3 → freeq-sdk)");
+            } else {
+                // Fallback: domain-based partitioning for other languages
+                let mut groups: HashMap<String, Vec<&CanonNode>> = HashMap::new();
+                for node in &canon.nodes {
+                    let domain = extract_domain(&node.clean_statement);
+                    groups.entry(domain).or_default().push(node);
+                }
+                
+                for (domain, nodes) in groups {
+                    let canon_ids: Vec<String> = nodes.iter().map(|n| n.id.clone()).collect();
+                    let name = format!("{}", domain);
+                    let contract = format!(
+                        "Implements {} requirements: {}",
+                        nodes.len(),
+                        nodes.iter().map(|n| n.clean_statement.clone()).collect::<Vec<_>>().join("; ")
+                    );
+                    
+                    let iu_id = crate::identity::iu_id(&name, &contract, &canon_ids);
+                    
+                    let ext = match target_language {
+                        "rust" => "rs",
+                        "typescript" => "ts",
+                        "python" => "py",
+                        _ => "rs",
+                    };
+                    
+                    ius.push(IU {
+                        iu_id: iu_id.clone(),
+                        name,
+                        contract,
+                        source_canon_ids: canon_ids,
+                        risk_tier: determine_risk_tier(&nodes),
+                        target_language: target_language.to_string(),
+                        output_files: vec![format!("src/generated/{}.{}", 
+                            domain.to_lowercase().replace("-", "_"),
+                            ext
+                        )],
+                    });
+                }
+                
+                // Create integration IU
+                let integration_iu = create_integration_iu(&ius, target_language);
+                ius.push(integration_iu);
             }
-            
-            // Create integration IU that wires all modules together
-            let integration_iu = create_integration_iu(&ius, target_language);
-            ius.push(integration_iu);
             
             let graph = IUGraph { ius };
             
             let comp = Complement {
                 canon_ids: canon.nodes.iter().map(|n| n.id.clone()).collect(),
-                provenance: vec![], // Would track per-node → IU assignment
+                provenance: vec![],
                 d_rate: 0.0,
                 timestamp: chrono::Utc::now().to_rfc3339(),
                 metadata: {
