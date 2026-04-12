@@ -269,6 +269,7 @@ pub fn canonicalize_lens() -> Lens<ClauseGraph, CanonGraph> {
                         context_semhash: sha256(&format!("section:{};text:{}", 
                             extract_section(&prov.map(|p| p.source_file.clone()).unwrap_or_default()),
                             node.clean_statement)),
+                        language_marker: None, // Unknown during reverse transformation
                     });
                 }
             }

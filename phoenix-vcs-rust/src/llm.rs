@@ -5,7 +5,6 @@
 
 use anyhow::{Result, Context};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 /// LLM configuration
 #[derive(Debug, Clone)]
@@ -229,7 +228,6 @@ fn clean_code_response(code: &str, _language: &str) -> String {
     let lines: Vec<&str> = code.lines().collect();
     let mut code_lines = Vec::new();
     let mut found_phoenix_header = false;
-    let mut in_analysis_block = false;
     
     for line in &lines {
         let trimmed = line.trim();

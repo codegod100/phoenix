@@ -1027,6 +1027,7 @@ async fn cmd_verify_laws(_project_root: &Path, lang: &str) -> Result<()> {
                         line: 1,
                         clause_semhash: sha256("clause:validate input"),
                         context_semhash: sha256("context"),
+                        language_marker: Some("rust".to_string()),
                     },
                 ],
             };
