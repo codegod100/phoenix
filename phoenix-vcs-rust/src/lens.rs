@@ -670,11 +670,26 @@ fn generate_code(iu: &IU) -> String {
 
 /// Generate code using LLM (async version for actual intelligent generation)
 pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig) -> anyhow::Result<String> {
+    // Extract actual requirement lines from the contract
+    // The contract format is "Implements N requirements: req1; req2; ..."
+    // We want to parse out just the requirement statements
     let requirements: Vec<String> = iu.contract
-        .split("; ")
-        .map(|s| s.to_string())
-        .filter(|s| !s.is_empty())
+        .split("Implements ")  // Remove prefix
+        .nth(1)
+        .and_then(|s| s.split(": ").nth(1))  // Get part after ": "
+        .map(|s| s.split("; ").map(|r| r.to_string()).collect::<Vec<String>>())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|r: &String| !r.is_empty() && r.len() > 10)  // Filter out empty/short
+        .take(15)  // Limit to top 15 to avoid overwhelming LLM
         .collect();
+    
+    // If we couldn't parse requirements, create a generic one
+    let requirements = if requirements.is_empty() {
+        vec![format!("Implement {} module", iu.name)]
+    } else {
+        requirements
+    };
     
     let request = crate::llm::CodeGenRequest {
         requirements,

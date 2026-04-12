@@ -135,45 +135,60 @@ pub async fn generate_code_with_llm(
 
 /// Build the prompt for code generation
 fn build_generation_prompt(request: &CodeGenRequest) -> String {
-    let req_list = request
+    // Limit to top 20 most important requirements to avoid overwhelming the LLM
+    let top_requirements: Vec<String> = request
         .requirements
         .iter()
-        .enumerate()
-        .map(|(i, r)| format!("{}. {}", i + 1, r))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .filter(|r| r.contains("REQUIREMENT:"))
+        .take(20)
+        .cloned()
+        .collect();
     
-    format!(r#"Generate production-ready {} code for module "{}".
+    // If no REQUIREMENT lines found, just take first 20
+    let req_list = if top_requirements.is_empty() {
+        request
+            .requirements
+            .iter()
+            .take(20)
+            .enumerate()
+            .map(|(i, r)| format!("{}. {}", i + 1, r.chars().take(200).collect::<String>()))
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        top_requirements
+            .iter()
+            .enumerate()
+            .map(|(i, r)| format!("{}. {}", i + 1, r.chars().take(200).collect::<String>()))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    
+    format!(r#"You are a code generator. Output ONLY working {} code, no explanations.
 
-IU ID: {}
+Generate a module named "{}" implementing these requirements:
 
-REQUIREMENTS TO IMPLEMENT:
 {}
 
-CONSTRAINTS:
-- Include Phoenix VCS tracking comment: // phoenix: iu_id = "{}"
-- Include all requirements as doc comments
-- Generate complete, working code (not just stubs)
-- Follow {} best practices
-- Include error handling where appropriate
-- Add type hints/annotations
-- Make functions modular and testable
-- Do NOT include markdown code blocks in output
+RULES:
+1. Output ONLY valid {} code - no markdown, no explanations, no analysis
+2. Start with: # phoenix: iu_id = "{}"
+3. Then module docstring with requirements listed
+4. Then imports
+5. Then actual implementations (classes/functions)
+6. Use type hints
+7. Include error handling
+8. Make code runnable
 
-OUTPUT FORMAT:
-Start with the tracking comment, then module docstring, then imports, then implementations.
-
-Generate the complete implementation now:"#,
+OUTPUT ONLY CODE NOW:"#,
         request.language,
         request.module_name,
-        request.iu_id,
         req_list,
-        request.iu_id,
         request.language,
+        request.iu_id,
     )
 }
 
-/// Clean up LLM response (remove markdown code fences)
+/// Clean up LLM response (remove markdown code fences and thinking text)
 fn clean_code_response(code: &str, language: &str) -> String {
     let code = code.trim();
     
@@ -189,8 +204,48 @@ fn clean_code_response(code: &str, language: &str) -> String {
         code.to_string()
     };
     
-    // Trim again
-    code.trim().to_string()
+    // Remove thinking/analysis text (look for phrases that indicate non-code content)
+    let thinking_patterns = [
+        "The user wants",
+        "Let me analyze",
+        "I'll implement",
+        "Here are the requirements",
+        "This module needs",
+        "I need to",
+        "To implement",
+    ];
+    
+    let lines: Vec<&str> = code.lines().collect();
+    let mut code_lines = Vec::new();
+    let mut in_code = false;
+    
+    for line in &lines {
+        // Check if this looks like code (has Python keywords, imports, etc.)
+        let is_likely_code = line.starts_with("#")  // comment
+            || line.starts_with("import ")
+            || line.starts_with("from ")
+            || line.starts_with("class ")
+            || line.starts_with("def ")
+            || line.starts_with("@")
+            || line.trim().is_empty()
+            || line.contains("=")  // assignment
+            || line.starts_with("    ");  // indented
+        
+        // Skip thinking text until we hit actual code
+        if !in_code {
+            if is_likely_code || line.starts_with("# phoenix:") {
+                in_code = true;
+                code_lines.push(*line);
+            } else if thinking_patterns.iter().any(|p| line.contains(p)) {
+                // Skip thinking line
+                continue;
+            }
+        } else {
+            code_lines.push(*line);
+        }
+    }
+    
+    code_lines.join("\n").trim().to_string()
 }
 
 /// Check if LLM generation is available
