@@ -1272,12 +1272,17 @@ async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::C
         .collect::<Vec<_>>()
         .join(" ");
     
+    // Debug: show what we're checking
+    println!("   🔍 Checking {} canon nodes for markers...", canon_nodes.len());
+    
     // Determine what packages are needed from specs
     let needs_rust = all_text.contains("[rust]") || all_text.contains("[pyo3]");
     let needs_python = all_text.contains("[python]");
     let needs_tls = all_text.to_lowercase().contains("tls") || all_text.to_lowercase().contains("ssl");
     let _needs_async = all_text.contains("async") || all_text.contains("tokio");
     let needs_pyo3 = all_text.to_lowercase().contains("pyo3");
+    
+    println!("   🔍 Detected: rust={}, python={}, pyo3={}, tls={}", needs_rust, needs_python, needs_pyo3, needs_tls);
     
     // Build packages list dynamically
     let mut packages = vec![];
