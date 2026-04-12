@@ -864,12 +864,8 @@ async fn cmd_pipeline_single(
         total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
     
     if stub {
-        println!("\n   STUB: {} IUs planned", iu_graph.ius.len());
-    
-    if stub {
         // STUB MODE: Print IUs and their output files, but don't invoke codegen
-        println!("\n▶ Phase 4: STUB MODE (skipping μ_codegen)");
-        println!("   Would generate {} Implementation Units:", iu_graph.ius.len());
+        println!("   STUB: {} IUs planned", iu_graph.ius.len());
         
         for (i, iu) in iu_graph.ius.iter().enumerate() {
             let output_path = iu.output_files.first()
