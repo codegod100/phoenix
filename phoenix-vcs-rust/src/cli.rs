@@ -679,8 +679,9 @@ async fn cmd_pipeline(
     println!();
     
     if llm {
-        let model_name = config.model.clone();
-        println!("🤖 LLM Mode: Using Fireworks API ({}) for intelligent code generation", model_name);
+        let llm_config = crate::llm::LlmConfig::default();
+        let model_short = llm_config.model.split('/').last().unwrap_or("LLM");
+        println!("🤖 LLM Mode: Using Fireworks API ({}) for intelligent code generation", model_short);
         println!();
     }
     
