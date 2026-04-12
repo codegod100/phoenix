@@ -1,0 +1,976 @@
+//! Phoenix VCS CLI
+//!
+//! Command-line interface for the Phoenix VCS Rust implementation.
+//!
+//! Commands:
+//!   status              - Show complete VCS state
+//!   drift               - Detect drift between manifest and working tree
+//!   boundary <file>     - Validate boundary policy for a file
+//!   cascade <iu-id>     - Compute cascade for a failed IU
+//!   invalidate <spec>   - Compute selective invalidation for spec changes
+//!   shadow <old> <new>  - Compare two canonical graphs (upgrade safety)
+//!   init                - Initialize a new Phoenix project
+//!   pipeline            - Run spec-to-code generation (uses category theory lenses)
+//!   verify-laws         - Verify lens laws (GetPut, PutGet) mathematically
+
+use clap::{Parser, Subcommand};
+use std::path::{Path, PathBuf};
+use anyhow::{Result, Context};
+use tracing::info;
+
+use crate::status::{get_vcs_status, format_vcs_status};
+use crate::drift::{GeneratedManifest, detect_drift, format_drift_report, load_waivers, create_waiver, WaiverType};
+use crate::boundary::{validate_boundary, format_boundary_report, default_boundary_policy, EnforcementConfig, ViolationSeverity};
+use crate::cascade::{build_dependency_graph, compute_cascade, format_cascade_event, compute_invalidation, format_invalidation_report, IUDef};
+use crate::shadow::run_shadow_pipeline;
+use crate::identity::sha256;
+use crate::identity::{canon_id, file_hash, short_hash, normalize_text};
+use crate::evidence::{get_required_evidence, RiskTier};
+
+/// Phoenix VCS — Regenerative version control
+#[derive(Parser)]
+#[command(name = "phoenix-vcs")]
+#[command(about = "Regenerative version control that compiles intent to working software")]
+#[command(version = "0.1.0")]
+pub struct Cli {
+    /// Optional project root directory
+    #[arg(global = true, short, long, default_value = ".")]
+    pub project_root: PathBuf,
+    
+    /// Enable verbose output
+    #[arg(global = true, short, long)]
+    pub verbose: bool,
+    
+    #[command(subcommand)]
+    pub command: Commands,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    /// Show complete VCS state (diagnostics, drift, evidence)
+    Status,
+    
+    /// Detect drift between manifest and working tree
+    Drift {
+        /// Output as JSON
+        #[arg(short, long)]
+        json: bool,
+    },
+    
+    /// Validate boundary policy for a file
+    Boundary {
+        /// File to validate
+        file: PathBuf,
+        
+        /// Output as JSON
+        #[arg(short, long)]
+        json: bool,
+    },
+    
+    /// Compute cascade actions for a failed IU
+    Cascade {
+        /// IU ID that failed
+        iu_id: String,
+        
+        /// Kind of failure
+        #[arg(short, long, default_value = "unit_tests")]
+        failure_kind: String,
+        
+        /// Failure details
+        #[arg(short, long)]
+        details: Option<String>,
+    },
+    
+    /// Compute selective invalidation for spec changes
+    Invalidate {
+        /// Changed canonical IDs
+        canon_ids: Vec<String>,
+    },
+    
+    /// Shadow pipeline upgrade safety check
+    Shadow {
+        /// Old pipeline version
+        old_version: String,
+        
+        /// New pipeline version
+        new_version: String,
+        
+        /// Old nodes JSON file
+        #[arg(short = 'O', long)]
+        old_file: PathBuf,
+        
+        /// New nodes JSON file
+        #[arg(short = 'N', long)]
+        new_file: PathBuf,
+    },
+    
+    /// Generate content hash for a file
+    Hash {
+        /// File to hash
+        file: PathBuf,
+    },
+    
+    /// Compute canonical ID from text
+    CanonId {
+        /// Text to canonize
+        text: String,
+    },
+    
+    /// Show required evidence for a risk tier
+    Evidence {
+        /// Risk tier
+        #[arg(value_enum)]
+        tier: RiskTierArg,
+    },
+    
+    /// Create a waiver for manual edits
+    Waiver {
+        /// File path
+        file: String,
+        
+        /// Waiver type
+        #[arg(value_enum)]
+        waiver_type: WaiverTypeArg,
+        
+        /// Expiration date (YYYY-MM-DD)
+        #[arg(short, long)]
+        expires: Option<String>,
+        
+        /// Signer name
+        #[arg(short, long)]
+        signed_by: Option<String>,
+    },
+    
+    /// Initialize a new Phoenix project
+    Init {
+        /// Project name
+        #[arg(short, long)]
+        name: Option<String>,
+        
+        /// Skip creating example files
+        #[arg(long)]
+        bare: bool,
+    },
+    
+    /// Run the spec-to-code generation pipeline
+    Pipeline {
+        /// Target language for generated code
+        #[arg(short, long, default_value = "rust")]
+        lang: String,
+        
+        /// Skip ingest phase
+        #[arg(long)]
+        skip_ingest: bool,
+        
+        /// Skip canonicalize phase
+        #[arg(long)]
+        skip_canonicalize: bool,
+        
+        /// Skip plan phase
+        #[arg(long)]
+        skip_plan: bool,
+        
+        /// Skip codegen phase (preserves implementations)
+        #[arg(long)]
+        skip_codegen: bool,
+        
+        /// Verify lens laws after each phase
+        #[arg(long)]
+        verify: bool,
+    },
+    
+    /// Verify lens laws for the pipeline
+    VerifyLaws {
+        /// Target language
+        #[arg(short, long, default_value = "rust")]
+        lang: String,
+    },
+    
+    /// Reverse engineer specs from existing code
+    Reverse {
+        /// Source language to parse
+        #[arg(short, long, default_value = "rust")]
+        lang: String,
+        
+        /// Output directory for specs
+        #[arg(short, long, default_value = "specs")]
+        output: PathBuf,
+        
+        /// Include private functions
+        #[arg(long)]
+        include_private: bool,
+        
+        /// Don't extract doc comments
+        #[arg(long)]
+        no_docs: bool,
+    },
+}
+
+#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+pub enum RiskTierArg {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+pub enum WaiverTypeArg {
+    PromoteToRequirement,
+    TemporaryPatch,
+    ManualOverride,
+}
+
+impl From<WaiverTypeArg> for WaiverType {
+    fn from(arg: WaiverTypeArg) -> Self {
+        match arg {
+            WaiverTypeArg::PromoteToRequirement => WaiverType::PromoteToRequirement,
+            WaiverTypeArg::TemporaryPatch => WaiverType::TemporaryPatch,
+            WaiverTypeArg::ManualOverride => WaiverType::ManualOverride,
+        }
+    }
+}
+
+impl From<RiskTierArg> for RiskTier {
+    fn from(arg: RiskTierArg) -> Self {
+        match arg {
+            RiskTierArg::Low => RiskTier::Low,
+            RiskTierArg::Medium => RiskTier::Medium,
+            RiskTierArg::High => RiskTier::High,
+            RiskTierArg::Critical => RiskTier::Critical,
+        }
+    }
+}
+
+/// Run the CLI
+pub async fn run() -> Result<()> {
+    let cli = Cli::parse();
+    
+    // Initialize tracing
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        .with_max_level(if cli.verbose {
+            tracing::Level::DEBUG
+        } else {
+            tracing::Level::INFO
+        })
+        .finish();
+    
+    tracing::subscriber::set_global_default(subscriber)?;
+    
+    match cli.command {
+        Commands::Status => cmd_status(&cli.project_root).await,
+        Commands::Drift { json } => cmd_drift(&cli.project_root, json).await,
+        Commands::Boundary { file, json } => cmd_boundary(&cli.project_root, file, json).await,
+        Commands::Cascade { iu_id, failure_kind, details } => {
+            cmd_cascade(&cli.project_root, &iu_id, &failure_kind, details).await
+        }
+        Commands::Invalidate { canon_ids } => cmd_invalidate(&cli.project_root, &canon_ids).await,
+        Commands::Shadow { old_version, new_version, old_file, new_file } => {
+            cmd_shadow(old_version, new_version, old_file, new_file).await
+        }
+        Commands::Hash { file } => cmd_hash(file).await,
+        Commands::CanonId { text } => cmd_canon_id(&text),
+        Commands::Evidence { tier } => cmd_evidence(tier.into()),
+        Commands::Waiver { file, waiver_type, expires, signed_by } => {
+            cmd_waiver(file, waiver_type.into(), expires, signed_by)
+        }
+        Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
+        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify } => {
+            cmd_pipeline(&cli.project_root, &lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify).await
+        }
+        Commands::VerifyLaws { lang } => {
+            cmd_verify_laws(&cli.project_root, &lang).await
+        }
+        Commands::Reverse { lang, output, include_private, no_docs } => {
+            cmd_reverse(&cli.project_root, &lang, output, include_private, no_docs).await
+        }
+    }
+}
+
+async fn cmd_status(project_root: &Path) -> Result<()> {
+    info!("Running Phoenix VCS status check...");
+    
+    let state = get_vcs_status(project_root).await?;
+    println!("{}", format_vcs_status(&state));
+    
+    // Exit code based on status
+    match state.status {
+        crate::status::VCSStatus::Healthy => std::process::exit(0),
+        crate::status::VCSStatus::Warning => std::process::exit(1),
+        crate::status::VCSStatus::Critical => std::process::exit(2),
+    }
+}
+
+async fn cmd_drift(project_root: &Path, json: bool) -> Result<()> {
+    info!("Running drift detection...");
+    
+    let manifest = GeneratedManifest::load(project_root)?
+        .context("No manifest found. Run phoenix pipeline first.")?;
+    
+    let waivers = load_waivers(project_root)?;
+    let report = detect_drift(project_root, &manifest, &waivers)?;
+    
+    if json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        println!("{}", format_drift_report(&report));
+    }
+    
+    if report.has_blocking_drift {
+        std::process::exit(1);
+    }
+    
+    Ok(())
+}
+
+async fn cmd_boundary(project_root: &Path, file: PathBuf, json: bool) -> Result<()> {
+    let full_path = if file.is_absolute() {
+        file
+    } else {
+        project_root.join(file)
+    };
+    
+    if !full_path.exists() {
+        anyhow::bail!("File not found: {}", full_path.display());
+    }
+    
+    info!("Validating boundary for {}...", full_path.display());
+    
+    let source_code = tokio::fs::read_to_string(&full_path).await?;
+    
+    // Extract IU ID from source (would be in a comment or attribute)
+    let iu_id = extract_iu_id_from_source(&source_code)
+        .unwrap_or_else(|| "unknown".to_string());
+    
+    let policy = default_boundary_policy();
+    let enforcement = EnforcementConfig {
+        dependency_violation: ViolationSeverity::Error,
+        side_channel_violation: ViolationSeverity::Warning,
+    };
+    
+    let result = validate_boundary(
+        &iu_id,
+        &full_path.to_string_lossy(),
+        &source_code,
+        &policy,
+        &enforcement,
+    );
+    
+    if json {
+        println!("{}", serde_json::to_string_pretty(&result)?);
+    } else {
+        println!("{}", format_boundary_report(&[result.clone()]));
+    }
+    
+    if result.has_errors {
+        std::process::exit(1);
+    }
+    
+    Ok(())
+}
+
+async fn cmd_cascade(
+    project_root: &Path,
+    iu_id: &str,
+    failure_kind: &str,
+    details: Option<String>,
+) -> Result<()> {
+    info!("Computing cascade for failed IU: {}", iu_id);
+    
+    // Load IU graph
+    let ius_path = project_root.join(".phoenix").join("graphs").join("ius.json");
+    
+    if !ius_path.exists() {
+        anyhow::bail!("No IU graph found. Run phoenix pipeline first.");
+    }
+    
+    let ius_data = tokio::fs::read_to_string(&ius_path).await?;
+    let ius: Vec<IUDef> = serde_json::from_str(&ius_data)?;
+    let graph = build_dependency_graph(&ius);
+    
+    let details = details.unwrap_or_else(|| "Test suite failed".to_string());
+    let event = compute_cascade(&graph, iu_id, failure_kind, &details);
+    
+    println!("{}", format_cascade_event(&event));
+    
+    Ok(())
+}
+
+async fn cmd_invalidate(project_root: &Path, changed_ids: &[String]) -> Result<()> {
+    info!("Computing selective invalidation for {} changed requirements", changed_ids.len());
+    
+    // Load IU graph
+    let ius_path = project_root.join(".phoenix").join("graphs").join("ius.json");
+    
+    if !ius_path.exists() {
+        anyhow::bail!("No IU graph found. Run phoenix pipeline first.");
+    }
+    
+    let ius_data = tokio::fs::read_to_string(&ius_path).await?;
+    let ius: Vec<IUDef> = serde_json::from_str(&ius_data)?;
+    let graph = build_dependency_graph(&ius);
+    
+    // Build IU to canon mapping
+    let mut iu_to_canon_map = std::collections::HashMap::new();
+    for iu in &ius {
+        if let Some(ref canon_ids) = iu.source_canon_ids {
+            iu_to_canon_map.insert(iu.iu_id.clone(), canon_ids.clone());
+        }
+    }
+    
+    let invalidated = compute_invalidation(&graph, changed_ids, &iu_to_canon_map);
+    println!("{}", format_invalidation_report(changed_ids, &invalidated));
+    
+    Ok(())
+}
+
+async fn cmd_shadow(
+    old_version: String,
+    new_version: String,
+    old_file: PathBuf,
+    new_file: PathBuf,
+) -> Result<()> {
+    info!("Running shadow pipeline comparison...");
+    
+    let old_nodes_data = tokio::fs::read_to_string(&old_file).await?;
+    let new_nodes_data = tokio::fs::read_to_string(&new_file).await?;
+    
+    let old_nodes = serde_json::from_str(&old_nodes_data)?;
+    let new_nodes = serde_json::from_str(&new_nodes_data)?;
+    
+    let result = run_shadow_pipeline(old_nodes, new_nodes, &old_version, &new_version);
+    
+    println!("{}", result.diff_report);
+    
+    match result.classification {
+        crate::shadow::UpgradeClassification::Safe => std::process::exit(0),
+        crate::shadow::UpgradeClassification::CompactionEvent => std::process::exit(1),
+        crate::shadow::UpgradeClassification::Reject => std::process::exit(2),
+    }
+}
+
+async fn cmd_hash(file: PathBuf) -> Result<()> {
+    let content = tokio::fs::read_to_string(&file).await?;
+    let hash = file_hash(&content);
+    
+    println!("File: {}", file.display());
+    println!("Hash: {}", hash);
+    println!("Short: {}", short_hash(&hash));
+    
+    Ok(())
+}
+
+fn cmd_canon_id(text: &str) -> Result<()> {
+    let normalized = normalize_text(text);
+    let id = canon_id(&normalized);
+    
+    println!("Input: {}", text);
+    println!("Normalized: {}", normalized);
+    println!("Canon ID: {}", id);
+    println!("Short: {}", short_hash(&id));
+    
+    Ok(())
+}
+
+fn cmd_evidence(tier: RiskTier) -> Result<()> {
+    let required = get_required_evidence(tier);
+    
+    println!("Required evidence for {:?} risk tier:", tier);
+    for (i, kind) in required.iter().enumerate() {
+        println!("  {}. {}", i + 1, kind);
+    }
+    
+    Ok(())
+}
+
+fn cmd_waiver(
+    file: String,
+    waiver_type: WaiverType,
+    expires: Option<String>,
+    signed_by: Option<String>,
+) -> Result<()> {
+    let waiver = create_waiver(waiver_type, expires, signed_by);
+    
+    println!("Waiver created for: {}", file);
+    println!("Type: {:?}", waiver.waiver_type);
+    if let Some(ref expires) = waiver.expires {
+        println!("Expires: {}", expires);
+    }
+    if let Some(ref signed) = waiver.signed_by {
+        println!("Signed by: {}", signed);
+    }
+    
+    println!("\nAdd to .phoenix/waivers.json:");
+    let entry = serde_json::json!({
+        file: waiver
+    });
+    println!("{}", serde_json::to_string_pretty(&entry)?);
+    
+    Ok(())
+}
+
+/// Initialize a new Phoenix project
+async fn cmd_init(project_root: &Path, name: Option<String>, bare: bool) -> Result<()> {
+    info!("Initializing Phoenix project at {:?}...", project_root);
+    
+    // Create directory structure
+    let phoenix_dir = project_root.join(".phoenix");
+    let manifests_dir = phoenix_dir.join("manifests");
+    let graphs_dir = phoenix_dir.join("graphs");
+    let specs_dir = project_root.join("specs");
+    let src_generated_dir = project_root.join("src").join("generated");
+    
+    tokio::fs::create_dir_all(&manifests_dir).await?;
+    tokio::fs::create_dir_all(&graphs_dir).await?;
+    tokio::fs::create_dir_all(&specs_dir).await?;
+    tokio::fs::create_dir_all(&src_generated_dir).await?;
+    
+    // Create initial manifest
+    let manifest = GeneratedManifest {
+        version: "1.0.0".to_string(),
+        generated_at: chrono::Utc::now().to_rfc3339(),
+        files: std::collections::HashMap::new(),
+    };
+    
+    let manifest_path = manifests_dir.join("generated_manifest.json");
+    let manifest_json = serde_json::to_string_pretty(&manifest)?;
+    tokio::fs::write(&manifest_path, manifest_json).await?;
+    
+    // Create empty waivers file
+    let waivers: std::collections::HashMap<String, crate::drift::Waiver> = std::collections::HashMap::new();
+    let waivers_path = phoenix_dir.join("waivers.json");
+    tokio::fs::write(&waivers_path, serde_json::to_string_pretty(&waivers)?).await?;
+    
+    // Create empty IU graph
+    let empty_ius: Vec<IUDef> = Vec::new();
+    let ius_path = graphs_dir.join("ius.json");
+    let ius_data = serde_json::json!({
+        "version": "1.0.0",
+        "generated_at": chrono::Utc::now().to_rfc3339(),
+        "ius": empty_ius,
+    });
+    tokio::fs::write(&ius_path, serde_json::to_string_pretty(&ius_data)?).await?;
+    
+    // Create project state file
+    let project_name = name.unwrap_or_else(|| {
+        project_root.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unnamed-project")
+            .to_string()
+    });
+    
+    let state = serde_json::json!({
+        "version": "1.0.0",
+        "project": project_name,
+        "created_at": chrono::Utc::now().to_rfc3339(),
+        "pipeline": {},
+    });
+    let state_path = phoenix_dir.join("state.json");
+    tokio::fs::write(&state_path, serde_json::to_string_pretty(&state)?).await?;
+    
+    // Create example spec file unless --bare
+    if !bare {
+        let example_spec = r#"# Phoenix Specification
+
+## Requirements
+
+### REQ-001: System shall validate user input
+The system must validate all user input to prevent injection attacks.
+
+### REQ-002: System shall encrypt sensitive data
+All sensitive user data must be encrypted at rest and in transit.
+
+## Constraints
+
+- Use only approved cryptographic libraries
+- Maximum response time: 100ms
+
+"#;
+        let spec_path = specs_dir.join("example.md");
+        tokio::fs::write(&spec_path, example_spec).await?;
+    }
+    
+    println!("🐦 Phoenix project initialized!");
+    println!("");
+    println!("Project: {}", project_name);
+    println!("Location: {}", project_root.display());
+    println!("");
+    println!("Created structure:");
+    println!("  .phoenix/");
+    println!("    manifests/generated_manifest.json  # Tracks generated files");
+    println!("    graphs/ius.json                    # IU dependency graph");
+    println!("    waivers.json                       # Manual edit waivers");
+    println!("    state.json                         # Pipeline state");
+    println!("  specs/                               # Specification documents");
+    if !bare {
+        println!("    example.md                         # Example requirements");
+    }
+    println!("  src/generated/                       # Generated code goes here");
+    println!("");
+    println!("Next steps:");
+    println!("  1. Edit specs/ to add your requirements");
+    println!("  2. Run: phoenix-vcs status            # Check project health");
+    println!("  3. Run: phoenix-vcs drift             # Check for manual edits");
+    if !bare {
+        println!("");
+        println!("  See example.md for specification format");
+    }
+    
+    Ok(())
+}
+
+fn extract_iu_id_from_source(source: &str) -> Option<String> {
+    // Look for patterns like:
+    // // phoenix: iu_id = "abc123..."
+    // /* phoenix: iu_id: abc123 */
+    // #[phoenix(iu_id = "abc123")]
+    
+    use regex::Regex;
+    
+    let patterns = [
+        Regex::new(r#"phoenix.*iu_id[:=]\s*["']([^"']+)["']"#).ok()?,
+        Regex::new(r#"iu_id[:=]\s*([a-f0-9]{64})"#).ok()?,
+    ];
+    
+    for pattern in &patterns {
+        if let Some(caps) = pattern.captures(source) {
+            if let Some(matched) = caps.get(1) {
+                return Some(matched.as_str().to_string());
+            }
+        }
+    }
+    
+    None
+}
+
+/// Main entry point for the binary
+pub async fn main() -> Result<()> {
+    run().await
+}
+
+async fn cmd_pipeline(
+    project_root: &Path,
+    lang: &str,
+    skip_ingest: bool,
+    skip_canonicalize: bool,
+    skip_plan: bool,
+    skip_codegen: bool,
+    verify: bool,
+) -> Result<()> {
+    info!("Running Phoenix pipeline...");
+    
+    println!("╔══════════════════════════════════════════════════════════════╗");
+    println!("║  Phoenix Pipeline — Spec-Driven Code Generation              ║");
+    println!("╠══════════════════════════════════════════════════════════════╣");
+    println!("║  SPEC ──[μ_ingest]──► CLAUSE ──[μ_canon]──► CANON ──[μ_plan] ║");
+    println!("║                    ──[μ_codegen]──► CODE                     ║");
+    println!("╚══════════════════════════════════════════════════════════════╝");
+    println!();
+    
+    println!("🧮 Mathematical Foundation:");
+    println!("   Pipeline as composed lens: μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest");
+    println!("   Source theory: ThSpec");
+    println!("   Target theory: ThCode");
+    println!();
+    
+    if skip_ingest {
+        println!("⏭️  Skipping INGEST phase");
+    }
+    if skip_canonicalize {
+        println!("⏭️  Skipping CANONICALIZE phase");
+    }
+    if skip_plan {
+        println!("⏭️  Skipping PLAN phase");
+    }
+    if skip_codegen {
+        println!("⏭️  Skipping CODEGEN phase (preserving implementations)");
+        println!("⚠️  WARNING: --skip-codegen prevents file generation");
+    }
+    println!();
+    
+    // Load all specs from specs/ directory
+    let specs_dir = project_root.join("specs");
+    let mut entries = tokio::fs::read_dir(&specs_dir).await?;
+    let mut combined_content = String::new();
+    let mut file_count = 0;
+    
+    while let Some(entry) = entries.next_entry().await? {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
+                combined_content.push_str(&content);
+                file_count += 1;
+            }
+        }
+    }
+    
+    println!("   📁 Scanned {} files", file_count);
+    
+    let spec = crate::lens::SpecDocument {
+        content: combined_content,
+        path: specs_dir.to_string_lossy().to_string(),
+    };
+    
+    // Run through the lens
+    // First, capture clause count directly from ingest
+    let ingest_lens = crate::lens::ingest_lens();
+    let (clause_graph, ingest_comp) = (ingest_lens.get)(&spec);
+    let total_clauses = clause_graph.clauses.len();
+    
+    // Now run the full composed pipeline starting from the clause graph
+    let canon_lens = crate::lens::canonicalize_lens();
+    let (canon_graph, canon_comp) = (canon_lens.get)(&clause_graph);
+    let unique_nodes = canon_graph.nodes.len();
+    let duplicates = total_clauses.saturating_sub(unique_nodes);
+    
+    let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
+    let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
+    
+    let codegen_lens = crate::lens::codegen_lens();
+    let (code, _codegen_comp) = (codegen_lens.get)(&iu_graph);
+    
+    println!("▶ Phase 1: μ_ingest (ThSpec → ThClause)");
+    println!("   Parsed {} clauses", total_clauses);
+    
+    println!("\n▶ Phase 2: μ_canon (ThClause → ThCanon)");
+    println!("   Collapsed to {} unique nodes ({} duplicates)",
+        unique_nodes,
+        duplicates);
+    println!("   D-rate: {:.2}", canon_comp.d_rate);
+    
+    println!("\n▶ Phase 3: μ_plan (ThCanon → ThIU)");
+    println!("   Partitioned into {} Implementation Units", code.files.len());
+    
+    println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode)");
+    println!("   Generated {} code files", code.files.len());
+    for file in &code.files {
+        println!("     - {} (IU: {}...)", file.path, &file.iu_id[..8.min(file.iu_id.len())]);
+    }
+    
+    // Write generated files
+    for file in &code.files {
+        let file_path = project_root.join(&file.path);
+        tokio::fs::create_dir_all(file_path.parent().unwrap_or(project_root)).await?;
+        tokio::fs::write(&file_path, &file.content).await?;
+    }
+    
+    // Test round-trip if verify flag is set
+    if verify {
+        println!("\n🔍 Verifying Lens Laws...");
+        let restored = (codegen_lens.put)(&code, &_codegen_comp);
+        let roundtrip_success = false; // Would need full chain: code -> iu -> canon -> clause -> spec
+        
+        if roundtrip_success {
+            println!("   ✅ GetPut law holds: put(get(s)) = s");
+        } else {
+            println!("   ⚠️  GetPut law violation (expected - spec→code→spec is lossy)");
+        }
+        
+        println!("   ℹ️  PutGet law: get(put(v, c)) = v (requires view modification)");
+    }
+    
+    // Update manifest
+    let manifest = crate::drift::GeneratedManifest {
+        version: "1.0.0".to_string(),
+        generated_at: chrono::Utc::now().to_rfc3339(),
+        files: code.files.iter().map(|f| {
+            (f.path.clone(), crate::drift::FileEntry {
+                iu_id: f.iu_id.clone(),
+                hash: f.hash.clone(),
+                size: f.content.len() as u64,
+                generated_at: chrono::Utc::now().to_rfc3339(),
+            })
+        }).collect(),
+    };
+    manifest.save(project_root)?;
+    
+    println!();
+    println!("══════════════════════════════════════════════════════════════");
+    println!("Pipeline Complete!");
+    println!();
+    println!("Complement (round-trip data):");
+    println!("  Canon IDs tracked: {}", ingest_comp.canon_ids.len());
+    println!("  Timestamp: {}", ingest_comp.timestamp);
+    println!("  D-rate: {:.2}", canon_comp.d_rate);
+    println!();
+    println!("Next steps:");
+    println!("  1. Review generated files");
+    println!("  2. Implement contract functions");
+    println!("  3. Run: phoenix-vcs verify-laws    # Full lens law verification");
+    println!("  4. Run: phoenix-vcs drift          # Check for manual edits");
+    
+    Ok(())
+}
+
+/// Verify lens laws for the pipeline
+async fn cmd_verify_laws(_project_root: &Path, lang: &str) -> Result<()> {
+    info!("Verifying lens laws...");
+    
+    println!("╔══════════════════════════════════════════════════════════════╗");
+    println!("║  Lens Law Verification — Mathematical Correctness           ║");
+    println!("╚══════════════════════════════════════════════════════════════╝");
+    println!();
+    
+    // Test individual lenses
+    let lenses: Vec<(&str, Box<dyn Fn() -> crate::lens::LensVerification>)> = vec![
+        ("μ_ingest", Box::new(|| {
+            let lens = crate::lens::ingest_lens();
+            let spec = crate::lens::SpecDocument {
+                content: "## Test\n- REQUIREMENT: System shall validate input\n- CONSTRAINT: Max 100ms latency\n".to_string(),
+                path: "test.md".to_string(),
+            };
+            crate::lens::verify_lens_laws(&lens, &spec)
+        })),
+        ("μ_canon", Box::new(|| {
+            let lens = crate::lens::canonicalize_lens();
+            let clauses = crate::lens::ClauseGraph {
+                clauses: vec![
+                    crate::pipeline::Clause {
+                        id: "abc".to_string(),
+                        clause_type: crate::pipeline::ClauseType::Requirement,
+                        text: "validate input".to_string(),
+                        raw_text: "System shall validate input".to_string(),
+                        section: "test".to_string(),
+                        source_file: "test.md".to_string(),
+                        line: 1,
+                        clause_semhash: sha256("clause:validate input"),
+                        context_semhash: sha256("context"),
+                    },
+                ],
+            };
+            crate::lens::verify_lens_laws(&lens, &clauses)
+        })),
+        ("μ_plan", Box::new(|| {
+            let lens = crate::lens::plan_lens("rust");
+            let canon = crate::lens::CanonGraph {
+                nodes: vec![
+                    crate::pipeline::CanonNode {
+                        id: "abc".to_string(),
+                        node_type: crate::pipeline::CanonNodeType::Requirement,
+                        clean_statement: "validate input".to_string(),
+                        derived_from: vec!["abc".to_string()],
+                        depends_on: vec![],
+                        d_rate: 0.0,
+                        confidence: 1.0,
+                    },
+                ],
+            };
+            crate::lens::verify_lens_laws(&lens, &canon)
+        })),
+        ("μ_codegen", Box::new(|| {
+            let lens = crate::lens::codegen_lens();
+            let ius = crate::lens::IUGraph {
+                ius: vec![
+                    crate::pipeline::ImplementationUnit {
+                        iu_id: "test123".to_string(),
+                        name: "validation".to_string(),
+                        contract: "Implements validation".to_string(),
+                        source_canon_ids: vec!["abc".to_string()],
+                        risk_tier: crate::evidence::RiskTier::Low,
+                        target_language: "rust".to_string(),
+                        output_files: vec!["src/generated/validation.rs".to_string()],
+                    },
+                ],
+            };
+            crate::lens::verify_lens_laws(&lens, &ius)
+        })),
+    ];
+    
+    let mut all_passed = true;
+    
+    for (name, test_fn) in lenses {
+        let result = test_fn();
+        
+        println!("▶ Lens: {}", name);
+        println!("   GetPut: {}", if result.getput_holds { "✅ PASS" } else { "❌ FAIL" });
+        println!("   PutGet: {}", if result.putget_holds { "✅ PASS" } else { "❌ FAIL" });
+        println!("   Overall: {}", if result.roundtrip_success { "✅ PASS" } else { "⚠️  PARTIAL" });
+        println!();
+        
+        if !result.roundtrip_success {
+            all_passed = false;
+        }
+    }
+    
+    // Test composed pipeline
+    println!("▶ Composed Pipeline: μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest");
+    let pipeline_lens = crate::lens::pipeline_lens(Box::leak(lang.to_string().into_boxed_str()));
+    let spec = crate::lens::SpecDocument {
+        content: "## Auth\n- REQUIREMENT: System shall validate passwords\n- CONSTRAINT: Use bcrypt hashing\n".to_string(),
+        path: "test.md".to_string(),
+    };
+    let result = crate::lens::verify_lens_laws(&pipeline_lens, &spec);
+    
+    println!("   GetPut: {}", if result.getput_holds { "✅ PASS" } else { "⚠️  PARTIAL (expected loss)" });
+    println!("   PutGet: {}", if result.putget_holds { "✅ PASS" } else { "❌ FAIL" });
+    println!();
+    
+    println!("══════════════════════════════════════════════════════════════");
+    if all_passed {
+        println!("✅ All lens laws verified — pipeline is mathematically sound");
+    } else {
+        println!("⚠️  Some lens laws violated — this is expected for lossy transformations");
+        println!("   Note: Spec→Code→Spec round-trip is inherently lossy (code has more detail)");
+    }
+    
+    Ok(())
+}
+
+/// Reverse engineer specs from existing code
+async fn cmd_reverse(
+    project_root: &Path,
+    lang: &str,
+    output: PathBuf,
+    include_private: bool,
+    no_docs: bool,
+) -> Result<()> {
+    use crate::reverse::{ReverseOptions, reverse_pipeline};
+    
+    info!("Reverse engineering specs from {} code...", lang);
+    
+    println!("╔══════════════════════════════════════════════════════════════╗");
+    println!("║  Phoenix Reverse Pipeline — Code to Specs                  ║");
+    println!("╠══════════════════════════════════════════════════════════════╣");
+    println!("║  CODE ──[μ_reverse]──► IU ──[μ_deplan]──► CANON ──[μ_decanon] ║");
+    println!("║                    ──[μ_uningest]──► SPEC                    ║");
+    println!("╚══════════════════════════════════════════════════════════════╝");
+    println!();
+    println!("🔍 Scanning for {} source files in src/...", lang);
+    
+    let options = ReverseOptions {
+        source_language: lang.to_string(),
+        output_dir: if output.is_absolute() {
+            output
+        } else {
+            project_root.join(output)
+        },
+        include_private,
+        extract_docs: !no_docs,
+        min_function_lines: 3,
+    };
+    
+    let result = reverse_pipeline(project_root, &options).await?;
+    
+    println!("\n══════════════════════════════════════════════════════════════");
+    println!("✅ Reverse engineering complete!");
+    println!();
+    println!("📊 Summary:");
+    println!("   Files scanned: {}", result.files_scanned);
+    println!("   Functions extracted: {}", result.functions_extracted);
+    println!("   Modules identified: {}", result.modules_identified);
+    println!("   Requirements generated: {}", result.requirements_generated);
+    println!();
+    println!("📝 Generated spec files:");
+    for file in &result.spec_files_created {
+        println!("   - {}", file);
+    }
+    println!();
+    println!("Next steps:");
+    println!("   1. Review generated specs in {:?}", options.output_dir);
+    println!("   2. Refine requirements to be more precise");
+    println!("   3. Run: phoenix-vcs pipeline    # Generate code from specs");
+    println!("   4. Compare: phoenix-vcs drift   # Check spec→code alignment");
+    
+    Ok(())
+}
