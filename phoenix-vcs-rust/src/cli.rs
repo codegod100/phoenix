@@ -794,7 +794,7 @@ async fn cmd_pipeline_multi(
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) == Some("md") {
+        if path.extension().and_then(|e| e.to_str()) == Some("ncl") {
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
                 combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
                 combined_content.push_str(&content);
@@ -848,7 +848,7 @@ async fn cmd_pipeline_single(
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) == Some("md") {
+        if path.extension().and_then(|e| e.to_str()) == Some("ncl") {
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
                 combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
                 combined_content.push_str(&content);
