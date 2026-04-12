@@ -766,7 +766,7 @@ async fn cmd_pipeline_multi(
     let specs_dir = project_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
-    let mut file_count = 0;
+    let _file_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
@@ -817,7 +817,7 @@ async fn cmd_pipeline_single(
     let specs_dir = specs_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
-    let mut file_count = 0;
+    let _file_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
@@ -879,6 +879,9 @@ async fn cmd_pipeline_single(
         // Still return empty code_files so the function completes
         return Ok(());
     }
+    
+    // Collect generated code files
+    let mut code_files = Vec::new();
     
     if llm_available {
         // Use LLM for intelligent code generation
@@ -1197,7 +1200,7 @@ async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::C
     
     // Determine what packages are needed from specs
     let needs_rust = all_text.contains("[rust]") || all_text.contains("[pyo3]");
-    let needs_python = all_text.contains("[python]");
+    let _needs_python = all_text.contains("[python]");
     let needs_tls = all_text.to_lowercase().contains("tls") || all_text.to_lowercase().contains("ssl");
     let needs_pyo3 = all_text.to_lowercase().contains("pyo3");
     
