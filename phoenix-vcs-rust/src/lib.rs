@@ -53,3 +53,4 @@ pub use evidence::{get_required_evidence, evaluate_policy, RiskTier, EvidenceKin
 pub use cascade::{build_dependency_graph, compute_cascade, compute_invalidation, CascadeEvent, IUNode, IUGraph};
 pub use shadow::{run_shadow_pipeline, compute_shadow_diff, classify_shadow_diff, ShadowResult, UpgradeClassification};
 pub use status::{get_vcs_status, VCSState, Severity};
+pub use llm::{LlmConfig, CodeGenRequest, ModuleApi};

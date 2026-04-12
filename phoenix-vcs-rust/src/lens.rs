@@ -326,6 +326,10 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                 });
             }
             
+            // Create integration IU that wires all modules together
+            let integration_iu = create_integration_iu(&ius, target_language);
+            ius.push(integration_iu);
+            
             let graph = IUGraph { ius };
             
             let comp = Complement {
@@ -367,6 +371,44 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
         name: "μ_plan",
         src_theory: "ThCanon",
         tgt_theory: "ThIU",
+    }
+}
+
+/// Create an Integration IU that wires all modules together into a working app
+fn create_integration_iu(domain_ius: &[IU], target_language: &str) -> IU {
+    let module_names: Vec<String> = domain_ius.iter()
+        .map(|iu| iu.name.to_lowercase().replace("-", "_"))
+        .collect();
+    
+    let ext = match target_language {
+        "rust" => "rs",
+        "typescript" => "ts",
+        "python" => "py",
+        _ => "rs",
+    };
+    
+    let contract = format!(
+        "Integration module wiring {} domain modules into a unified application: {}",
+        domain_ius.len(),
+        module_names.join(", ")
+    );
+    
+    let name = "app".to_string();
+    let canon_ids: Vec<String> = domain_ius.iter()
+        .flat_map(|iu| iu.source_canon_ids.clone())
+        .take(5)
+        .collect();
+    
+    let iu_id = crate::identity::iu_id(&name, &contract, &canon_ids);
+    
+    IU {
+        iu_id,
+        name,
+        contract,
+        source_canon_ids: canon_ids,
+        risk_tier: crate::evidence::RiskTier::High,
+        target_language: target_language.to_string(),
+        output_files: vec![format!("src/generated/app.{}", ext)],
     }
 }
 
@@ -660,6 +702,11 @@ fn extract_section(path: &str) -> String {
 }
 
 fn generate_code(iu: &IU) -> String {
+    // Special handling for integration app IU
+    if iu.name == "app" {
+        return generate_integration_skeleton(iu);
+    }
+    
     match iu.target_language.as_str() {
         "rust" => generate_rust(iu),
         "typescript" => generate_typescript(iu),
@@ -668,11 +715,140 @@ fn generate_code(iu: &IU) -> String {
     }
 }
 
+/// Generate skeleton integration code for the app IU
+fn generate_integration_skeleton(iu: &IU) -> String {
+    // Extract module names from contract: "Integration module wiring N domain modules: mod1, mod2, ..."
+    let module_names: Vec<String> = iu.contract
+        .split(": ")
+        .nth(1)
+        .map(|s| s.split(", ").map(|m| m.to_string()).collect())
+        .unwrap_or_default();
+    
+    match iu.target_language.as_str() {
+        "python" => generate_python_app_skeleton(iu, &module_names),
+        "rust" => generate_rust_app_skeleton(iu, &module_names),
+        "typescript" => generate_typescript_app_skeleton(iu, &module_names),
+        _ => generate_python_app_skeleton(iu, &module_names),
+    }
+}
+
+fn generate_python_app_skeleton(iu: &IU, module_names: &[String]) -> String {
+    let imports = module_names.iter()
+        .map(|name| format!("from .{} import *", name))
+        .collect::<Vec<_>>()
+        .join("\n");
+    
+    let init_calls = module_names.iter()
+        .map(|name| {
+            let class_name = name.split('_').map(|s| {
+                let mut chars = s.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            }).collect::<String>();
+            format!(
+                "        self.{}_manager = {}Manager()  # TODO: Initialize from {} module",
+                name, class_name, name
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    
+    format!(
+        r#"# phoenix: iu_id = "{}"
+"""
+Integrated Application Entry Point
+Wires together all domain modules into a unified application.
+"""
+
+{}
+
+
+class App:
+    """Main application class integrating all modules."""
+    
+    def __init__(self):
+        """Initialize all domain managers."""
+{}
+        self.running = False
+    
+    def start(self) -> None:
+        """Start the application."""
+        self.running = True
+        print("Application started")
+        self._main_loop()
+    
+    def stop(self) -> None:
+        """Stop the application."""
+        self.running = False
+        print("Application stopped")
+    
+    def _main_loop(self) -> None:
+        """Main application loop."""
+        while self.running:
+            # TODO: Implement main application logic
+            pass
+    
+    def health_check(self) -> dict:
+        """Check health of all modules."""
+        return {{
+            "status": "healthy",
+            "modules": {{}}
+        }}
+
+
+def main() -> int:
+    """Application entry point."""
+    app = App()
+    try:
+        app.start()
+        return 0
+    except KeyboardInterrupt:
+        app.stop()
+        return 0
+    except Exception as e:
+        print(f"Error: {{e}}")
+        return 1
+
+
+if __name__ == "__main__":
+    exit(main())
+"#,
+        iu.iu_id,
+        imports,
+        init_calls
+    )
+}
+
+fn generate_rust_app_skeleton(_iu: &IU, _module_names: &[String]) -> String {
+    // TODO: Generate Rust integration skeleton
+    r#"// phoenix: iu_id = integration
+// TODO: Generate Rust app integration
+fn main() {
+    println!("Integration app placeholder");
+}
+"#.to_string()
+}
+
+fn generate_typescript_app_skeleton(_iu: &IU, _module_names: &[String]) -> String {
+    // TODO: Generate TypeScript integration skeleton
+    r#"// phoenix: iu_id = integration
+// TODO: Generate TypeScript app integration
+console.log("Integration app placeholder");
+"#.to_string()
+}
+
 /// Generate code using LLM (async version for actual intelligent generation)
-pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig, all_ius: Option<&[IU]>) -> anyhow::Result<String> {
+pub async fn generate_code_with_llm(
+    iu: &IU, 
+    config: &crate::llm::LlmConfig, 
+    all_ius: Option<&[IU]>,
+    module_apis: Option<Vec<crate::llm::ModuleApi>>,
+) -> anyhow::Result<String> {
     // Special handling for integration app IU
     if iu.name == "app" {
-        return generate_app_integration_with_llm(iu, config, all_ius).await;
+        return generate_app_integration_with_llm(iu, config, all_ius, module_apis).await;
     }
     
     // Extract actual requirement lines from the contract
@@ -702,13 +878,19 @@ pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig, all
         module_name: iu.name.clone(),
         iu_id: iu.iu_id.clone(),
         context: None,
+        module_apis: None,  // Domain modules don't need APIs of other modules
     };
     
     crate::llm::generate_code_with_llm(&request, config).await
 }
 
 /// Generate integration app using LLM
-async fn generate_app_integration_with_llm(iu: &IU, config: &crate::llm::LlmConfig, all_ius: Option<&[IU]>) -> anyhow::Result<String> {
+async fn generate_app_integration_with_llm(
+    iu: &IU, 
+    config: &crate::llm::LlmConfig, 
+    all_ius: Option<&[IU]>,
+    module_apis: Option<Vec<crate::llm::ModuleApi>>,
+) -> anyhow::Result<String> {
     let module_names: Vec<String> = all_ius.map(|ius| {
         ius.iter()
             .filter(|i| i.name != "app")
@@ -716,10 +898,29 @@ async fn generate_app_integration_with_llm(iu: &IU, config: &crate::llm::LlmConf
             .collect()
     }).unwrap_or_default();
     
+    // Build available APIs context
+    let api_context = if let Some(apis) = &module_apis {
+        let mut ctx = "Available module APIs:\n".to_string();
+        for api in apis {
+            ctx.push_str(&format!("\nModule '{}':\n", api.name));
+            if !api.classes.is_empty() {
+                ctx.push_str(&format!("  Classes: {}\n", api.classes.join(", ")));
+            }
+            if !api.functions.is_empty() {
+                ctx.push_str(&format!("  Functions: {}\n", api.functions.join(", ")));
+            }
+            ctx.push_str(&format!("  Import with: from {} import {}\n", 
+                api.name, 
+                api.exports.join(", ")));
+        }
+        ctx
+    } else {
+        format!("Modules to integrate: {}", module_names.join(", "))
+    };
+    
     let context = format!(
-        "This is the MAIN APPLICATION ENTRY POINT.\n\nIt must integrate these {} modules:\n{}\n\nGenerate a main App class that:\n1. Imports all the above modules\n2. Initializes their managers in __init__\n3. Has start() and stop() methods\n4. Has a main_loop() method\n5. Has if __name__ == '__main__': entry point\n6. Returns int from main() for exit codes",
-        module_names.len(),
-        module_names.join(", ")
+        "This is the MAIN APPLICATION ENTRY POINT.\n\n{}\n\n\nGenerate a main App class that:\n1. Imports from the modules above using EXACTLY the classes/functions listed\n2. Initializes their classes in __init__\n3. Has start() and stop() methods\n4. Has a main_loop() method\n5. Has if __name__ == '__main__': entry point\n6. Returns int from main() for exit codes\n\nIMPORTANT: Only use imports that are explicitly listed above. Do NOT invent new classes.",
+        api_context
     );
     
     let request = crate::llm::CodeGenRequest {
@@ -731,6 +932,7 @@ async fn generate_app_integration_with_llm(iu: &IU, config: &crate::llm::LlmConf
         module_name: "app".to_string(),
         iu_id: iu.iu_id.clone(),
         context: Some(context),
+        module_apis,
     };
     
     crate::llm::generate_code_with_llm(&request, config).await

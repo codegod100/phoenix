@@ -37,6 +37,17 @@ pub struct CodeGenRequest {
     pub module_name: String,
     pub iu_id: String,
     pub context: Option<String>,
+    /// Available module APIs for integration
+    pub module_apis: Option<Vec<ModuleApi>>,
+}
+
+/// Public API of a generated module
+#[derive(Debug, Clone, Serialize)]
+pub struct ModuleApi {
+    pub name: String,
+    pub classes: Vec<String>,
+    pub functions: Vec<String>,
+    pub exports: Vec<String>,
 }
 
 /// Fireworks API request
@@ -163,6 +174,26 @@ fn build_generation_prompt(request: &CodeGenRequest) -> String {
             .join("\n")
     };
     
+    let api_section = if let Some(apis) = &request.module_apis {
+        let mut section = "\n\nAvailable Module APIs:\n".to_string();
+        for api in apis {
+            section.push_str(&format!("\nModule '{}':\n", api.name));
+            if !api.classes.is_empty() {
+                section.push_str(&format!("  Classes: {}\n", api.classes.join(", ")));
+            }
+            if !api.functions.is_empty() {
+                section.push_str(&format!("  Functions: {}\n", api.functions.join(", ")));
+            }
+            section.push_str(&format!("  Import: from {} import {}\n", 
+                api.name, 
+                api.exports.join(", ")));
+        }
+        section.push_str("\nIMPORTANT: Only use imports that are listed above.\n");
+        section
+    } else {
+        String::new()
+    };
+    
     format!(r#"You are a CODE GENERATOR ONLY. Your entire response must be valid {} code.
 
 CRITICAL RULES:
@@ -179,7 +210,7 @@ Module: {}
 IU ID: {}
 
 Requirements:
-{}
+{}{}
 
 OUTPUT ONLY CODE. NOTHING ELSE."#,
         request.language,
@@ -187,6 +218,7 @@ OUTPUT ONLY CODE. NOTHING ELSE."#,
         request.module_name,
         request.iu_id,
         req_list,
+        api_section,
     )
 }
 

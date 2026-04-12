@@ -152,7 +152,7 @@ pub enum Commands {
         bare: bool,
     },
     
-    /// Run the spec-to-code generation pipeline
+    /// Run the spec-to-code generation pipeline (always includes codegen)
     Pipeline {
         /// Target language for generated code
         #[arg(short, long, default_value = "rust")]
@@ -170,17 +170,9 @@ pub enum Commands {
         #[arg(long)]
         skip_plan: bool,
         
-        /// Skip codegen phase (preserves implementations)
-        #[arg(long)]
-        skip_codegen: bool,
-        
         /// Verify lens laws after each phase
         #[arg(long)]
         verify: bool,
-        
-        /// Use LLM (Fireworks API) for intelligent code generation
-        #[arg(long)]
-        llm: bool,
     },
     
     /// Verify lens laws for the pipeline
@@ -279,8 +271,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify, llm } => {
-            cmd_pipeline(&cli.project_root, &lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify, llm).await
+        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline(&cli.project_root, &lang, skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -647,6 +639,65 @@ fn extract_iu_id_from_source(source: &str) -> Option<String> {
     None
 }
 
+/// Extract public API (classes, functions) from generated Python code
+fn extract_module_api(module_name: &str, code: &str) -> crate::llm::ModuleApi {
+    use regex::Regex;
+    
+    let mut classes = Vec::new();
+    let mut functions = Vec::new();
+    let mut exports = Vec::new();
+    
+    // Match class definitions
+    let class_re = Regex::new(r"^class (\w+)").unwrap();
+    for cap in class_re.captures_iter(code) {
+        if let Some(m) = cap.get(1) {
+            classes.push(m.as_str().to_string());
+            exports.push(m.as_str().to_string());
+        }
+    }
+    
+    // Match function definitions (top-level only, not methods)
+    let func_re = Regex::new(r"^def (\w+)").unwrap();
+    for cap in func_re.captures_iter(code) {
+        if let Some(m) = cap.get(1) {
+            let name = m.as_str();
+            // Skip private functions
+            if !name.starts_with('_') {
+                functions.push(name.to_string());
+                exports.push(name.to_string());
+            }
+        }
+    }
+    
+    // Match __all__ exports if present
+    let all_re = Regex::new(r"__all__\s*=\s*\[([^\]]+)\]").unwrap();
+    if let Some(cap) = all_re.captures(code) {
+        if let Some(m) = cap.get(1) {
+            let all_exports: Vec<String> = m.as_str()
+                .split(',')
+                .filter_map(|s| {
+                    let trimmed = s.trim().trim_matches('"').trim_matches('\'');
+                    if !trimmed.is_empty() {
+                        Some(trimmed.to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if !all_exports.is_empty() {
+                exports = all_exports;
+            }
+        }
+    }
+    
+    crate::llm::ModuleApi {
+        name: module_name.to_string(),
+        classes,
+        functions,
+        exports,
+    }
+}
+
 /// Main entry point for the binary
 pub async fn main() -> Result<()> {
     run().await
@@ -658,11 +709,14 @@ async fn cmd_pipeline(
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
-    skip_codegen: bool,
     verify: bool,
-    llm: bool,
 ) -> Result<()> {
     info!("Running Phoenix pipeline...");
+    
+    // Auto-detect LLM availability
+    let llm_config = crate::llm::LlmConfig::default();
+    let llm_available = crate::llm::is_llm_available(&llm_config);
+    let full_url = format!("{}/chat/completions", llm_config.api_base);
     
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║  Phoenix Pipeline — Spec-Driven Code Generation              ║");
@@ -678,10 +732,11 @@ async fn cmd_pipeline(
     println!("   Target theory: ThCode");
     println!();
     
-    if llm {
-        let llm_config = crate::llm::LlmConfig::default();
-        let full_url = format!("{}/chat/completions", llm_config.api_base);
+    if llm_available {
         println!("🤖 LLM Mode: Using {} ({}) for intelligent code generation", full_url, llm_config.model);
+        println!();
+    } else {
+        println!("📝 Skeleton Mode: Set FIREWORKS_API_KEY env var for LLM generation");
         println!();
     }
     
@@ -693,10 +748,6 @@ async fn cmd_pipeline(
     }
     if skip_plan {
         println!("⏭️  Skipping PLAN phase");
-    }
-    if skip_codegen {
-        println!("⏭️  Skipping CODEGEN phase (preserving implementations)");
-        println!("⚠️  WARNING: --skip-codegen prevents file generation");
     }
     println!();
     
@@ -739,31 +790,46 @@ async fn cmd_pipeline(
     let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
     let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
     
+    // Print phase summaries
+    println!("▶ Phase 1: μ_ingest (ThSpec → ThClause)");
+    println!("   Parsed {} clauses", total_clauses);
+    
+    println!("\n▶ Phase 2: μ_canon (ThClause → ThCanon)");
+    println!("   Collapsed to {} unique nodes ({} duplicates)",
+        unique_nodes,
+        duplicates);
+    println!("   D-rate: {:.2}", canon_comp.d_rate);
+    
+    println!("\n▶ Phase 3: μ_plan (ThCanon → ThIU)");
+    println!("   Partitioned into {} Implementation Units", iu_graph.ius.len());
+    
     // Generate code (either via LLM or standard codegen)
     let mut code_files = Vec::new();
     
-    if llm {
+    if llm_available {
         // Use LLM for intelligent code generation
-        let llm_config = crate::llm::LlmConfig::default();
-        
-        if !crate::llm::is_llm_available(&llm_config) {
-            anyhow::bail!("LLM generation requested but FIREWORKS_API_KEY not set. \
-                Please set the FIREWORKS_API_KEY environment variable.");
-        }
-        
         println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — LLM Mode");
-        let full_url = format!("{}/chat/completions", llm_config.api_base);
-        println!("   Generating code with {} ({})...", full_url, llm_config.model);
+        println!("   Generating code with {}...", full_url);
         
-        for (i, iu) in iu_graph.ius.iter().enumerate() {
-            print!("   [{}/{}] Generating {}...", i + 1, iu_graph.ius.len(), iu.name);
+        // First pass: generate domain modules (excluding app)
+        let mut domain_apis: Vec<crate::llm::ModuleApi> = Vec::new();
+        let app_iu_opt = iu_graph.ius.iter().find(|iu| iu.name == "app");
+        let domain_ius: Vec<_> = iu_graph.ius.iter().filter(|iu| iu.name != "app").collect();
+        
+        // Generate domain modules
+        for (i, iu) in domain_ius.iter().enumerate() {
+            print!("   [{}/{}] Generating {}...", i + 1, domain_ius.len(), iu.name);
             
-            match crate::lens::generate_code_with_llm(iu, &llm_config, Some(&iu_graph.ius)).await {
+            match crate::lens::generate_code_with_llm(iu, &llm_config, Some(&iu_graph.ius), None).await {
                 Ok(generated_code) => {
                     let hash = crate::identity::file_hash(&generated_code);
                     let path = iu.output_files.first()
                         .cloned()
                         .unwrap_or_else(|| format!("src/generated/{}.rs", iu.name));
+                    
+                    // Extract public API from generated code
+                    let api = extract_module_api(&iu.name, &generated_code);
+                    domain_apis.push(api);
                     
                     code_files.push(crate::lens::CodeFile {
                         path: path.clone(),
@@ -780,7 +846,42 @@ async fn cmd_pipeline(
                     // Fall back to placeholder
                     let codegen_lens = crate::lens::codegen_lens();
                     let (code, _) = (codegen_lens.get)(&iu_graph);
-                    if let Some(file) = code.files.get(i) {
+                    if let Some(file) = code.files.iter().find(|f| f.path.contains(&iu.name)) {
+                        // Extract API even from fallback
+                        let api = extract_module_api(&iu.name, &file.content);
+                        domain_apis.push(api);
+                        code_files.push(file.clone());
+                    }
+                }
+            }
+        }
+        
+        // Second pass: generate app with knowledge of domain module APIs
+        if let Some(app_iu) = app_iu_opt {
+            print!("   [{}/{}] Generating {}...", domain_ius.len() + 1, iu_graph.ius.len(), app_iu.name);
+            
+            match crate::lens::generate_code_with_llm(app_iu, &llm_config, Some(&iu_graph.ius), Some(domain_apis)).await {
+                Ok(generated_code) => {
+                    let hash = crate::identity::file_hash(&generated_code);
+                    let path = app_iu.output_files.first()
+                        .cloned()
+                        .unwrap_or_else(|| format!("src/generated/app.rs",));
+                    
+                    code_files.push(crate::lens::CodeFile {
+                        path: path.clone(),
+                        iu_id: app_iu.iu_id.clone(),
+                        content: generated_code,
+                        hash: hash.clone(),
+                        traces_to: app_iu.source_canon_ids.clone(),
+                    });
+                    
+                    println!(" ✓ (IU: {}...)", &app_iu.iu_id[..16]);
+                }
+                Err(e) => {
+                    println!(" ✗ Error: {}", e);
+                    let codegen_lens = crate::lens::codegen_lens();
+                    let (code, _) = (codegen_lens.get)(&iu_graph);
+                    if let Some(file) = code.files.iter().find(|f| f.path.contains("app")) {
                         code_files.push(file.clone());
                     }
                 }
@@ -788,27 +889,13 @@ async fn cmd_pipeline(
         }
     } else {
         // Standard codegen (placeholders)
+        println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — Skeleton Mode");
         let codegen_lens = crate::lens::codegen_lens();
         let (code, _codegen_comp) = (codegen_lens.get)(&iu_graph);
         code_files = code.files;
     }
     
-    println!("▶ Phase 1: μ_ingest (ThSpec → ThClause)");
-    println!("   Parsed {} clauses", total_clauses);
-    
-    println!("\n▶ Phase 2: μ_canon (ThClause → ThCanon)");
-    println!("   Collapsed to {} unique nodes ({} duplicates)",
-        unique_nodes,
-        duplicates);
-    println!("   D-rate: {:.2}", canon_comp.d_rate);
-    
-    println!("\n▶ Phase 3: μ_plan (ThCanon → ThIU)");
-    println!("   Partitioned into {} Implementation Units", code_files.len());
-    
-    if !llm {
-        println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode)");
-        println!("   Generated {} code files", code_files.len());
-    }
+    println!("   Generated {} code files", code_files.len());
     
     for file in &code_files {
         println!("     - {} (IU: {}...)", file.path, &file.iu_id[..8.min(file.iu_id.len())]);
