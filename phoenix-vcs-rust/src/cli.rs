@@ -1416,6 +1416,7 @@ EOF
         inputs_str,
         project_name, project_name,
         project_name,
+        project_name,
         project_name, project_name,
         project_name
     )
