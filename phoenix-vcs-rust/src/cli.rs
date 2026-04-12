@@ -790,6 +790,9 @@ async fn cmd_pipeline_multi(
         }
     }
     
+    // Generate project-wide flake.nix based on all specs
+    generate_project_flake(project_root, &combined_content).await?;
+    
     println!("✓ Done: {}", languages.join(", "));
     
     Ok(())
@@ -862,11 +865,6 @@ async fn cmd_pipeline_single(
     // Print phase summaries - concise format
     println!("   {} clauses → {} canons ({} dups) → {} IUs", 
         total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
-    
-    // Generate flake.nix for Rust projects (before stub check so it always runs)
-    if lang == "rust" {
-        generate_flake_nix(output_dir, &canon_graph.nodes).await?;
-    }
     
     if stub {
         // STUB MODE: Print IUs and their output files, but don't invoke codegen
@@ -1184,33 +1182,25 @@ async fn cmd_reverse(
     Ok(())
 }
 
-/// Generate flake.nix based on requirements detected from specs
-async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
-    // Debug: show sample of what we're checking
-    println!("   🔍 Sample canon statements:");
-    for (i, node) in canon_nodes.iter().take(3).enumerate() {
-        println!("      [{}]: {}...", i, &node.clean_statement[..50.min(node.clean_statement.len())]);
+/// Generate project-wide flake.nix based on all specs
+async fn generate_project_flake(project_root: &Path, all_specs_content: &str) -> Result<()> {
+    // Determine what packages are needed from all specs
+    let needs_rust = all_specs_content.contains("[rust]") || all_specs_content.contains("[pyo3]");
+    let needs_python = all_specs_content.contains("[python]");
+    let needs_tls = all_specs_content.to_lowercase().contains("tls") || all_specs_content.to_lowercase().contains("ssl");
+    let needs_pyo3 = all_specs_content.to_lowercase().contains("pyo3");
+    
+    // Build packages list dynamically based on detected needs
+    let mut packages = vec![];
+    
+    if needs_rust {
+        packages.extend(vec!["cargo", "rustc", "rustfmt", "clippy"]);
     }
-    
-    // Collect all text to analyze requirements
-    let all_text: String = canon_nodes.iter()
-        .map(|n| n.clean_statement.clone())
-        .collect::<Vec<_>>()
-        .join(" ");
-    
-    // Determine what packages are needed from specs
-    let needs_rust = all_text.contains("[rust]") || all_text.contains("[pyo3]");
-    let _needs_python = all_text.contains("[python]");
-    let needs_tls = all_text.to_lowercase().contains("tls") || all_text.to_lowercase().contains("ssl");
-    let needs_pyo3 = all_text.to_lowercase().contains("pyo3");
-    
-    println!("   🔍 Detected: rust={}, pyo3={}, tls={}", needs_rust, needs_pyo3, needs_tls);
-    
-    // ALWAYS include rust toolchain for rust target - this is the fix
-    let mut packages = vec!["cargo", "rustc", "rustfmt", "clippy"];
     
     if needs_pyo3 {
         packages.extend(vec!["maturin", "python"]);
+    } else if needs_python {
+        packages.push("python");
     }
     
     if needs_tls {
@@ -1273,8 +1263,8 @@ async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::C
         env = env_str
     );
     
-    // Write flake.nix
-    let flake_path = output_dir.join("flake.nix");
+    // Write flake.nix to project root
+    let flake_path = project_root.join("flake.nix");
     tokio::fs::write(&flake_path, flake).await?;
     
     println!("   📦 Generated flake.nix from specs:");
