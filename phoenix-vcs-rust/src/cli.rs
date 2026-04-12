@@ -766,7 +766,7 @@ async fn cmd_pipeline_multi(
     let specs_dir = project_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
-    let _file_count = 0;
+    let mut _file_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
@@ -817,7 +817,7 @@ async fn cmd_pipeline_single(
     let specs_dir = specs_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
-    let _file_count = 0;
+    let mut _file_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
