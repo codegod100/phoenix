@@ -334,14 +334,33 @@ pub struct CanonicalOutput {
     pub total_duplicates: u32,
 }
 
-/// Canonical requirement node
+/// Canonical requirement node (pipeline-specific version)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CanonNode {
+    pub id: String,
+    pub node_type: CanonNodeType,
+    pub clean_statement: String,
+    pub derived_from: Vec<String>,
+    pub depends_on: Vec<String>,
+    pub d_rate: f64,
+    pub confidence: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CanonNodeType {
+    Requirement,
+    Constraint,
+    Definition,
+    Assumption,
+    Scenario,
+}
+
 /// μ_plan: Partition canonical nodes into Implementation Units
 ///
 /// Creates language-specific IUs based on the architecture:
 /// - Python: Only TUI code (interface, app) - imports from freeq_pyo3
 /// - Rust/PyO3: Only PyO3 wrappers - wraps freeq-sdk
-pub async fn plan_ius(canon_output: &CanonOutput, target_language: &str) -> Result<PlanOutput> {
+pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> Result<PlanOutput> {
     use petgraph::graph::{DiGraph, NodeIndex};
     use petgraph::algo::toposort;
     
