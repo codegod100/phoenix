@@ -43,6 +43,7 @@ pub mod cli;
 pub mod pipeline;
 pub mod lens;
 pub mod reverse;
+pub mod llm;
 
 // Re-export core types for convenience
 pub use identity::{sha256, canon_id, iu_id, file_hash, short_hash, normalize_text, DRateTracker, BootstrapStateMachine};

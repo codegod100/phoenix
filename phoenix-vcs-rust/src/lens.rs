@@ -668,6 +668,25 @@ fn generate_code(iu: &IU) -> String {
     }
 }
 
+/// Generate code using LLM (async version for actual intelligent generation)
+pub async fn generate_code_with_llm(iu: &IU, config: &crate::llm::LlmConfig) -> anyhow::Result<String> {
+    let requirements: Vec<String> = iu.contract
+        .split("; ")
+        .map(|s| s.to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
+    let request = crate::llm::CodeGenRequest {
+        requirements,
+        language: iu.target_language.clone(),
+        module_name: iu.name.clone(),
+        iu_id: iu.iu_id.clone(),
+        context: None,
+    };
+    
+    crate::llm::generate_code_with_llm(&request, config).await
+}
+
 fn generate_rust(iu: &IU) -> String {
     format!(
         r#"// phoenix: iu_id = "{}"

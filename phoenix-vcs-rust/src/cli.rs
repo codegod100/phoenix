@@ -177,6 +177,10 @@ pub enum Commands {
         /// Verify lens laws after each phase
         #[arg(long)]
         verify: bool,
+        
+        /// Use LLM (Fireworks API) for intelligent code generation
+        #[arg(long)]
+        llm: bool,
     },
     
     /// Verify lens laws for the pipeline
@@ -275,8 +279,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify } => {
-            cmd_pipeline(&cli.project_root, &lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify).await
+        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify, llm } => {
+            cmd_pipeline(&cli.project_root, &lang, skip_ingest, skip_canonicalize, skip_plan, skip_codegen, verify, llm).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -656,6 +660,7 @@ async fn cmd_pipeline(
     skip_plan: bool,
     skip_codegen: bool,
     verify: bool,
+    llm: bool,
 ) -> Result<()> {
     info!("Running Phoenix pipeline...");
     
@@ -672,6 +677,11 @@ async fn cmd_pipeline(
     println!("   Source theory: ThSpec");
     println!("   Target theory: ThCode");
     println!();
+    
+    if llm {
+        println!("🤖 LLM Mode: Using Fireworks API (kimi-k2p5-turbo) for intelligent code generation");
+        println!();
+    }
     
     if skip_ingest {
         println!("⏭️  Skipping INGEST phase");
@@ -727,8 +737,58 @@ async fn cmd_pipeline(
     let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
     let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
     
-    let codegen_lens = crate::lens::codegen_lens();
-    let (code, _codegen_comp) = (codegen_lens.get)(&iu_graph);
+    // Generate code (either via LLM or standard codegen)
+    let mut code_files = Vec::new();
+    
+    if llm {
+        // Use LLM for intelligent code generation
+        let llm_config = crate::llm::LlmConfig::default();
+        
+        if !crate::llm::is_llm_available(&llm_config) {
+            anyhow::bail!("LLM generation requested but FIREWORKS_API_KEY not set. \
+                Please set the FIREWORKS_API_KEY environment variable.");
+        }
+        
+        println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — LLM Mode");
+        println!("   Generating code with Fireworks API (kimi-k2p5-turbo)...");
+        
+        for (i, iu) in iu_graph.ius.iter().enumerate() {
+            print!("   [{}/{}] Generating {}...", i + 1, iu_graph.ius.len(), iu.name);
+            
+            match crate::lens::generate_code_with_llm(iu, &llm_config).await {
+                Ok(generated_code) => {
+                    let hash = crate::identity::file_hash(&generated_code);
+                    let path = iu.output_files.first()
+                        .cloned()
+                        .unwrap_or_else(|| format!("src/generated/{}.rs", iu.name));
+                    
+                    code_files.push(crate::lens::CodeFile {
+                        path: path.clone(),
+                        iu_id: iu.iu_id.clone(),
+                        content: generated_code,
+                        hash: hash.clone(),
+                        traces_to: iu.source_canon_ids.clone(),
+                    });
+                    
+                    println!(" ✓ (IU: {}...)", &iu.iu_id[..16]);
+                }
+                Err(e) => {
+                    println!(" ✗ Error: {}", e);
+                    // Fall back to placeholder
+                    let codegen_lens = crate::lens::codegen_lens();
+                    let (code, _) = (codegen_lens.get)(&iu_graph);
+                    if let Some(file) = code.files.get(i) {
+                        code_files.push(file.clone());
+                    }
+                }
+            }
+        }
+    } else {
+        // Standard codegen (placeholders)
+        let codegen_lens = crate::lens::codegen_lens();
+        let (code, _codegen_comp) = (codegen_lens.get)(&iu_graph);
+        code_files = code.files;
+    }
     
     println!("▶ Phase 1: μ_ingest (ThSpec → ThClause)");
     println!("   Parsed {} clauses", total_clauses);
@@ -740,16 +800,19 @@ async fn cmd_pipeline(
     println!("   D-rate: {:.2}", canon_comp.d_rate);
     
     println!("\n▶ Phase 3: μ_plan (ThCanon → ThIU)");
-    println!("   Partitioned into {} Implementation Units", code.files.len());
+    println!("   Partitioned into {} Implementation Units", code_files.len());
     
-    println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode)");
-    println!("   Generated {} code files", code.files.len());
-    for file in &code.files {
+    if !llm {
+        println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode)");
+        println!("   Generated {} code files", code_files.len());
+    }
+    
+    for file in &code_files {
         println!("     - {} (IU: {}...)", file.path, &file.iu_id[..8.min(file.iu_id.len())]);
     }
     
     // Write generated files
-    for file in &code.files {
+    for file in &code_files {
         let file_path = project_root.join(&file.path);
         tokio::fs::create_dir_all(file_path.parent().unwrap_or(project_root)).await?;
         tokio::fs::write(&file_path, &file.content).await?;
@@ -758,23 +821,15 @@ async fn cmd_pipeline(
     // Test round-trip if verify flag is set
     if verify {
         println!("\n🔍 Verifying Lens Laws...");
-        let restored = (codegen_lens.put)(&code, &_codegen_comp);
-        let roundtrip_success = false; // Would need full chain: code -> iu -> canon -> clause -> spec
-        
-        if roundtrip_success {
-            println!("   ✅ GetPut law holds: put(get(s)) = s");
-        } else {
-            println!("   ⚠️  GetPut law violation (expected - spec→code→spec is lossy)");
-        }
-        
-        println!("   ℹ️  PutGet law: get(put(v, c)) = v (requires view modification)");
+        // Note: Lens verification requires original lens state, simplified here
+        println!("   ℹ️  Lens law verification available in verify-laws command");
     }
     
     // Update manifest
     let manifest = crate::drift::GeneratedManifest {
         version: "1.0.0".to_string(),
         generated_at: chrono::Utc::now().to_rfc3339(),
-        files: code.files.iter().map(|f| {
+        files: code_files.iter().map(|f| {
             (f.path.clone(), crate::drift::FileEntry {
                 iu_id: f.iu_id.clone(),
                 hash: f.hash.clone(),
