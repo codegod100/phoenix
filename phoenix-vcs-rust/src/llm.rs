@@ -211,7 +211,10 @@ CRITICAL RULES:
 5. NO emojis
 6. NO analysis text
 7. START IMMEDIATELY with: {} phoenix: iu_id = "{}"
-8. Then docstring, then imports, then implementation
+8. Generate EXACTLY what the spec shows - NO additional modules or files
+9. THIN WRAPPER only - do NOT add config, error, models, services modules
+10. SINGLE file - all code must be self-contained
+11. NO `mod xxx;` declarations that reference external files
 
 Module: {}
 IU ID: {}
