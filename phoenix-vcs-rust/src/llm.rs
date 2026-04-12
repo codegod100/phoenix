@@ -21,7 +21,7 @@ impl Default for LlmConfig {
     fn default() -> Self {
         Self {
             api_base: "https://api.fireworks.ai/inference/v1".to_string(),
-            model: "accounts/fireworks/routers/kimi-k2p5-turbo".to_string(),
+            model: "accounts/fireworks/models/deepseek-v3p2".to_string(),
             api_key: std::env::var("FIREWORKS_API_KEY").ok(),
             max_tokens: 4096,
             temperature: 0.0, // Maximum determinism, reduce reasoning output
