@@ -1064,6 +1064,11 @@ async fn cmd_pipeline_single(
     };
     manifest.save(output_dir)?;
     
+    // Generate project configuration files based on detected requirements
+    if target_language == "rust" {
+        generate_flake_nix(output_dir, &canon_output.nodes).await?;
+    }
+    
     println!();
     println!("══════════════════════════════════════════════════════════════");
     println!("Pipeline Complete!");
@@ -1253,6 +1258,115 @@ async fn cmd_reverse(
     println!("   2. Refine requirements to be more precise");
     println!("   3. Run: phoenix-vcs pipeline    # Generate code from specs");
     println!("   4. Compare: phoenix-vcs drift   # Check spec→code alignment");
+    
+    Ok(())
+}
+
+/// Generate flake.nix based on requirements detected from specs
+/// 
+/// Derives build dependencies from spec content rather than hardcoding app details.
+async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
+    // Collect all text to analyze requirements
+    let all_text: String = canon_nodes.iter()
+        .map(|n| n.clean_statement.clone())
+        .collect::<Vec<_>>()
+        .join(" ");
+    
+    // Determine what packages are needed from specs
+    let needs_rust = all_text.contains("[rust]") || all_text.contains("[pyo3]");
+    let needs_python = all_text.contains("[python]");
+    let needs_tls = all_text.to_lowercase().contains("tls") || all_text.to_lowercase().contains("ssl");
+    let needs_async = all_text.contains("async") || all_text.contains("tokio");
+    let needs_pyo3 = all_text.to_lowercase().contains("pyo3");
+    
+    // Build packages list dynamically
+    let mut packages = vec![];
+    
+    if needs_rust {
+        packages.extend(vec![
+            "cargo",
+            "rustc", 
+            "rustfmt",
+            "clippy",
+        ]);
+    }
+    
+    if needs_pyo3 {
+        packages.extend(vec!["maturin", "python"]);
+    }
+    
+    if needs_python && !needs_pyo3 {
+        packages.push("python");
+    }
+    
+    if needs_tls {
+        packages.extend(vec!["openssl", "openssl.dev", "pkg-config"]);
+    }
+    
+    // Build the packages section
+    let packages_str = packages.iter()
+        .map(|p| format!("            {}\n", p))
+        .collect::<String>();
+    
+    // Build env vars
+    let mut env_vars = vec![];
+    if needs_pyo3 {
+        env_vars.push(("PYO3_PYTHON", r#""${python}/bin/python""#));
+    }
+    if needs_tls {
+        env_vars.extend(vec![
+            ("OPENSSL_DIR", r#""${pkgs.openssl.dev}""#),
+            ("OPENSSL_LIB_DIR", r#""${pkgs.openssl.out}/lib""#),
+            ("PKG_CONFIG_PATH", r#""${pkgs.openssl.dev}/lib/pkgconfig""#),
+        ]);
+    }
+    
+    let env_str = env_vars.iter()
+        .map(|(k, v)| format!("            {} = {};\n", k, v))
+        .collect::<String>();
+    
+    // Generate flake - generic structure, no app-specific hardcoding
+    let flake = format!(r#"{{
+  description = "Generated development environment from specs";
+
+  inputs = {{
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  }};
+
+  outputs = {{ self, nixpkgs, flake-utils }}:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${{system}};
+        python = pkgs.python312;
+      in
+      {{
+        devShells.default = pkgs.mkShell {{
+          buildInputs = with pkgs; [
+{packages}          ];
+
+          env = {{
+{env}          }};
+
+          shellHook = ''
+            echo "Development shell from specs"
+          '';
+        }};
+      }});
+}}
+"#,
+        packages = packages_str,
+        env = env_str
+    );
+    
+    // Write flake.nix
+    let flake_path = output_dir.join("flake.nix");
+    tokio::fs::write(&flake_path, flake).await?;
+    
+    println!("   📦 Generated flake.nix from specs:");
+    for pkg in packages {
+        println!("      + {}", pkg);
+    }
     
     Ok(())
 }
