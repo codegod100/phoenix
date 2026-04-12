@@ -47,10 +47,13 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
     let mut clauses = Vec::new();
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut file_count = 0;
+    let mut ncl_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) == Some("md") {
+        let ext = path.extension().and_then(|e| e.to_str());
+        
+        if ext == Some("md") {
             file_count += 1;
             let content = tokio::fs::read_to_string(&path).await?;
             let file_clauses = parse_markdown_clauses(&content, &path, target_lang);
@@ -75,10 +78,28 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
             };
             println!("   📄 {}: {}", path.file_name().unwrap().to_string_lossy(), marker_info);
             clauses.extend(file_clauses);
+        } else if ext == Some("ncl") {
+            ncl_count += 1;
+            let content = tokio::fs::read_to_string(&path).await?;
+            match parse_ncl_spec(&content, &path, target_lang) {
+                Ok(ncl_clauses) => {
+                    let gen_count = ncl_clauses.len();
+                    println!("   🗂️  {}: {} generation directives", 
+                        path.file_name().unwrap().to_string_lossy(), 
+                        gen_count);
+                    clauses.extend(ncl_clauses);
+                }
+                Err(e) => {
+                    println!("   ⚠️  {}: parse error - {}", 
+                        path.file_name().unwrap().to_string_lossy(), 
+                        e);
+                }
+            }
         }
     }
     
-    println!("   📁 Scanned {} files, found {} matching clauses", file_count, clauses.len());
+    println!("   📁 Scanned {} .md + {} .ncl files, found {} matching clauses", 
+        file_count, ncl_count, clauses.len());
     
     Ok(IngestOutput {
         clauses,
@@ -201,6 +222,193 @@ fn parse_markdown_clauses(content: &str, source_path: &Path, target_lang: &str) 
     }
     
     clauses
+}
+
+/// Parse NCL (Nickel) spec file into clauses
+/// 
+/// Extracts generation directives from panproto-style .ncl files
+/// Each morphism with a generation block becomes a clause
+fn parse_ncl_spec(content: &str, source_path: &Path, target_lang: &str) -> Result<Vec<Clause>> {
+    let mut clauses = Vec::new();
+    let lines: Vec<&str> = content.lines().collect();
+    
+    // Track if we're in a morphisms section and capturing generation info
+    let mut in_morphisms = false;
+    let mut brace_depth = 0;
+    let mut current_morphism: Option<(String, String, String, Option<String>)> = None; // (name, domain, codomain, output_path)
+    let mut capturing_generation = false;
+    let mut generation_content = String::new();
+    
+    for (i, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        
+        // Track brace depth for section detection
+        brace_depth += trimmed.chars().filter(|&c| c == '{').count() as i32;
+        brace_depth -= trimmed.chars().filter(|&c| c == '}').count() as i32;
+        
+        // Detect morphisms section
+        if trimmed.contains("morphisms") && trimmed.contains("=") && trimmed.contains("[") {
+            in_morphisms = true;
+            continue;
+        }
+        
+        // Detect individual morphism entry
+        if in_morphisms && trimmed.starts_with("{") && trimmed.contains("morphism") {
+            // Extract morphism name
+            if let Some(name_start) = trimmed.find("morphism") {
+                let after_morphism = &trimmed[name_start..];
+                if let Some(eq_pos) = after_morphism.find("=") {
+                    let after_eq = &after_morphism[eq_pos+1..];
+                    let name = after_eq.split(|c: char| c == ',' || c == '}').next()
+                        .unwrap_or("")
+                        .trim()
+                        .trim_matches('"')
+                        .to_string();
+                    
+                    // Extract domain/codomain for language detection
+                    let domain = lines.iter().skip(i).take(10)
+                        .find(|l| l.contains("domain"))
+                        .and_then(|l| l.split("=").nth(1))
+                        .map(|s| s.trim().trim_matches(',').trim_matches('"').to_string())
+                        .unwrap_or_default();
+                    
+                    let codomain = lines.iter().skip(i).take(10)
+                        .find(|l| l.contains("codomain"))
+                        .and_then(|l| l.split("=").nth(1))
+                        .map(|s| s.trim().trim_matches(',').trim_matches('"').to_string())
+                        .unwrap_or_default();
+                    
+                    current_morphism = Some((name, domain, codomain, None));
+                }
+            }
+            continue;
+        }
+        
+        // Detect output_path in morphism
+        if let Some((ref name, _, _, ref mut output_path)) = current_morphism {
+            if trimmed.contains("output_path") && trimmed.contains("=") {
+                if let Some(path) = trimmed.split("=").nth(1) {
+                    let path_clean = path.trim().trim_matches(',').trim_matches('"').trim_matches('"').to_string();
+                    *output_path = Some(path_clean);
+                }
+            }
+            
+            // Detect generation block
+            if trimmed.contains("generation") && trimmed.contains("=") && trimmed.contains("{") {
+                capturing_generation = true;
+                generation_content.clear();
+                continue;
+            }
+            
+            // Capture generation content
+            if capturing_generation {
+                if brace_depth <= 0 && trimmed.contains("}") {
+                    // End of generation block
+                    capturing_generation = false;
+                    
+                    // Determine language from generation block or path
+                    let language = if generation_content.contains("language") {
+                        generation_content.lines()
+                            .find(|l| l.contains("language"))
+                            .and_then(|l| l.split("=").nth(1))
+                            .map(|s| s.trim().trim_matches(',').trim_matches('"').to_string())
+                            .unwrap_or_else(|| infer_lang_from_path(output_path.as_deref().unwrap_or("")))
+                    } else {
+                        infer_lang_from_path(output_path.as_deref().unwrap_or(""))
+                    };
+                    
+                    // Check if this morphism matches target language
+                    let should_include = match target_lang {
+                        "rust" => language == "rust" || output_path.as_deref().unwrap_or("").ends_with(".rs"),
+                        "python" | "py" => language == "python" || output_path.as_deref().unwrap_or("").ends_with(".py"),
+                        _ => true,
+                    };
+                    
+                    if should_include {
+                        // Create a clause from this morphism
+                        let raw_text = format!("Morphism {}: {} → {} generating {} {:?}", 
+                            name, 
+                            current_morphism.as_ref().map(|(_, d, _, _)| d.clone()).unwrap_or_default(),
+                            current_morphism.as_ref().map(|(_, _, c, _)| c.clone()).unwrap_or_default(),
+                            language,
+                            output_path
+                        );
+                        let normalized = normalize_text(&raw_text);
+                        let id = canon_id(&normalized);
+                        let clause_hash = clause_semhash(&normalized);
+                        
+                        clauses.push(Clause {
+                            id: id.clone(),
+                            clause_type: ClauseType::Requirement,
+                            text: normalized.clone(),
+                            raw_text: raw_text.clone(),
+                            section: format!("morphism_{}", name),
+                            source_file: source_path.to_string_lossy().to_string(),
+                            line: i + 1,
+                            clause_semhash: clause_hash.clone(),
+                            context_semhash: context_semhash(&normalized, &[&format!("morphism_{}", name)], &clause_hash, ""),
+                            language_marker: Some(language),
+                        });
+                    }
+                    
+                    current_morphism = None;
+                } else {
+                    generation_content.push_str(trimmed);
+                    generation_content.push('\n');
+                }
+            }
+        }
+        
+        // Also check for standalone OUTPUT_PATH directives (from markdown-style specs)
+        if trimmed.contains("OUTPUT_PATH") && trimmed.contains(":") {
+            if let Some(path) = trimmed.split(':').nth(1) {
+                let path_clean = path.trim().to_string();
+                let language = infer_lang_from_path(&path_clean);
+                
+                let should_include = match target_lang {
+                    "rust" => language == "rust" || path_clean.ends_with(".rs"),
+                    "python" | "py" => language == "python" || path_clean.ends_with(".py"),
+                    _ => true,
+                };
+                
+                if should_include {
+                    let raw_text = format!("Output file: {}", path_clean);
+                    let normalized = normalize_text(&raw_text);
+                    let id = canon_id(&normalized);
+                    let clause_hash = clause_semhash(&normalized);
+                    
+                    clauses.push(Clause {
+                        id: id.clone(),
+                        clause_type: ClauseType::Constraint,
+                        text: normalized.clone(),
+                        raw_text: raw_text.clone(),
+                        section: "output_paths".to_string(),
+                        source_file: source_path.to_string_lossy().to_string(),
+                        line: i + 1,
+                        clause_semhash: clause_hash.clone(),
+                        context_semhash: context_semhash(&normalized, &["output_paths"], &clause_hash, ""),
+                        language_marker: Some(language),
+                    });
+                }
+            }
+        }
+    }
+    
+    Ok(clauses)
+}
+
+fn infer_lang_from_path(path: &str) -> String {
+    if path.ends_with(".rs") {
+        "rust".to_string()
+    } else if path.ends_with(".py") {
+        "python".to_string()
+    } else if path.ends_with(".ts") || path.ends_with(".tsx") {
+        "typescript".to_string()
+    } else if path.ends_with(".js") || path.ends_with(".jsx") {
+        "javascript".to_string()
+    } else {
+        "unknown".to_string()
+    }
 }
 
 fn normalize_text(text: &str) -> String {
