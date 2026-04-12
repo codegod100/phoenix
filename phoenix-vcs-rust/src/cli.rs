@@ -152,12 +152,8 @@ pub enum Commands {
         bare: bool,
     },
     
-    /// Run the spec-to-code generation pipeline (always includes codegen)
+    /// Run the spec-to-code generation pipeline (auto-detects language from spec markers)
     Pipeline {
-        /// Target language for generated code
-        #[arg(short, long, default_value = "rust")]
-        lang: String,
-        
         /// Skip ingest phase
         #[arg(long)]
         skip_ingest: bool,
@@ -271,8 +267,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, verify } => {
-            cmd_pipeline(&cli.project_root, &lang, skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Commands::Pipeline { skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline(&cli.project_root, skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -703,9 +699,53 @@ pub async fn main() -> Result<()> {
     run().await
 }
 
+/// Detect target language from spec content based on language markers
+fn detect_target_language(content: &str) -> String {
+    let mut rust_count = 0;
+    let mut python_count = 0;
+    let mut pyo3_count = 0;
+    
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == "[rust]" || (trimmed.starts_with("##") && trimmed.contains("[rust]")) {
+            rust_count += 1;
+        }
+        if trimmed == "[python]" || (trimmed.starts_with("##") && trimmed.contains("[python]")) {
+            python_count += 1;
+        }
+        if trimmed == "[pyo3]" || (trimmed.starts_with("##") && trimmed.contains("[pyo3]")) {
+            pyo3_count += 1;
+            // pyo3 implies rust output
+            rust_count += 1;
+        }
+    }
+    
+    // Also check code block languages
+    for line in content.lines() {
+        if line.trim().starts_with("```") {
+            let lang = line.trim().trim_start_matches("```").trim();
+            match lang {
+                "rust" | "rs" => rust_count += 2,
+                "python" | "py" => python_count += 2,
+                "toml" => {} // neutral
+                _ => {}
+            }
+        }
+    }
+    
+    // Determine dominant language
+    if python_count > rust_count {
+        "python".to_string()
+    } else if rust_count > 0 || pyo3_count > 0 {
+        "rust".to_string()
+    } else {
+        // Default based on project structure - check for Cargo.toml vs setup.py
+        "rust".to_string() // fallback
+    }
+}
+
 async fn cmd_pipeline(
     project_root: &Path,
-    lang: &str,
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
@@ -718,6 +758,26 @@ async fn cmd_pipeline(
     let llm_available = crate::llm::is_llm_available(&llm_config);
     let full_url = format!("{}/chat/completions", llm_config.api_base);
     
+    // Load all specs from specs/ directory first to detect language
+    let specs_dir = project_root.join("specs");
+    let mut entries = tokio::fs::read_dir(&specs_dir).await?;
+    let mut combined_content = String::new();
+    let mut file_count = 0;
+    
+    while let Some(entry) = entries.next_entry().await? {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
+                combined_content.push_str(&content);
+                file_count += 1;
+            }
+        }
+    }
+    
+    // Auto-detect target language from spec content
+    let lang = detect_target_language(&combined_content);
+    
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║  Phoenix Pipeline — Spec-Driven Code Generation              ║");
     println!("╠══════════════════════════════════════════════════════════════╣");
@@ -726,6 +786,7 @@ async fn cmd_pipeline(
     println!("╚══════════════════════════════════════════════════════════════╝");
     println!();
     
+    println!("🎯 Auto-detected language: {} (from spec markers)", lang);
     println!("🧮 Mathematical Foundation:");
     println!("   Pipeline as composed lens: μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest");
     println!("   Source theory: ThSpec");
@@ -750,23 +811,6 @@ async fn cmd_pipeline(
         println!("⏭️  Skipping PLAN phase");
     }
     println!();
-    
-    // Load all specs from specs/ directory
-    let specs_dir = project_root.join("specs");
-    let mut entries = tokio::fs::read_dir(&specs_dir).await?;
-    let mut combined_content = String::new();
-    let mut file_count = 0;
-    
-    while let Some(entry) = entries.next_entry().await? {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            if let Ok(content) = tokio::fs::read_to_string(&path).await {
-                combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
-                combined_content.push_str(&content);
-                file_count += 1;
-            }
-        }
-    }
     
     println!("   📁 Scanned {} files", file_count);
     
