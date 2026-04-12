@@ -781,35 +781,16 @@ async fn cmd_pipeline_multi(
     
     let languages = detect_all_languages(&combined_content);
     
-    println!("╔══════════════════════════════════════════════════════════════╗");
-    println!("║  Phoenix Multi-Language Pipeline                            ║");
-    println!("╠══════════════════════════════════════════════════════════════╣");
-    println!("║  Generates code for ALL language markers found in specs      ║");
-    println!("╚══════════════════════════════════════════════════════════════╝");
-    println!();
-    println!("📁 Scanned {} files", file_count);
-    println!("🎯 Detected languages: {}", languages.join(", "));
-    println!();
+    println!("▶ Multi-language: {}", languages.join(", "));
     
     // Run pipeline for each language
-    for (i, lang) in languages.iter().enumerate() {
-        println!("══════════════════════════════════════════════════════════════");
-        println!("▶ Language {}/{}: {}", i + 1, languages.len(), lang);
-        println!("══════════════════════════════════════════════════════════════");
-        
-        if stub {
-            println!("   📝 STUB MODE: IU generation only (no LLM codegen)");
-        }
-        
+    for lang in &languages {
         if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
-            println!("⚠️  Pipeline for {} failed: {}", lang, e);
+            println!("⚠️  {} failed: {}", lang, e);
         }
-        println!();
     }
     
-    println!("══════════════════════════════════════════════════════════════");
-    println!("✅ Multi-language pipeline complete!");
-    println!("   Generated code for: {}", languages.join(", "));
+    println!("✓ Done: {}", languages.join(", "));
     
     Ok(())
 }
@@ -849,39 +830,11 @@ async fn cmd_pipeline_single(
         }
     }
     
-    println!("╔══════════════════════════════════════════════════════════════╗");
-    println!("║  Phoenix Pipeline — Spec-Driven Code Generation              ║");
-    println!("╠══════════════════════════════════════════════════════════════╣");
-    println!("║  SPEC ──[μ_ingest]──► CLAUSE ──[μ_canon]──► CANON ──[μ_plan] ║");
-    println!("║                    ──[μ_codegen]──► CODE                     ║");
-    println!("╚══════════════════════════════════════════════════════════════╝");
-    println!();
-    
-    println!("🎯 Target language: {}", lang);
-    println!("🧮 Mathematical Foundation:");
-    println!("   Pipeline as composed lens: μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest");
-    println!("   Source theory: ThSpec");
-    println!("   Target theory: ThCode");
-    println!();
+    println!("▶ Phoenix Pipeline: {} → {} code", lang, if llm_available { "LLM" } else { "skeleton" });
     
     if llm_available {
-        println!("🤖 LLM Mode: Using {} ({}) for intelligent code generation", full_url, llm_config.model);
-        println!();
-    } else {
-        println!("📝 Skeleton Mode: Set FIREWORKS_API_KEY env var for LLM generation");
-        println!();
+        println!("   LLM: {}", full_url);
     }
-    
-    if skip_ingest {
-        println!("⏭️  Skipping INGEST phase");
-    }
-    if skip_canonicalize {
-        println!("⏭️  Skipping CANONICALIZE phase");
-    }
-    if skip_plan {
-        println!("⏭️  Skipping PLAN phase");
-    }
-    println!();
     
     println!("   📁 Scanned {} files", file_count);
     
@@ -906,21 +859,12 @@ async fn cmd_pipeline_single(
     let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
     let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
     
-    // Print phase summaries
-    println!("▶ Phase 1: μ_ingest (ThSpec → ThClause)");
-    println!("   Parsed {} clauses", total_clauses);
+    // Print phase summaries - concise format
+    println!("   {} clauses → {} canons ({} dups) → {} IUs", 
+        total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
     
-    println!("\n▶ Phase 2: μ_canon (ThClause → ThCanon)");
-    println!("   Collapsed to {} unique nodes ({} duplicates)",
-        unique_nodes,
-        duplicates);
-    println!("   D-rate: {:.2}", canon_comp.d_rate);
-    
-    println!("\n▶ Phase 3: μ_plan (ThCanon → ThIU)");
-    println!("   Partitioned into {} Implementation Units", iu_graph.ius.len());
-    
-    // Generate code (either via LLM or standard codegen)
-    let mut code_files = Vec::new();
+    if stub {
+        println!("\n   STUB: {} IUs planned", iu_graph.ius.len());
     
     if stub {
         // STUB MODE: Print IUs and their output files, but don't invoke codegen
@@ -942,8 +886,7 @@ async fn cmd_pipeline_single(
     
     if llm_available {
         // Use LLM for intelligent code generation
-        println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — LLM Mode");
-        println!("   Generating code with {}...", full_url);
+        println!("   Generating...");
         
         // First pass: generate domain modules (excluding app)
         let mut domain_apis: Vec<crate::llm::ModuleApi> = Vec::new();
@@ -973,7 +916,7 @@ async fn cmd_pipeline_single(
                         traces_to: iu.source_canon_ids.clone(),
                     });
                     
-                    println!(" ✓ (IU: {}...)", &iu.iu_id[..16]);
+                    println!("   ✓ {}", iu.name);
                 }
                 Err(e) => {
                     println!(" ✗ Error: {}", e);
@@ -1023,16 +966,9 @@ async fn cmd_pipeline_single(
         }
     } else {
         // Standard codegen (placeholders)
-        println!("\n▶ Phase 4: μ_codegen (ThIU → ThCode) — Skeleton Mode");
         let codegen_lens = crate::lens::codegen_lens();
         let (code, _codegen_comp) = (codegen_lens.get)(&iu_graph);
         code_files = code.files;
-    }
-    
-    println!("   Generated {} code files", code_files.len());
-    
-    for file in &code_files {
-        println!("     - {} (IU: {}...)", file.path, &file.iu_id[..8.min(file.iu_id.len())]);
     }
     
     // Write generated files
@@ -1069,20 +1005,7 @@ async fn cmd_pipeline_single(
         generate_flake_nix(output_dir, &canon_graph.nodes).await?;
     }
     
-    println!();
-    println!("══════════════════════════════════════════════════════════════");
-    println!("Pipeline Complete!");
-    println!();
-    println!("Complement (round-trip data):");
-    println!("  Canon IDs tracked: {}", ingest_comp.canon_ids.len());
-    println!("  Timestamp: {}", ingest_comp.timestamp);
-    println!("  D-rate: {:.2}", canon_comp.d_rate);
-    println!();
-    println!("Next steps:");
-    println!("  1. Review generated files");
-    println!("  2. Implement contract functions");
-    println!("  3. Run: phoenix-vcs verify-laws    # Full lens law verification");
-    println!("  4. Run: phoenix-vcs drift          # Check for manual edits");
+    println!("✓ Generated {}", code_files.iter().map(|f| f.path.clone()).collect::<Vec<_>>().join(", "));
     
     Ok(())
 }
