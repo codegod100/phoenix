@@ -774,7 +774,7 @@ async fn cmd_pipeline_multi(
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
                 combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
                 combined_content.push_str(&content);
-                file_count += 1;
+                _file_count += 1;
             }
         }
     }
@@ -825,7 +825,7 @@ async fn cmd_pipeline_single(
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
                 combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
                 combined_content.push_str(&content);
-                file_count += 1;
+                _file_count += 1;
             }
         }
     }
@@ -836,7 +836,7 @@ async fn cmd_pipeline_single(
         println!("   LLM: {}", full_url);
     }
     
-    println!("   📁 Scanned {} files", file_count);
+    println!("   📁 Scanned {} files", _file_count);
     
     let spec = crate::lens::SpecDocument {
         content: combined_content,
