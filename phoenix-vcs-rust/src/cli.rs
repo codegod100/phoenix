@@ -1086,6 +1086,11 @@ async fn cmd_pipeline_single(
     };
     manifest.save(output_dir)?;
     
+    // Generate project configuration files based on detected requirements
+    if target_language == "rust" {
+        generate_cargo_toml(output_dir, &canon_output.nodes).await?;
+    }
+    
     println!();
     println!("══════════════════════════════════════════════════════════════");
     println!("Pipeline Complete!");
@@ -1275,6 +1280,70 @@ async fn cmd_reverse(
     println!("   2. Refine requirements to be more precise");
     println!("   3. Run: phoenix-vcs pipeline    # Generate code from specs");
     println!("   4. Compare: phoenix-vcs drift   # Check spec→code alignment");
+    
+    Ok(())
+}
+
+/// Generate Cargo.toml based on detected requirements from specs
+async fn generate_cargo_toml(output_dir: &Path, canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
+    // Analyze requirements to determine dependencies
+    let all_text: String = canon_nodes.iter()
+        .map(|n| n.clean_statement.clone())
+        .collect::<Vec<_>>()
+        .join(" ");
+    
+    let needs_pyo3 = all_text.contains("pyo3") || all_text.contains("PyO3");
+    let needs_tls = all_text.contains("TLS") || all_text.contains("tls") || all_text.contains("SSL");
+    let needs_async = all_text.contains("async") || all_text.contains("tokio") || needs_pyo3;
+    let needs_atproto = all_text.contains("ATProto") || all_text.contains("atproto") || all_text.contains("DID");
+    let needs_irc = all_text.contains("IRC") || all_text.contains("irc");
+    
+    let mut deps = vec![
+        ("pyo3", "{ version = \"0.21\", features = [\"extension-module\", \"abi3-py38\"] }", needs_pyo3),
+        ("pyo3-asyncio", "{ version = \"0.21\", features = [\"tokio-runtime\"] }", needs_pyo3),
+        ("tokio", "{ version = \"1\", features = [\"rt\", \"rt-multi-thread\", \"macros\", \"net\", \"io-util\"] }", needs_async),
+        ("tokio-native-tls", "\"0.3\"", needs_tls && !all_text.contains("rustls")),
+        ("rustls", "{ version = \"0.21\", features = [\"dangerous_configuration\"] }", needs_tls && all_text.contains("rustls")),
+        ("serde", "{ version = \"1.0\", features = [\"derive\"] }", all_text.contains("serde") || all_text.contains("JSON")),
+        ("serde_json", "\"1.0\"", all_text.contains("JSON")),
+        ("sha2", "\"0.10\"", all_text.contains("SHA") || all_text.contains("hash")),
+        ("thiserror", "\"1.0\"", all_text.contains("Error") || all_text.contains("error")),
+        ("anyhow", "\"1.0\"", all_text.contains("Result") || needs_async),
+    ];
+    
+    // Add freeq-sdk dependency if this is a PyO3 wrapper
+    let needs_freeq_sdk = needs_pyo3 && (needs_irc || needs_atproto);
+    if needs_freeq_sdk {
+        deps.push(("freeq-sdk", "{ path = \"../../freeq-sdk\" }", true));
+    }
+    
+    // Build Cargo.toml content
+    let mut cargo_toml = String::new();
+    cargo_toml.push_str("[package]\n");
+    cargo_toml.push_str("name = \"freeq-pyo3\"\n");
+    cargo_toml.push_str("version = \"0.1.0\"\n");
+    cargo_toml.push_str("edition = \"2021\"\n");
+    cargo_toml.push_str("\n[lib]\n");
+    cargo_toml.push_str("name = \"freeq_pyo3\"\n");
+    cargo_toml.push_str("crate-type = [\"cdylib\"]\n");
+    cargo_toml.push_str("\n[dependencies]\n");
+    
+    for (name, version, needed) in deps {
+        if needed {
+            cargo_toml.push_str(&format!("{} = {}\n", name, version));
+        }
+    }
+    
+    // Write Cargo.toml
+    let cargo_path = output_dir.join("Cargo.toml");
+    tokio::fs::write(&cargo_path, cargo_toml).await?;
+    
+    println!("   📦 Generated Cargo.toml with detected dependencies:");
+    for (name, _, needed) in deps {
+        if needed {
+            println!("      + {}", name);
+        }
+    }
     
     Ok(())
 }
