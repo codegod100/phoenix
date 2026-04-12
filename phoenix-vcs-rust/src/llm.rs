@@ -163,89 +163,100 @@ fn build_generation_prompt(request: &CodeGenRequest) -> String {
             .join("\n")
     };
     
-    format!(r#"You are a code generator. Output ONLY working {} code, no explanations.
+    format!(r#"You are a code generator. Output ONLY valid {} code. No explanations. No markdown. No numbered lists. No emojis.
 
-Generate a module named "{}" implementing these requirements:
+Module: {}
+IU ID: {}
 
+Requirements to implement:
 {}
 
-RULES:
-1. Output ONLY valid {} code - no markdown, no explanations, no analysis
-2. Start with: # phoenix: iu_id = "{}"
-3. Then module docstring with requirements listed
-4. Then imports
-5. Then actual implementations (classes/functions)
-6. Use type hints
-7. Include error handling
-8. Make code runnable
+OUTPUT RULES:
+1. First line MUST be: # phoenix: iu_id = "{}"
+2. Second line: """Docstring with requirements."""
+3. Then: imports
+4. Then: actual implementations
+5. Use type hints
+6. NO other text before or after code
 
-OUTPUT ONLY CODE NOW:"#,
+OUTPUT CODE NOW:"#,
         request.language,
         request.module_name,
+        request.iu_id,
         req_list,
-        request.language,
         request.iu_id,
     )
 }
 
 /// Clean up LLM response (remove markdown code fences and thinking text)
-fn clean_code_response(code: &str, language: &str) -> String {
+fn clean_code_response(code: &str, _language: &str) -> String {
     let code = code.trim();
     
-    // Remove markdown code blocks
-    let fence = format!("```{}", language);
-    let code = if code.starts_with(&fence) || code.starts_with("```") {
-        code.lines()
-            .skip(1)
-            .take_while(|l| !l.starts_with("```"))
-            .collect::<Vec<_>>()
-            .join("\n")
-    } else {
-        code.to_string()
-    };
-    
-    // Remove thinking/analysis text (look for phrases that indicate non-code content)
-    let thinking_patterns = [
-        "The user wants",
-        "Let me analyze",
-        "I'll implement",
-        "Here are the requirements",
-        "This module needs",
-        "I need to",
-        "To implement",
-    ];
-    
+    // First pass: look for actual code block
     let lines: Vec<&str> = code.lines().collect();
     let mut code_lines = Vec::new();
-    let mut in_code = false;
+    let mut found_code_start = false;
     
     for line in &lines {
-        // Check if this looks like code (has Python keywords, imports, etc.)
-        let is_likely_code = line.starts_with("#")  // comment
-            || line.starts_with("import ")
-            || line.starts_with("from ")
-            || line.starts_with("class ")
-            || line.starts_with("def ")
-            || line.starts_with("@")
-            || line.trim().is_empty()
-            || line.contains("=")  // assignment
-            || line.starts_with("    ");  // indented
+        let trimmed = line.trim();
         
-        // Skip thinking text until we hit actual code
-        if !in_code {
-            if is_likely_code || line.starts_with("# phoenix:") {
-                in_code = true;
-                code_lines.push(*line);
-            } else if thinking_patterns.iter().any(|p| line.contains(p)) {
-                // Skip thinking line
-                continue;
-            }
-        } else {
+        // Skip markdown fences
+        if trimmed.starts_with("```") {
+            continue;
+        }
+        
+        // Detect actual code start - look for Python/Rust/TypeScript patterns
+        let is_definitely_code = trimmed.starts_with("# phoenix:")
+            || trimmed.starts_with("# ") && trimmed.contains("iu_id")
+            || trimmed.starts_with("import ")
+            || trimmed.starts_with("from ")
+            || trimmed.starts_with("class ")
+            || trimmed.starts_with("def ")
+            || trimmed.starts_with("mod ")  // Rust
+            || trimmed.starts_with("pub ")  // Rust
+            || trimmed.starts_with("fn ")   // Rust
+            || trimmed.starts_with("use ")  // Rust
+            || trimmed.starts_with("export ") // TS
+            || trimmed.starts_with("const ")
+            || trimmed.starts_with("let ")
+            || trimmed.starts_with("type ")
+            || trimmed.starts_with("interface ");
+        
+        // Detect definitely NOT code (analysis/thinking)
+        let is_analysis = trimmed.starts_with(|c: char| c.is_ascii_digit())  // "1." "2." etc
+            || trimmed.starts_with("Let me")
+            || trimmed.starts_with("I'll ")
+            || trimmed.starts_with("Here ")
+            || trimmed.starts_with("Additional")
+            || trimmed.starts_with("- ")  // Bullet points
+            || trimmed.starts_with("* ")
+            || trimmed.starts_with("• ")
+            || trimmed.contains("🔴")
+            || trimmed.contains("🟢")
+            || trimmed.contains("🔵")
+            || trimmed.contains("⚠️")
+            || trimmed.contains("✅")
+            || trimmed.contains("❌");
+        
+        if is_definitely_code {
+            found_code_start = true;
+            code_lines.push(*line);
+        } else if found_code_start && !is_analysis {
+            // Once we're in code mode, keep lines unless clearly analysis
+            // Allow empty lines, indented lines, closing braces, etc.
             code_lines.push(*line);
         }
+        // Otherwise skip (analysis before code starts)
     }
     
-    code_lines.join("\n").trim().to_string()
+    let result = code_lines.join("\n").trim().to_string();
+    
+    // If we got nothing, return original (maybe it was already clean)
+    if result.is_empty() {
+        code.to_string()
+    } else {
+        result
+    }
 }
 
 /// Check if LLM generation is available
