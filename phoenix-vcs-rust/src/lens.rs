@@ -302,6 +302,9 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     .filter(|n| n.clean_statement.contains("[python]") || n.clean_statement.contains("interface"))
                     .collect();
                 
+                // Check for OUTPUT_PATH in specs
+                let output_path = extract_output_path(&python_nodes, "src/app.py");
+                
                 let canon_ids: Vec<String> = python_nodes.iter().map(|n| n.id.clone()).collect();
                 let contract = "Textual TUI application importing IRCClient/ATProtoAuth from freeq_pyo3".to_string();
                 let iu_id = crate::identity::iu_id("app", &contract, &canon_ids);
@@ -313,7 +316,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     source_canon_ids: canon_ids,
                     risk_tier: determine_risk_tier(&python_nodes),
                     target_language: target_language.to_string(),
-                    output_files: vec!["src/app.py".to_string()],
+                    output_files: vec![output_path],
                 });
                 
                 println!("   🎯 Simplified Python: 1 IU (TUI → freeq_pyo3)");
@@ -322,6 +325,9 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                 let rust_nodes: Vec<&CanonNode> = canon.nodes.iter()
                     .filter(|n| n.clean_statement.contains("[rust]") || n.clean_statement.contains("[pyo3]"))
                     .collect();
+                
+                // Check for OUTPUT_PATH in specs
+                let output_path = extract_output_path(&rust_nodes, "src/lib.rs");
                 
                 let canon_ids: Vec<String> = rust_nodes.iter().map(|n| n.id.clone()).collect();
                 let contract = "PyO3 bindings wrapping freeq-sdk for Python".to_string();
@@ -334,7 +340,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     source_canon_ids: canon_ids,
                     risk_tier: determine_risk_tier(&rust_nodes),
                     target_language: target_language.to_string(),
-                    output_files: vec!["src/lib.rs".to_string()],
+                    output_files: vec![output_path],
                 });
                 
                 println!("   🎯 Simplified Rust: 1 IU (PyO3 → freeq-sdk)");
@@ -748,6 +754,28 @@ pub struct CodeFile {
 use crate::pipeline::{Clause, ClauseType, CanonNode, CanonNodeType, ImplementationUnit as IU};
 
 // Helper functions
+
+/// Extract OUTPUT_PATH from canon nodes if specified
+/// Format in specs: "OUTPUT_PATH: path/to/file.ext"
+fn extract_output_path(nodes: &[&CanonNode], default: &str) -> String {
+    for node in nodes {
+        if let Some(pos) = node.clean_statement.find("OUTPUT_PATH:") {
+            let after_marker = &node.clean_statement[pos + "OUTPUT_PATH:".len()..];
+            // Extract the path (trim whitespace, take until end of line)
+            let path = after_marker
+                .lines()
+                .next()
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !path.is_empty() {
+                return path;
+            }
+        }
+    }
+    default.to_string()
+}
+
 fn extract_domain(statement: &str) -> String {
     let domains = [
         ("auth", vec!["auth", "login", "user", "session", "password", "token"]),
