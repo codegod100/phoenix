@@ -152,12 +152,8 @@ pub enum Commands {
         bare: bool,
     },
     
-    /// Run the spec-to-code generation pipeline (auto-detects language from spec markers, or use --lang to override)
+    /// Run the spec-to-code generation pipeline (generates for all language markers found)
     Pipeline {
-        /// Target language for generated code (auto-detected if not specified)
-        #[arg(short, long)]
-        lang: Option<String>,
-        
         /// Skip ingest phase
         #[arg(long)]
         skip_ingest: bool,
@@ -271,8 +267,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { lang, skip_ingest, skip_canonicalize, skip_plan, verify } => {
-            cmd_pipeline(&cli.project_root, lang.as_deref(), skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Commands::Pipeline { skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline_multi(&cli.project_root, skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -703,24 +699,23 @@ pub async fn main() -> Result<()> {
     run().await
 }
 
-/// Detect target language from spec content based on language markers
-fn detect_target_language(content: &str) -> String {
-    let mut rust_count = 0;
-    let mut python_count = 0;
-    let mut pyo3_count = 0;
+/// Detect all target languages from spec content based on language markers
+fn detect_all_languages(content: &str) -> Vec<String> {
+    let mut has_rust = false;
+    let mut has_python = false;
+    let mut has_pyo3 = false;
     
     for line in content.lines() {
         let trimmed = line.trim();
         if trimmed == "[rust]" || (trimmed.starts_with("##") && trimmed.contains("[rust]")) {
-            rust_count += 1;
+            has_rust = true;
         }
         if trimmed == "[python]" || (trimmed.starts_with("##") && trimmed.contains("[python]")) {
-            python_count += 1;
+            has_python = true;
         }
         if trimmed == "[pyo3]" || (trimmed.starts_with("##") && trimmed.contains("[pyo3]")) {
-            pyo3_count += 1;
-            // pyo3 implies rust output
-            rust_count += 1;
+            has_pyo3 = true;
+            has_rust = true; // pyo3 implies rust
         }
     }
     
@@ -729,41 +724,40 @@ fn detect_target_language(content: &str) -> String {
         if line.trim().starts_with("```") {
             let lang = line.trim().trim_start_matches("```").trim();
             match lang {
-                "rust" | "rs" => rust_count += 2,
-                "python" | "py" => python_count += 2,
-                "toml" => {} // neutral
+                "rust" | "rs" => has_rust = true,
+                "python" | "py" => has_python = true,
                 _ => {}
             }
         }
     }
     
-    // Determine dominant language
-    if python_count > rust_count {
-        "python".to_string()
-    } else if rust_count > 0 || pyo3_count > 0 {
-        "rust".to_string()
-    } else {
-        // Default based on project structure - check for Cargo.toml vs setup.py
-        "rust".to_string() // fallback
+    let mut languages = Vec::new();
+    if has_rust || has_pyo3 {
+        languages.push("rust".to_string());
     }
+    if has_python {
+        languages.push("python".to_string());
+    }
+    
+    // If no markers found, default to rust
+    if languages.is_empty() {
+        languages.push("rust".to_string());
+    }
+    
+    languages
 }
 
-async fn cmd_pipeline(
+/// Run pipeline for all detected languages
+async fn cmd_pipeline_multi(
     project_root: &Path,
-    lang_override: Option<&str>,
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
     verify: bool,
 ) -> Result<()> {
-    info!("Running Phoenix pipeline...");
+    info!("Running Phoenix multi-language pipeline...");
     
-    // Auto-detect LLM availability
-    let llm_config = crate::llm::LlmConfig::default();
-    let llm_available = crate::llm::is_llm_available(&llm_config);
-    let full_url = format!("{}/chat/completions", llm_config.api_base);
-    
-    // Load all specs from specs/ directory first to detect language
+    // Load all specs first to detect languages
     let specs_dir = project_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
@@ -780,8 +774,69 @@ async fn cmd_pipeline(
         }
     }
     
-    // Auto-detect target language from spec content, or use override if provided
-    let lang = lang_override.map(|l| l.to_string()).unwrap_or_else(|| detect_target_language(&combined_content));
+    let languages = detect_all_languages(&combined_content);
+    
+    println!("╔══════════════════════════════════════════════════════════════╗");
+    println!("║  Phoenix Multi-Language Pipeline                            ║");
+    println!("╠══════════════════════════════════════════════════════════════╣");
+    println!("║  Generates code for ALL language markers found in specs      ║");
+    println!("╚══════════════════════════════════════════════════════════════╝");
+    println!();
+    println!("📁 Scanned {} files", file_count);
+    println!("🎯 Detected languages: {}", languages.join(", "));
+    println!();
+    
+    // Run pipeline for each language
+    for (i, lang) in languages.iter().enumerate() {
+        println!("══════════════════════════════════════════════════════════════");
+        println!("▶ Language {}/{}: {}", i + 1, languages.len(), lang);
+        println!("══════════════════════════════════════════════════════════════");
+        
+        if let Err(e) = cmd_pipeline_single(project_root, lang, skip_ingest, skip_canonicalize, skip_plan, verify).await {
+            println!("⚠️  Pipeline for {} failed: {}", lang, e);
+        }
+        println!();
+    }
+    
+    println!("══════════════════════════════════════════════════════════════");
+    println!("✅ Multi-language pipeline complete!");
+    println!("   Generated code for: {}", languages.join(", "));
+    
+    Ok(())
+}
+
+/// Run pipeline for a single language
+async fn cmd_pipeline_single(
+    project_root: &Path,
+    lang: &str,
+    skip_ingest: bool,
+    skip_canonicalize: bool,
+    skip_plan: bool,
+    verify: bool,
+) -> Result<()> {
+    info!("Running Phoenix pipeline for {}...", lang);
+    
+    // Auto-detect LLM availability
+    let llm_config = crate::llm::LlmConfig::default();
+    let llm_available = crate::llm::is_llm_available(&llm_config);
+    let full_url = format!("{}/chat/completions", llm_config.api_base);
+    
+    // Load all specs from specs/ directory
+    let specs_dir = project_root.join("specs");
+    let mut entries = tokio::fs::read_dir(&specs_dir).await?;
+    let mut combined_content = String::new();
+    let mut file_count = 0;
+    
+    while let Some(entry) = entries.next_entry().await? {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                combined_content.push_str(&format!("\n\n## Source: {}\n\n", path.file_name().unwrap().to_string_lossy()));
+                combined_content.push_str(&content);
+                file_count += 1;
+            }
+        }
+    }
     
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║  Phoenix Pipeline — Spec-Driven Code Generation              ║");
@@ -791,11 +846,7 @@ async fn cmd_pipeline(
     println!("╚══════════════════════════════════════════════════════════════╝");
     println!();
     
-    if lang_override.is_some() {
-        println!("🎯 Target language: {} (user specified)", lang);
-    } else {
-        println!("🎯 Auto-detected language: {} (from spec markers)", lang);
-    }
+    println!("🎯 Target language: {}", lang);
     println!("🧮 Mathematical Foundation:");
     println!("   Pipeline as composed lens: μ_total = μ_codegen ∘ μ_plan ∘ μ_canon ∘ μ_ingest");
     println!("   Source theory: ThSpec");
