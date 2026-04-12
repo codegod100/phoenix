@@ -440,7 +440,10 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
     // Normalize target language for comparison
     let lang = target_language.to_lowercase().trim().to_string();
     
+    println!("   🔍 DEBUG: target_language='{}', normalized='{}'", target_language, lang);
+    
     if lang == "python" || lang == "py" {
+        println!("   🔍 DEBUG: Taking Python branch");
         // Python only needs the TUI app - it imports from freeq_pyo3
         let contract = "Textual TUI application that imports IRCClient and ATProtoAuth from freeq_pyo3 module".to_string();
         let iu_id = iu_id("app", &contract, &[]);
@@ -460,6 +463,7 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
         
         println!("   🎯 Simplified Python architecture: 1 IU (TUI app importing from freeq_pyo3)");
     } else if lang == "rust" || lang == "rs" {
+        println!("   🔍 DEBUG: Taking Rust branch");
         // Rust/PyO3 project: create PyO3 wrapper module
         // This wraps freeq-sdk for Python consumption
         let contract = "PyO3 bindings wrapping freeq-sdk IRCClient and ATProtoAuth for Python".to_string();
@@ -480,6 +484,7 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
         
         println!("   🎯 Simplified Rust architecture: 1 IU (PyO3 wrapper for freeq-sdk)");
     } else {
+        println!("   🔍 DEBUG: Taking ELSE branch for lang='{}'", lang);
         // Fallback: create domain-based IUs for other languages
         for (domain_key, group_nodes) in groups {
             if group_nodes.is_empty() {
