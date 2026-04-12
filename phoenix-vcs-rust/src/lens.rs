@@ -826,7 +826,7 @@ fn determine_risk_tier(nodes: &[&CanonNode]) -> crate::evidence::RiskTier {
 fn extract_section(path: &str) -> String {
     path.split('/')
         .last()
-        .and_then(|f| f.strip_suffix(".md"))
+        .and_then(|f| f.strip_suffix(".ncl").or_else(|| f.strip_suffix(".md")))
         .unwrap_or("default")
         .to_string()
 }

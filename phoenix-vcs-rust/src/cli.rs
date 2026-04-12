@@ -566,23 +566,47 @@ async fn cmd_init(project_root: &Path, name: Option<String>, bare: bool) -> Resu
     
     // Create example spec file unless --bare
     if !bare {
-        let example_spec = r#"# Phoenix Specification
+        let example_spec = r#"# Phoenix Specification (Nickel Format)
 
-## Requirements
-
-### REQ-001: System shall validate user input
-The system must validate all user input to prevent injection attacks.
-
-### REQ-002: System shall encrypt sensitive data
-All sensitive user data must be encrypted at rest and in transit.
-
-## Constraints
-
-- Use only approved cryptographic libraries
-- Maximum response time: 100ms
-
-"#;
-        let spec_path = specs_dir.join("example.md");
+{
+  id = "dev.example.project",
+  description = "Example Phoenix project specification",
+  
+  # Requirements as morphisms that generate code
+  morphisms = [
+    {
+      morphism = "ExampleModule",
+      domain = "ThSpec",
+      codomain = "ThCode",
+      description = "Example module demonstrating Phoenix spec format",
+      
+      # Generation directive - this becomes an IU
+      generation = {
+        language = "rust",
+        output_path = "src/generated/example.rs",
+      },
+    },
+  ],
+  
+  # Protocols define runtime behavior contracts
+  protocols = [
+    {
+      protocol = "InputValidation",
+      description = "System shall validate user input",
+    },
+    {
+      protocol = "Encryption",
+      description = "System shall encrypt sensitive data",
+    },
+  ],
+  
+  # Constraints are global properties
+  constraints = {
+    crypto_libraries = ["ring", "openssl"],
+    max_response_time_ms = 100,
+  },
+}"#;
+        let spec_path = specs_dir.join("example.ncl");
         tokio::fs::write(&spec_path, example_spec).await?;
     }
     
@@ -597,19 +621,19 @@ All sensitive user data must be encrypted at rest and in transit.
     println!("    graphs/ius.json                    # IU dependency graph");
     println!("    waivers.json                       # Manual edit waivers");
     println!("    state.json                         # Pipeline state");
-    println!("  specs/                               # Specification documents");
+    println!("  specs/                               # Specification documents (.ncl files)");
     if !bare {
-        println!("    example.md                         # Example requirements");
+        println!("    example.ncl                        # Example specification");
     }
     println!("  src/generated/                       # Generated code goes here");
     println!("");
     println!("Next steps:");
-    println!("  1. Edit specs/ to add your requirements");
+    println!("  1. Edit specs/ to add your requirements (.ncl format)");
     println!("  2. Run: phoenix-vcs status            # Check project health");
     println!("  3. Run: phoenix-vcs drift             # Check for manual edits");
     if !bare {
         println!("");
-        println!("  See example.md for specification format");
+        println!("  See example.ncl for specification format");
     }
     
     Ok(())

@@ -33,52 +33,26 @@ pub struct StageStatus {
 
 /// μ_ingest: Parse specifications into content-addressed clauses
 ///
-/// Input: Markdown files in `specs/` directory
+/// Input: Nickel (.ncl) files in `specs/` directory
 /// Output: Clauses with canon IDs (semantic hashes) filtered by target language
 pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> Result<IngestOutput> {
     let specs_dir = project_root.as_ref().join("specs");
     
     if !specs_dir.exists() {
-        anyhow::bail!("No specs/ directory found. Create one with .md files.");
+        anyhow::bail!("No specs/ directory found. Create one with .ncl files.");
     }
     
     println!("🎯 Target language: {}", target_lang);
     
     let mut clauses = Vec::new();
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
-    let mut file_count = 0;
     let mut ncl_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
         let ext = path.extension().and_then(|e| e.to_str());
         
-        if ext == Some("md") {
-            file_count += 1;
-            let content = tokio::fs::read_to_string(&path).await?;
-            let file_clauses = parse_markdown_clauses(&content, &path, target_lang);
-            let marker_info = if file_clauses.is_empty() {
-                "(no matching clauses)".to_string()
-            } else {
-                let rust_count = file_clauses.iter().filter(|c| c.language_marker.as_deref() == Some("rust")).count();
-                let py_count = file_clauses.iter().filter(|c| c.language_marker.as_deref() == Some("python")).count();
-                let pyo3_count = file_clauses.iter().filter(|c| c.language_marker.as_deref() == Some("pyo3")).count();
-                let unmarked = file_clauses.iter().filter(|c| c.language_marker.is_none()).count();
-                let parts: Vec<String> = [
-                    (rust_count > 0).then(|| format!("{} rust", rust_count)),
-                    (py_count > 0).then(|| format!("{} python", py_count)),
-                    (pyo3_count > 0).then(|| format!("{} pyo3", pyo3_count)),
-                    (unmarked > 0).then(|| format!("{} unmarked", unmarked)),
-                ].into_iter().flatten().collect();
-                if parts.is_empty() {
-                    format!("{} clauses", file_clauses.len())
-                } else {
-                    format!("{} clauses ({})", file_clauses.len(), parts.join(", "))
-                }
-            };
-            println!("   📄 {}: {}", path.file_name().unwrap().to_string_lossy(), marker_info);
-            clauses.extend(file_clauses);
-        } else if ext == Some("ncl") {
+        if ext == Some("ncl") {
             ncl_count += 1;
             let content = tokio::fs::read_to_string(&path).await?;
             match parse_ncl_spec(&content, &path, target_lang) {
@@ -98,130 +72,13 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
         }
     }
     
-    println!("   📁 Scanned {} .md + {} .ncl files, found {} matching clauses", 
-        file_count, ncl_count, clauses.len());
+    println!("   📁 Scanned {} .ncl files, found {} matching clauses", 
+        ncl_count, clauses.len());
     
     Ok(IngestOutput {
         clauses,
         source_files: vec![],
     })
-}
-
-/// Parse markdown content into clauses with language marker detection
-fn parse_markdown_clauses(content: &str, source_path: &Path, target_lang: &str) -> Vec<Clause> {
-    let mut clauses = Vec::new();
-    let lines: Vec<&str> = content.lines().collect();
-    let mut current_section = String::new();
-    let mut prev_hash = String::new();
-    let mut current_marker: Option<String> = None;
-    let mut in_code_block = false;
-    let mut code_block_lang = String::new();
-    
-    // Determine which markers are relevant for target language
-    let relevant_markers: Vec<&str> = match target_lang {
-        "rust" => vec!["rust", "pyo3"],
-        "python" | "py" => vec!["python"],
-        _ => vec![target_lang],
-    };
-    
-    for (i, line) in lines.iter().enumerate() {
-        // Track language markers: [rust], [python], [pyo3]
-        if line.trim() == "[rust]" || line.trim().starts_with("##") && line.contains("[rust]") {
-            current_marker = Some("rust".to_string());
-            continue;
-        }
-        if line.trim() == "[python]" || line.trim().starts_with("##") && line.contains("[python]") {
-            current_marker = Some("python".to_string());
-            continue;
-        }
-        if line.trim() == "[pyo3]" || line.trim().starts_with("##") && line.contains("[pyo3]") {
-            current_marker = Some("pyo3".to_string());
-            continue;
-        }
-        
-        // Track code blocks for language detection
-        if line.trim().starts_with("```") {
-            if in_code_block {
-                in_code_block = false;
-                code_block_lang.clear();
-            } else {
-                in_code_block = true;
-                code_block_lang = line.trim().trim_start_matches("```").trim().to_string();
-                // Update marker based on code block language
-                if !code_block_lang.is_empty() && code_block_lang != "toml" && code_block_lang != "json" {
-                    current_marker = Some(code_block_lang.clone());
-                }
-            }
-            continue;
-        }
-        
-        // Track sections
-        if line.starts_with("## ") && !line.contains('[') {
-            current_section = line.trim_start_matches("## ").trim().to_string();
-            current_marker = None; // Reset marker at new section
-            continue;
-        }
-        
-        // Parse requirement/constraint/definition/assumption/scenario lines
-        let patterns = [
-            ("REQUIREMENT", ClauseType::Requirement),
-            ("CONSTRAINT", ClauseType::Constraint),
-            ("DEFINITION", ClauseType::Definition),
-            ("ASSUMPTION", ClauseType::Assumption),
-            ("SCENARIO", ClauseType::Scenario),
-        ];
-        
-        for (prefix, clause_type) in &patterns {
-            let pattern = format!("- {}:", prefix);
-            if line.starts_with(&pattern) {
-                let raw_text = line.trim_start_matches(&pattern).trim().to_string();
-                let normalized = normalize_text(&raw_text);
-                let id = canon_id(&normalized);
-                let clause_hash = clause_semhash(&normalized);
-                let context_hash = context_semhash(&normalized, &[&current_section], &prev_hash, "");
-                
-                // Determine effective marker for this clause
-                let effective_marker = current_marker.clone().or_else(|| {
-                    // Infer from section name
-                    if current_section.to_lowercase().contains("rust") || 
-                       current_section.to_lowercase().contains("sdk") {
-                        Some("rust".to_string())
-                    } else if current_section.to_lowercase().contains("python") ||
-                              current_section.to_lowercase().contains("tui") {
-                        Some("python".to_string())
-                    } else {
-                        None
-                    }
-                });
-                
-                // Check if clause should be included for target language
-                let should_include = match &effective_marker {
-                    None => true, // No marker = include for all
-                    Some(m) => relevant_markers.contains(&m.as_str()),
-                };
-                
-                if should_include {
-                    clauses.push(Clause {
-                        id: id.clone(),
-                        clause_type: *clause_type,
-                        text: normalized.clone(),
-                        raw_text: raw_text.clone(),
-                        section: current_section.clone(),
-                        source_file: source_path.to_string_lossy().to_string(),
-                        line: i + 1,
-                        clause_semhash: clause_hash.clone(),
-                        context_semhash: context_hash,
-                        language_marker: effective_marker,
-                    });
-                }
-                
-                prev_hash = clause_hash;
-                break; // Only match one pattern per line
-            }
-        }
-    }
-    
-    clauses
 }
 
 /// Parse NCL (Nickel) spec file into clauses
@@ -409,6 +266,140 @@ fn infer_lang_from_path(path: &str) -> String {
     } else {
         "unknown".to_string()
     }
+}
+
+/// Generate flake.nix content from theory build configuration
+/// 
+/// This generates a Nix flake from the 'build' section of the theory,
+/// mapping languages and packages to proper Nixpkgs attributes.
+pub fn generate_flake_nix(
+    languages: &[String],
+    packages: &std::collections::HashMap<String, Vec<String>>,
+    env_vars: &std::collections::HashMap<String, String>,
+    hooks: &[String],
+    project_name: &str,
+) -> String {
+    use std::fmt::Write;
+    
+    let mut flake = String::new();
+    
+    // Header
+    flake.push_str("{\n");
+    flake.push_str("  description = \"");
+    flake.push_str(project_name);
+    flake.push_str("\";\n\n");
+    
+    // Inputs
+    flake.push_str("  inputs = {\n");
+    flake.push_str("    nixpkgs.url = \"github:NixOS/nixpkgs/nixos-unstable\";\n");
+    flake.push_str("    flake-utils.url = \"github:numtide/flake-utils\";\n");
+    
+    // Add rust-overlay if Rust is needed
+    if languages.contains(&"rust".to_string()) {
+        flake.push_str("    rust-overlay.url = \"github:oxalica/rust-overlay\";\n");
+    }
+    
+    flake.push_str("  };\n\n");
+    
+    // Outputs
+    flake.push_str("  outputs = { self, nixpkgs, flake-utils");
+    if languages.contains(&"rust".to_string()) {
+        flake.push_str(", rust-overlay");
+    }
+    flake.push_str(" }:\n");
+    
+    flake.push_str("    flake-utils.lib.eachDefaultSystem (system:\n");
+    flake.push_str("      let\n");
+    
+    // pkgs with overlays
+    if languages.contains(&"rust".to_string()) {
+        flake.push_str("        overlays = [ (import rust-overlay) ];\n");
+        flake.push_str("        pkgs = import nixpkgs { inherit system overlays; };\n");
+    } else {
+        flake.push_str("        pkgs = nixpkgs.legacyPackages.${system};\n");
+    }
+    
+    // Build inputs
+    flake.push_str("        buildInputs = with pkgs; [\n");
+    
+    // Add packages from each language category
+    if let Some(rust_pkgs) = packages.get("rust") {
+        for pkg in rust_pkgs {
+            flake.push_str("          ");
+            flake.push_str(&map_to_nixpkg(pkg));
+            flake.push('\n');
+        }
+    }
+    
+    if let Some(py_pkgs) = packages.get("python") {
+        for pkg in py_pkgs {
+            flake.push_str("          ");
+            flake.push_str(&map_to_nixpkg(pkg));
+            flake.push('\n');
+        }
+    }
+    
+    if let Some(tool_pkgs) = packages.get("tools") {
+        for pkg in tool_pkgs {
+            flake.push_str("          ");
+            flake.push_str(&map_to_nixpkg(pkg));
+            flake.push('\n');
+        }
+    }
+    
+    flake.push_str("        ];\n");
+    
+    // Dev shell
+    flake.push_str("      in\n");
+    flake.push_str("      {\n");
+    flake.push_str("        devShells.default = pkgs.mkShell {\n");
+    flake.push_str("          inherit buildInputs;\n");
+    
+    // Environment variables
+    if !env_vars.is_empty() {
+        flake.push_str("\n          shellHook = ''\n");
+        for (key, value) in env_vars {
+            flake.push_str("            export ");
+            flake.push_str(key);
+            flake.push_str("=\"");
+            flake.push_str(value);
+            flake.push_str("\"\n");
+        }
+        
+        // Add hooks
+        for hook in hooks {
+            flake.push_str("            ");
+            flake.push_str(hook);
+            flake.push('\n');
+        }
+        
+        flake.push_str("          '';\n");
+    }
+    
+    flake.push_str("        };\n");
+    flake.push_str("      });\n");
+    flake.push_str("}\n");
+    
+    flake
+}
+
+/// Map package names from theory to proper nixpkgs attribute paths
+fn map_to_nixpkg(pkg: &str) -> String {
+    // Handle python packages
+    if pkg.starts_with("python") && pkg.contains("Packages.") {
+        let parts: Vec<&str> = pkg.split("Packages.").collect();
+        if parts.len() == 2 {
+            return format!("python312Packages.{}", parts[1]);
+        }
+    }
+    
+    // Handle rust toolchain
+    if pkg == "rustc" || pkg == "cargo" {
+        return "rust-bin.stable.latest.default".to_string();
+    }
+    
+    // Default: pass through
+    pkg.to_string()
 }
 
 fn normalize_text(text: &str) -> String {

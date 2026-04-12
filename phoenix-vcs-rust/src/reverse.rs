@@ -757,7 +757,7 @@ async fn write_spec_files(
     
     // Write each domain as a separate spec file
     for (domain, clauses) in domain_clauses {
-        let filename = format!("{}_generated.md", domain);
+        let filename = format!("{}_generated.ncl", domain);
         let filepath = output_dir.join(&filename);
         
         let mut content = format!("# {} Requirements\n\n", capitalize(&domain));
