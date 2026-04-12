@@ -733,21 +733,9 @@ fn detect_all_languages(content: &str) -> Vec<String> {
     let mut has_python = false;
     let mut has_pyo3 = false;
     
+    // Only NCL-style language declarations
     for line in content.lines() {
         let trimmed = line.trim();
-        // Markdown-style markers
-        if trimmed == "[rust]" || (trimmed.starts_with("##") && trimmed.contains("[rust]")) {
-            has_rust = true;
-        }
-        if trimmed == "[python]" || (trimmed.starts_with("##") && trimmed.contains("[python]")) {
-            has_python = true;
-        }
-        if trimmed == "[pyo3]" || (trimmed.starts_with("##") && trimmed.contains("[pyo3]")) {
-            has_pyo3 = true;
-            has_rust = true; // pyo3 implies rust
-        }
-        
-        // NCL-style language declarations
         if trimmed.contains("language") && trimmed.contains("=") {
             if trimmed.contains("\"rust\"") || trimmed.contains("'rust'") {
                 has_rust = true;
@@ -758,18 +746,6 @@ fn detect_all_languages(content: &str) -> Vec<String> {
             if trimmed.contains("\"pyo3\"") || trimmed.contains("'pyo3'") {
                 has_pyo3 = true;
                 has_rust = true;
-            }
-        }
-    }
-    
-    // Also check code block languages
-    for line in content.lines() {
-        if line.trim().starts_with("```") {
-            let lang = line.trim().trim_start_matches("```").trim();
-            match lang {
-                "rust" | "rs" => has_rust = true,
-                "python" | "py" => has_python = true,
-                _ => {}
             }
         }
     }
@@ -1437,10 +1413,17 @@ EOF
 
 /// Generate simple devShell-only flake (legacy format)
 fn generate_simple_flake(spec_content: &str) -> String {
-    let needs_rust = spec_content.contains("[rust]") || spec_content.contains("[pyo3]");
-    let needs_python = spec_content.contains("[python]");
-    let needs_tls = spec_content.to_lowercase().contains("tls") || spec_content.to_lowercase().contains("ssl");
-    let needs_pyo3 = spec_content.to_lowercase().contains("pyo3");
+    // NCL-style language detection only
+    let needs_rust = spec_content.contains("language = \"rust\"") || 
+                     spec_content.contains("language = 'rust'") ||
+                     spec_content.contains("language = \"pyo3\"") ||
+                     spec_content.contains("language = 'pyo3'");
+    let needs_python = spec_content.contains("language = \"python\"") || 
+                       spec_content.contains("language = 'python'");
+    let needs_tls = spec_content.to_lowercase().contains("tls") || 
+                    spec_content.to_lowercase().contains("ssl");
+    let needs_pyo3 = spec_content.contains("language = \"pyo3\"") || 
+                     spec_content.contains("language = 'pyo3'");
     
     let mut packages = vec![];
     

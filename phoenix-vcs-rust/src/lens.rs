@@ -298,8 +298,11 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
             
             if lang == "python" || lang == "py" {
                 // Python TUI: Single app that imports from freeq_pyo3
+                // Look for NCL-style language declarations
                 let python_nodes: Vec<&CanonNode> = canon.nodes.iter()
-                    .filter(|n| n.clean_statement.contains("[python]") || n.clean_statement.contains("interface"))
+                    .filter(|n| n.clean_statement.contains("language = \"python\"") || 
+                                 n.clean_statement.contains("language = 'python'") ||
+                                 n.clean_statement.contains("interface"))
                     .collect();
                 
                 // Check for OUTPUT_PATH in specs
@@ -322,8 +325,12 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                 println!("   Simplified Python: 1 IU (TUI → freeq_pyo3)");
             } else if lang == "rust" || lang == "rs" {
                 // Rust PyO3: Single lib wrapping freeq-sdk
+                // Look for NCL-style language declarations
                 let rust_nodes: Vec<&CanonNode> = canon.nodes.iter()
-                    .filter(|n| n.clean_statement.contains("[rust]") || n.clean_statement.contains("[pyo3]"))
+                    .filter(|n| n.clean_statement.contains("language = \"rust\"") || 
+                                 n.clean_statement.contains("language = 'rust'") ||
+                                 n.clean_statement.contains("language = \"pyo3\"") ||
+                                 n.clean_statement.contains("language = 'pyo3'"))
                     .collect();
                 
                 // Check for OUTPUT_PATH in specs
@@ -608,109 +615,173 @@ pub struct SpecDocument {
 }
 
 impl SpecDocument {
+    /// Parse clauses from spec content
+    /// 
+    /// Supports both NCL-style (current) and legacy markdown formats
     fn parse_clauses(&self) -> (Vec<Clause>, Vec<Provenance>) {
-        // Parse markdown into clauses with language marker support
         let mut clauses = Vec::new();
         let mut provenance = Vec::new();
         
         let lines: Vec<&str> = self.content.lines().collect();
         let mut current_section = String::new();
-        let mut current_marker: Option<String> = None;
         
-        // Determine relevant markers for target language
-        let relevant_markers: Vec<&str> = match self.target_language.as_str() {
-            "rust" => vec!["rust", "pyo3"],
-            "python" | "py" => vec!["python"],
-            _ => vec![&self.target_language],
-        };
+        // Check if this is NCL content
+        let is_ncl = self.content.contains("language") && 
+                     self.content.contains("=") && 
+                     (self.content.contains("morphisms") || self.content.contains("generation"));
         
-        println!("    🔍 Parsing {} lines for target: {}", lines.len(), self.target_language);
-        
-        for (i, line) in lines.iter().enumerate() {
-            // Track language markers
-            if line.trim() == "[rust]" || line.trim().starts_with("##") && line.contains("[rust]") {
-                current_marker = Some("rust".to_string());
-                continue;
-            }
-            if line.trim() == "[python]" || line.trim().starts_with("##") && line.contains("[python]") {
-                current_marker = Some("python".to_string());
-                continue;
-            }
-            if line.trim() == "[pyo3]" || line.trim().starts_with("##") && line.contains("[pyo3]") {
-                current_marker = Some("pyo3".to_string());
-                continue;
-            }
-            
-            // Track sections
-            if line.starts_with("## ") && !line.contains('[') {
-                current_section = line.trim_start_matches("## ").trim().to_string();
-                current_marker = None; // Reset marker at new section
-                continue;
-            }
-            
-            let patterns = [
-                ("REQUIREMENT", ClauseType::Requirement),
-                ("CONSTRAINT", ClauseType::Constraint),
-                ("DEFINITION", ClauseType::Definition),
-                ("ASSUMPTION", ClauseType::Assumption),
-                ("SCENARIO", ClauseType::Scenario),
-            ];
-            
-            for (prefix, clause_type) in &patterns {
-                let pattern = format!("- {}:", prefix);
-                if line.starts_with(&pattern) {
-                    let raw_text = line.trim_start_matches(&pattern).trim().to_string();
+        if is_ncl {
+            // NCL-style parsing
+            for (i, line) in lines.iter().enumerate() {
+                let trimmed = line.trim();
+                
+                // Track section from NCL structure
+                if trimmed.starts_with("morphism") && trimmed.contains("=") {
+                    current_section = trimmed.split("=").nth(1)
+                        .map(|s| s.trim().trim_matches('"').to_string())
+                        .unwrap_or_else(|| "morphism".to_string());
+                    continue;
+                }
+                
+                // Check for generation blocks (code generation directives)
+                if trimmed.contains("generation") && trimmed.contains("=") && trimmed.contains("{") {
+                    // Extract language from generation block
+                    let language = if self.content.contains("language = \"rust\"") || 
+                                      self.content.contains("language = 'rust'") {
+                        "rust"
+                    } else if self.content.contains("language = \"python\"") || 
+                              self.content.contains("language = 'python'") {
+                        "python"
+                    } else if self.content.contains("language = \"pyo3\"") || 
+                              self.content.contains("language = 'pyo3'") {
+                        "pyo3"
+                    } else {
+                        "unknown"
+                    };
+                    
+                    // Create a clause for this generation directive
+                    let raw_text = format!("Generation directive: {} for {}", trimmed, current_section);
                     let normalized = normalize_text(&raw_text);
                     let id = crate::identity::canon_id(&normalized);
                     
-                    // Determine effective marker
-                    let effective_marker = current_marker.clone().or_else(|| {
-                        if current_section.to_lowercase().contains("rust") ||
-                           current_section.to_lowercase().contains("sdk") {
-                            Some("rust".to_string())
-                        } else if current_section.to_lowercase().contains("python") ||
-                                  current_section.to_lowercase().contains("tui") {
-                            Some("python".to_string())
-                        } else {
-                            None
-                        }
-                    });
-                    
-                    // Check if clause should be included
-                    let should_include = match &effective_marker {
-                        None => true,
-                        Some(m) => relevant_markers.contains(&m.as_str()),
+                    let clause = Clause {
+                        id: id.clone(),
+                        clause_type: ClauseType::Requirement,
+                        text: normalized.clone(),
+                        raw_text: raw_text.clone(),
+                        section: current_section.clone(),
+                        source_file: self.path.clone(),
+                        line: i + 1,
+                        clause_semhash: sha256(&format!("clause:{}", normalized)),
+                        context_semhash: sha256(&format!("section:{};text:{}", current_section, normalized)),
+                        language_marker: Some(language.to_string()),
                     };
                     
-                    if should_include {
-                        let clause = Clause {
-                            id: id.clone(),
-                            clause_type: *clause_type,
-                            text: normalized.clone(),
-                            raw_text: raw_text.clone(),
-                            section: current_section.clone(),
-                            source_file: self.path.clone(),
-                            line: i + 1,
-                            clause_semhash: sha256(&format!("clause:{}", normalized)),
-                            context_semhash: sha256(&format!("section:{};text:{}", 
-                                current_section, normalized)),
-                            language_marker: effective_marker,
-                        };
+                    provenance.push(Provenance {
+                        canon_id: id,
+                        source_file: self.path.clone(),
+                        line_number: i + 1,
+                    });
+                    
+                    clauses.push(clause);
+                    break; // Only need one generation clause per spec
+                }
+            }
+        } else {
+            // Legacy markdown parsing (kept for backwards compatibility)
+            let mut current_marker: Option<String> = None;
+            
+            // Determine relevant markers for target language
+            let relevant_markers: Vec<&str> = match self.target_language.as_str() {
+                "rust" => vec!["rust", "pyo3"],
+                "python" | "py" => vec!["python"],
+                _ => vec![&self.target_language],
+            };
+            
+            for (i, line) in lines.iter().enumerate() {
+                // Track language markers
+                if line.trim() == "[rust]" || line.trim().starts_with("##") && line.contains("[rust]") {
+                    current_marker = Some("rust".to_string());
+                    continue;
+                }
+                if line.trim() == "[python]" || line.trim().starts_with("##") && line.contains("[python]") {
+                    current_marker = Some("python".to_string());
+                    continue;
+                }
+                if line.trim() == "[pyo3]" || line.trim().starts_with("##") && line.contains("[pyo3]") {
+                    current_marker = Some("pyo3".to_string());
+                    continue;
+                }
+                
+                // Track sections
+                if line.starts_with("## ") && !line.contains('[') {
+                    current_section = line.trim_start_matches("## ").trim().to_string();
+                    current_marker = None; // Reset marker at new section
+                    continue;
+                }
+                
+                let patterns = [
+                    ("REQUIREMENT", ClauseType::Requirement),
+                    ("CONSTRAINT", ClauseType::Constraint),
+                    ("DEFINITION", ClauseType::Definition),
+                    ("ASSUMPTION", ClauseType::Assumption),
+                    ("SCENARIO", ClauseType::Scenario),
+                ];
+                
+                for (prefix, clause_type) in &patterns {
+                    let pattern = format!("- {}:", prefix);
+                    if line.starts_with(&pattern) {
+                        let raw_text = line.trim_start_matches(&pattern).trim().to_string();
+                        let normalized = normalize_text(&raw_text);
+                        let id = crate::identity::canon_id(&normalized);
                         
-                        provenance.push(Provenance {
-                            canon_id: id,
-                            source_file: self.path.clone(),
-                            line_number: i + 1,
+                        // Determine effective marker
+                        let effective_marker = current_marker.clone().or_else(|| {
+                            if current_section.to_lowercase().contains("rust") ||
+                               current_section.to_lowercase().contains("sdk") {
+                                Some("rust".to_string())
+                            } else if current_section.to_lowercase().contains("python") ||
+                                      current_section.to_lowercase().contains("tui") {
+                                Some("python".to_string())
+                            } else {
+                                None
+                            }
                         });
                         
-                        clauses.push(clause);
+                        // Check if clause should be included
+                        let should_include = match &effective_marker {
+                            None => true,
+                            Some(m) => relevant_markers.contains(&m.as_str()),
+                        };
+                        
+                        if should_include {
+                            let clause = Clause {
+                                id: id.clone(),
+                                clause_type: *clause_type,
+                                text: normalized.clone(),
+                                raw_text: raw_text.clone(),
+                                section: current_section.clone(),
+                                source_file: self.path.clone(),
+                                line: i + 1,
+                                clause_semhash: sha256(&format!("clause:{}", normalized)),
+                                context_semhash: sha256(&format!("section:{};text:{}", 
+                                    current_section, normalized)),
+                                language_marker: effective_marker,
+                            };
+                            
+                            provenance.push(Provenance {
+                                canon_id: id,
+                                source_file: self.path.clone(),
+                                line_number: i + 1,
+                            });
+                            
+                            clauses.push(clause);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
-        
-        println!("    Found {} clauses", clauses.len());
         
         (clauses, provenance)
     }
