@@ -808,8 +808,6 @@ async fn cmd_pipeline_multi(
     
     let languages = detect_all_languages(&combined_content);
     
-    println!("▶ Multi-language: {}", languages.join(", "));
-    
     // Run pipeline for each language
     for lang in &languages {
         if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
@@ -820,7 +818,7 @@ async fn cmd_pipeline_multi(
     // Generate project-wide flake.nix based on all specs
     generate_project_flake(project_root, &combined_content).await?;
     
-    println!("✓ Done: {}", languages.join(", "));
+    println!("Done: {}", languages.join(", "));
     
     Ok(())
 }
@@ -860,13 +858,13 @@ async fn cmd_pipeline_single(
         }
     }
     
-    println!("▶ Phoenix Pipeline: {} → {} code", lang, if llm_available { "LLM" } else { "skeleton" });
+    println!("{}: {} → {} code", lang, if llm_available { "LLM" } else { "skeleton" });
     
     if llm_available {
         println!("   LLM: {}", full_url);
     }
     
-    println!("   📁 Scanned {} files", _file_count);
+    // Removed: "📁 Scanned {} files" - too verbose
     
     let spec = crate::lens::SpecDocument {
         content: combined_content,
@@ -915,7 +913,7 @@ async fn cmd_pipeline_single(
     
     if llm_available {
         // Use LLM for intelligent code generation
-        println!("   Generating...");
+        println!("   Generating {} IUs...", iu_graph.ius.len());
         
         // First pass: generate domain modules (excluding app)
         let mut domain_apis: Vec<crate::llm::ModuleApi> = Vec::new();
@@ -924,7 +922,7 @@ async fn cmd_pipeline_single(
         
         // Generate domain modules
         for (i, iu) in domain_ius.iter().enumerate() {
-            print!("   [{}/{}] Generating {}...", i + 1, domain_ius.len(), iu.name);
+            print!("     [{}/{}] {}...", i + 1, domain_ius.len(), iu.name);
             
             match crate::lens::generate_code_with_llm(iu, &llm_config, Some(&iu_graph.ius), None).await {
                 Ok(generated_code) => {
@@ -945,7 +943,7 @@ async fn cmd_pipeline_single(
                         traces_to: iu.source_canon_ids.clone(),
                     });
                     
-                    println!("   ✓ {}", iu.name);
+                    println!(" -> {}", path);
                 }
                 Err(e) => {
                     println!(" ✗ Error: {}", e);
@@ -964,7 +962,7 @@ async fn cmd_pipeline_single(
         
         // Second pass: generate app with knowledge of domain module APIs
         if let Some(app_iu) = app_iu_opt {
-            print!("   [{}/{}] Generating {}...", domain_ius.len() + 1, iu_graph.ius.len(), app_iu.name);
+            print!("     [{}/{}] {}...", domain_ius.len() + 1, iu_graph.ius.len(), app_iu.name);
             
             match crate::lens::generate_code_with_llm(app_iu, &llm_config, Some(&iu_graph.ius), Some(domain_apis)).await {
                 Ok(generated_code) => {
@@ -981,7 +979,7 @@ async fn cmd_pipeline_single(
                         traces_to: app_iu.source_canon_ids.clone(),
                     });
                     
-                    println!(" ✓ (IU: {}...)", &app_iu.iu_id[..16]);
+                    println!(" -> {}", path);
                 }
                 Err(e) => {
                     println!(" ✗ Error: {}", e);
@@ -1029,7 +1027,7 @@ async fn cmd_pipeline_single(
     };
     manifest.save(output_dir)?;
     
-    println!("✓ Generated {}", code_files.iter().map(|f| f.path.clone()).collect::<Vec<_>>().join(", "));
+    println!("   Generated: {}", code_files.iter().map(|f| f.path.clone()).collect::<Vec<_>>().join(", "));
     
     Ok(())
 }
@@ -1268,9 +1266,9 @@ async fn generate_project_flake(project_root: &Path, all_specs_content: &str) ->
     tokio::fs::write(&flake_path, flake_content).await?;
     
     if has_packages {
-        println!("   📦 Generated flake.nix with packages, apps, and devShell");
+        println!("   flake.nix -> packages, apps, devShell");
     } else {
-        println!("   📦 Generated flake.nix (devShell only)");
+        println!("   flake.nix -> devShell only");
     }
     
     Ok(())

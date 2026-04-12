@@ -319,7 +319,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     output_files: vec![output_path],
                 });
                 
-                println!("   🎯 Simplified Python: 1 IU (TUI → freeq_pyo3)");
+                println!("   Simplified Python: 1 IU (TUI → freeq_pyo3)");
             } else if lang == "rust" || lang == "rs" {
                 // Rust PyO3: Single lib wrapping freeq-sdk
                 let rust_nodes: Vec<&CanonNode> = canon.nodes.iter()
@@ -343,7 +343,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     output_files: vec![output_path],
                 });
                 
-                println!("   🎯 Simplified Rust: 1 IU (PyO3 → freeq-sdk)");
+                println!("   Simplified Rust: 1 IU (PyO3 → freeq-sdk)");
             } else {
                 // Fallback: domain-based partitioning for other languages
                 let mut groups: HashMap<String, Vec<&CanonNode>> = HashMap::new();
@@ -710,7 +710,7 @@ impl SpecDocument {
             }
         }
         
-        println!("    ✅ Found {} matching clauses", clauses.len());
+        println!("    Found {} clauses", clauses.len());
         
         (clauses, provenance)
     }
