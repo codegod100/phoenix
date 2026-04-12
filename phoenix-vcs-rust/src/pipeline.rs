@@ -353,6 +353,7 @@ pub enum CanonNodeType {
     Definition,
     Assumption,
     Scenario,
+    PipelineUpgrade,
 }
 
 /// μ_plan: Partition canonical nodes into Implementation Units
@@ -373,17 +374,23 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
         id_to_idx.insert(node.id.clone(), idx);
     }
     
-    // Add edges based on cross-references in statements
+    // Collect edges first to avoid borrow checker issues
+    let mut edges_to_add: Vec<(NodeIndex, NodeIndex)> = Vec::new();
     for (id, idx) in &id_to_idx {
         if let Some(node) = graph.node_weight(*idx) {
             for other_id in canon_output.nodes.iter().map(|n| &n.id) {
                 if id != other_id && node.clean_statement.contains(&other_id[..8.min(other_id.len())]) {
                     if let Some(&other_idx) = id_to_idx.get(other_id) {
-                        graph.add_edge(*idx, other_idx, ());
+                        edges_to_add.push((*idx, other_idx));
                     }
                 }
             }
         }
+    }
+    
+    // Add all collected edges
+    for (from, to) in edges_to_add {
+        graph.add_edge(from, to, ());
     }
     
     // Topological sort gives us a valid processing order
@@ -934,7 +941,11 @@ pub async fn run_pipeline(
     // Phase 3: Plan
     println!("\n▶ Phase: PLAN");
     println!("   μ_plan: ThCanon → ThIU (partition morphism)");
-    let plan_output = plan_implementation_units(canon_output.nodes, target_language).await?;
+    let canon_output_struct = CanonicalOutput {
+        nodes: canon_output.nodes,
+        total_duplicates: 0,
+    };
+    let plan_output = plan_ius(&canon_output_struct, target_language).await?;
     let ius_count = plan_output.ius.len();
     println!("   ✓ {} Implementation Units", ius_count);
     
