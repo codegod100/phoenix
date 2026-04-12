@@ -61,7 +61,8 @@ struct ExtractedItem {
     docs: Vec<String>,
     file_path: PathBuf,
     line_start: usize,
-    _line_end: usize,
+    #[allow(dead_code)]
+    line_end: usize,
     is_public: bool,
     parameters: Vec<String>,
     return_type: Option<String>,
