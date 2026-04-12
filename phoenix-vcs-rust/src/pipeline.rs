@@ -142,7 +142,12 @@ fn parse_ncl_spec(content: &str, source_path: &Path, target_lang: &str) -> Resul
         }
         
         // Detect output_path in morphism
-        if let Some((ref name, _, _, ref mut output_path)) = current_morphism {
+        if let Some((ref name, ref domain, ref codomain, ref mut output_path)) = current_morphism {
+            // Clone values we need to avoid borrow issues later
+            let name_clone = name.clone();
+            let domain_clone = domain.clone();
+            let codomain_clone = codomain.clone();
+            
             if trimmed.contains("output_path") && trimmed.contains("=") {
                 if let Some(path) = trimmed.split("=").nth(1) {
                     let path_clean = path.trim().trim_matches(',').trim_matches('"').trim_matches('"').to_string();
@@ -184,9 +189,9 @@ fn parse_ncl_spec(content: &str, source_path: &Path, target_lang: &str) -> Resul
                     if should_include {
                         // Create a clause from this morphism
                         let raw_text = format!("Morphism {}: {} → {} generating {} {:?}", 
-                            name, 
-                            current_morphism.as_ref().map(|(_, d, _, _)| d.clone()).unwrap_or_default(),
-                            current_morphism.as_ref().map(|(_, _, c, _)| c.clone()).unwrap_or_default(),
+                            name_clone, 
+                            domain_clone,
+                            codomain_clone,
                             language,
                             output_path
                         );
@@ -199,11 +204,11 @@ fn parse_ncl_spec(content: &str, source_path: &Path, target_lang: &str) -> Resul
                             clause_type: ClauseType::Requirement,
                             text: normalized.clone(),
                             raw_text: raw_text.clone(),
-                            section: format!("morphism_{}", name),
+                            section: format!("morphism_{}", name_clone),
                             source_file: source_path.to_string_lossy().to_string(),
                             line: i + 1,
                             clause_semhash: clause_hash.clone(),
-                            context_semhash: context_semhash(&normalized, &[&format!("morphism_{}", name)], &clause_hash, ""),
+                            context_semhash: context_semhash(&normalized, &[&format!("morphism_{}", name_clone)], &clause_hash, ""),
                             language_marker: Some(language),
                         });
                     }
@@ -279,8 +284,6 @@ pub fn generate_flake_nix(
     hooks: &[String],
     project_name: &str,
 ) -> String {
-    use std::fmt::Write;
-    
     let mut flake = String::new();
     
     // Header

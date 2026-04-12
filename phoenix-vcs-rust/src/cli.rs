@@ -828,9 +828,9 @@ async fn cmd_pipeline_single(
     specs_root: &Path,
     lang: &str,
     stub: bool,
-    skip_ingest: bool,
-    skip_canonicalize: bool,
-    skip_plan: bool,
+    _skip_ingest: bool,
+    _skip_canonicalize: bool,
+    _skip_plan: bool,
     verify: bool,
 ) -> Result<()> {
     info!("Running Phoenix pipeline for {}...", lang);
@@ -874,12 +874,12 @@ async fn cmd_pipeline_single(
     // Run through the lens
     // First, capture clause count directly from ingest
     let ingest_lens = crate::lens::ingest_lens();
-    let (clause_graph, ingest_comp) = (ingest_lens.get)(&spec);
+    let (clause_graph, _ingest_comp) = (ingest_lens.get)(&spec);
     let total_clauses = clause_graph.clauses.len();
     
     // Now run the full composed pipeline starting from the clause graph
     let canon_lens = crate::lens::canonicalize_lens();
-    let (canon_graph, canon_comp) = (canon_lens.get)(&clause_graph);
+    let (canon_graph, _canon_comp) = (canon_lens.get)(&clause_graph);
     let unique_nodes = canon_graph.nodes.len();
     let duplicates = total_clauses.saturating_sub(unique_nodes);
     
