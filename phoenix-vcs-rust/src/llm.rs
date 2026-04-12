@@ -46,6 +46,14 @@ struct FireworksRequest {
     messages: Vec<Message>,
     max_tokens: u32,
     temperature: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reasoning: Option<ReasoningConfig>,
+}
+
+#[derive(Debug, Serialize)]
+struct ReasoningConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    include_in_output: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -84,7 +92,7 @@ pub async fn generate_code_with_llm(
         messages: vec![
             Message {
                 role: "system".to_string(),
-                content: "You are an expert software engineer. Generate clean, well-documented, production-ready code. Follow best practices for the target language. Include Phoenix VCS tracking comments.".to_string(),
+                content: "You are a code generator. Output ONLY valid code. No explanations, no reasoning, no markdown formatting. Just raw code starting with the phoenix tracking comment.".to_string(),
             },
             Message {
                 role: "user".to_string(),
@@ -93,6 +101,9 @@ pub async fn generate_code_with_llm(
         ],
         max_tokens: config.max_tokens,
         temperature: config.temperature,
+        reasoning: Some(ReasoningConfig {
+            include_in_output: Some(false),
+        }),
     };
     
     let mut request_builder = client
