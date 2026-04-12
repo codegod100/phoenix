@@ -1021,8 +1021,8 @@ async fn cmd_pipeline_single(
     
     // Write generated files
     for file in &code_files {
-        let file_path = project_root.join(&file.path);
-        tokio::fs::create_dir_all(file_path.parent().unwrap_or(project_root)).await?;
+        let file_path = output_dir.join(&file.path);
+        tokio::fs::create_dir_all(file_path.parent().unwrap_or(output_dir)).await?;
         tokio::fs::write(&file_path, &file.content).await?;
     }
     
@@ -1046,7 +1046,7 @@ async fn cmd_pipeline_single(
             })
         }).collect(),
     };
-    manifest.save(project_root)?;
+    manifest.save(output_dir)?;
     
     println!();
     println!("══════════════════════════════════════════════════════════════");
