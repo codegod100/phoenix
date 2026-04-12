@@ -1088,7 +1088,7 @@ async fn cmd_pipeline_single(
     
     // Generate project configuration files based on detected requirements
     if target_language == "rust" {
-        generate_cargo_toml(output_dir, &canon_output.nodes).await?;
+        generate_flake_nix(output_dir, &canon_output.nodes).await?;
     }
     
     println!();
@@ -1284,8 +1284,8 @@ async fn cmd_reverse(
     Ok(())
 }
 
-/// Generate Cargo.toml based on detected requirements from specs
-async fn generate_cargo_toml(output_dir: &Path, canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
+/// Generate flake.nix based on detected requirements from specs
+async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::CanonNode]) -> Result<()> {
     // Analyze requirements to determine dependencies
     let all_text: String = canon_nodes.iter()
         .map(|n| n.clean_statement.clone())
@@ -1297,53 +1297,105 @@ async fn generate_cargo_toml(output_dir: &Path, canon_nodes: &[crate::pipeline::
     let needs_async = all_text.contains("async") || all_text.contains("tokio") || needs_pyo3;
     let needs_atproto = all_text.contains("ATProto") || all_text.contains("atproto") || all_text.contains("DID");
     let needs_irc = all_text.contains("IRC") || all_text.contains("irc");
+    let needs_textual = all_text.contains("Textual") || all_text.contains("textual") || all_text.contains("TUI");
     
-    let mut deps = vec![
-        ("pyo3", "{ version = \"0.21\", features = [\"extension-module\", \"abi3-py38\"] }", needs_pyo3),
-        ("pyo3-asyncio", "{ version = \"0.21\", features = [\"tokio-runtime\"] }", needs_pyo3),
-        ("tokio", "{ version = \"1\", features = [\"rt\", \"rt-multi-thread\", \"macros\", \"net\", \"io-util\"] }", needs_async),
-        ("tokio-native-tls", "\"0.3\"", needs_tls && !all_text.contains("rustls")),
-        ("rustls", "{ version = \"0.21\", features = [\"dangerous_configuration\"] }", needs_tls && all_text.contains("rustls")),
-        ("serde", "{ version = \"1.0\", features = [\"derive\"] }", all_text.contains("serde") || all_text.contains("JSON")),
-        ("serde_json", "\"1.0\"", all_text.contains("JSON")),
-        ("sha2", "\"0.10\"", all_text.contains("SHA") || all_text.contains("hash")),
-        ("thiserror", "\"1.0\"", all_text.contains("Error") || all_text.contains("error")),
-        ("anyhow", "\"1.0\"", all_text.contains("Result") || needs_async),
-    ];
+    // Build flake.nix content
+    let mut flake = String::new();
+    flake.push_str("{\n");
+    flake.push_str("  description = \"FreeQ PyO3 module with dependencies detected from specs\";\n\n");
+    flake.push_str("  inputs = {\n");
+    flake.push_str("    nixpkgs.url = \"github:NixOS/nixpkgs/nixos-unstable\";\n");
+    flake.push_str("    flake-utils.url = \"github:numtide/flake-utils\";\n");
+    flake.push_str("  };\n\n");
+    flake.push_str("  outputs = { self, nixpkgs, flake-utils }:\n");
+    flake.push_str("    flake-utils.lib.eachDefaultSystem (system:\n");
+    flake.push_str("      let\n");
+    flake.push_str("        pkgs = nixpkgs.legacyPackages.${system};\n");
+    flake.push_str("        python = pkgs.python312;\n");
+    flake.push_str("      in\n");
+    flake.push_str("      {\n");
+    flake.push_str("        devShells.default = pkgs.mkShell {\n");
+    flake.push_str("          buildInputs = with pkgs; [\n");
+    flake.push_str("            # Rust toolchain\n");
+    flake.push_str("            cargo\n");
+    flake.push_str("            rustc\n");
+    flake.push_str("            rustfmt\n");
+    flake.push_str("            clippy\n");
     
-    // Add freeq-sdk dependency if this is a PyO3 wrapper
-    let needs_freeq_sdk = needs_pyo3 && (needs_irc || needs_atproto);
-    if needs_freeq_sdk {
-        deps.push(("freeq-sdk", "{ path = \"../../freeq-sdk\" }", true));
+    if needs_pyo3 {
+        flake.push_str("\n            # PyO3 / maturin\n");
+        flake.push_str("            maturin\n");
+        flake.push_str("            python\n");
     }
     
-    // Build Cargo.toml content
-    let mut cargo_toml = String::new();
-    cargo_toml.push_str("[package]\n");
-    cargo_toml.push_str("name = \"freeq-pyo3\"\n");
-    cargo_toml.push_str("version = \"0.1.0\"\n");
-    cargo_toml.push_str("edition = \"2021\"\n");
-    cargo_toml.push_str("\n[lib]\n");
-    cargo_toml.push_str("name = \"freeq_pyo3\"\n");
-    cargo_toml.push_str("crate-type = [\"cdylib\"]\n");
-    cargo_toml.push_str("\n[dependencies]\n");
-    
-    for (name, version, needed) in deps {
-        if needed {
-            cargo_toml.push_str(&format!("{} = {}\n", name, version));
-        }
+    if needs_tls {
+        flake.push_str("\n            # TLS/OpenSSL\n");
+        flake.push_str("            openssl\n");
+        flake.push_str("            openssl.dev\n");
+        flake.push_str("            pkg-config\n");
     }
     
-    // Write Cargo.toml
-    let cargo_path = output_dir.join("Cargo.toml");
-    tokio::fs::write(&cargo_path, cargo_toml).await?;
-    
-    println!("   📦 Generated Cargo.toml with detected dependencies:");
-    for (name, _, needed) in deps {
-        if needed {
-            println!("      + {}", name);
-        }
+    if needs_textual {
+        flake.push_str("\n            # Python TUI\n");
+        flake.push_str("            python312Packages.textual\n");
+        flake.push_str("            python312Packages.pillow\n");
     }
+    
+    flake.push_str("          ];\n\n");
+    
+    // Add environment variables
+    flake.push_str("          env = {\n");
+    if needs_pyo3 {
+        flake.push_str("            PYO3_PYTHON = \"${python}/bin/python\";\n");
+    }
+    if needs_tls {
+        flake.push_str("            OPENSSL_DIR = \"${pkgs.openssl.dev}\";\n");
+        flake.push_str("            OPENSSL_LIB_DIR = \"${pkgs.openssl.out}/lib\";\n");
+        flake.push_str("            PKG_CONFIG_PATH = \"${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH\";\n");
+    }
+    flake.push_str("          };\n\n");
+    
+    // Add shell hook
+    flake.push_str("          shellHook = ''\n");
+    flake.push_str("            echo \"FreeQ development shell\"\n");
+    if needs_pyo3 {
+        flake.push_str("            echo \"\n");
+        flake.push_str("            echo \"Quick start:\"\n");
+        flake.push_str("            echo \"  maturin develop  # Build PyO3 module\"\n");
+        flake.push_str("            echo \"  python -c 'import freeq_pyo3'  # Test import\"\n");
+    }
+    flake.push_str("          '';\n");
+    flake.push_str("        };\n");
+    
+    // Add app if pyo3
+    if needs_pyo3 {
+        flake.push_str("\n        apps.default = {\n");
+        flake.push_str("          type = \"app\";\n");
+        flake.push_str("          program = toString (pkgs.writeShellScript \"freeq-dev\" ''\n");
+        flake.push_str("            export OPENSSL_DIR=\"${pkgs.openssl.dev}\"\n");
+        flake.push_str("            export OPENSSL_LIB_DIR=\"${pkgs.openssl.out}/lib\"\n");
+        flake.push_str("            export PKG_CONFIG_PATH=\"${pkgs.openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH\"\n");
+        flake.push_str("            ${pkgs.maturin}/bin/maturin develop\n");
+        flake.push_str("            exec ${python}/bin/python -c \"import freeq_pyo3; print('OK')\"\n");
+        flake.push_str("          '');\n");
+        flake.push_str("        };\n");
+    }
+    
+    flake.push_str("      });\n");
+    flake.push_str("}\n");
+    
+    // Write flake.nix
+    let flake_path = output_dir.join("flake.nix");
+    tokio::fs::write(&flake_path, flake).await?;
+    
+    println!("   📦 Generated flake.nix with detected dependencies:");
+    println!("      Detected from specs:");
+    if needs_pyo3 { println!("        - PyO3 bindings (maturin, python)"); }
+    if needs_tls { println!("        - TLS/OpenSSL support"); }
+    if needs_async { println!("        - Async runtime (tokio)"); }
+    if needs_irc { println!("        - IRC protocol"); }
+    if needs_atproto { println!("        - ATProto authentication"); }
+    if needs_textual { println!("        - Textual TUI"); }
     
     Ok(())
 }
