@@ -154,6 +154,10 @@ pub enum Commands {
     
     /// Run the spec-to-code generation pipeline (generates for all language markers found)
     Pipeline {
+        /// Output directory for Rust code (if different from project root)
+        #[arg(long)]
+        rust_output: Option<PathBuf>,
+        
         /// Skip ingest phase
         #[arg(long)]
         skip_ingest: bool,
@@ -267,8 +271,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { skip_ingest, skip_canonicalize, skip_plan, verify } => {
-            cmd_pipeline_multi(&cli.project_root, skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Commands::Pipeline { rust_output, skip_ingest, skip_canonicalize, skip_plan, verify } => {
+            cmd_pipeline_multi(&cli.project_root, rust_output.as_deref(), skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
         Commands::VerifyLaws { lang } => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -750,6 +754,7 @@ fn detect_all_languages(content: &str) -> Vec<String> {
 /// Run pipeline for all detected languages
 async fn cmd_pipeline_multi(
     project_root: &Path,
+    rust_output: Option<&Path>,
     skip_ingest: bool,
     skip_canonicalize: bool,
     skip_plan: bool,
@@ -792,7 +797,14 @@ async fn cmd_pipeline_multi(
         println!("▶ Language {}/{}: {}", i + 1, languages.len(), lang);
         println!("══════════════════════════════════════════════════════════════");
         
-        if let Err(e) = cmd_pipeline_single(project_root, lang, skip_ingest, skip_canonicalize, skip_plan, verify).await {
+        // Use rust_output for rust language, project_root for others
+        let output_dir = if lang == "rust" && rust_output.is_some() {
+            rust_output.unwrap()
+        } else {
+            project_root
+        };
+        
+        if let Err(e) = cmd_pipeline_single(output_dir, project_root, lang, skip_ingest, skip_canonicalize, skip_plan, verify).await {
             println!("⚠️  Pipeline for {} failed: {}", lang, e);
         }
         println!();
@@ -807,7 +819,8 @@ async fn cmd_pipeline_multi(
 
 /// Run pipeline for a single language
 async fn cmd_pipeline_single(
-    project_root: &Path,
+    output_dir: &Path,
+    specs_root: &Path,
     lang: &str,
     skip_ingest: bool,
     skip_canonicalize: bool,
@@ -822,7 +835,7 @@ async fn cmd_pipeline_single(
     let full_url = format!("{}/chat/completions", llm_config.api_base);
     
     // Load all specs from specs/ directory
-    let specs_dir = project_root.join("specs");
+    let specs_dir = specs_root.join("specs");
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
     let mut file_count = 0;
