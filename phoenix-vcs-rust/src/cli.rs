@@ -1065,8 +1065,8 @@ async fn cmd_pipeline_single(
     manifest.save(output_dir)?;
     
     // Generate project configuration files based on detected requirements
-    if target_language == "rust" {
-        generate_flake_nix(output_dir, &canon_output.nodes).await?;
+    if lang == "rust" {
+        generate_flake_nix(output_dir, &canon_graph.nodes).await?;
     }
     
     println!();
@@ -1276,7 +1276,7 @@ async fn generate_flake_nix(output_dir: &Path, canon_nodes: &[crate::pipeline::C
     let needs_rust = all_text.contains("[rust]") || all_text.contains("[pyo3]");
     let needs_python = all_text.contains("[python]");
     let needs_tls = all_text.to_lowercase().contains("tls") || all_text.to_lowercase().contains("ssl");
-    let needs_async = all_text.contains("async") || all_text.contains("tokio");
+    let _needs_async = all_text.contains("async") || all_text.contains("tokio");
     let needs_pyo3 = all_text.to_lowercase().contains("pyo3");
     
     // Build packages list dynamically
