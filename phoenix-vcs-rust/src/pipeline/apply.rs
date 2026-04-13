@@ -91,12 +91,13 @@ pub fn canon_node_to_domain_term(node: &CanonNode) -> Term {
 fn extract_domain_simple(statement: &str) -> &'static str {
     let lower = statement.to_lowercase();
     
-    let domains: [(&str, Vec<&str>); 6] = [
+    let domains: [(&str, Vec<&str>); 7] = [
         ("auth", vec!["auth", "login", "user", "session", "password", "token"]),
         ("database", vec!["db", "database", "query", "storage", "persist"]),
         ("api", vec!["api", "endpoint", "route", "http", "request", "response"]),
         ("validation", vec!["validate", "check", "verify", "sanitiz"]),
         ("security", vec!["encrypt", "secure", "hash", "permission"]),
+        ("navigation", vec!["nav", "keyboard", "shortcut", "key binding", "focus", "tab", "arrow"]),
         ("core", vec![]), // default
     ];
     

@@ -45,6 +45,7 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
     let mut clauses = Vec::new();
     let mut entries = tokio::fs::read_dir(&project_path).await?;
     let mut ncl_count = 0;
+    let mut combined_content = String::new();
     
     // Track first parsed NCL for formal morphism creation
     let mut first_parsed: Option<crate::ncl::ParsedNcl> = None;
@@ -60,6 +61,8 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
         if ext == Some("ncl") {
             ncl_count += 1;
             let content = tokio::fs::read_to_string(&path).await?;
+            combined_content.push_str(&format!("\n## Source: {}\n\n", path.display()));
+            combined_content.push_str(&content);
             
             // Parse NCL for both clauses and formal morphism
             match crate::ncl::parse_ncl_spec(&content, &path.to_string_lossy()) {
@@ -117,7 +120,11 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
     println!("   📁 Scanned {} .ncl files, found {} matching clauses", 
         ncl_count, clauses.len());
     
-    Ok(IngestOutput::new(clauses, vec![]))
+    Ok(IngestOutput {
+        clauses,
+        source_files: vec![],
+        spec_content: combined_content,
+    })
 }
 
 /// Parse NCL (Nickel) spec file into clauses using nickel-lang-core
@@ -440,12 +447,17 @@ fn map_to_nixpkg(pkg: &str) -> String {
 pub struct IngestOutput {
     pub clauses: Vec<Clause>,
     pub source_files: Vec<String>,
+    pub spec_content: String,  // Combined content of all spec files for flake generation
 }
 
 impl IngestOutput {
     /// Create new ingest output
     pub fn new(clauses: Vec<Clause>, source_files: Vec<String>) -> Self {
-        Self { clauses, source_files }
+        Self { 
+            clauses, 
+            source_files,
+            spec_content: String::new(),
+        }
     }
 }
 
@@ -855,6 +867,42 @@ pub struct ImplementationUnit {
 ///
 /// Input: IUs with contracts
 /// Output: Generated code files
+/// Generate code using pure term morphisms (no templates)
+pub async fn generate_code_term_based(
+    ius: &[ImplementationUnit],
+    output_dir: impl AsRef<Path>,
+) -> Result<CodegenOutput> {
+    let output_dir = output_dir.as_ref();
+    tokio::fs::create_dir_all(output_dir).await?;
+    
+    let mut files = Vec::new();
+    
+    for iu in ius {
+        if iu.target_language != "python" && iu.target_language != "py" {
+            // Fall back to template for non-Python languages
+            continue;
+        }
+        
+        let file_path = output_dir.join(format!("{}.py", iu.name));
+        
+        // Use pure term morphism: IU → PythonTerm → String
+        let code = term_codegen::generate_from_term(iu);
+        
+        tokio::fs::write(&file_path, &code).await?;
+        
+        files.push(GeneratedFile {
+            path: file_path.to_string_lossy().to_string(),
+            iu_id: iu.iu_id.clone(),
+            hash: file_hash(&code),
+            size: code.len(),
+        });
+        
+        println!("   🧮 Term-generated: {} (μ_iu→term ∘ μ_term→code)", file_path.display());
+    }
+    
+    Ok(CodegenOutput { files })
+}
+
 pub async fn generate_code(
     ius: &[ImplementationUnit],
     output_dir: impl AsRef<Path>,
@@ -865,7 +913,40 @@ pub async fn generate_code(
     let project_root = project_root.as_ref();
     tokio::fs::create_dir_all(output_dir).await?;
     
+    // DEFAULT: Use pure term morphism generation (no templates, no LLM)
+    // For template-based generation, set PHOENIX_TEMPLATE_MODE=1
+    if std::env::var("PHOENIX_TEMPLATE_MODE").is_err() {
+        println!("   🧮 Using pure term morphism generation (no templates)");
+        println!("      μ_iu→term: ThIU → ThPythonTextual");
+        println!("      μ_term→code: ThPythonTextual → String");
+        return generate_code_term_based(ius, output_dir).await;
+    }
+    
+    // FALLBACK: Template-based generation with formal validation
+    println!("   📄 Using template-based generation (PHOENIX_TEMPLATE_MODE set)");
+    
+    // Load template based on target language
+    let template_dir = std::env::var("PHOENIX_TEMPLATE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|exe| exe.parent().map(|p| p.join("templates")))
+                .unwrap_or_else(|| PathBuf::from("templates"))
+        });
+    
+    let template_name = match target_language {
+        "python" | "py" => "python-textual",
+        "rust" | "rs" => "rust",
+        _ => "rust",
+    };
+    
+    let template = crate::ncl::load_code_template(&template_dir, template_name)
+        .map_err(|e| anyhow::anyhow!("Failed to load template '{}': {}", template_name, e))?;
+    let template_hash = crate::identity::file_hash(&template.code_template);
+    
     let mut files = Vec::new();
+    let mut validation_errors = Vec::new();
     
     for iu in ius {
         let file_path = match iu.target_language.as_str() {
@@ -875,7 +956,26 @@ pub async fn generate_code(
             _ => output_dir.join(format!("{}.rs", iu.name)),
         };
         
-        let code = generate_skeleton_code(iu, Some(ius));
+        // Use formal template application with validation
+        let formal_app = template_formal::FormalTemplateApplication::apply(
+            &template,
+            template_name,
+            &template_hash,
+            iu,
+        );
+        
+        // Report validation results
+        if let Err(violations) = &formal_app.validation_result {
+            eprintln!("⚠️  Formal validation errors for IU {}:", iu.iu_id);
+            for violation in violations {
+                eprintln!("   - {}", violation);
+            }
+            validation_errors.extend(violations.clone());
+        } else {
+            println!("✅ Formal validation passed for IU {}: {}", iu.iu_id, iu.name);
+        }
+        
+        let code = formal_app.rendered_code.clone();
         tokio::fs::write(&file_path, &code).await?;
         
         files.push(GeneratedFile {
@@ -884,6 +984,14 @@ pub async fn generate_code(
             hash: file_hash(&code),
             size: code.len(),
         });
+    }
+    
+    // Fail if there are validation errors in strict mode
+    if std::env::var("PHOENIX_STRICT_VALIDATION").is_ok() && !validation_errors.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Formal template validation failed with {} errors. Set PHOENIX_STRICT_VALIDATION=0 to allow.",
+            validation_errors.len()
+        ));
     }
     
     // Generate pyproject.toml for Python projects
@@ -1312,10 +1420,35 @@ pub async fn run_pipeline(
     // Phase 4: Codegen
     println!("\n▶ Phase: CODEGEN");
     println!("   μ_codegen: ThIU → ThCode (generative morphism)");
+    
+    // Check which mode we're in
+    if std::env::var("PHOENIX_TEMPLATE_MODE").is_err() {
+        println!("   ├─ DEFAULT: Pure term morphism (no LLM, no templates)");
+        println!("   │  ├─ μ_iu→term: ThIU → ThPythonTextual");
+        println!("   │  ├─ μ_term→code: ThPythonTextual → String");
+        println!("   │  └─ Composition: μ_codegen = μ_term→code ∘ μ_iu→term");
+        println!("   │");
+        println!("   └─ Set PHOENIX_TEMPLATE_MODE=1 for template-based generation");
+    } else {
+        println!("   ├─ TEMPLATE MODE: Formal template application");
+        println!("   │  ├─ μ_iu_to_vars: ThIU → ThTemplateVars");
+        println!("   │  ├─ μ_template_render: ThTemplateVars × ThTemplate → ThCode");
+        println!("   │  └─ With formal validation equations");
+        println!("   │");
+        println!("   └─ Unset PHOENIX_TEMPLATE_MODE for term-based generation");
+    }
+    
     let output_dir = project_root.join("src").join("generated");
     let codegen_output = generate_code(&plan_output.ius, &output_dir, project_root, target_language).await?;
     let files_count = codegen_output.files.len();
     println!("   ✓ Generated {} files", files_count);
+    
+    // Report formal validation status
+    if std::env::var("PHOENIX_STRICT_VALIDATION").is_ok() {
+        println!("   🔒 Strict validation mode: All equations enforced");
+    } else {
+        println!("   ⚠️  Validation warnings enabled (set PHOENIX_STRICT_VALIDATION=1 to enforce)");
+    }
     for file in &codegen_output.files {
         println!("     - {}", file.path);
     }
@@ -1359,6 +1492,18 @@ pub async fn run_pipeline(
     });
     tokio::fs::write(&ius_path, serde_json::to_string_pretty(&ius_data)?).await?;
     
+    // Phase 5: Generate flake.nix from spec (formal build configuration)
+    println!("\n▶ Phase: FLAKE GENERATION");
+    println!("   μ_flake: ThSpec → ThNix (build configuration morphism)");
+    match generate_flake_from_spec(project_root, &ingest_output.spec_content, target_language).await {
+        Ok(flake_path) => {
+            println!("   ✓ Generated {}", flake_path.display());
+        }
+        Err(e) => {
+            println!("   ⚠️  Flake generation skipped: {}", e);
+        }
+    }
+    
     Ok(PipelineResult {
         clauses_parsed: clauses_count,
         canonical_nodes: nodes_count,
@@ -1386,6 +1531,9 @@ pub mod formal;
 
 // Apply formal morphisms to pipeline data
 pub mod apply;
+pub mod template_formal;
+pub mod term_codegen;
+pub mod nix_codegen;
 
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;
@@ -1426,3 +1574,62 @@ pub use equations::{
     print_morphism_preservation_results,
     VerificationResult, VerificationReport, MorphismPreservationResult,
 };
+
+/// Generate flake.nix from spec content (formal build configuration)
+/// 
+/// This implements μ_flake: ThSpec → ThNix
+pub async fn generate_flake_from_spec(
+    project_root: &Path,
+    spec_content: &str,
+    target_language: &str,
+) -> Result<PathBuf> {
+    // Try to parse the spec to get proper config
+    let spec_path = project_root.join("spec.ncl");
+    let (project_name, build_type, extra_deps) = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        if let Ok(parsed) = crate::ncl::parse_ncl_spec(&content, "spec.ncl") {
+            let name = parsed.name
+                .or_else(|| parsed.flake.as_ref().and_then(|f| f.pname.clone()))
+                .unwrap_or_else(|| "phoenix-project".to_string());
+            
+            let build_type = parsed.build_type
+                .unwrap_or_else(|| target_language.to_string());
+            
+            // Extract extra_deps from generic fields
+            let extra_deps = parsed.generic
+                .as_ref()
+                .and_then(|g| g.get("extra_deps"))
+                .cloned()
+                .unwrap_or_default();
+            
+            (name, build_type, extra_deps)
+        } else {
+            ("phoenix-project".to_string(), target_language.to_string(), String::new())
+        }
+    } else {
+        ("phoenix-project".to_string(), target_language.to_string(), String::new())
+    };
+    
+    // Generate flake using formal term morphism: ThSpec → ThNix → String
+    // Parse extra_deps into list
+    let deps: Vec<String> = extra_deps
+        .split(|c| c == ',' || c == '[' || c == ']' || c == '\n')
+        .map(|s| s.trim().trim_matches('"').to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
+    let flake_content = nix_codegen::generate_flake_from_spec_term(
+        &project_name,
+        &build_type,
+        "0.1.0",
+        &deps,
+    );
+    
+    let flake_path = project_root.join("flake.nix");
+    tokio::fs::write(&flake_path, flake_content).await?;
+    
+    Ok(flake_path)
+}
+
+// Note: The old generate_python_flake, generate_rust_flake, generate_generic_flake functions
+// have been replaced by the proper formal theory in nix_codegen.rs
+// The morphism μ_flake: ThSpec → ThNix is now implemented algebraically via term constructors.

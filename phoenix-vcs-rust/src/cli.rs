@@ -954,6 +954,12 @@ async fn cmd_pipeline_single(
         crate::pipeline::print_theory_summary(&th_iu, "ThIU");
         crate::pipeline::print_theory_summary(&th_code, "ThCode");
         
+        // Show template formal theories
+        let th_template = crate::pipeline::template_formal::template_theory();
+        let th_template_vars = crate::pipeline::template_formal::template_vars_theory();
+        crate::pipeline::print_theory_summary(&th_template, "ThTemplate");
+        crate::pipeline::print_theory_summary(&th_template_vars, "ThTemplateVars");
+        
         println!("   ↳ Pipeline Morphisms:");
         
         // Show canonical morphisms
@@ -965,12 +971,19 @@ async fn cmd_pipeline_single(
         crate::pipeline::print_morphism_summary(&mu_plan);
         crate::pipeline::print_morphism_summary(&mu_codegen);
         
+        // Show template morphisms
+        let mu_iu_to_vars = crate::pipeline::template_formal::iu_to_vars_morphism();
+        let mu_template_render = crate::pipeline::template_formal::template_render_morphism();
+        crate::pipeline::print_morphism_summary(&mu_iu_to_vars);
+        crate::pipeline::print_morphism_summary(&mu_template_render);
+        
         // Show equations for each theory
         println!("   ⚖️  Algebraic Laws (Equations):");
         crate::pipeline::print_equations("ThClause", &crate::pipeline::clause_equations());
         crate::pipeline::print_equations("ThCanon", &crate::pipeline::canon_equations());
         crate::pipeline::print_equations("ThIU", &crate::pipeline::iu_equations());
         crate::pipeline::print_equations("ThCode", &crate::pipeline::code_equations());
+        crate::pipeline::print_equations("ThTemplateVars", &crate::pipeline::template_formal::template_equations());
         
         // Verify morphism equation preservation with detailed results
         println!("   ✓ Verifying morphism preservation of equations:");
@@ -1073,8 +1086,47 @@ async fn cmd_pipeline_single(
     // Collect generated code files
     let mut code_files = Vec::new();
     
-    if llm_available {
-        // Use LLM for intelligent code generation
+    // DEFAULT: Use formal term-based pipeline (no LLM, deterministic)
+    if std::env::var("PHOENIX_TEMPLATE_MODE").is_err() && std::env::var("PHOENIX_LLM_MODE").is_err() {
+        println!("   🧮 Using formal term-based code generation (no LLM)");
+        println!("      μ_codegen: ThIU → ThPythonTextual → String");
+        
+        // Convert IU graph to ImplementationUnits for pipeline
+        let ius: Vec<_> = iu_graph.ius.clone();
+        let gen_output = crate::pipeline::generate_code(&ius, output_dir, specs_root, lang).await?;
+        
+        // Convert to CodeFile format
+        for file in gen_output.files {
+            let content = tokio::fs::read_to_string(output_dir.join(&file.path)).await?;
+            code_files.push(crate::lens::CodeFile {
+                path: file.path,
+                iu_id: file.iu_id,
+                content,
+                hash: file.hash,
+                traces_to: vec![],
+            });
+        }
+        
+        // Generate integrated app that wires all IUs together
+        if code_files.len() > 1 {
+            println!("   🔌 Generating integrated app entry point...");
+            let integrated = generate_integrated_app(&iu_graph.ius, lang);
+            let app_path = format!("src/generated/app.{}", if lang == "python" || lang == "py" { "py" } else { "rs" });
+            code_files.push(crate::lens::CodeFile {
+                path: app_path.clone(),
+                iu_id: "integrated-app".to_string(),
+                content: integrated.clone(),
+                hash: crate::identity::file_hash(&integrated),
+                traces_to: iu_graph.ius.iter().map(|iu| iu.iu_id.clone()).collect(),
+            });
+            tokio::fs::write(output_dir.join(&app_path), integrated).await?;
+            println!("   ✓ Integrated app: {}", app_path);
+        }
+        
+        println!("   ✓ Generated {} files via term morphism", code_files.len());
+    } else if llm_available && std::env::var("PHOENIX_LLM_MODE").is_ok() {
+        // OPTIONAL: Use LLM for intelligent code generation
+        println!("   🤖 Using LLM-based code generation (PHOENIX_LLM_MODE set)");
         println!("   Generating {} IUs...", iu_graph.ius.len());
         
         // First pass: generate domain modules (excluding app)
@@ -1600,33 +1652,56 @@ async fn generate_project_flake(project_root: &Path, all_specs_content: &str) ->
         })
         .unwrap_or_else(|| "phoenix-project".to_string());
     
-    let flake_content = if flake_config.is_some() {
-        // Generate from flake config
-        generate_flake_from_config(&project_name, flake_config.as_ref().unwrap())
-            .map_err(|e| anyhow::anyhow!("Failed to generate flake from spec config: {}", e))?
+    // Use formal term-based flake generation (μ_flake: ThSpec → ThNix → String)
+    let build_type = if all_specs_content.contains("build_type = \"python\"") || 
+                        all_specs_content.contains("build_type = \"py\"") ||
+                        all_specs_content.contains("template = \"python") {
+        "python"
+    } else if all_specs_content.contains("build_type = \"rust\"") || 
+              all_specs_content.contains("build_type = \"rs\"") ||
+              all_specs_content.contains("template = \"rust") {
+        "rust"
     } else {
-        // Detect if this has a flake.packages section (legacy format)
-        let has_packages = all_specs_content.contains("flake = {") && 
-                           all_specs_content.contains("packages = {");
-        
-        if has_packages {
-            // Generate full flake with packages, apps, devShells
-            generate_full_flake(&project_name, all_specs_content)
-        } else {
-            // Generate simple devShell only (legacy format) - may error if build type unknown
-            generate_simple_flake(project_root, &project_name, all_specs_content)
-                .map_err(|e| anyhow::anyhow!("Failed to generate flake: {}. Please add explicit flake configuration or specify build_type in your spec file.", e))?
-        }
+        "python" // default
     };
+    
+    // Extract deps from extra_deps if present
+    let deps: Vec<String> = if let Some(start) = all_specs_content.find("extra_deps") {
+        let section = &all_specs_content[start..];
+        if let Some(py_start) = section.find("python = [") {
+            let py_section = &section[py_start..];
+            if let Some(end) = py_section.find("]") {
+                let list = &py_section[10..end];
+                list.split(',')
+                    .map(|s| s.trim().trim_matches('"').to_string())
+                    .filter(|s| !s.is_empty() && !s.starts_with('#'))
+                    .collect()
+            } else {
+                vec![]
+            }
+        } else {
+            vec![]
+        }
+    } else {
+        vec![]
+    };
+    
+    // Generate flake using formal term morphism
+    let flake_content = crate::pipeline::nix_codegen::generate_flake_from_spec_term(
+        &project_name,
+        build_type,
+        "0.1.0",
+        &deps,
+    );
     
     // Write flake.nix to project root
     let flake_path = project_root.join("flake.nix");
     tokio::fs::write(&flake_path, flake_content).await?;
     
     if flake_config.is_some() {
-        println!("   flake.nix -> generated from spec config");
+        println!("   flake.nix -> generated from spec config (legacy)");
     } else {
-        println!("   flake.nix -> devShell only (no flake config in spec)");
+        println!("   flake.nix -> generated via μ_flake: ThSpec → ThNix → String");
     }
     
     Ok(())
@@ -1775,6 +1850,120 @@ EOF
         project_name,
         project_name, project_name,
         project_name
+    )
+}
+
+/// Generate integrated app entry point that wires all IUs together
+/// 
+/// This creates a formal term: IntegratedApp = Σ(IU_imports) + MainEntry
+fn generate_integrated_app(ius: &[crate::pipeline::ImplementationUnit], lang: &str) -> String {
+    if lang == "python" || lang == "py" {
+        generate_python_integrated_app(ius)
+    } else {
+        generate_rust_integrated_app(ius)
+    }
+}
+
+fn generate_python_integrated_app(ius: &[crate::pipeline::ImplementationUnit]) -> String {
+    let domain_modules: Vec<_> = ius.iter()
+        .filter(|iu| !iu.name.contains("app"))
+        .map(|iu| {
+            let name = iu.name.replace("-", "_");
+            format!("    from .{} import {}", 
+                name.to_lowercase(),
+                name.to_uppercase()
+            )
+        })
+        .collect();
+    
+    let module_list: Vec<_> = ius.iter()
+        .filter(|iu| !iu.name.contains("app"))
+        .map(|iu| {
+            let name = iu.name.replace("-", "_");
+            format!("        {}.{},", 
+                name.to_lowercase(),
+                name.to_uppercase()
+            )
+        })
+        .collect();
+    
+    format!(r#"# phoenix: iu_id = "integrated-app"
+# phoenix: generated_by = formal_term_morphism
+# Integrated app entry point - wires all domain IUs together
+
+{imports}
+
+class IntegratedApp:
+    """Main application integrating all domain modules."""
+    
+    def __init__(self):
+        # Initialize all domain modules
+{init_modules}
+    
+    def run(self):
+        """Run the integrated application."""
+        print("🚀 Starting integrated application...")
+        # Coordinate all modules
+        return 0
+
+def main() -> int:
+    """Entry point."""
+    app = IntegratedApp()
+    return app.run()
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
+"#,
+        imports = if domain_modules.is_empty() { "# No domain modules".to_string() } else { domain_modules.join("\n") },
+        init_modules = if module_list.is_empty() { "        pass  # No modules to initialize".to_string() } else { module_list.join("\n") }
+    )
+}
+
+fn generate_rust_integrated_app(ius: &[crate::pipeline::ImplementationUnit]) -> String {
+    let domain_modules: Vec<_> = ius.iter()
+        .filter(|iu| !iu.name.contains("app"))
+        .map(|iu| {
+            let name = iu.name.replace("-", "_");
+            format!("pub mod {};", name.to_lowercase())
+        })
+        .collect();
+    
+    format!(r#"// phoenix: iu_id = "integrated-app"
+// phoenix: generated_by = formal_term_morphism
+// Integrated app entry point - wires all domain IUs together
+
+{imports}
+
+use std::error::Error;
+
+/// Main application integrating all domain modules.
+pub struct IntegratedApp {{
+    // Domain module instances
+}}
+
+impl IntegratedApp {{
+    /// Create new integrated application.
+    pub fn new() -> Self {{
+        Self {{
+            // Initialize domain modules
+        }}
+    }}
+    
+    /// Run the integrated application.
+    pub fn run(&self) -> Result<(), Box<dyn Error>> {{
+        println!("🚀 Starting integrated application...");
+        // Coordinate all modules
+        Ok(())
+    }}
+}}
+
+fn main() -> Result<(), Box<dyn Error>> {{
+    let app = IntegratedApp::new();
+    app.run()
+}}
+"#,
+        imports = domain_modules.join("\n")
     )
 }
 

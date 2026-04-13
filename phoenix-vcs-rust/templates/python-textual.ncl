@@ -110,8 +110,8 @@ CORRECT WIDGET UPDATE PATTERN (copy this structure):
         yield Header()
         yield Horizontal(
             Vertical(
-                Static("Uptime", id="uptime_label"),
-                Static("00:00:00", id="uptime_value"),  # Descriptive ID!
+                Static("Status", id="status_label"),
+                Static("Ready", id="status_value"),  # Descriptive ID!
                 id="sidebar"
             ),
             id="main"
@@ -119,10 +119,10 @@ CORRECT WIDGET UPDATE PATTERN (copy this structure):
         yield Footer()
     
     def on_mount(self) -> None:
-        self.title = "Dashboard"
+        self.title = "{{Name}}"
         # CORRECT: Query by specific ID, then update()
-        uptime_display = self.query_one("#uptime_value", Static)
-        uptime_display.update("System Ready")
+        status_display = self.query_one("#status_value", Static)
+        status_display.update("{{Name}} Ready")
     
     def update_uptime(self, new_value: str) -> None:
         # CORRECT: Direct query by ID, no iteration, no text comparison
