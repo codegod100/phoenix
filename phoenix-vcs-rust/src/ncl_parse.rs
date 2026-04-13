@@ -321,9 +321,11 @@ mod tests {
     fn test_parse_real_spec() {
         let spec = include_str!("/home/nandi/code/simple-tui/spec.ncl");
         let config = extract_ui_config(spec).expect("Should parse real spec");
-        // Real spec should have at least header, sidebar, main
-        assert!(!config.widgets.is_empty(), "Should parse some widgets from real spec");
-        assert!(config.widgets.len() >= 4, "Should have at least 4 widgets");
+        // Real spec uses array format with nested containers
+        // Parser extracts top-level widgets (not recursively into children)
+        assert!(!config.widgets.is_empty(), "Should parse at least 1 top-level widget from real spec");
+        // Should have header, main_container, footer at minimum
+        assert!(config.widgets.len() >= 3, "Should have at least 3 top-level widgets (header, main_container, footer)");
     }
 
     #[test]

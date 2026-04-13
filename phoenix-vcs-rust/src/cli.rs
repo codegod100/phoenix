@@ -996,8 +996,11 @@ async fn cmd_pipeline_multi(
         }
     }
     
-    // Generate project-wide flake.nix based on all specs
-    generate_project_flake(project_root, &combined_content).await?;
+    // Only generate top-level flake.nix for multi-language projects
+    // Single-language projects get their flake from the bundle
+    if languages.len() > 1 {
+        generate_project_flake(project_root, &combined_content).await?;
+    }
     
     println!("Done: {}", languages.join(", "));
     

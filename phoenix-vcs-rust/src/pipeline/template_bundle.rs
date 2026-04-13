@@ -381,7 +381,9 @@ pub enum PyProjectTerm {
 
 /// Morphism: ThSpec → ThPyProject
 fn spec_to_pyproject_term(project_name: &str, deps: &[String]) -> PyProjectTerm {
-    let pname = project_name.to_lowercase().replace("-", "_");
+    // Sanitize: lowercase, spaces→hyphens for valid Python package names
+    let pname = project_name.to_lowercase().replace(" ", "-").replace("_", "-");
+    let pname_underscore = pname.replace("-", "_");
     
     PyProjectTerm::Root {
         build_system: Box::new(PyProjectTerm::BuildSystem {
@@ -553,6 +555,6 @@ mod tests {
         assert!(toml.contains("name = \"my-app\""));
         assert!(toml.contains("textual\""));
         assert!(toml.contains("rich\""));
-        assert!(toml.contains("my_app = \"app:main\""));
+        assert!(toml.contains("my-app = \"app:main\""));
     }
 }
