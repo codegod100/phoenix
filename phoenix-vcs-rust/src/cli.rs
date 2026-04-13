@@ -908,6 +908,10 @@ async fn cmd_pipeline_single(
         println!("   LLM: {}", full_url);
     }
     
+    // Clone content for formal morphism (used when panproto is enabled)
+    #[cfg(feature = "panproto")]
+    let content_for_morphism = combined_content.clone();
+    
     // Removed: "📁 Scanned {} files" - too verbose
     
     let spec = crate::lens::SpecDocument {
@@ -921,6 +925,33 @@ async fn cmd_pipeline_single(
     let ingest_lens = crate::lens::ingest_lens();
     let (clause_graph, _ingest_comp) = (ingest_lens.get)(&spec);
     let total_clauses = clause_graph.clauses.len();
+    
+    // Create and report formal theory morphism (when panproto is enabled)
+    #[cfg(feature = "panproto")]
+    {
+        // Use pre-cloned content to create formal theory
+        if let Ok(parsed) = crate::ncl::parse_ncl_spec(&content_for_morphism, "combined.ncl") {
+            let theory = parsed.to_panproto_theory();
+            match crate::pipeline::morphisms::create_ncl_to_code_morphism(&theory, lang) {
+                Ok(morphism) => {
+                    println!("   🧮 Formal TheoryMorphism: {} → {}", 
+                        morphism.domain, morphism.codomain);
+                    if !morphism.sort_map.is_empty() {
+                        println!("      Sort mappings:");
+                        for (src, tgt) in &morphism.sort_map {
+                            println!("        {} → {}", src, tgt);
+                        }
+                    }
+                    if !morphism.op_map.is_empty() {
+                        println!("      Operation mappings: {}", morphism.op_map.len());
+                    }
+                }
+                Err(e) => {
+                    println!("   ⚠️  Formal morphism error: {}", e);
+                }
+            }
+        }
+    }
     
     // Now run the full composed pipeline starting from the clause graph
     let canon_lens = crate::lens::canonicalize_lens();

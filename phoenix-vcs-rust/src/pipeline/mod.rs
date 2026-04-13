@@ -30,10 +30,13 @@ pub struct StageStatus {
     pub error: Option<String>,
 }
 
-/// μ_ingest: Parse specifications into content-addressed clauses
+/// μ_ingest: Parse specifications into content-addressed clauses using formal morphisms
 ///
 /// Input: Nickel (.ncl) files in project root directory
 /// Output: Clauses with canon IDs (semantic hashes) filtered by target language
+///
+/// When panproto is enabled, also creates a formal TheoryMorphism from
+/// NCL requirements theory to target language code theory.
 pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> Result<IngestOutput> {
     let project_path = project_root.as_ref();
     
@@ -42,6 +45,9 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
     let mut clauses = Vec::new();
     let mut entries = tokio::fs::read_dir(&project_path).await?;
     let mut ncl_count = 0;
+    
+    // Track first parsed NCL for formal morphism creation
+    let mut first_parsed: Option<crate::ncl::ParsedNcl> = None;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
@@ -54,16 +60,33 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
         if ext == Some("ncl") {
             ncl_count += 1;
             let content = tokio::fs::read_to_string(&path).await?;
-            match parse_ncl_spec_to_clauses(&content, &path, target_lang) {
-                Ok(ncl_clauses) => {
-                    let gen_count = ncl_clauses.len();
-                    println!("   🗂️  {}: {} generation directives", 
-                        path.file_name().unwrap().to_string_lossy(), 
-                        gen_count);
-                    clauses.extend(ncl_clauses);
+            
+            // Parse NCL for both clauses and formal morphism
+            match crate::ncl::parse_ncl_spec(&content, &path.to_string_lossy()) {
+                Ok(parsed) => {
+                    // Store first parsed for formal morphism
+                    if first_parsed.is_none() {
+                        first_parsed = Some(parsed.clone());
+                    }
+                    
+                    // Convert to clauses using the parsed NCL
+                    match parse_ncl_spec_to_clauses(&content, &path, target_lang) {
+                        Ok(ncl_clauses) => {
+                            let gen_count = ncl_clauses.len();
+                            println!("   🗂️  {}: {} generation directives", 
+                                path.file_name().unwrap().to_string_lossy(), 
+                                gen_count);
+                            clauses.extend(ncl_clauses);
+                        }
+                        Err(e) => {
+                            println!("   ⚠️  {}: parse error - {}", 
+                                path.file_name().unwrap().to_string_lossy(), 
+                                e);
+                        }
+                    }
                 }
                 Err(e) => {
-                    println!("   ⚠️  {}: parse error - {}", 
+                    println!("   ⚠️  {}: NCL parse error - {}", 
                         path.file_name().unwrap().to_string_lossy(), 
                         e);
                 }
@@ -71,13 +94,30 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
         }
     }
     
+    // Report formal morphism when panproto is enabled
+    #[cfg(feature = "panproto")]
+    if let Some(parsed) = first_parsed {
+        let theory = parsed.to_panproto_theory();
+        match crate::pipeline::morphisms::create_ncl_to_code_morphism(&theory, target_lang) {
+            Ok(morphism) => {
+                println!("   🧮 Formal TheoryMorphism: {} → {}", 
+                    morphism.domain, morphism.codomain);
+                println!("      Sort mappings: {}", morphism.sort_map.len());
+                println!("      Operation mappings: {}", morphism.op_map.len());
+                for (src, tgt) in &morphism.sort_map {
+                    println!("        {} → {}", src, tgt);
+                }
+            }
+            Err(e) => {
+                println!("   ⚠️  Failed to create formal morphism: {}", e);
+            }
+        }
+    }
+    
     println!("   📁 Scanned {} .ncl files, found {} matching clauses", 
         ncl_count, clauses.len());
     
-    Ok(IngestOutput {
-        clauses,
-        source_files: vec![],
-    })
+    Ok(IngestOutput::new(clauses, vec![]))
 }
 
 /// Parse NCL (Nickel) spec file into clauses using nickel-lang-core
@@ -395,11 +435,18 @@ fn map_to_nixpkg(pkg: &str) -> String {
 }
 
 
-/// Output of ingest phase
+/// Output of μ_ingest phase
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IngestOutput {
     pub clauses: Vec<Clause>,
     pub source_files: Vec<String>,
+}
+
+impl IngestOutput {
+    /// Create new ingest output
+    pub fn new(clauses: Vec<Clause>, source_files: Vec<String>) -> Self {
+        Self { clauses, source_files }
+    }
 }
 
 /// A parsed clause from specification
