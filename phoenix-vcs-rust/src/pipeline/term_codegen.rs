@@ -1098,7 +1098,7 @@ pub fn generate_from_theory(
         Assign {
             target: Box::new(Var("app".to_string())),
             value: Box::new(Call {
-                func: Box::new(Var(class_name.clone())),
+                func: Box::new(Var(format!("{}App", class_name))),
                 args: vec![],
             }),
         },
