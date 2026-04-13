@@ -55,10 +55,11 @@ TEXTUAL FRAMEWORK RULES:
     - margin: 0, 1
     - height: auto, 100%, 1fr, or N (number)
     - width: auto, 100%, 1fr, or N (number)
-    - border: none, solid, heavy, double, rounded
+    - border: none, solid, heavy, double, round
     - display: block, none
     - visibility: visible, hidden
     NEVER USE INVALID: text:, font:, font-weight:, font-size:, font-family:
+    CRITICAL: Use 'round' NOT 'rounded' for border property - 'rounded' causes CSS parsing errors!
 23. compose() MUST yield Header(), then content widgets, then Footer()
 24. Use widget ids for styling and queries: Static("...", id="title")
 25. Implement on_mount(self) for initialization (set self.title)
