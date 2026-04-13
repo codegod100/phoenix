@@ -933,8 +933,16 @@ async fn cmd_pipeline_multi(
                     Ok(spec_ncl) => {
                         // Validate generated spec has actual content
                         if spec_ncl.trim().len() < 50 || spec_ncl.contains("awaiting input") {
+                            // Save failed output for debugging
+                            let debug_path = spec_ncl_path.with_extension("ncl.failed");
+                            tokio::fs::write(&debug_path, &spec_ncl).await.ok();
                             anyhow::bail!(
-                                "LLM generated empty/invalid spec.ncl - template filling failed. Check your spec.md content and ensure FIREWORKS_API_KEY is valid."
+                                "LLM generated empty/invalid spec.ncl - template filling failed.\n\
+                                 Debug output saved to: {}\n\
+                                 Generated content (first 500 chars): {}\n\
+                                 Check: (1) spec.md has valid content, (2) FIREWORKS_API_KEY is valid, (3) template is correct.",
+                                debug_path.display(),
+                                &spec_ncl.chars().take(500).collect::<String>()
                             );
                         }
                         // Backup existing spec.ncl if present
