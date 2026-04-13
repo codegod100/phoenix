@@ -1,21 +1,19 @@
 # Theory Document Example for Simple TUI
 # This is a panproto TheoryDocument that defines ThPythonTextual
 # 
-# Architecture:
-# - Sorts: ThPyproject, ThNix, ThApp, ThCSS, ThREADME, UIConfig, Widget, etc.
-# - Operations: generate_* ops produce artifacts, mk_ui_config produces UIConfig
-# - The ui_config is a TERM (instance) of sort UIConfig defined via equations
+# Architecture: Each UI concept is its own sort - no UIConfig wrapper!
+# The "ui config" is decomposed into separate sorts that work together.
 
 {
   # TheoryDocument metadata (REQUIRED)
   id = "dev.phoenix.simple-tui",
   description = "A feature-rich terminal user interface built with Textual",
   
-  # Theory name (string, not record)
+  # Theory name
   theory = "SimpleTUI",
   extends = [],
   
-  # Sort declarations
+  # Sort declarations - each UI concept is a FIRST-CLASS SORT
   sorts = [
     # Artifact generation sub-theories
     { name = "ThPyproject", kind = { type = "structural" } },
@@ -24,9 +22,19 @@
     { name = "ThCSS", kind = { type = "structural" } },
     { name = "ThREADME", kind = { type = "structural" } },
     { name = "ThIntegratedApp", kind = { type = "structural" } },
-    # UI types - UIConfig is now a proper sort!
-    { name = "UIConfig", kind = { type = "structural" } },
-    { name = "Widget", kind = { type = "structural" } },
+    
+    # UI types - each is its own sort!
+    { name = "ProjectName", kind = { type = "val", value_kind = "string" } },
+    { name = "ProjectDescription", kind = { type = "val", value_kind = "string" } },
+    { name = "LayoutType", kind = { type = "val", value_kind = "string" } },
+    { name = "LayoutColumns", kind = { type = "val", value_kind = "integer" } },
+    { name = "LayoutRows", kind = { type = "val", value_kind = "string" } },
+    { name = "LayoutGap", kind = { type = "val", value_kind = "integer" } },
+    { name = "WidgetTree", kind = { type = "structural" } },
+    { name = "KeyBindings", kind = { type = "structural" } },
+    { name = "Styles", kind = { type = "structural" } },
+    
+    # Widget types (each is a sort)
     { name = "Header", kind = { type = "structural" } },
     { name = "Sidebar", kind = { type = "structural" } },
     { name = "MainContent", kind = { type = "structural" } },
@@ -35,7 +43,7 @@
     { name = "LogView", kind = { type = "structural" } },
     { name = "Static", kind = { type = "structural" } },
     { name = "Container", kind = { type = "structural" } },
-    { name = "KeyBinding", kind = { type = "structural" } },
+    
     # Primitives
     { name = "String", kind = { type = "structural" } },
     { name = "Number", kind = { type = "structural" } },
@@ -43,9 +51,9 @@
     { name = "Config", kind = { type = "structural" } },
   ],
   
-  # Operations - constructors for the theory
+  # Operations - constructors for each sort
   ops = [
-    # Sub-theory generation operations
+    # Sub-theory generation
     { 
       name = "generate_pyproject",
       inputs = [
@@ -86,33 +94,15 @@
       ],
       output = "Markdown"
     },
-    # Composition operation
-    {
-      name = "compose_app",
-      inputs = [
-        { name = "pyproject", sort = "TOML" },
-        { name = "app", sort = "Python" },
-        { name = "css", sort = "CSS" },
-        { name = "readme", sort = "Markdown" },
-        { name = "config", sort = "Config" }
-      ],
-      output = "ThIntegratedApp"
-    },
-    # UIConfig constructor - this creates the UIConfig instance!
-    {
-      name = "mk_ui_config",
-      inputs = [
-        { name = "name", sort = "String" },
-        { name = "description", sort = "String" },
-        { name = "layout_type", sort = "String" },
-        { name = "columns", sort = "Number" },
-        { name = "rows", sort = "String" },
-        { name = "gap", sort = "Number" },
-        { name = "widgets", sort = "Array Widget" },
-        { name = "key_bindings", sort = "Array KeyBinding" },
-      ],
-      output = "UIConfig"
-    },
+    
+    # UI value constructors - each creates its own sort
+    { name = "mk_project_name", inputs = [{ name = "name", sort = "String" }], output = "ProjectName" },
+    { name = "mk_description", inputs = [{ name = "desc", sort = "String" }], output = "ProjectDescription" },
+    { name = "mk_layout_type", inputs = [{ name = "type", sort = "String" }], output = "LayoutType" },
+    { name = "mk_layout_columns", inputs = [{ name = "cols", sort = "Number" }], output = "LayoutColumns" },
+    { name = "mk_layout_rows", inputs = [{ name = "rows", sort = "String" }], output = "LayoutRows" },
+    { name = "mk_layout_gap", inputs = [{ name = "gap", sort = "Number" }], output = "LayoutGap" },
+    
     # Widget constructors
     { 
       name = "mk_header",
@@ -128,7 +118,7 @@
       inputs = [
         { name = "id", sort = "String" },
         { name = "title", sort = "String" },
-        { name = "children", sort = "Array Widget" }
+        { name = "children", sort = "WidgetTree" }
       ],
       output = "Sidebar"
     },
@@ -137,7 +127,7 @@
       inputs = [
         { name = "id", sort = "String" },
         { name = "title", sort = "String" },
-        { name = "children", sort = "Array Widget" }
+        { name = "children", sort = "WidgetTree" }
       ],
       output = "MainContent"
     },
@@ -180,11 +170,19 @@
       inputs = [
         { name = "id", sort = "String" },
         { name = "title", sort = "String" },
-        { name = "children", sort = "Array Widget" }
+        { name = "children", sort = "WidgetTree" }
       ],
       output = "Container"
     },
-    # Key binding constructor
+    
+    # WidgetTree composition
+    {
+      name = "mk_widget_tree",
+      inputs = [{ name = "widgets", sort = "Array Widget" }],
+      output = "WidgetTree"
+    },
+    
+    # Key bindings
     { 
       name = "mk_key_binding",
       inputs = [
@@ -192,18 +190,33 @@
         { name = "action", sort = "String" },
         { name = "context", sort = "String" }
       ],
-      output = "KeyBinding"
+      output = "KeyBindings"
     },
-  ],
-  
-  # Directed equations - these define the actual UI config INSTANCE
-  # as a term in the theory. The ui_config is now a proper term!
-  directed_equations = [
     {
-      name = "ui_config",
-      lhs = "UIConfig",
-      rhs = "mk_ui_config(...)",
-      impl_expr = "mk_ui_config(name, desc, layout, cols, rows, gap, widgets, keys)",
+      name = "mk_key_bindings",
+      inputs = [{ name = "bindings", sort = "Array KeyBindings" }],
+      output = "KeyBindings"
+    },
+    
+    # Styles
+    {
+      name = "mk_styles",
+      inputs = [{ name = "styles", sort = "Styles" }],
+      output = "Styles"
+    },
+    
+    # Composition: ThNix uses this to build the app
+    {
+      name = "compose_app",
+      inputs = [
+        { name = "name", sort = "ProjectName" },
+        { name = "desc", sort = "ProjectDescription" },
+        { name = "layout_type", sort = "LayoutType" },
+        { name = "widgets", sort = "WidgetTree" },
+        { name = "keys", sort = "KeyBindings" },
+        { name = "styles", sort = "Styles" },
+      ],
+      output = "ThIntegratedApp"
     },
   ],
   
@@ -213,29 +226,26 @@
   version = "0.1.0",
   spec_version = "1.0",
   
-  # Phoenix-specific: the ui_config values for easy extraction
-  # This is NOT part of the theory - it's instance data Phoenix uses
-  # Extract this field after loading the theory
+  # Phoenix instance config - the actual values
+  # Each field here maps to a sort in the theory
   phoenix_config = {
-    name = "Simple TUI",
-    description = "A simple terminal UI for task management",
-    layout = {
-      type = "grid",
-      columns = 2,
-      rows = "1fr 4fr 1fr",
-      gap = 1,
-      widgets = [
-        { type = "Header", id = "header", title = "Simple TUI", show_clock = true },
-        { type = "Sidebar", id = "sidebar", title = "Navigation", children = [
-          { type = "ListView", id = "nav_list", items = ["Home", "Tasks", "Settings"], focusable = true }
-        ]},
-        { type = "Container", id = "main", title = "Main Content", children = [
-          { type = "Static", id = "welcome", content = "Welcome to Simple TUI" },
-          { type = "LogView", id = "log", max_lines = 100, follow_tail = true }
-        ]},
-        { type = "Footer", id = "footer", text = "Press 'q' to quit, 'h' for help" }
-      ],
-    },
+    project_name = "Simple TUI",
+    project_description = "A simple terminal UI for task management",
+    layout_type = "grid",
+    layout_columns = 2,
+    layout_rows = "1fr 4fr 1fr",
+    layout_gap = 1,
+    widgets = [
+      { type = "Header", id = "header", title = "Simple TUI", show_clock = true },
+      { type = "Sidebar", id = "sidebar", title = "Navigation", children = [
+        { type = "ListView", id = "nav_list", items = ["Home", "Tasks", "Settings"], focusable = true }
+      ]},
+      { type = "Container", id = "main", title = "Main Content", children = [
+        { type = "Static", id = "welcome", content = "Welcome to Simple TUI" },
+        { type = "LogView", id = "log", max_lines = 100, follow_tail = true }
+      ]},
+      { type = "Footer", id = "footer", text = "Press 'q' to quit, 'h' for help" }
+    ],
     key_bindings = [
       { key = "q", action = "quit", context = "global" },
       { key = "h", action = "help", context = "global" },

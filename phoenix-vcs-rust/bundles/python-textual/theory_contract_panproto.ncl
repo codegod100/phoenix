@@ -1,14 +1,11 @@
 # Contract-Based Template for Python-Textual (Theory Document Format)
 # 
-# This template generates a panproto TheoryDocument that can be loaded
-# by panproto_theory_dsl::load() as ThPythonTextual.
-#
-# Key insight: UIConfig is now a proper SORT in the theory, not an extra field!
-# The actual config values go in phoenix_config (extra field, ignored by panproto)
+# Architecture: UI concepts are DECOMPOSED into separate sorts
+# No UIConfig wrapper - each concept (name, layout, widgets, etc.) is its own sort!
 
 # Forward declarations for recursive types
 let rec
-  # Widget sort definition (recursive for children)
+  # Widget tree (recursive for children)
   Widget = {
     type | String,
     id | String,
@@ -18,77 +15,66 @@ let rec
     props | { _ : String },
   },
   
-  # KeyBinding sort definition
+  # Key binding
   KeyBinding = {
     key | String,
     action | String,
     context | String,
   },
   
-  # InputSpec for operation inputs
+  # Input for operation
   InputSpec = {
     name | String,
     sort | String,
   },
   
-  # SortSpec for sort declarations
+  # Sort kind - use "val" for value sorts (strings, numbers)
+  ValKind = { type | String, value_kind | String },
+  StructuralKind = { type | String },
+  
+  # Sort declaration
   SortSpec = {
     name | String,
-    kind | { type | String },
+    kind | ValKind or StructuralKind,
   },
   
-  # OpSpec for operation declarations
+  # Operation
   OpSpec = {
     name | String,
     inputs | Array InputSpec,
     output | String,
   },
   
-  # Directed equation for defining terms
-  DirectedEqSpec = {
-    name | String,
-    lhs | String,
-    rhs | String,
-    impl_expr | String,
-  },
-  
-  # Phoenix config - instance data (not part of theory)
+  # Phoenix instance config
   PhoenixConfig = {
-    name | String,
-    description | String,
-    layout | {
-      type | String,
-      columns | Number,
-      rows | String,
-      gap | Number,
-      widgets | Array Widget,
-    },
+    project_name | String,
+    project_description | String,
+    layout_type | String,
+    layout_columns | Number,
+    layout_rows | String,
+    layout_gap | Number,
+    widgets | Array Widget,
     key_bindings | Array KeyBinding,
     styles | { _ : String },
   }
 
-# The panproto TheoryDocument format (FLAT structure)
+# TheoryDocument format - each UI concept is its own sort!
 in {
-  # Required TheoryDocument fields
+  # Required fields
   id | String,
   description | String,
-  
-  # Theory name (string, not record)
   theory | String,
   
-  # Sort declarations - at TOP LEVEL
+  # Sorts - each UI concept is a FIRST-CLASS SORT
   sorts | Array SortSpec,
   
-  # Operations - at TOP LEVEL  
+  # Operations - constructors for each sort
   ops | Array OpSpec,
   
-  # Directed equations (optional) - define actual UI terms
-  directed_equations | Array DirectedEqSpec,
-  
-  # Phoenix instance config - at TOP LEVEL (extra field, ignored by panproto)
+  # Phoenix instance data
   phoenix_config | PhoenixConfig,
   
-  # Extra metadata (ignored by panproto)
+  # Metadata
   template | String,
   build_type | String,
   version | String,

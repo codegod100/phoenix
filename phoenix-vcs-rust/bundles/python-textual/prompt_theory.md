@@ -13,97 +13,122 @@ and generate a valid panproto TheoryDocument.
 {{contract_content}}
 ```
 
-## CRITICAL: TheoryDocument Structure
+## CRITICAL: Decomposed Sorts (No UIConfig!)
 
-The output MUST follow this exact FLAT structure with UIConfig as a SORT:
+Instead of one big UIConfig sort, DECOMPOSE into separate sorts:
+- ProjectName (val sort - holds the string)
+- ProjectDescription (val sort - holds the string)
+- LayoutType, LayoutColumns, LayoutRows, LayoutGap (val sorts)
+- WidgetTree (structural sort - holds widget hierarchy)
+- KeyBindings (structural sort)
+- Styles (structural sort)
+
+## Required Structure
 
 ```nickel
 {
-  # TheoryDocument metadata (REQUIRED)
   id = "dev.phoenix.{project-name}",
-  description = "Human-readable description from spec",
-  
-  # Theory name (STRING, not a record!)
+  description = "Human-readable description",
   theory = "{ProjectName}TUI",
   
-  # Sort declarations - at TOP LEVEL
+  # Sorts - each UI concept is its own sort!
   sorts = [
-    # Sub-theories that generate artifacts
+    # Artifact sub-theories
     { name = "ThPyproject", kind = { type = "structural" } },
     { name = "ThNix", kind = { type = "structural" } },
     { name = "ThApp", kind = { type = "structural" } },
     { name = "ThCSS", kind = { type = "structural" } },
     { name = "ThREADME", kind = { type = "structural" } },
     { name = "ThIntegratedApp", kind = { type = "structural" } },
-    # UI types - UIConfig is a PROPER SORT!
-    { name = "UIConfig", kind = { type = "structural" } },
-    { name = "Widget", kind = { type = "structural" } },
+    
+    # UI value sorts (val kind = holds actual values)
+    { name = "ProjectName", kind = { type = "val", value_kind = "string" } },
+    { name = "ProjectDescription", kind = { type = "val", value_kind = "string" } },
+    { name = "LayoutType", kind = { type = "val", value_kind = "string" } },
+    { name = "LayoutColumns", kind = { type = "val", value_kind = "integer" } },
+    { name = "LayoutRows", kind = { type = "val", value_kind = "string" } },
+    { name = "LayoutGap", kind = { type = "val", value_kind = "integer" } },
+    
+    # UI structural sorts
+    { name = "WidgetTree", kind = { type = "structural" } },
+    { name = "KeyBindings", kind = { type = "structural" } },
+    { name = "Styles", kind = { type = "structural" } },
+    
+    # Widget types (each is a sort)
     { name = "Header", kind = { type = "structural" } },
     { name = "Sidebar", kind = { type = "structural" } },
+    { name = "MainContent", kind = { type = "structural" } },
     { name = "Footer", kind = { type = "structural" } },
     { name = "ListView", kind = { type = "structural" } },
     { name = "LogView", kind = { type = "structural" } },
     { name = "Static", kind = { type = "structural" } },
     { name = "Container", kind = { type = "structural" } },
-    { name = "KeyBinding", kind = { type = "structural" } },
+    
     # Primitives
     { name = "String", kind = { type = "structural" } },
     { name = "Number", kind = { type = "structural" } },
     { name = "Bool", kind = { type = "structural" } },
   ],
   
-  # Operations - at TOP LEVEL
+  # Operations - one constructor per sort
   ops = [
-    # Sub-theory generation operations
+    # Sub-theory generation
     { name = "generate_pyproject", inputs = [...], output = "TOML" },
     { name = "generate_nix", inputs = [...], output = "Nix" },
     { name = "generate_app", inputs = [...], output = "Python" },
     { name = "generate_css", inputs = [...], output = "CSS" },
     { name = "generate_readme", inputs = [...], output = "Markdown" },
-    # UIConfig constructor - creates UIConfig instances!
-    {
-      name = "mk_ui_config",
-      inputs = [
-        { name = "name", sort = "String" },
-        { name = "description", sort = "String" },
-        { name = "layout_type", sort = "String" },
-        { name = "columns", sort = "Number" },
-        { name = "rows", sort = "String" },
-        { name = "gap", sort = "Number" },
-        { name = "widgets", sort = "Array Widget" },
-        { name = "key_bindings", sort = "Array KeyBinding" },
-      ],
-      output = "UIConfig"
-    },
-    # Widget constructors - extract from spec
-    { name = "mk_header", inputs = [...], output = "Header" },
+    
+    # Value constructors (mk_X creates sort X)
+    { name = "mk_project_name", inputs = [{ name = "name", sort = "String" }], output = "ProjectName" },
+    { name = "mk_layout_type", inputs = [{ name = "type", sort = "String" }], output = "LayoutType" },
+    { name = "mk_layout_columns", inputs = [{ name = "cols", sort = "Number" }], output = "LayoutColumns" },
+    
+    # Widget constructors
+    { name = "mk_header", inputs = [{ name = "id", sort = "String" }, { name = "title", sort = "String" }, { name = "show_clock", sort = "Bool" }], output = "Header" },
     { name = "mk_sidebar", inputs = [...], output = "Sidebar" },
     { name = "mk_list_view", inputs = [...], output = "ListView" },
-    ...
+    { name = "mk_static", inputs = [...], output = "Static" },
+    { name = "mk_log_view", inputs = [...], output = "LogView" },
+    { name = "mk_container", inputs = [...], output = "Container" },
+    { name = "mk_footer", inputs = [...], output = "Footer" },
+    
+    # Composition
+    { name = "mk_widget_tree", inputs = [{ name = "widgets", sort = "Array Widget" }], output = "WidgetTree" },
+    { name = "mk_key_bindings", inputs = [{ name = "bindings", sort = "Array KeyBindings" }], output = "KeyBindings" },
+    
+    # Final composition for ThNix
+    {
+      name = "compose_app",
+      inputs = [
+        { name = "name", sort = "ProjectName" },
+        { name = "desc", sort = "ProjectDescription" },
+        { name = "layout_type", sort = "LayoutType" },
+        { name = "widgets", sort = "WidgetTree" },
+        { name = "keys", sort = "KeyBindings" },
+      ],
+      output = "ThIntegratedApp"
+    },
   ],
   
-  # PHOENIX CONFIG - the actual UI values (extra field, ignored by panproto)
+  # Phoenix instance data
   phoenix_config = {
-    name = "Project Name",
-    description = "From spec overview",
-    layout = {
-      type = "grid",
-      columns = 2,
-      rows = "1fr 3fr auto",
-      gap = 1,
-      widgets = [
-        { type = "Header", id = "header", title = "...", show_clock = true },
-        # ... extract ALL widgets from spec
-      ],
-    },
+    project_name = "Extracted from # heading",
+    project_description = "Extracted from ## Overview",
+    layout_type = "grid",
+    layout_columns = 2,
+    layout_rows = "1fr 3fr auto",
+    layout_gap = 1,
+    widgets = [
+      # Extract all widgets from spec
+    ],
     key_bindings = [
-      { key = "q", action = "quit", context = "global" },
-      # ... extract from ## Key Bindings section
+      # Extract from ## Key Bindings
     ],
     styles = {},
   },
   
-  # Extra metadata at top level (ignored by panproto)
+  # Metadata
   template = "python-textual",
   build_type = "python",
   version = "0.1.0",
@@ -111,24 +136,22 @@ The output MUST follow this exact FLAT structure with UIConfig as a SORT:
 }
 ```
 
-## KEY INSIGHT: UIConfig is a Sort
+## KEY INSIGHT: Decomposed Sorts
 
-- **UIConfig** is a proper sort (type) in the theory, like `ThApp` or `Header`
-- **mk_ui_config** is an operation that produces UIConfig values
-- **phoenix_config** is the actual instance data Phoenix uses
-- panproto loads the theory (sorts, ops) and ignores phoenix_config
-- Phoenix extracts phoenix_config separately after loading
+- **val sorts**: Hold actual values (ProjectName = "Simple TUI")
+- **structural sorts**: Hold structure (WidgetTree, KeyBindings)
+- Each concept has its own sort - no UIConfig wrapper!
+- ThNix composes the sorts together in compose_app
 
 ## CRITICAL RULES
 
-1. **UIConfig as sort**: Include `{ name = "UIConfig", kind = { type = "structural" } }` in sorts
-2. **mk_ui_config operation**: Define this constructor in ops
-3. **phoenix_config at top level**: The actual values Phoenix uses
-4. **FLAT structure**: sorts/ops at top level, NOT nested in theory record
-5. **theory = "..."** is a STRING (the theory name), NOT a record
-6. NEVER change `template = "python-textual"` or `build_type = "python"`
+1. **NO UIConfig sort** - decompose into ProjectName, LayoutType, WidgetTree, etc.
+2. **val sorts** for primitive values: `{ kind = { type = "val", value_kind = "string" } }`
+3. **structural sorts** for complex types: `{ kind = { type = "structural" } }`
+4. One constructor per sort: `mk_project_name`, `mk_header`, etc.
+5. `compose_app` brings all the decomposed sorts together for ThIntegratedApp
 
 ## OUTPUT
 
-Output ONLY the complete Nickel TheoryDocument. No markdown code fences, no explanations.
-The output must be valid panproto TheoryDocument format with UIConfig as a sort.
+Output ONLY the complete Nickel TheoryDocument with decomposed sorts.
+No markdown code fences, no explanations.
