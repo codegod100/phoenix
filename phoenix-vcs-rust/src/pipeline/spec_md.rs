@@ -309,7 +309,8 @@ async fn call_llm_for_contract(prompt: &str, config: &crate::llm::LlmConfig) -> 
 /// Validate generated Nickel satisfies the contract requirements
 fn validate_nickel_contract(generated: &str, bundle: &TemplateBundle) -> Result<()> {
     // Check for required top-level fields that must be present
-    let required_fields = ["name", "template", "ui_config"];
+    // Note: theory format uses phoenix_config (decomposed UI values)
+    let required_fields = ["id", "description", "theory", "phoenix_config"];
     for field in &required_fields {
         let has_field = generated.contains(&format!("{} =", field)) 
             || generated.contains(&format!("{} |", field));
