@@ -168,15 +168,57 @@ fn parse_widget<'a>(node: Node<'a>, default_id: &str, content: &'a str) -> Optio
     widget.title = get_field(record, "title", content);
     widget.content = get_field(record, "content", content);
     
-    // Extract additional properties
-    if let Some(items_str) = get_field(record, "items", content) {
-        widget.props.push(("items".to_string(), items_str));
+    // Extract additional properties from spec
+    // Header properties
+    if let Some(val) = get_field(record, "show_clock", content) {
+        widget.props.push(("show_clock".to_string(), val));
     }
-    if get_field(record, "show_clock", content).is_some() {
-        widget.props.push(("show_clock".to_string(), "true".to_string()));
+    if let Some(val) = get_field(record, "subtitle", content) {
+        widget.props.push(("subtitle".to_string(), val));
     }
-    if let Some(subtitle) = get_field(record, "subtitle", content) {
-        widget.props.push(("subtitle".to_string(), subtitle));
+    
+    // LogView properties
+    if let Some(val) = get_field(record, "max_lines", content) {
+        widget.props.push(("max_lines".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "follow_tail", content) {
+        widget.props.push(("follow_tail".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "scroll_keys", content) {
+        widget.props.push(("scroll_keys".to_string(), val));
+    }
+    
+    // Footer properties
+    if let Some(val) = get_field(record, "show_bindings", content) {
+        widget.props.push(("show_bindings".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "show_commands", content) {
+        widget.props.push(("show_commands".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "custom_sections", content) {
+        widget.props.push(("custom_sections".to_string(), val));
+    }
+    
+    // Common widget properties
+    if let Some(val) = get_field(record, "focusable", content) {
+        widget.props.push(("focusable".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "focus_order", content) {
+        widget.props.push(("focus_order".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "css_class", content) {
+        widget.props.push(("css_class".to_string(), val));
+    }
+    
+    // List properties
+    if let Some(val) = get_field(record, "items", content) {
+        widget.props.push(("items".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "capture_keys", content) {
+        widget.props.push(("capture_keys".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "on_select", content) {
+        widget.props.push(("on_select".to_string(), val));
     }
     
     // Parse children if present

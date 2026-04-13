@@ -450,8 +450,8 @@ fn render_widget_inline(widget: &PythonTerm, out: &mut String) {
                     }
                 } else if key == "content" {
                     if let Str(s) = val {
-                        // For Static widgets, content becomes the text
-                        if widget_type == "Static" || widget_type == "Label" {
+                        // For Static/Label/Header/Footer, content is direct string
+                        if widget_type == "Static" || widget_type == "Label" || widget_type == "Header" || widget_type == "Footer" {
                             arg_strings.push(format!("\"{}\"", s));
                         } else {
                             arg_strings.push(format!("Static(\"{}\")", s));
@@ -802,12 +802,33 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
     
     match widget.widget_type.as_str() {
         "Header" => {
-            // Header: title (from widget.title), show_clock (from props)
+            // Header with title, subtitle, show_clock
             if let Some(ref title) = widget.title {
                 args.push(("content".to_string(), Str(title.clone())));
             }
-            if widget.props.iter().any(|(k, _)| k == "show_clock") {
-                args.push(("show_clock".to_string(), Bool(true)));
+            // Textual Header doesn't directly support subtitle/show_clock,
+            // but we could extend this later
+            if widget.props.iter().any(|(k, v)| k == "show_clock" && v == "true") {
+                // Note: show_clock would need custom Header subclass
+            }
+        }
+        "Log" => {
+            // Log widget with max_lines, follow_tail
+            if let Some((_, max_lines)) = widget.props.iter().find(|(k, _)| k == "max_lines") {
+                args.push(("max_lines".to_string(), Int(max_lines.parse().unwrap_or(100))));
+            }
+            if widget.props.iter().any(|(k, v)| k == "follow_tail" && v == "true") {
+                // follow_tail is default behavior in Textual Log
+            }
+            if let Some(ref id) = widget.id {
+                args.push(("id".to_string(), Str(id.clone())));
+            }
+        }
+        "Footer" => {
+            // Footer with show_bindings, show_commands
+            // Textual Footer handles these automatically
+            if let Some(ref id) = widget.id {
+                args.push(("id".to_string(), Str(id.clone())));
             }
         }
         "ListView" => {
@@ -857,6 +878,14 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
             } else if !children_terms.is_empty() {
                 args.push(("children".to_string(), List(children_terms)));
             }
+        }
+    }
+    
+    // Add id if present (for all widget types)
+    if let Some(ref id) = widget.id {
+        // Check if id is already in args
+        if !args.iter().any(|(k, _)| k == "id") {
+            args.push(("id".to_string(), Str(id.clone())));
         }
     }
     
