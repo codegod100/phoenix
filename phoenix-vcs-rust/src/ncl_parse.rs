@@ -128,15 +128,59 @@ pub fn extract_ui_config(content: &str) -> Option<UIConfig> {
     
     // Find ui_config.layout.widgets recursively
     if let Some(widgets_val) = find_field_recursive(root, "widgets", &clean, 0) {
-        let widgets_node = unwrap(widgets_val);
+        // Try array format first: widgets = [ {...}, {...} ]
+        // Navigate through: term -> uni_term -> infix_expr -> applicative -> record_operand -> atom -> [ ... ]
+        let mut current = widgets_val;
+        let mut is_array = false;
         
-        // widgets is a record with named fields: header, sidebar, main, footer
-        if widgets_node.kind() == "uni_record" || widgets_node.kind() == "record" {
-            // Known widget names in order
-            for widget_name in ["header", "sidebar", "main", "footer"] {
-                if let Some(widget_val) = find_field_recursive(widgets_node, widget_name, &clean, 0) {
-                    if let Some(widget) = parse_widget(widget_val, widget_name, &clean) {
-                        config.widgets.push(widget);
+        for _ in 0..10 {
+            // Check if current node contains a [ bracket (array marker)
+            for child in current.children(&mut current.walk()) {
+                if child.kind() == "[" {
+                    is_array = true;
+                    break;
+                }
+            }
+            if is_array { break; }
+            
+            // Move to next wrapper layer
+            let mut moved = false;
+            for child in current.children(&mut current.walk()) {
+                match child.kind() {
+                    "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
+                        current = child;
+                        moved = true;
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+            if !moved { break; }
+        }
+        
+        if is_array {
+            // Array format: parse children of the node containing [
+            for child in current.children(&mut current.walk()) {
+                if child.kind() == "term" || child.kind() == "uni_term" {
+                    let record_node = unwrap(child);
+                    if record_node.kind() == "uni_record" || record_node.kind() == "record" {
+                        let id = get_field(record_node, "id", &clean)
+                            .unwrap_or_else(|| format!("widget_{}", config.widgets.len()));
+                        if let Some(widget) = parse_widget(record_node, &id, &clean) {
+                            config.widgets.push(widget);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Record format: widgets = { header = {...}, sidebar = {...} }
+            let widgets_node = unwrap(widgets_val);
+            if widgets_node.kind() == "uni_record" || widgets_node.kind() == "record" {
+                for widget_name in ["header", "sidebar", "main", "footer"] {
+                    if let Some(widget_val) = find_field_recursive(widgets_node, widget_name, &clean, 0) {
+                        if let Some(widget) = parse_widget(widget_val, widget_name, &clean) {
+                            config.widgets.push(widget);
+                        }
                     }
                 }
             }
