@@ -214,6 +214,253 @@ pub fn trace_term_provenance(term: &Term) -> Vec<String> {
     provenance
 }
 
+/// Extract string from a term that should be a variable or simple operation
+#[cfg(feature = "panproto")]
+fn extract_string(term: &Term) -> Option<String> {
+    match term {
+        Term::Var(name) => Some(name.to_string()),
+        Term::App { op, args } if args.is_empty() => Some(op.to_string()),
+        Term::App { op, args } if op.as_ref() == "sources" => {
+            // For sources, extract all source IDs
+            let ids: Vec<String> = args.iter()
+                .filter_map(extract_string)
+                .collect();
+            Some(ids.join(","))
+        }
+        _ => None,
+    }
+}
+
+/// Convert a term back to a CanonNode
+/// 
+/// Expects term structure: canonize(get_id(id), get_type(t), stmt)
+#[cfg(feature = "panproto")]
+pub fn term_to_canon_node(term: &Term, source_clause_ids: Vec<String>) -> Option<CanonNode> {
+    match term {
+        Term::App { op, args } if op.as_ref() == "canonize" && args.len() >= 3 => {
+            // Extract ID from get_id wrapper
+            let id = match &args[0] {
+                Term::App { op, args: inner } if op.as_ref() == "get_id" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[0]),
+            }?;
+            
+            // Extract type from get_type wrapper
+            let node_type_str = match &args[1] {
+                Term::App { op, args: inner } if op.as_ref() == "get_type" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[1]),
+            }?;
+            
+            // Parse node type
+            let node_type = match node_type_str.as_str() {
+                "Requirement" => crate::pipeline::CanonNodeType::Requirement,
+                "Constraint" => crate::pipeline::CanonNodeType::Constraint,
+                "Definition" => crate::pipeline::CanonNodeType::Definition,
+                _ => crate::pipeline::CanonNodeType::Requirement,
+            };
+            
+            // Extract statement
+            let clean_statement = extract_string(&args[2])?;
+            
+            Some(CanonNode {
+                id,
+                node_type,
+                clean_statement,
+                derived_from: source_clause_ids,
+                depends_on: vec![],
+                d_rate: 0.0,
+                confidence: 1.0,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Convert a term back to an ImplementationUnit
+///
+/// Expects term structure: plan(sources(srcs), name(n), contract_of(c), risk(r), target(l), output(o))
+#[cfg(feature = "panproto")]
+pub fn term_to_iu(term: &Term, iu_id: String) -> Option<ImplementationUnit> {
+    match term {
+        Term::App { op, args } if op.as_ref() == "plan" && args.len() >= 6 => {
+            // Extract sources
+            let source_canon_ids = match &args[0] {
+                Term::App { op, args: src_args } if op.as_ref() == "sources" => {
+                    src_args.iter()
+                        .filter_map(extract_string)
+                        .collect()
+                }
+                _ => vec![],
+            };
+            
+            // Extract name
+            let name = match &args[1] {
+                Term::App { op, args: inner } if op.as_ref() == "name" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[1]),
+            }?;
+            
+            // Extract contract
+            let contract = match &args[2] {
+                Term::App { op, args: inner } if op.as_ref() == "contract_of" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[2]),
+            }.unwrap_or_else(|| "Default".to_string());
+            
+            // Extract risk
+            let risk_tier = match &args[3] {
+                Term::App { op, args: inner } if op.as_ref() == "risk" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[3]),
+            }.map(|s| match s.as_str() {
+                "Critical" => crate::evidence::RiskTier::Critical,
+                "High" => crate::evidence::RiskTier::High,
+                "Medium" => crate::evidence::RiskTier::Medium,
+                "Low" => crate::evidence::RiskTier::Low,
+                _ => crate::evidence::RiskTier::Medium,
+            }).unwrap_or(crate::evidence::RiskTier::Medium);
+            
+            // Extract language
+            let target_language = match &args[4] {
+                Term::App { op, args: inner } if op.as_ref() == "target" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[4]),
+            }.unwrap_or_else(|| "python".to_string());
+            
+            // Extract output
+            let output_files = match &args[5] {
+                Term::App { op, args: inner } if op.as_ref() == "output" && !inner.is_empty() => {
+                    extract_string(&inner[0])
+                }
+                _ => extract_string(&args[5]),
+            }.map(|s| s.split(',').map(String::from).collect())
+             .unwrap_or_else(|| vec!["src/app.py".to_string()]);
+            
+            Some(ImplementationUnit {
+                iu_id,
+                name,
+                contract,
+                risk_tier,
+                target_language,
+                source_canon_ids,
+                output_files,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Apply formal canonize morphism to create a CanonNode
+///
+/// This constructs a CanonNode using the formal transformation approach:
+/// - Clause ID becomes CanonNode ID
+/// - Clause type becomes NodeType
+/// - Normalized text becomes clean_statement
+#[cfg(feature = "panproto")]
+pub fn formal_canonize(clause: &Clause) -> Option<CanonNode> {
+    // The formal canonize morphism transforms:
+    // - identify → get_id
+    // - classify → get_type
+    // - parse(normalize(text), classify(type), identify(id)) → canonize(get_id(id), get_type(type), normalize(text))
+    
+    // For now, construct directly from clause data
+    let node_type = match clause.clause_type {
+        crate::pipeline::ClauseType::Requirement => crate::pipeline::CanonNodeType::Requirement,
+        crate::pipeline::ClauseType::Constraint => crate::pipeline::CanonNodeType::Constraint,
+        crate::pipeline::ClauseType::Definition => crate::pipeline::CanonNodeType::Definition,
+        crate::pipeline::ClauseType::Assumption => crate::pipeline::CanonNodeType::Assumption,
+        crate::pipeline::ClauseType::Scenario => crate::pipeline::CanonNodeType::Scenario,
+    };
+    
+    Some(CanonNode {
+        id: clause.id.clone(),
+        node_type,
+        clean_statement: clause.raw_text.clone(),
+        derived_from: vec![clause.id.clone()],
+        depends_on: vec![],
+        d_rate: 0.0,
+        confidence: 1.0,
+    })
+}
+
+/// Apply formal plan morphism to create an IU from a canon node
+///
+/// This constructs an ImplementationUnit using the formal transformation approach:
+/// - CanonNode ID becomes source_canon_id
+/// - Node type determines contract
+/// - Language is set from parameter
+#[cfg(feature = "panproto")]
+pub fn formal_plan(node: &CanonNode, lang: &str) -> Option<ImplementationUnit> {
+    // The formal plan morphism transforms:
+    // - canonize(get_id(id), get_type(t), stmt) → plan(sources([id]), name(t), contract, risk, target(lang), output)
+    
+    let iu_id = format!("iu_{}", &node.id[..8.min(node.id.len())]);
+    
+    // Derive contract from node type
+    let contract = match node.node_type {
+        crate::pipeline::CanonNodeType::Requirement => format!("{:?} {} implementation", node.node_type, lang),
+        crate::pipeline::CanonNodeType::Constraint => format!("{:?} validation", node.node_type),
+        crate::pipeline::CanonNodeType::Definition => format!("{:?} implementation", node.node_type),
+        crate::pipeline::CanonNodeType::Assumption => format!("{:?} context", node.node_type),
+        crate::pipeline::CanonNodeType::Scenario => format!("{:?} test scenario", node.node_type),
+        crate::pipeline::CanonNodeType::PipelineUpgrade => format!("{:?} upgrade", node.node_type),
+    };
+    
+    // Derive name from clean_statement (first few words)
+    let name = node.clean_statement.split_whitespace()
+        .take(3)
+        .collect::<Vec<_>>()
+        .join("_")
+        .to_lowercase()
+        .replace(|c: char| !c.is_alphanumeric(), "_");
+    let name = if name.is_empty() { "app".to_string() } else { name };
+    
+    Some(ImplementationUnit {
+        iu_id,
+        name,
+        contract,
+        risk_tier: crate::evidence::RiskTier::Medium,
+        target_language: lang.to_string(),
+        source_canon_ids: vec![node.id.clone()],
+        output_files: vec![format!("src/app.{}", if lang == "python" { "py" } else { "rs" })],
+    })
+}
+
+/// Build canon graph using formal morphisms
+///
+/// Alternative to canonicalize_lens that uses formal transformations
+#[cfg(feature = "panproto")]
+pub fn formal_canonicalize(clauses: &[Clause]) -> crate::lens::CanonGraph {
+    use crate::lens::CanonGraph;
+    
+    let nodes: Vec<CanonNode> = clauses.iter()
+        .filter_map(formal_canonize)
+        .collect();
+    
+    CanonGraph { nodes }
+}
+
+/// Build IU graph using formal morphisms
+///
+/// Alternative to plan_lens that uses formal transformations
+#[cfg(feature = "panproto")]
+pub fn formal_plan_nodes(nodes: &[CanonNode], lang: &str) -> crate::lens::IUGraph {
+    use crate::lens::IUGraph;
+    
+    let ius: Vec<ImplementationUnit> = nodes.iter()
+        .filter_map(|n| formal_plan(n, lang))
+        .collect();
+    
+    IUGraph { ius }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -319,5 +566,86 @@ mod tests {
         let vars = trace_term_provenance(&term);
         assert!(vars.contains(&"iu_123".to_string()));
         assert!(vars.contains(&"template_abc".to_string()));
+    }
+    
+    #[test]
+    #[cfg(feature = "panproto")]
+    fn test_term_to_canon_node() {
+        let term = Term::app("canonize", vec![
+            Term::app("get_id", vec![Term::var("test_id")]),
+            Term::app("get_type", vec![Term::var("Requirement")]),
+            Term::var("Test statement"),
+        ]);
+        
+        let node = term_to_canon_node(&term, vec!["source_1".to_string()]);
+        assert!(node.is_some());
+        let node = node.unwrap();
+        assert_eq!(node.id, "test_id");
+        assert_eq!(node.clean_statement, "Test statement");
+        assert_eq!(node.derived_from, vec!["source_1"]);
+    }
+    
+    #[test]
+    #[cfg(feature = "panproto")]
+    fn test_term_to_iu() {
+        let term = Term::app("plan", vec![
+            Term::app("sources", vec![Term::var("src_1"), Term::var("src_2")]),
+            Term::app("name", vec![Term::var("test_app")]),
+            Term::app("contract_of", vec![Term::var("TestContract")]),
+            Term::app("risk", vec![Term::var("Medium")]),
+            Term::app("target", vec![Term::var("python")]),
+            Term::app("output", vec![Term::var("src/app.py")]),
+        ]);
+        
+        let iu = term_to_iu(&term, "iu_test123".to_string());
+        assert!(iu.is_some());
+        let iu = iu.unwrap();
+        assert_eq!(iu.name, "test_app");
+        assert_eq!(iu.target_language, "python");
+        assert_eq!(iu.output_files, vec!["src/app.py"]);
+    }
+    
+    #[test]
+    #[cfg(feature = "panproto")]
+    fn test_formal_canonize() {
+        let clause = Clause {
+            id: "test_rt".to_string(),
+            clause_type: ClauseType::Requirement,
+            text: "Test text".to_string(),
+            raw_text: "Test raw".to_string(),
+            section: "test".to_string(),
+            source_file: "test.md".to_string(),
+            line: 1,
+            clause_semhash: "abc".to_string(),
+            context_semhash: "def".to_string(),
+            language_marker: None,
+        };
+        
+        // Test that formal_canonize creates a CanonNode from a Clause
+        let node = formal_canonize(&clause);
+        assert!(node.is_some());
+        let node = node.unwrap();
+        assert_eq!(node.id, clause.id);
+        assert_eq!(node.derived_from, vec![clause.id.clone()]);
+    }
+    
+    #[test]
+    #[cfg(feature = "panproto")]
+    fn test_formal_plan() {
+        let node = CanonNode {
+            id: "test_node".to_string(),
+            node_type: crate::pipeline::CanonNodeType::Requirement,
+            clean_statement: "Test statement".to_string(),
+            derived_from: vec!["source_1".to_string()],
+            depends_on: vec![],
+            d_rate: 0.0,
+            confidence: 1.0,
+        };
+        
+        let iu = formal_plan(&node, "python");
+        assert!(iu.is_some());
+        let iu = iu.unwrap();
+        assert_eq!(iu.target_language, "python");
+        assert!(iu.source_canon_ids.contains(&"test_node".to_string()));
     }
 }

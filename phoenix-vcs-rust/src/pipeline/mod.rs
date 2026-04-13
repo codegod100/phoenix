@@ -1407,9 +1407,11 @@ pub use formal::{
 #[cfg(feature = "panproto")]
 pub use apply::{
     clause_to_term, canon_node_to_term, iu_to_term,
+    term_to_canon_node, term_to_iu,
     apply_canonize, apply_plan, apply_codegen,
     pipeline_transform, format_term, demonstrate_pipeline_morphisms,
     code_file_term, trace_term_provenance,
+    formal_canonize, formal_plan, formal_canonicalize, formal_plan_nodes,
 };
 
 // Re-export equation functions when panproto is enabled
