@@ -536,6 +536,105 @@ async fn fill_template_with_llm(prompt: &str, config: &crate::llm::LlmConfig) ->
     Ok(cleaned.to_string())
 }
 
+/// Generate spec using contract-based approach
+/// 
+/// Instead of filling {{slots}}, the LLM generates Nickel that satisfies
+/// the contracts defined in the template_contract.ncl file.
+pub async fn spec_md_to_ncl_contract(
+    spec_md: &str,
+    bundles_dir: impl AsRef<Path>,
+) -> Result<String> {
+    let bundles_dir = bundles_dir.as_ref();
+    
+    // Discover templates
+    let bundles = discover_template_bundles(bundles_dir)?;
+    if bundles.is_empty() {
+        anyhow::bail!("No template bundles found in {:?}", bundles_dir);
+    }
+    
+    // Select best template
+    let bundle = select_template_for_spec(spec_md, &bundles)
+        .context("No suitable template found for spec")?;
+    
+    tracing::info!("Selected template bundle: {}", bundle.id);
+    
+    // Load contract template instead of slot template
+    let contract_path = bundle.path.join("template_contract.ncl");
+    let contract_content = if contract_path.exists() {
+        std::fs::read_to_string(&contract_path)
+            .context("Failed to read template_contract.ncl")?
+    } else {
+        // Fall back to slot-based if no contract template
+        tracing::warn!("No contract template found, using slot-based fallback");
+        return spec_md_to_ncl(spec_md, bundles_dir).await;
+    };
+    
+    // Load contract prompt
+    let prompt_path = bundle.path.join("prompt_contract.md");
+    let prompt_template = if prompt_path.exists() {
+        std::fs::read_to_string(&prompt_path)?
+    } else {
+        // Build a default contract prompt
+        build_default_contract_prompt()
+    };
+    
+    // Build the prompt
+    let prompt = prompt_template
+        .replace("{{spec_content}}", spec_md)
+        .replace("{{contract_content}}", &contract_content);
+    
+    // Call LLM
+    tracing::info!("Generating spec using contract-based approach...");
+    let config = crate::llm::LlmConfig::default();
+    let generated = fill_template_with_llm(&prompt, &config).await?;
+    
+    // Validate the generated Nickel
+    validate_nickel_contract(&generated, &contract_content)?;
+    
+    tracing::info!("Successfully generated spec.ncl from spec.md using contracts");
+    Ok(generated)
+}
+
+/// Validate generated Nickel satisfies the contract
+fn validate_nickel_contract(generated: &str, _contract: &str) -> Result<()> {
+    // Basic structural validation
+    // In the future, this could use nickel-lang-core to type-check
+    
+    // Check for required top-level fields
+    let required_fields = ["name", "template", "ui_config"];
+    for field in &required_fields {
+        if !generated.contains(&format!("{} =", field)) && !generated.contains(&format!("{} |", field)) {
+            anyhow::bail!("Generated spec missing required field: {}", field);
+        }
+    }
+    
+    // Check template field has correct value
+    if !generated.contains("template = \"python-textual\"") {
+        anyhow::bail!("Generated spec has wrong template value (must be 'python-textual')");
+    }
+    
+    // Check build_type is python
+    if !generated.contains("build_type = \"python\"") {
+        anyhow::bail!("Generated spec missing build_type = 'python'");
+    }
+    
+    Ok(())
+}
+
+fn build_default_contract_prompt() -> String {
+    r#"Generate a Nickel configuration that satisfies the given contract.
+
+Read the specification from the markdown and produce valid Nickel code.
+
+Rules:
+1. Every field marked with `| Type` in the contract MUST have a value
+2. Fields with `=` are FIXED - do not change them
+3. Use proper Nickel syntax: strings in quotes, numbers bare, arrays in [], records in {}
+4. Extract all values from the spec provided
+
+Output ONLY the Nickel record, no markdown, no explanation."#.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

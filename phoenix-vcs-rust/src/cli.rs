@@ -926,10 +926,23 @@ async fn cmd_pipeline_multi(
             }
             
             if let Some(bundles_dir) = bundles_dir {
-                match crate::pipeline::spec_md::spec_md_to_ncl(
-                    &spec_md_content,
-                    &bundles_dir,
-                ).await {
+                // Choose between slot-based or contract-based generation
+                let use_contracts = std::env::var("PHOENIX_USE_CONTRACTS").is_ok();
+                
+                let result = if use_contracts {
+                    println!("   Using contract-based spec generation (PHOENIX_USE_CONTRACTS set)");
+                    crate::pipeline::spec_md::spec_md_to_ncl_contract(
+                        &spec_md_content,
+                        &bundles_dir,
+                    ).await
+                } else {
+                    crate::pipeline::spec_md::spec_md_to_ncl(
+                        &spec_md_content,
+                        &bundles_dir,
+                    ).await
+                };
+                
+                match result {
                     Ok(spec_ncl) => {
                         // Validate generated spec has actual content
                         if spec_ncl.trim().len() < 50 || spec_ncl.contains("awaiting input") {
