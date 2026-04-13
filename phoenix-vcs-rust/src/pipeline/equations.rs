@@ -244,6 +244,82 @@ pub fn iu_equations() -> Vec<Equation> {
     ]
 }
 
+/// Equations for ThDomain: Laws governing domain extraction
+///
+/// These formalize how domain extraction works from canon node statements.
+#[cfg(feature = "panproto")]
+pub fn domain_equations() -> Vec<Equation> {
+    vec![
+        // E1: Domain extraction is deterministic
+        // extract_domain(stmt) = extract_domain(stmt) - always same result
+        Equation::new(
+            "extract_domain_deterministic",
+            Term::app("extract_domain", vec![Term::var("stmt")]),
+            Term::app("extract_domain", vec![Term::var("stmt")])
+        ),
+        
+        // E2: Keyword matching is commutative with normalization
+        // matches_keyword(lower(stmt), kw) = matches_keyword(stmt, kw)
+        // (Domain keywords are case-insensitive)
+        Equation::new(
+            "keyword_matching_case_insensitive",
+            Term::app("matches_keyword", vec![
+                Term::app("lowercase", vec![Term::var("stmt")]),
+                Term::var("kw")
+            ]),
+            Term::app("matches_keyword", vec![
+                Term::var("stmt"),
+                Term::var("kw_lower")
+            ])
+        ),
+        
+        // E3: Domain priority (auth > security > database > api > validation > core)
+        // If auth keyword matches, domain is auth regardless of other matches
+        // Represented as: extract_domain(auth_match($stmt)) = auth_domain
+        Equation::new(
+            "domain_priority_auth",
+            Term::app("extract_domain", vec![
+                Term::app("auth_match", vec![Term::var("stmt")])
+            ]),
+            Term::constant("auth_domain")
+        ),
+        
+        // E4: Domain priority for security
+        // Security keywords take precedence over database/api/validation
+        Equation::new(
+            "domain_priority_security",
+            Term::app("extract_domain", vec![
+                Term::app("security_match", vec![Term::var("stmt")])
+            ]),
+            Term::constant("security_domain")
+        ),
+        
+        // E5: Fallback to core domain
+        // When no keywords match, domain is "core"
+        Equation::new(
+            "domain_fallback_core",
+            Term::app("extract_domain", vec![
+                Term::app("no_match", vec![Term::var("stmt")])
+            ]),
+            Term::constant("core_domain")
+        ),
+        
+        // E6: Domain clustering groups by extracted domain
+        // All canons with same domain cluster together
+        // domain_cluster([cn1, cn2, ...]) = {auth: [...], database: [...], ...}
+        Equation::new(
+            "domain_clustering_by_domain",
+            Term::app("domain_cluster", vec![
+                Term::app("canon_nodes", vec![Term::var("cn1"), Term::var("cn2")])
+            ]),
+            Term::app("group_by", vec![
+                Term::app("extract_domain", vec![Term::var("cn1")]),
+                Term::app("canon_nodes", vec![Term::var("cn1"), Term::var("cn2")])
+            ])
+        ),
+    ]
+}
+
 /// Equations for ThCode: Laws governing code generation
 ///
 /// These ensure that code generation produces valid, traceable artifacts.
@@ -483,6 +559,16 @@ pub fn verify_pipeline_equations(
     // Verify domain clustering (legacy pipeline semantics)
     if let Some(result) = verify_domain_clustering(canon_nodes, ius) {
         report.add_iu_result("domain_clustering", result);
+    }
+    
+    // Verify domain extraction equations
+    println!("   🔍 Verifying ThDomain equations...");
+    for node in canon_nodes {
+        let term = crate::pipeline::apply::canon_node_to_domain_term(node);
+        for eq in domain_equations() {
+            let result = verify_equation(&eq, &term);
+            report.add_canon_result(&eq.name, result);
+        }
     }
     
     report

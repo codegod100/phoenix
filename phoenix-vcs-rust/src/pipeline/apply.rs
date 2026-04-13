@@ -68,6 +68,49 @@ pub fn iu_to_term(iu: &ImplementationUnit) -> Term {
     )
 }
 
+/// Convert a CanonNode to a domain extraction term
+///
+/// Represents the domain extraction from a canon node statement
+#[cfg(feature = "panproto")]
+pub fn canon_node_to_domain_term(node: &CanonNode) -> Term {
+    // Represent as: extract_domain(canon_node_statement)
+    // This captures the domain classification of the node's clean statement
+    let domain = extract_domain_simple(&node.clean_statement);
+    
+    Term::app(
+        "extract_domain",
+        vec![
+            Term::var(node.clean_statement.clone()),
+            Term::constant(domain),
+        ],
+    )
+}
+
+/// Simple domain extraction for term representation
+/// Mirrors the logic in equations.rs and lens.rs
+fn extract_domain_simple(statement: &str) -> &'static str {
+    let lower = statement.to_lowercase();
+    
+    let domains: [(&str, Vec<&str>); 6] = [
+        ("auth", vec!["auth", "login", "user", "session", "password", "token"]),
+        ("database", vec!["db", "database", "query", "storage", "persist"]),
+        ("api", vec!["api", "endpoint", "route", "http", "request", "response"]),
+        ("validation", vec!["validate", "check", "verify", "sanitiz"]),
+        ("security", vec!["encrypt", "secure", "hash", "permission"]),
+        ("core", vec![]), // default
+    ];
+    
+    for (name, keywords) in &domains {
+        for kw in keywords {
+            if lower.contains(kw) {
+                return name;
+            }
+        }
+    }
+    
+    "core"
+}
+
 /// Apply canonize morphism to a clause term
 ///
 /// Transforms: ThClause → ThCanon

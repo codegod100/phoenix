@@ -262,6 +262,89 @@ pub fn code_theory() -> Theory {
     )
 }
 
+/// ThDomain: Theory of domain extraction from canon nodes
+///
+/// Sorts:
+///   - Domain: The extracted domain (auth, database, api, validation, security, core)
+///   - Keyword: Domain classification keywords
+///   - Statement: The text to classify
+///
+/// Operations:
+///   - extract_domain: Statement → Domain
+///   - matches_keyword: Statement × Keyword → Bool
+///   - get_keywords: Domain → List[Keyword]
+#[cfg(feature = "panproto")]
+pub fn domain_theory() -> Theory {
+    Theory::new(
+        Arc::from("ThDomain"),
+        vec![
+            Sort { name: Arc::from("Domain"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Keyword"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Statement"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("DomainMap"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("extract_domain"),
+                inputs: vec![(Arc::from("stmt"), Arc::from("Statement"))],
+                output: Arc::from("Domain"),
+            },
+            Operation {
+                name: Arc::from("matches_keyword"),
+                inputs: vec![
+                    (Arc::from("stmt"), Arc::from("Statement")),
+                    (Arc::from("kw"), Arc::from("Keyword")),
+                ],
+                output: Arc::from("Bool"),
+            },
+            Operation {
+                name: Arc::from("get_keywords"),
+                inputs: vec![(Arc::from("domain"), Arc::from("Domain"))],
+                output: Arc::from("List[Keyword]"),
+            },
+            Operation {
+                name: Arc::from("domain_cluster"),
+                inputs: vec![(Arc::from("canons"), Arc::from("List[CanonNode]"))],
+                output: Arc::from("DomainMap"),
+            },
+        ],
+        vec![], // equations added via domain_equations()
+    )
+}
+
+/// μ_domain: TheoryMorphism ThCanon → ThDomain
+///
+/// Maps canonical nodes to their extracted domains
+#[cfg(feature = "panproto")]
+pub fn domain_morphism() -> TheoryMorphism {
+    let domain = canon_theory();
+    let codomain = domain_theory();
+    
+    let mut sort_map = HashMap::new();
+    sort_map.insert(
+        Arc::from("CanonNode"),
+        Arc::from("Domain"),
+    );
+    sort_map.insert(
+        Arc::from("NodeText"),
+        Arc::from("Statement"),
+    );
+    
+    let mut op_map = HashMap::new();
+    op_map.insert(
+        Arc::from("get_statement"), // From canon node
+        Arc::from("extract_domain"),
+    );
+    
+    TheoryMorphism::new(
+        Arc::from("μ_domain"),
+        Arc::from("ThCanon"),
+        Arc::from("ThDomain"),
+        sort_map,
+        op_map,
+    )
+}
+
 /// μ_canon: TheoryMorphism ThClause → ThCanon
 ///
 /// Maps clauses to canonical nodes (quotient by semantic equivalence)
