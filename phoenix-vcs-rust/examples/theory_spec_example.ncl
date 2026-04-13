@@ -1,8 +1,10 @@
 # Theory Document Example for Simple TUI
 # This is a panproto TheoryDocument that defines ThPythonTextual
 # 
-# NOTE: TheoryDocument format is FLAT - sorts and ops at top level,
-# not nested inside a theory record.
+# Architecture:
+# - Sorts: ThPyproject, ThNix, ThApp, ThCSS, ThREADME, UIConfig, Widget, etc.
+# - Operations: generate_* ops produce artifacts, mk_ui_config produces UIConfig
+# - The ui_config is a TERM (instance) of sort UIConfig defined via equations
 
 {
   # TheoryDocument metadata (REQUIRED)
@@ -13,7 +15,7 @@
   theory = "SimpleTUI",
   extends = [],
   
-  # Sort declarations - at TOP LEVEL, not inside theory record
+  # Sort declarations
   sorts = [
     # Artifact generation sub-theories
     { name = "ThPyproject", kind = { type = "structural" } },
@@ -22,7 +24,9 @@
     { name = "ThCSS", kind = { type = "structural" } },
     { name = "ThREADME", kind = { type = "structural" } },
     { name = "ThIntegratedApp", kind = { type = "structural" } },
-    # UI widget types
+    # UI types - UIConfig is now a proper sort!
+    { name = "UIConfig", kind = { type = "structural" } },
+    { name = "Widget", kind = { type = "structural" } },
     { name = "Header", kind = { type = "structural" } },
     { name = "Sidebar", kind = { type = "structural" } },
     { name = "MainContent", kind = { type = "structural" } },
@@ -31,12 +35,15 @@
     { name = "LogView", kind = { type = "structural" } },
     { name = "Static", kind = { type = "structural" } },
     { name = "Container", kind = { type = "structural" } },
+    { name = "KeyBinding", kind = { type = "structural" } },
     # Primitives
     { name = "String", kind = { type = "structural" } },
+    { name = "Number", kind = { type = "structural" } },
+    { name = "Bool", kind = { type = "structural" } },
     { name = "Config", kind = { type = "structural" } },
   ],
   
-  # Operations - at TOP LEVEL
+  # Operations - constructors for the theory
   ops = [
     # Sub-theory generation operations
     { 
@@ -91,50 +98,125 @@
       ],
       output = "ThIntegratedApp"
     },
-    # Widget constructors
-    { 
-      name = "header",
-      inputs = [{ name = "title", sort = "String" }],
-      output = "Header"
-    },
-    { 
-      name = "sidebar",
-      inputs = [],
-      output = "Sidebar"
-    },
-    { 
-      name = "main",
-      inputs = [],
-      output = "MainContent"
-    },
-    { 
-      name = "footer",
-      inputs = [{ name = "text", sort = "String" }],
-      output = "Footer"
-    },
-    { 
-      name = "compose",
+    # UIConfig constructor - this creates the UIConfig instance!
+    {
+      name = "mk_ui_config",
       inputs = [
-        { name = "h", sort = "Header" },
-        { name = "s", sort = "Sidebar" },
-        { name = "m", sort = "MainContent" },
-        { name = "f", sort = "Footer" }
+        { name = "name", sort = "String" },
+        { name = "description", sort = "String" },
+        { name = "layout_type", sort = "String" },
+        { name = "columns", sort = "Number" },
+        { name = "rows", sort = "String" },
+        { name = "gap", sort = "Number" },
+        { name = "widgets", sort = "Array Widget" },
+        { name = "key_bindings", sort = "Array KeyBinding" },
       ],
       output = "UIConfig"
     },
+    # Widget constructors
+    { 
+      name = "mk_header",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "title", sort = "String" },
+        { name = "show_clock", sort = "Bool" }
+      ],
+      output = "Header"
+    },
+    { 
+      name = "mk_sidebar",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "title", sort = "String" },
+        { name = "children", sort = "Array Widget" }
+      ],
+      output = "Sidebar"
+    },
+    { 
+      name = "mk_main_content",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "title", sort = "String" },
+        { name = "children", sort = "Array Widget" }
+      ],
+      output = "MainContent"
+    },
+    { 
+      name = "mk_footer",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "text", sort = "String" }
+      ],
+      output = "Footer"
+    },
+    { 
+      name = "mk_list_view",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "items", sort = "Array String" },
+        { name = "focusable", sort = "Bool" }
+      ],
+      output = "ListView"
+    },
+    { 
+      name = "mk_static",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "content", sort = "String" }
+      ],
+      output = "Static"
+    },
+    { 
+      name = "mk_log_view",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "max_lines", sort = "Number" },
+        { name = "follow_tail", sort = "Bool" }
+      ],
+      output = "LogView"
+    },
+    { 
+      name = "mk_container",
+      inputs = [
+        { name = "id", sort = "String" },
+        { name = "title", sort = "String" },
+        { name = "children", sort = "Array Widget" }
+      ],
+      output = "Container"
+    },
     # Key binding constructor
     { 
-      name = "bind_key",
+      name = "mk_key_binding",
       inputs = [
         { name = "key", sort = "String" },
-        { name = "action", sort = "String" }
+        { name = "action", sort = "String" },
+        { name = "context", sort = "String" }
       ],
       output = "KeyBinding"
     },
   ],
   
-  # UI configuration - at TOP LEVEL as extra field (ignored by panproto)
-  ui_config = {
+  # Directed equations - these define the actual UI config INSTANCE
+  # as a term in the theory. The ui_config is now a proper term!
+  directed_equations = [
+    {
+      name = "ui_config",
+      lhs = "UIConfig",
+      rhs = "mk_ui_config(...)",
+      impl_expr = "mk_ui_config(name, desc, layout, cols, rows, gap, widgets, keys)",
+    },
+  ],
+  
+  # Extra metadata (ignored by panproto, used by Phoenix)
+  template = "python-textual",
+  build_type = "python",
+  version = "0.1.0",
+  spec_version = "1.0",
+  
+  # Phoenix-specific: the ui_config values for easy extraction
+  # This is NOT part of the theory - it's instance data Phoenix uses
+  # Extract this field after loading the theory
+  phoenix_config = {
     name = "Simple TUI",
     description = "A simple terminal UI for task management",
     layout = {
@@ -165,15 +247,5 @@
       secondary = "#64748B",
       background = "#0F172A",
     },
-    # Phoenix metadata
-    template = "python-textual",
-    build_type = "python",
-    version = "0.1.0",
   },
-  
-  # Extra metadata (ignored by panproto, used by Phoenix)
-  template = "python-textual",
-  build_type = "python",
-  version = "0.1.0",
-  spec_version = "1.0",
 }

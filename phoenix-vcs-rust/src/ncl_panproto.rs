@@ -59,10 +59,10 @@ pub fn extract_ui_config_from_theory(content: &str) -> Result<serde_json::Value,
     let doc: serde_json::Value = expr.to_serde()
         .map_err(|e| format!("Failed to convert to JSON: {}", e))?;
     
-    // ui_config is at TOP LEVEL in TheoryDocument (extra field ignored by panproto)
-    doc.get("ui_config")
+    // phoenix_config is at TOP LEVEL in TheoryDocument (extra field ignored by panproto)
+    doc.get("phoenix_config")
         .cloned()
-        .ok_or_else(|| "No ui_config found in spec (expected at top level)".into())
+        .ok_or_else(|| "No phoenix_config found in spec (expected at top level)".into())
 }
 
 /// Load spec as theory and extract UI config in one step

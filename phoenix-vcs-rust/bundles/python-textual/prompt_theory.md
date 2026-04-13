@@ -15,7 +15,7 @@ and generate a valid panproto TheoryDocument.
 
 ## CRITICAL: TheoryDocument Structure
 
-The output MUST follow this exact FLAT structure:
+The output MUST follow this exact FLAT structure with UIConfig as a SORT:
 
 ```nickel
 {
@@ -26,7 +26,7 @@ The output MUST follow this exact FLAT structure:
   # Theory name (STRING, not a record!)
   theory = "{ProjectName}TUI",
   
-  # Sort declarations - at TOP LEVEL, NOT inside a theory record
+  # Sort declarations - at TOP LEVEL
   sorts = [
     # Sub-theories that generate artifacts
     { name = "ThPyproject", kind = { type = "structural" } },
@@ -35,7 +35,9 @@ The output MUST follow this exact FLAT structure:
     { name = "ThCSS", kind = { type = "structural" } },
     { name = "ThREADME", kind = { type = "structural" } },
     { name = "ThIntegratedApp", kind = { type = "structural" } },
-    # UI widget sorts from the spec
+    # UI types - UIConfig is a PROPER SORT!
+    { name = "UIConfig", kind = { type = "structural" } },
+    { name = "Widget", kind = { type = "structural" } },
     { name = "Header", kind = { type = "structural" } },
     { name = "Sidebar", kind = { type = "structural" } },
     { name = "Footer", kind = { type = "structural" } },
@@ -43,61 +45,45 @@ The output MUST follow this exact FLAT structure:
     { name = "LogView", kind = { type = "structural" } },
     { name = "Static", kind = { type = "structural" } },
     { name = "Container", kind = { type = "structural" } },
+    { name = "KeyBinding", kind = { type = "structural" } },
     # Primitives
     { name = "String", kind = { type = "structural" } },
-    { name = "Config", kind = { type = "structural" } },
+    { name = "Number", kind = { type = "structural" } },
+    { name = "Bool", kind = { type = "structural" } },
   ],
   
-  # Operations - at TOP LEVEL, NOT inside a theory record
+  # Operations - at TOP LEVEL
   ops = [
     # Sub-theory generation operations
-    { 
-      name = "generate_pyproject",
-      inputs = [{ name = "theory", sort = "ThPyproject" }, { name = "config", sort = "Config" }],
-      output = "TOML"
-    },
-    { 
-      name = "generate_nix",
-      inputs = [{ name = "theory", sort = "ThNix" }, { name = "config", sort = "Config" }],
-      output = "Nix"
-    },
-    { 
-      name = "generate_app",
-      inputs = [{ name = "theory", sort = "ThApp" }, { name = "config", sort = "Config" }],
-      output = "Python"
-    },
-    { 
-      name = "generate_css",
-      inputs = [{ name = "theory", sort = "ThCSS" }, { name = "config", sort = "Config" }],
-      output = "CSS"
-    },
-    { 
-      name = "generate_readme",
-      inputs = [{ name = "theory", sort = "ThREADME" }, { name = "config", sort = "Config" }],
-      output = "Markdown"
-    },
-    # Composition operation
+    { name = "generate_pyproject", inputs = [...], output = "TOML" },
+    { name = "generate_nix", inputs = [...], output = "Nix" },
+    { name = "generate_app", inputs = [...], output = "Python" },
+    { name = "generate_css", inputs = [...], output = "CSS" },
+    { name = "generate_readme", inputs = [...], output = "Markdown" },
+    # UIConfig constructor - creates UIConfig instances!
     {
-      name = "compose_app",
+      name = "mk_ui_config",
       inputs = [
-        { name = "pyproject", sort = "TOML" },
-        { name = "app", sort = "Python" },
-        { name = "css", sort = "CSS" },
-        { name = "readme", sort = "Markdown" },
-        { name = "config", sort = "Config" }
+        { name = "name", sort = "String" },
+        { name = "description", sort = "String" },
+        { name = "layout_type", sort = "String" },
+        { name = "columns", sort = "Number" },
+        { name = "rows", sort = "String" },
+        { name = "gap", sort = "Number" },
+        { name = "widgets", sort = "Array Widget" },
+        { name = "key_bindings", sort = "Array KeyBinding" },
       ],
-      output = "ThIntegratedApp"
+      output = "UIConfig"
     },
     # Widget constructors - extract from spec
-    { name = "header", inputs = [{ name = "title", sort = "String" }], output = "Header" },
-    { name = "sidebar", inputs = [], output = "Sidebar" },
-    { name = "main", inputs = [], output = "MainContent" },
-    { name = "footer", inputs = [{ name = "text", sort = "String" }], output = "Footer" },
-    { name = "compose", inputs = [...], output = "UIConfig" },
+    { name = "mk_header", inputs = [...], output = "Header" },
+    { name = "mk_sidebar", inputs = [...], output = "Sidebar" },
+    { name = "mk_list_view", inputs = [...], output = "ListView" },
+    ...
   ],
   
-  # UI CONFIGURATION - at TOP LEVEL (extra field, ignored by panproto)
-  ui_config = {
+  # PHOENIX CONFIG - the actual UI values (extra field, ignored by panproto)
+  phoenix_config = {
     name = "Project Name",
     description = "From spec overview",
     layout = {
@@ -115,10 +101,6 @@ The output MUST follow this exact FLAT structure:
       # ... extract from ## Key Bindings section
     ],
     styles = {},
-    # Phoenix metadata (FIXED values)
-    template = "python-textual",
-    build_type = "python",
-    version = "0.1.0",
   },
   
   # Extra metadata at top level (ignored by panproto)
@@ -129,18 +111,24 @@ The output MUST follow this exact FLAT structure:
 }
 ```
 
+## KEY INSIGHT: UIConfig is a Sort
+
+- **UIConfig** is a proper sort (type) in the theory, like `ThApp` or `Header`
+- **mk_ui_config** is an operation that produces UIConfig values
+- **phoenix_config** is the actual instance data Phoenix uses
+- panproto loads the theory (sorts, ops) and ignores phoenix_config
+- Phoenix extracts phoenix_config separately after loading
+
 ## CRITICAL RULES
 
-1. **FLAT structure**: sorts and ops at TOP LEVEL, NOT inside a theory record
-2. **theory = "..."** is a STRING (the theory name), NOT a record
-3. **ui_config at top level**: Phoenix extracts it, panproto ignores it
-4. Include ALL required sorts: ThPyproject, ThNix, ThApp, ThCSS, ThREADME, ThIntegratedApp
-5. Include generate_* operations for each Th* sort
-6. Include compose_app operation for ThIntegratedApp
-7. NEVER change `template = "python-textual"` or `build_type = "python"`
-8. Extract ALL widget values from the markdown spec
+1. **UIConfig as sort**: Include `{ name = "UIConfig", kind = { type = "structural" } }` in sorts
+2. **mk_ui_config operation**: Define this constructor in ops
+3. **phoenix_config at top level**: The actual values Phoenix uses
+4. **FLAT structure**: sorts/ops at top level, NOT nested in theory record
+5. **theory = "..."** is a STRING (the theory name), NOT a record
+6. NEVER change `template = "python-textual"` or `build_type = "python"`
 
 ## OUTPUT
 
 Output ONLY the complete Nickel TheoryDocument. No markdown code fences, no explanations.
-The output must be valid panproto TheoryDocument format.
+The output must be valid panproto TheoryDocument format with UIConfig as a sort.

@@ -3,15 +3,8 @@
 # This template generates a panproto TheoryDocument that can be loaded
 # by panproto_theory_dsl::load() as ThPythonTextual.
 #
-# CRITICAL: TheoryDocument format is FLAT - sorts and ops at top level
-# {
-#   id = "...",
-#   description = "...",
-#   theory = "...",      # <-- String, not record!
-#   sorts = [...],       # <-- Top level
-#   ops = [...],         # <-- Top level
-#   ui_config = {...},   # <-- Top level (extra, ignored by panproto)
-# }
+# Key insight: UIConfig is now a proper SORT in the theory, not an extra field!
+# The actual config values go in phoenix_config (extra field, ignored by panproto)
 
 # Forward declarations for recursive types
 let rec
@@ -51,8 +44,16 @@ let rec
     output | String,
   },
   
-  # UI configuration - at TOP LEVEL
-  UIConfig = {
+  # Directed equation for defining terms
+  DirectedEqSpec = {
+    name | String,
+    lhs | String,
+    rhs | String,
+    impl_expr | String,
+  },
+  
+  # Phoenix config - instance data (not part of theory)
+  PhoenixConfig = {
     name | String,
     description | String,
     layout | {
@@ -64,9 +65,6 @@ let rec
     },
     key_bindings | Array KeyBinding,
     styles | { _ : String },
-    template | String,
-    build_type | String,
-    version | String,
   }
 
 # The panproto TheoryDocument format (FLAT structure)
@@ -84,8 +82,11 @@ in {
   # Operations - at TOP LEVEL  
   ops | Array OpSpec,
   
-  # UI configuration - at TOP LEVEL (extra field, ignored by panproto)
-  ui_config | UIConfig,
+  # Directed equations (optional) - define actual UI terms
+  directed_equations | Array DirectedEqSpec,
+  
+  # Phoenix instance config - at TOP LEVEL (extra field, ignored by panproto)
+  phoenix_config | PhoenixConfig,
   
   # Extra metadata (ignored by panproto)
   template | String,
