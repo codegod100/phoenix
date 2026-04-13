@@ -1,5 +1,23 @@
 # AI Agent Guidelines
 
+## Debugging Philosophy
+
+### Verify Before Blaming Libraries
+**TRIPLE CHECK before claiming a library has a bug.**
+
+When something doesn't work as expected:
+1. First assume YOUR code is wrong
+2. Check your understanding of the library's API/syntax
+3. Add debug output to verify your assumptions
+4. Only after exhaustive verification, consider library issues
+
+**Common mistakes:**
+- Assuming parser bug when it's actually syntax misunderstanding
+- Claiming tokenizer issue when it's delimiter confusion  
+- Blaming AST structure when traversal logic is wrong
+
+**Remember:** Mature libraries like tree-sitter, nickel-lang-core, etc. have been battle-tested. The bug is almost certainly in your code.
+
 ## Build Commands
 
 ### Rust Development

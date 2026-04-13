@@ -162,6 +162,14 @@ fn build_generation_prompt(request: &CodeGenRequest, template_prompt: Option<&st
     prompt = prompt.replace("{{language}}", &request.language);
     let req_list = request.requirements.join("\n");
     prompt = prompt.replace("{{requirements}}", &req_list);
+    
+    // Debug: print full prompt if requested
+    if std::env::var("DEBUG_LLM_PROMPT").is_ok() {
+        eprintln!("\n=== FULL LLM PROMPT ({} chars) ===", prompt.len());
+        eprintln!("{}", prompt);
+        eprintln!("=== END PROMPT ===\n");
+    }
+    
     prompt
 }
 

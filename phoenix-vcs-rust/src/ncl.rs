@@ -312,14 +312,33 @@ fn extract_record_fields(node: Node, source: &str, result: &mut ParsedNcl) -> Re
     // Iterate over field declarations
     let mut cursor = record_node.walk();
     for child in record_node.children(&mut cursor) {
-        if child.kind() != "field_decl" {
+        // Handle both regular fields (field_decl) and the last field (last_field) in a record
+        if child.kind() != "field_decl" && child.kind() != "last_field" {
             continue;
         }
         
-        // Get field_def inside field_decl
-        let mut field_def_cursor = child.walk();
-        let field_def = child.children(&mut field_def_cursor)
-            .find(|c| c.kind() == "field_def");
+        // Get field_def inside field_decl or last_field
+        let mut cursor = child.walk();
+        let children: Vec<_> = child.children(&mut cursor).collect();
+        
+        // For field_decl, look for field_def directly
+        // For last_field, look for field_decl then field_def inside it
+        let field_def = if child.kind() == "field_decl" {
+            children.iter()
+                .find(|c| c.kind() == "field_def")
+                .copied()
+        } else if child.kind() == "last_field" {
+            // last_field contains field_decl which contains field_def
+            if let Some(field_decl) = children.iter().find(|c| c.kind() == "field_decl") {
+                let mut inner_cursor = field_decl.walk();
+                let inner_children: Vec<_> = field_decl.children(&mut inner_cursor).collect();
+                inner_children.iter().find(|c| c.kind() == "field_def").copied()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         
         let field_def = match field_def {
             Some(fd) => fd,
@@ -558,7 +577,25 @@ fn extract_string_from_node(node: Option<Node>, source: &str) -> Result<Option<S
                                         "double_quote" => {
                                             result.push('"');
                                         }
-                                        _ => {}
+                                        "str_esc_char" => {
+                                            let text = node_text(literal, source)?;
+                                            // Handle escaped chars like \"
+                                            if text == "\\\"" {
+                                                result.push('"');
+                                            } else {
+                                                result.push_str(&text);
+                                            }
+                                        }
+                                        "percent" => {
+                                            result.push('%');
+                                        }
+                                        _ => {
+                                            // Debug unknown literal types in multiline strings
+                                            if std::env::var("DEBUG_NCL").is_ok() {
+                                                let text = node_text(literal, source).unwrap_or_default();
+                                                eprintln!("DEBUG: Unknown multiline literal type: {} = {:?}", literal.kind(), text);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -998,6 +1035,7 @@ fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
     if std::env::var("DEBUG_TEMPLATE").is_ok() {
         eprintln!("DEBUG_TEMPLATE: llm_prompt length: {}", template.llm_prompt.len());
         eprintln!("DEBUG_TEMPLATE: llm_prompt first 200 chars: {:?}", &template.llm_prompt[..template.llm_prompt.len().min(200)]);
+        eprintln!("DEBUG_TEMPLATE: llm_prompt last 200 chars: {:?}", &template.llm_prompt[template.llm_prompt.len().saturating_sub(200)..]);
     }
     
     Ok(template)
@@ -1043,5 +1081,109 @@ mod tests {
         let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
         assert_eq!(parsed.name, Some("test.theory".to_string()));
         assert_eq!(parsed.description, Some("A test theory".to_string()));
+    }
+
+    #[test]
+    fn test_parse_multiline_string_basic() {
+        let spec = r#"
+        {
+            llm_prompt = m%"line1
+line2
+line3"%m
+        }
+        "#;
+        
+        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
+        let prompt = parsed.generic.expect("Should have generic").get("llm_prompt").cloned().expect("Should have llm_prompt");
+        
+        assert!(prompt.contains("line1"), "Should contain line1");
+        assert!(prompt.contains("line2"), "Should contain line2");
+        assert!(prompt.contains("line3"), "Should contain line3");
+    }
+
+    #[test]
+    fn test_parse_multiline_string_with_quotes() {
+        let spec = r#"{
+            content = m%"This has "quoted" text inside"%m
+        }"#;
+        
+        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
+        let content = parsed.generic.expect("Should have generic").get("content").cloned().expect("Should have content");
+        
+        assert!(content.contains("quoted"), "Should contain quoted text");
+    }
+
+    #[test]
+    fn test_parse_multiline_string_with_percent() {
+        let spec = r#"{
+            css = m%"width: 100%
+height: 50%"%m
+        }"#;
+        
+        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
+        let css = parsed.generic.expect("Should have generic").get("css").cloned().expect("Should have css");
+        
+        assert!(css.contains("100%"), "Should contain 100%");
+        assert!(css.contains("50%"), "Should contain 50%");
+    }
+
+    #[test]
+    fn test_parse_multiline_string_with_escaped_quotes() {
+        let spec = r#"
+        {
+            code = m%"text = \"escaped quotes\""%m
+        }
+        "#;
+        
+        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
+        let code = parsed.generic.expect("Should have generic").get("code").cloned().expect("Should have code");
+        
+        // Escaped quotes are preserved as-is in the extracted string
+        assert!(code.contains("\\\"escaped quotes\\\""), "Should contain escaped quotes: got {:?}", code);
+    }
+
+    #[test]
+    fn test_parse_multiline_string_with_template_vars() {
+        let spec = r#"{
+            prompt = m%"Hello {{name}}, welcome to {{place}}"%m
+        }"#;
+        
+        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
+        let prompt = parsed.generic.expect("Should have generic").get("prompt").cloned().expect("Should have prompt");
+        
+        assert!(prompt.contains("{{name}}"), "Should contain {{name}}");
+        assert!(prompt.contains("{{place}}"), "Should contain {{place}}");
+    }
+
+    #[test]
+    fn test_parse_multiline_string_long_content() {
+        // Test that we don't truncate long multiline strings
+        let long_line = "A".repeat(100);
+        let spec = format!(r#"{{
+            content = m%"{}
+{}
+{}"%m
+        }}"#, long_line, long_line, long_line);
+        
+        let parsed = parse_ncl_spec(&spec, "test.ncl").expect("Should parse");
+        let content = parsed.generic.expect("Should have generic").get("content").cloned().expect("Should have content");
+        
+        // Should contain all three lines (300+ chars)
+        assert!(content.len() > 300, "Content should be > 300 chars, got {}", content.len());
+    }
+
+    #[test]
+    fn test_parse_code_template_with_multiline() {
+        let spec = r#"{
+            code_template = m%"def main():
+    print("hello")
+    return 0"%m
+        }"#;
+        
+        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
+        let template = parsed.generic.expect("Should have generic").get("code_template").cloned().expect("Should have code_template");
+        
+        assert!(template.contains("def main()"), "Should contain function definition");
+        assert!(template.contains("print(\"hello\")"), "Should contain print statement");
     }
 }

@@ -18,6 +18,13 @@ ABSOLUTE RULES - VIOLATION = INVALID OUTPUT:
 5. Generate EXACTLY what requirements specify - no creative additions
 6. All code must be inline in a single file - no external references
 
+CRITICAL COMMON MISTAKES - NEVER DO THESE:
+- NEVER use widget.renderable (Static has no such attribute)
+- NEVER use widget.text (Static has no such attribute)  
+- NEVER loop through widgets checking if label == "something" to find widgets
+- ALWAYS use widget.update("new text") to change Static content
+- ALWAYS use specific widget IDs like id="uptime_value" to query later
+
 PYTHON-SPECIFIC REQUIREMENTS:
 7. MUST define `def main() -> int:` function as entry point with return type
 8. MUST end with exactly: `if __name__ == "__main__": main()`
@@ -54,23 +61,77 @@ TEXTUAL FRAMEWORK RULES:
 24. Use widget ids for styling and queries: Static("...", id="title")
 25. Implement on_mount(self) for initialization (set self.title)
 26. Handle on_key(self, event) for custom key handling
+27. WIDGET QUERY AND UPDATE RULES:
+    - Static widgets ONLY have: update(), render(), query(), query_one() methods
+    - Static widgets DO NOT HAVE: .renderable, .text, .label, .value attributes
+    - To update: widget.update("new text") - this is the ONLY way
+    - To query: self.query_one("#specific_id", Static) - use descriptive IDs
+    - NEVER iterate widgets looking for text matches - use IDs instead
+    - Example: id="uptime_value" not id="value1"
+    - FORBIDDEN PATTERN (will crash): for w in self.query(".box"): if w.query_one(".label").renderable == "Uptime": ...
+    - CORRECT PATTERN: uptime_val = self.query_one("#uptime_value", Static); uptime_val.update("...")
+28. Widget IDs in CSS use #id syntax. Widget classes use .class syntax
+29. compose() yields widgets in order. Query by ID after mounting in on_mount()
 
 REQUIREMENTS TO IMPLEMENT:
 {{requirements}}
 
-Generate a complete Python Textual TUI application including:
+Generate a complete Python Textual TUI application. USE ONLY THESE PATTERNS:
 1. All required imports (textual.app, textual.widgets, textual.containers)
-2. Class {Name}App(App) with proper CSS class variable
-3. compose() method yielding Header, content area with styled widgets, Footer
-4. on_mount() method setting self.title
-5. main() function creating app and calling app.run()
-6. Standard if __name__ == "__main__": main() block
-7. Type hints throughout (def compose(self) -> ComposeResult:)
-8. Valid Textual CSS only (use text-style: bold, NOT text: bold)
+2. Class {Name}App(App) with proper CSS class variable  
+3. compose() yields Header, content with ID-tagged widgets, Footer
+4. CRITICAL: Every Static that gets updated MUST have unique id="something_specific"
+5. CRITICAL: Updates use ONLY: self.query_one("#id", Static).update("text")
+6. NO iteration over widgets. NO class-based queries for updates. NO text matching.
+7. main() function and if __name__ == "__main__": main() block
+
+EXAMPLE OF CORRECT UPDATE:
+    # In compose:
+    yield Static("Status: ", id="status_label")
+    yield Static("Ready", id="status_value")  # Will be updated
+    
+    # Later to update:
+    self.query_one("#status_value", Static).update("Running")
+
+NEVER DO THIS:
+    for widget in self.query(".box"):          # Forbidden: iteration
+        if widget.renderable == "Status":      # Forbidden: .renderable
+            widget.text = "..."                 # Forbidden: .text
 
 The UI should reflect the requirements - if requirements mention sidebar, include a sidebar layout. If requirements mention logs, include a Log widget. Match the complexity described in requirements.
 
 OUTPUT ONLY RAW PYTHON CODE. NO MARKDOWN. NO EXPLANATIONS.
+
+CORRECT WIDGET UPDATE PATTERN (copy this structure):
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Horizontal(
+            Vertical(
+                Static("Uptime", id="uptime_label"),
+                Static("00:00:00", id="uptime_value"),  # Descriptive ID!
+                id="sidebar"
+            ),
+            id="main"
+        )
+        yield Footer()
+    
+    def on_mount(self) -> None:
+        self.title = "Dashboard"
+        # CORRECT: Query by specific ID, then update()
+        uptime_display = self.query_one("#uptime_value", Static)
+        uptime_display.update("System Ready")
+    
+    def update_uptime(self, new_value: str) -> None:
+        # CORRECT: Direct query by ID, no iteration, no text comparison
+        uptime_display = self.query_one("#uptime_value", Static)
+        uptime_display.update(new_value)
+    
+    # INCORRECT - NEVER DO THIS:
+    # def update_widgets(self):
+    #     for widget in self.query(".box"):           # WRONG! Don't iterate looking for widgets
+    #         label = widget.query_one(".label")       # WRONG! Use IDs not classes for queries
+    #         if label.renderable == "Uptime":         # WRONG! No .renderable!
+    #             label.text = "..."                   # WRONG! No .text!
 "%m,
 
   code_template = m%"
