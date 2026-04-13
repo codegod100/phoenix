@@ -681,22 +681,29 @@ fn build_compose_body_from_spec(config: Option<&UIConfig>, default_name: &str) -
 fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<PythonTerm> {
     let mut body = Vec::new();
     
-    // yield Header with clock and title
-    let header_title = config.title.clone().unwrap_or_else(|| "App".to_string());
-    body.push(Yield {
-        widget: Box::new(Widget {
-            widget_type: "Header".to_string(),
-            args: vec![
-                ("content".to_string(), Str(header_title)),
-                ("show_clock".to_string(), Bool(config.show_clock)),
-            ],
-            id: None,
-        }),
-    });
+    // Find and yield Header widget (first widget or look for type="Header")
+    if let Some(header) = config.widgets.iter().find(|w| w.widget_type == "Header") {
+        body.push(Yield {
+            widget: Box::new(build_widget_term(header)),
+        });
+    } else {
+        // Default header
+        let header_title = config.title.clone().unwrap_or_else(|| "App".to_string());
+        body.push(Yield {
+            widget: Box::new(Widget {
+                widget_type: "Header".to_string(),
+                args: vec![
+                    ("content".to_string(), Str(header_title)),
+                    ("show_clock".to_string(), Bool(config.show_clock)),
+                ],
+                id: None,
+            }),
+        });
+    }
     
     // Build main layout with sidebar and content in a Horizontal split
     if config.widgets.len() >= 3 {
-        // Horizontal split: sidebar | main
+        // Horizontal split: sidebar | main  
         let sidebar_term = build_widget_term(&config.widgets[1]); // sidebar
         let main_term = build_widget_term(&config.widgets[2]); // main content
         
@@ -720,14 +727,21 @@ fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<Pyt
         });
     }
     
-    // yield Footer
-    body.push(Yield {
-        widget: Box::new(Widget {
-            widget_type: "Footer".to_string(),
-            args: vec![],
-            id: None,
-        }),
-    });
+    // Find and yield Footer widget (last widget or look for type="Footer")
+    if let Some(footer) = config.widgets.iter().find(|w| w.widget_type == "Footer") {
+        body.push(Yield {
+            widget: Box::new(build_widget_term(footer)),
+        });
+    } else {
+        // Default footer
+        body.push(Yield {
+            widget: Box::new(Widget {
+                widget_type: "Footer".to_string(),
+                args: vec![],
+                id: None,
+            }),
+        });
+    }
     
     body
 }
@@ -738,14 +752,62 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
         .map(|c| build_widget_term(c))
         .collect();
     
-    let args = if let Some(content) = &widget.content {
-        vec![("content".to_string(), Str(content.clone()))]
-    } else if !children_terms.is_empty() {
-        // For containers with children
-        vec![("children".to_string(), List(children_terms))]
-    } else {
-        vec![]
-    };
+    // Build args based on widget type
+    let mut args: Vec<(String, ExprTerm)> = vec![];
+    
+    match widget.widget_type.as_str() {
+        "Header" => {
+            // Header: title (from widget.title), show_clock (from props)
+            if let Some(ref title) = widget.title {
+                args.push(("content".to_string(), Str(title.clone())));
+            }
+            if widget.props.iter().any(|(k, _)| k == "show_clock") {
+                args.push(("show_clock".to_string(), Bool(true)));
+            }
+        }
+        "ListView" => {
+            // ListView: create ListItem children from items prop
+            if let Some((_, items_str)) = widget.props.iter().find(|(k, _)| k == "items") {
+                // Parse items like: ["Home", "Settings", "Logs"]
+                let items: Vec<_> = items_str
+                    .trim_matches(|c| c == '[' || c == ']')
+                    .split(',')
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| {
+                        let label = s.trim().trim_matches('"').to_string();
+                        // Create ListItem(Label(label)) for each item
+                        Call {
+                            func: Box::new(Var("ListItem".to_string())),
+                            args: vec![Call {
+                                func: Box::new(Var("Label".to_string())),
+                                args: vec![Str(label)],
+                            }],
+                        }
+                    })
+                    .collect();
+                if !items.is_empty() {
+                    args.push(("children".to_string(), List(items)));
+                }
+            }
+        }
+        "Vertical" | "Horizontal" => {
+            // Containers: title if present, then children
+            if let Some(ref title) = widget.title {
+                args.push(("content".to_string(), Str(title.clone())));
+            }
+            if !children_terms.is_empty() {
+                args.push(("children".to_string(), List(children_terms)));
+            }
+        }
+        _ => {
+            // Default: content or children
+            if let Some(ref content) = widget.content {
+                args.push(("content".to_string(), Str(content.clone())));
+            } else if !children_terms.is_empty() {
+                args.push(("children".to_string(), List(children_terms)));
+            }
+        }
+    }
     
     Widget {
         widget_type: widget.widget_type.clone(),

@@ -152,7 +152,7 @@ pub fn extract_ui_config(content: &str) -> Option<UIConfig> {
 }
 
 /// Parse a widget from its record value
-fn parse_widget<'a>(node: Node<'a>, id: &str, content: &'a str) -> Option<WidgetConfig> {
+fn parse_widget<'a>(node: Node<'a>, default_id: &str, content: &'a str) -> Option<WidgetConfig> {
     let record = unwrap(node);
     if record.kind() != "uni_record" && record.kind() != "record" {
         return None;
@@ -163,9 +163,21 @@ fn parse_widget<'a>(node: Node<'a>, id: &str, content: &'a str) -> Option<Widget
         .unwrap_or_else(|| "Static".to_string());
     
     let mut widget = WidgetConfig::new(wtype);
-    widget.id = Some(id.to_string());
+    // Use explicit id from record if present, otherwise use default
+    widget.id = get_field(record, "id", content).or_else(|| Some(default_id.to_string()));
     widget.title = get_field(record, "title", content);
     widget.content = get_field(record, "content", content);
+    
+    // Extract additional properties
+    if let Some(items_str) = get_field(record, "items", content) {
+        widget.props.push(("items".to_string(), items_str));
+    }
+    if get_field(record, "show_clock", content).is_some() {
+        widget.props.push(("show_clock".to_string(), "true".to_string()));
+    }
+    if let Some(subtitle) = get_field(record, "subtitle", content) {
+        widget.props.push(("subtitle".to_string(), subtitle));
+    }
     
     // Parse children if present
     if let Some(children_val) = find_field_recursive(record, "children", content, 0) {
@@ -176,10 +188,12 @@ fn parse_widget<'a>(node: Node<'a>, id: &str, content: &'a str) -> Option<Widget
             // Look at parent atom to find array elements
             if let Some(parent) = children_node.parent() {
                 if parent.kind() == "atom" {
-                    for (i, child) in parent.children(&mut parent.walk()).enumerate() {
+                    for child in parent.children(&mut parent.walk()) {
                         if child.kind() == "term" || child.kind() == "uni_term" {
-                            // Generate id like "nav_list", "status" from index
-                            let child_id = format!("{}_child_{}", id, i);
+                            // Use explicit id from child if present, else generate
+                            let child_record = unwrap(child);
+                            let child_id = get_field(child_record, "id", content)
+                                .unwrap_or_else(|| format!("{}_child", default_id));
                             if let Some(parsed) = parse_widget(child, &child_id, content) {
                                 widget.children.push(parsed);
                             }

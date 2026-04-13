@@ -205,6 +205,102 @@ pub fn iu_theory() -> Theory {
     )
 }
 
+/// ThUI: Theory of UI widget configurations
+///
+/// Sorts:
+///   - UIConfig: Complete UI configuration
+///   - Widget: Individual widget (Header, Footer, Container, etc.)
+///   - WidgetType: Type classification (Header, Footer, Vertical, Horizontal, ListView, Static, Log)
+///   - WidgetId: Unique identifier for widget
+///   - WidgetTitle: Display title
+///   - WidgetContent: Static content text
+///   - WidgetProps: Additional properties (show_clock, items, subtitle, etc.)
+///   - WidgetChildren: Nested child widgets
+///   - CSSRule: Styling rule
+///
+/// Operations:
+///   - parse_spec: SpecContent → UIConfig
+///   - extract_widgets: UIConfig → List[Widget]
+///   - get_widget_type: Widget → WidgetType
+///   - get_widget_id: Widget → WidgetId
+///   - get_widget_title: Widget → WidgetTitle
+///   - get_widget_content: Widget → WidgetContent
+///   - get_widget_props: Widget → WidgetProps
+///   - get_children: Widget → WidgetChildren
+///   - map_to_textual: WidgetType → TextualWidget
+///   - generate_compose: UIConfig → PythonCode
+#[cfg(feature = "panproto")]
+pub fn ui_theory() -> Theory {
+    Theory::new(
+        Arc::from("ThUI"),
+        vec![
+            Sort { name: Arc::from("UIConfig"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetTitle"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetContent"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetProps"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetChildren"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("SpecContent"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("CSSRule"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("parse_spec"),
+                inputs: vec![(Arc::from("spec"), Arc::from("SpecContent"))],
+                output: Arc::from("UIConfig"),
+            },
+            Operation {
+                name: Arc::from("extract_widgets"),
+                inputs: vec![(Arc::from("config"), Arc::from("UIConfig"))],
+                output: Arc::from("WidgetChildren"),
+            },
+            Operation {
+                name: Arc::from("get_widget_type"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetType"),
+            },
+            Operation {
+                name: Arc::from("get_widget_id"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetId"),
+            },
+            Operation {
+                name: Arc::from("get_widget_title"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetTitle"),
+            },
+            Operation {
+                name: Arc::from("get_widget_content"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetContent"),
+            },
+            Operation {
+                name: Arc::from("get_widget_props"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetProps"),
+            },
+            Operation {
+                name: Arc::from("get_children"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetChildren"),
+            },
+            Operation {
+                name: Arc::from("map_to_textual"),
+                inputs: vec![(Arc::from("wtype"), Arc::from("WidgetType"))],
+                output: Arc::from("TextualWidget"),
+            },
+            Operation {
+                name: Arc::from("generate_compose"),
+                inputs: vec![(Arc::from("config"), Arc::from("UIConfig"))],
+                output: Arc::from("ComposeBody"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
 /// ThCode: Theory of generated code
 ///
 /// Sorts:
