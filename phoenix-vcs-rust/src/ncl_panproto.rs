@@ -49,9 +49,18 @@ pub fn load_spec_content_as_theory(content: &str, source_name: &str) -> Result<T
 pub fn extract_ui_config_from_theory(content: &str) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     use std::io::Write;
     
-    // Use nickel export to convert to JSON
+    // Check if nickel is available
+    match std::process::Command::new("nickel").arg("--version").output() {
+        Ok(_) => {},
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Err("Nickel binary not found in PATH. Run: nix develop".into());
+        }
+        Err(e) => return Err(format!("Failed to run nickel: {}", e).into()),
+    }
+    
+    // Use nickel export to convert to JSON (no --format raw - we need the full JSON)
     let mut child = std::process::Command::new("nickel")
-        .args(["export", "--format", "raw"])
+        .args(["export"])  // Removed --format raw, we need JSON object
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
