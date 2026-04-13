@@ -2,13 +2,34 @@
 
 ## Debugging Philosophy
 
+### Read Source, Write Tests - Don't Explore Via Code
+**NEVER debug by iteratively modifying code and running it.**
+
+When something doesn't work:
+1. **READ** the upstream source code (tree-sitter grammar, library implementation, etc.)
+2. **UNDERSTAND** the data structures and APIs being used
+3. **WRITE** a comprehensive test suite that covers edge cases
+4. **THEN** implement the fix based on understanding
+
+**Anti-pattern:** Adding print statements, changing code randomly, running to see what happens, repeating.
+
+**Why this matters:**
+- Exploratory coding creates messy git history
+- Wastes time on compile-run cycles
+- Often misses root cause, creating brittle fixes
+- Technical debt from "temporary" debug code
+
+**Example - Parser issue:**
+- ❌ BAD: "Let me add debug prints and see what node types appear"
+- ✅ GOOD: "Let me read tree-sitter-nickel's grammar.js to understand how arrays are structured, then write tests for both array and record formats"
+
 ### Verify Before Blaming Libraries
 **TRIPLE CHECK before claiming a library has a bug.**
 
 When something doesn't work as expected:
 1. First assume YOUR code is wrong
-2. Check your understanding of the library's API/syntax
-3. Add debug output to verify your assumptions
+2. Check your understanding of the library's API/syntax  
+3. Write tests to verify your understanding
 4. Only after exhaustive verification, consider library issues
 
 **Common mistakes:**
@@ -17,6 +38,18 @@ When something doesn't work as expected:
 - Blaming AST structure when traversal logic is wrong
 
 **Remember:** Mature libraries like tree-sitter, nickel-lang-core, etc. have been battle-tested. The bug is almost certainly in your code.
+
+### Test Coverage Before Fixes
+**Write comprehensive tests BEFORE attempting fixes.**
+
+For any parsing or transformation code:
+1. Create test cases covering all input formats
+2. Include edge cases (empty, nested, malformed)
+3. Verify tests fail with current code
+4. Implement fix to make tests pass
+5. Refactor while keeping tests green
+
+**Target:** >90% code coverage for parser logic, 100% for critical paths.
 
 ## Build Commands
 
