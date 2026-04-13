@@ -1018,7 +1018,9 @@ fn widget_to_term(_widget: &crate::pipeline::widget_config::WidgetConfig) -> Pyt
 }
 
 pub fn to_pascal_case(s: &str) -> String {
-    s.split('-')
+    // Split on common word separators: space, hyphen, underscore
+    s.split(|c: char| c == ' ' || c == '-' || c == '_')
+        .filter(|word| !word.is_empty())
         .map(|word| {
             let mut chars = word.chars();
             match chars.next() {
