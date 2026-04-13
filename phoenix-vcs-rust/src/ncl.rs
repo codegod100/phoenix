@@ -211,6 +211,18 @@ pub fn parse_ncl_spec(content: &str, _source_name: &str) -> Result<ParsedNcl, St
         .parse(content, None)
         .ok_or_else(|| "Failed to parse".to_string())?;
     
+    // Debug: print the tree structure
+    if std::env::var("DEBUG_NCL").is_ok() {
+        let root = tree.root_node();
+        eprintln!("DEBUG: Root kind: {}", root.kind());
+        eprintln!("DEBUG: Root child count: {}", root.child_count());
+        for i in 0..root.child_count() {
+            if let Some(child) = root.child(i) {
+                eprintln!("DEBUG: Child {}: kind={}", i, child.kind());
+            }
+        }
+    }
+    
     extract_from_tree(&tree, content)
 }
 
@@ -219,99 +231,175 @@ fn extract_from_tree(tree: &Tree, source: &str) -> Result<ParsedNcl, String> {
     let mut result = ParsedNcl::default();
     let root = tree.root_node();
     
-    // NCL file structure: typically a record {...} or let ... in {...}
-    for i in 0..root.child_count() {
-        let child = root.child(i).unwrap();
-        
-        match child.kind() {
-            "record" => {
-                extract_record_fields(child, source, &mut result)?;
-            }
-            "let_in" => {
-                // For now, just extract from the 'in' part (the body)
-                if let Some(body) = child.child_by_field_name("body") {
-                    let kind: &str = body.kind();
-                    if kind == "record" {
-                        extract_record_fields(body, source, &mut result)?;
-                    }
-                }
-            }
-            _ => {}
-        }
+    // Debug: print detailed structure
+    if std::env::var("DEBUG_NCL").is_ok() {
+        eprintln!("DEBUG: Traversing tree...");
+        traverse_node(root, source, 0);
     }
     
+    // NCL file structure: term -> uni_term -> record {...}
+    // or term -> let_in with body containing record
+    extract_from_term(root, source, &mut result)?;
+    
     Ok(result)
+}
+
+/// Recursively traverse and print node structure
+fn traverse_node(node: Node, source: &str, depth: usize) {
+    let indent = "  ".repeat(depth);
+    let text = node_text(node, source).unwrap_or_default();
+    let preview = if text.len() > 50 { &text[..50] } else { &text };
+    eprintln!("{}{}: {}...", indent, node.kind(), preview);
+    
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        traverse_node(child, source, depth + 1);
+    }
+}
+
+/// Extract from a term node - handles the full hierarchy
+fn extract_from_term(node: Node, source: &str, result: &mut ParsedNcl) -> Result<(), String> {
+    match node.kind() {
+        "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
+            // These are wrapper nodes - traverse down to find the actual record
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
+                extract_from_term(child, source, result)?;
+            }
+            Ok(())
+        }
+        "record" | "uni_record" => {
+            extract_record_fields(node, source, result)
+        }
+        "let_in" => {
+            // For now, just extract from the 'in' part (the body)
+            if let Some(body) = node.child_by_field_name("body") {
+                extract_from_term(body, source, result)?;
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
 }
 
 /// Extract fields from a record node
 fn extract_record_fields(node: Node, source: &str, result: &mut ParsedNcl) -> Result<(), String> {
     let mut generic = HashMap::new();
     
-    // Find record_field_list
-    let mut cursor = node.walk();
-    for field_list in node.children_by_field_name("field_list", &mut cursor) {
-        let mut field_cursor = field_list.walk();
-        for field in field_list.children(&mut field_cursor) {
-            if field.kind() != "field" {
-                continue;
+    // Handle different record node types: "record", "uni_record", "atom" containing record
+    let record_node = match node.kind() {
+        "record" | "uni_record" => Some(node),
+        "atom" | "record_operand" | "applicative" | "infix_expr" | "uni_term" | "term" => {
+            // Look for uni_record child
+            let mut cursor = node.walk();
+            let mut found = None;
+            for child in node.children(&mut cursor) {
+                if child.kind() == "uni_record" || child.kind() == "record" {
+                    found = Some(child);
+                    break;
+                }
             }
-            
-            // Get field name
-            let name_node = field.child_by_field_name("name")
-                .ok_or_else(|| "Field missing name".to_string())?;
-            let name = node_text(name_node, source)?;
-            
-            // Get field value
-            let value_node = field.child_by_field_name("value")
-                .ok_or_else(|| format!("Field '{}' missing value", name))?;
-            
-            // Handle based on field name
-            match name.as_str() {
-                "template" => {
-                    if let Some(s) = extract_string(value_node, source)? {
-                        result.template = Some(s);
-                    }
+            found
+        }
+        _ => None,
+    };
+    
+    let record_node = match record_node {
+        Some(n) => n,
+        None => return Ok(()),
+    };
+    
+    // Iterate over field declarations
+    let mut cursor = record_node.walk();
+    for child in record_node.children(&mut cursor) {
+        if child.kind() != "field_decl" {
+            continue;
+        }
+        
+        // Get field_def inside field_decl
+        let mut field_def_cursor = child.walk();
+        let field_def = child.children(&mut field_def_cursor)
+            .find(|c| c.kind() == "field_def");
+        
+        let field_def = match field_def {
+            Some(fd) => fd,
+            None => continue,
+        };
+        
+        // Extract field name from field_path
+        let name = extract_field_name(field_def, source)?;
+        if name.is_empty() {
+            continue;
+        }
+        
+        // Debug: print field name
+        if std::env::var("DEBUG_NCL").is_ok() {
+            eprintln!("DEBUG: Processing field: {}", name);
+        }
+        
+        // Extract value
+        let value_node = find_field_value_node(field_def);
+        
+        // Handle based on field name
+        match name.as_str() {
+            "template" => {
+                let val = extract_string_from_node(value_node, source)?;
+                if std::env::var("DEBUG_NCL").is_ok() {
+                    eprintln!("DEBUG: template value: {:?}", val);
                 }
-                "build_type" => {
-                    if let Some(s) = extract_string(value_node, source)? {
-                        result.build_type = Some(s);
-                    }
+                if let Some(s) = val {
+                    result.template = Some(s);
                 }
-                "name" => {
-                    if let Some(s) = extract_string(value_node, source)? {
-                        result.name = Some(s);
-                    }
+            }
+            "build_type" => {
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    result.build_type = Some(s);
                 }
-                "version" => {
-                    if let Some(s) = extract_string(value_node, source)? {
-                        result.version = Some(s);
-                    }
+            }
+            "name" => {
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    result.name = Some(s);
                 }
-                "description" => {
-                    if let Some(s) = extract_string(value_node, source)? {
-                        result.description = Some(s);
-                    }
+            }
+            "version" => {
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    result.version = Some(s);
                 }
-                "flake" => {
-                    result.flake = extract_flake(value_node, source)?;
+            }
+            "description" => {
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    result.description = Some(s);
                 }
-                "pyproject" => {
-                    result.pyproject = extract_pyproject(value_node, source)?;
+            }
+            "flake" => {
+                if let Some(node) = value_node {
+                    result.flake = extract_flake(node, source)?;
                 }
-                "requirements" => {
-                    result.requirements = extract_requirements(value_node, source)?;
+            }
+            "pyproject" => {
+                if let Some(node) = value_node {
+                    result.pyproject = extract_pyproject(node, source)?;
                 }
-                "morphisms" => {
-                    result.morphisms = extract_morphisms(value_node, source)?;
+            }
+            "requirements" => {
+                if let Some(node) = value_node {
+                    result.requirements = extract_requirements(node, source)?;
                 }
-                "compositions" => {
-                    result.compositions = extract_morphisms(value_node, source)?;
+            }
+            "morphisms" => {
+                if let Some(node) = value_node {
+                    result.morphisms = extract_morphisms(node, source)?;
                 }
-                _ => {
-                    // Store in generic fields
-                    if let Some(s) = extract_string(value_node, source)? {
-                        generic.insert(name, s);
-                    }
+            }
+            "compositions" => {
+                if let Some(node) = value_node {
+                    result.compositions = extract_morphisms(node, source)?;
+                }
+            }
+            _ => {
+                // Store in generic fields
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    generic.insert(name, s);
                 }
             }
         }
@@ -324,39 +412,121 @@ fn extract_record_fields(node: Node, source: &str, result: &mut ParsedNcl) -> Re
     Ok(())
 }
 
-/// Extract string value from a node
-fn extract_string(node: Node, source: &str) -> Result<Option<String>, String> {
-    match node.kind() {
-        "str" | "multistring" => {
-            let text = node_text(node, source)?;
-            // Remove quotes
-            if text.starts_with('"') && text.ends_with('"') {
-                return Ok(Some(text[1..text.len()-1].to_string()));
-            }
-            if text.starts_with("m%\"") && text.ends_with("\"") {
-                // Handle m%"..." (single %)
-                return Ok(Some(text[3..text.len()-1].to_string()));
-            }
-            if text.starts_with("m%\"") {
-                // Handle m%"..."%m or m%%"..."%%m etc
-                let end_marker = find_multistring_end(&text);
-                if let Some(end_pos) = end_marker {
-                    return Ok(Some(text[3..end_pos].to_string()));
+/// Extract field name from field_def node
+fn extract_field_name(field_def: Node, source: &str) -> Result<String, String> {
+    let mut cursor = field_def.walk();
+    
+    // Find field_path
+    for child in field_def.children(&mut cursor) {
+        if child.kind() == "field_path" {
+            // Get the first field_path_elem -> ident
+            let mut elem_cursor = child.walk();
+            for elem in child.children(&mut elem_cursor) {
+                if elem.kind() == "field_path_elem" {
+                    let mut ident_cursor = elem.walk();
+                    for ident in elem.children(&mut ident_cursor) {
+                        if ident.kind() == "ident" {
+                            return node_text(ident, source);
+                        }
+                    }
                 }
             }
-            Ok(Some(text))
+        }
+    }
+    
+    Ok(String::new())
+}
+
+/// Find the value node in a field_def (after the '=')
+fn find_field_value_node(field_def: Node) -> Option<Node> {
+    let mut cursor = field_def.walk();
+    let mut found_eq = false;
+    
+    for child in field_def.children(&mut cursor) {
+        if found_eq {
+            return Some(child);
+        }
+        if child.kind() == "=" {
+            found_eq = true;
+        }
+    }
+    
+    None
+}
+
+/// Extract string value from a node (handles term/uni_term nesting)
+fn extract_string_from_node(node: Option<Node>, source: &str) -> Result<Option<String>, String> {
+    let node = match node {
+        Some(n) => n,
+        None => return Ok(None),
+    };
+    
+    // Navigate through term -> uni_term -> infix_expr -> applicative -> record_operand -> atom -> str_chunks
+    let mut current = node;
+    let kinds = ["term", "uni_term", "infix_expr", "applicative", "record_operand", "atom"];
+    
+    loop {
+        if current.kind() == "str_chunks" || current.kind() == "str_chunks_single" {
+            break;
+        }
+        
+        // Try to find a child with one of the expected kinds
+        let mut cursor = current.walk();
+        let mut found = None;
+        for child in current.children(&mut cursor) {
+            if child.kind() == "str_chunks" || child.kind() == "str_chunks_single" 
+                || child.kind() == "chunk_literal_single" || child.kind() == "str_literal" {
+                found = Some(child);
+                break;
+            }
+            if kinds.contains(&child.kind()) {
+                found = Some(child);
+                break;
+            }
+        }
+        
+        match found {
+            Some(next) => current = next,
+            None => break,
+        }
+    }
+    
+    match current.kind() {
+        "str_chunks" => {
+            // Navigate: str_chunks -> str_chunks_single -> chunk_literal_single -> str_literal
+            let mut cursor = current.walk();
+            for child in current.children(&mut cursor) {
+                if child.kind() == "str_chunks_single" {
+                    let mut inner = child.walk();
+                    for chunk_lit in child.children(&mut inner) {
+                        if chunk_lit.kind() == "chunk_literal_single" {
+                            let mut inner2 = chunk_lit.walk();
+                            for str_lit in chunk_lit.children(&mut inner2) {
+                                if str_lit.kind() == "str_literal" {
+                                    let text = node_text(str_lit, source)?;
+                                    // str_literal content: remove surrounding quotes
+                                    let trimmed = text.trim_matches('"');
+                                    return Ok(Some(trimmed.to_string()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(None)
+        }
+        "str_literal" => {
+            let text = node_text(current, source)?;
+            let trimmed = text.trim_matches('"');
+            return Ok(Some(trimmed.to_string()));
         }
         _ => Ok(None),
     }
 }
 
-/// Find the end position of a multiline string content
-fn find_multistring_end(text: &str) -> Option<usize> {
-    // For m%"..."%m pattern, find the closing
-    if let Some(pos) = text.rfind("\"%m") {
-        return Some(pos);
-    }
-    None
+/// Extract string value from a node (wrapper for compatibility)
+fn extract_string(node: Node, source: &str) -> Result<Option<String>, String> {
+    extract_string_from_node(Some(node), source)
 }
 
 /// Extract text from a node
