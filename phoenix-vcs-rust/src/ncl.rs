@@ -1270,6 +1270,308 @@ pub fn load_code_template(template_dir: impl AsRef<Path>, template_name: &str) -
     parse_code_template(&content)
 }
 
+/// Extract UI widget configuration from NCL content using tree-sitter
+/// 
+/// This is the formal approach - uses the AST to extract structured widget trees
+/// rather than string manipulation.
+pub fn extract_ui_config(content: &str) -> Option<crate::pipeline::widget_config::UIConfig> {
+    use crate::pipeline::widget_config::{UIConfig, WidgetConfig, map_widget_type};
+    use tree_sitter::{Node, Parser};
+    
+    eprintln!("DEBUG extract_ui_config: content len = {}", content.len());
+    
+    // Strip ## Source: markers to get clean Nickel code
+    let clean_content: String = content.lines()
+        .filter(|line| !line.starts_with("## Source:"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    
+    eprintln!("DEBUG clean_content len = {}", clean_content.len());
+    
+    let mut parser = Parser::new();
+    parser.set_language(&tree_sitter_nickel::LANGUAGE.into()).ok()?;
+    let tree = parser.parse(&clean_content, None)?;
+    let root = tree.root_node();
+    
+    eprintln!("DEBUG: parsed tree, root kind = {}", root.kind());
+    
+    let mut config = UIConfig::default();
+    
+    // Helper to get node text - use clean_content for correct byte positions
+    let node_text = |node: Node| -> String {
+        clean_content[node.start_byte()..node.end_byte()].to_string()
+    };
+    
+    // Find all field patterns like `name = "value"` or `widgets = { ... }`
+    fn traverse_for_widgets(node: Node, clean_content: &str, content: &str, config: &mut UIConfig, depth: usize) {
+        let node_text = |n: Node| -> String { clean_content[n.start_byte()..n.end_byte()].to_string() };
+        
+        let indent = "  ".repeat(depth);
+        if depth <= 15 {
+            eprintln!("DEBUG {}node kind: {}, text: {}", indent, node.kind(), &node_text(node)[..40.min(node_text(node).len())]);
+        }
+        
+        match node.kind() {
+            "field_decl" => {
+                // A field_decl node has: field_def (which has field_path = value)
+                let mut cursor = node.walk();
+                let children: Vec<_> = node.children(&mut cursor).collect();
+                
+                // Find the field_def child
+                if let Some(&field_def) = children.iter().find(|&&n| n.kind() == "field_def") {
+                    let mut def_cursor = field_def.walk();
+                    let def_children: Vec<_> = field_def.children(&mut def_cursor).collect();
+                    
+                    // Get field name from field_path
+                    if let Some(&field_path) = def_children.iter().find(|&&n| n.kind() == "field_path") {
+                        let name = node_text(field_path).trim().to_string();
+                        
+                        if depth <= 12 {
+                            eprintln!("DEBUG traverse: found field '{}' at depth {}", name, depth);
+                        }
+                        
+                        // Check if this is a widgets field
+                        if name == "widgets" && depth <= 12 {
+                            eprintln!("DEBUG: found widgets field!");
+                            // Find the value - skip field_path and =, get the value (usually index 2)
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                eprintln!("DEBUG: widgets value node kind: {}", value_node.kind());
+                                // Value could be uni_record, record_operand, or term containing them
+                                // Unwrap term/uni_term to get inner record
+                                let target_node = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
+                                    let mut cursor = value_node.walk();
+                                    let children: Vec<_> = value_node.children(&mut cursor).collect();
+                                    children.first().copied()
+                                } else {
+                                    Some(value_node)
+                                };
+                                
+                                if let Some(record_node) = target_node {
+                                    if record_node.kind() == "uni_record" || record_node.kind() == "record_operand" {
+                                        let widgets = extract_widgets_from_record(record_node, clean_content);
+                                        eprintln!("DEBUG: extracted {} widgets", widgets.len());
+                                        config.widgets = widgets;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Extract name field for title (look for static_string value)
+                        if name == "name" && config.title.is_none() {
+                            if let Some(&value_node) = def_children.iter().find(|&&n| n.kind() == "static_string") {
+                                let title = node_text(value_node);
+                                config.title = Some(title.trim_matches('"').to_string());
+                            }
+                        }
+                        
+                        // Debug: show when we find ui_config
+                        if name == "ui_config" {
+                            eprintln!("DEBUG: Found ui_config field at depth {}, checking children", depth);
+                            for (i, &child) in def_children.iter().enumerate() {
+                                eprintln!("DEBUG:  ui_config child {}: kind={}, text={}", i, child.kind(), &node_text(child)[..30.min(node_text(child).len())]);
+                            }
+                        }
+                    }
+                }
+            }
+            "record" => {
+                // Check for show_clock field
+                let text = node_text(node);
+                if text.contains("show_clock = true") {
+                    config.show_clock = true;
+                }
+            }
+            _ => {}
+        }
+        
+        // Debug: show what we're recursing into for ui_config, layout, or widgets
+        let node_preview = node_text(node);
+        let preview = &node_preview[..50.min(node_preview.len())];
+        if preview.contains("ui_config") || preview.contains("layout") || preview.contains("widgets") {
+            eprintln!("DEBUG: recursing into {} '{}' at depth {}", node.kind(), preview, depth);
+        }
+        
+        // Recurse
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            traverse_for_widgets(child, clean_content, content, config, depth + 1);
+        }
+    }
+    
+    fn extract_widgets_from_record(record_node: Node, clean_content: &str) -> Vec<WidgetConfig> {
+        let mut widgets = Vec::new();
+        let node_text = |n: Node| -> String { clean_content[n.start_byte()..n.end_byte()].to_string() };
+        
+        // Known top-level widget names in expected order
+        let known_widgets = ["header", "sidebar", "main", "footer"];
+        
+        for widget_name in &known_widgets {
+            // Find field_decl with this name in the record
+            let mut cursor = record_node.walk();
+            for child in record_node.children(&mut cursor) {
+                if child.kind() == "field_decl" {
+                    let mut decl_cursor = child.walk();
+                    let decl_children: Vec<_> = child.children(&mut decl_cursor).collect();
+                    
+                    // Find field_def inside field_decl
+                    if let Some(&field_def) = decl_children.iter().find(|&&n| n.kind() == "field_def") {
+                        let mut def_cursor = field_def.walk();
+                        let def_children: Vec<_> = field_def.children(&mut def_cursor).collect();
+                        
+                        // Get field name from field_path (first child)
+                        if let Some(&field_path) = def_children.iter().find(|&&n| n.kind() == "field_path") {
+                            let name = node_text(field_path).trim().to_string();
+                            if &name == *widget_name {
+                                // Found the widget field, now extract its record value (skip = sign, so index 2)
+                                if let Some(&value_node) = def_children.iter().nth(2) {
+                                    // Value could be term/uni_term wrapping the actual record
+                                    let target_node = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
+                                        let mut cursor = value_node.walk();
+                                        let children: Vec<_> = value_node.children(&mut cursor).collect();
+                                        children.first().copied()
+                                    } else {
+                                        Some(value_node)
+                                    };
+                                    
+                                    if let Some(record_node) = target_node {
+                                        if record_node.kind() == "uni_record" || record_node.kind() == "record_operand" {
+                                            if let Some(widget) = parse_widget_node(*widget_name, record_node, clean_content) {
+                                                widgets.push(widget);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        widgets
+    }
+    
+    fn parse_widget_node(name: &str, record_node: Node, clean_content: &str) -> Option<WidgetConfig> {
+        let node_text = |n: Node| -> String { clean_content[n.start_byte()..n.end_byte()].to_string() };
+        
+        let mut widget = WidgetConfig::new("Static"); // default
+        widget.id = Some(name.to_string());
+        
+        let mut cursor = record_node.walk();
+        for child in record_node.children(&mut cursor) {
+            if child.kind() == "field_decl" {
+                let mut decl_cursor = child.walk();
+                let decl_children: Vec<_> = child.children(&mut decl_cursor).collect();
+                
+                if let Some(&field_def) = decl_children.iter().find(|&&n| n.kind() == "field_def") {
+                    let mut def_cursor = field_def.walk();
+                    let def_children: Vec<_> = field_def.children(&mut def_cursor).collect();
+                    
+                    // Get field name from field_path
+                    if let Some(&field_path) = def_children.iter().find(|&&n| n.kind() == "field_path") {
+                        let field_name = node_text(field_path).trim().to_string();
+                        
+                        // Get value (skip = sign, so index 2)
+                        if let Some(&value_node) = def_children.iter().nth(2) {
+                            // For string values, unwrap term/uni_term if needed
+                            let value = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
+                                let mut cursor = value_node.walk();
+                                let children: Vec<_> = value_node.children(&mut cursor).collect();
+                                if let Some(&inner) = children.first() {
+                                    node_text(inner).trim().to_string()
+                                } else {
+                                    node_text(value_node).trim().to_string()
+                                }
+                            } else {
+                                node_text(value_node).trim().to_string()
+                            };
+                            
+                            match field_name.as_str() {
+                                "type" => {
+                                    let spec_type = value.trim_matches('"');
+                                    widget.widget_type = map_widget_type(spec_type);
+                                }
+                                "id" => {
+                                    widget.id = Some(value.trim_matches('"').to_string());
+                                }
+                                "title" => {
+                                    widget.title = Some(value.trim_matches('"').to_string());
+                                }
+                                "content" => {
+                                    widget.content = Some(value.trim_matches('"').to_string());
+                                }
+                                "children" => {
+                                    // Parse children array - unwrap term if needed
+                                    let target_node = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
+                                        let mut cursor = value_node.walk();
+                                        let children: Vec<_> = value_node.children(&mut cursor).collect();
+                                        children.first().copied()
+                                    } else {
+                                        Some(value_node)
+                                    };
+                                    
+                                    if let Some(array_node) = target_node {
+                                        if array_node.kind() == "array" {
+                                            widget.children = parse_children_array(array_node, clean_content);
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    // Store as generic prop
+                                    widget.props.push((field_name, value.trim_matches('"').to_string()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If no type was found, infer from name
+        if widget.widget_type == "Static" {
+            widget.widget_type = match name {
+                "header" => "Header".to_string(),
+                "footer" => "Footer".to_string(),
+                _ => "Vertical".to_string(),
+            };
+        }
+        
+        Some(widget)
+    }
+    
+    fn parse_children_array(array_node: Node, clean_content: &str) -> Vec<WidgetConfig> {
+        let mut children = Vec::new();
+        
+        let mut cursor = array_node.walk();
+        for (idx, child) in array_node.children(&mut cursor).enumerate() {
+            if child.kind() == "record" {
+                let name = format!("child_{}", idx);
+                if let Some(widget) = parse_widget_node(&name, child, clean_content) {
+                    children.push(widget);
+                }
+            }
+        }
+        
+        children
+    }
+    
+    // Start traversal
+    eprintln!("DEBUG: about to start traversal, root has {} children", root.child_count());
+    traverse_for_widgets(root, &clean_content, content, &mut config, 0);
+    eprintln!("DEBUG: traversal complete, found {} widgets", config.widgets.len());
+    
+    // Check for list widget presence
+    config.has_list = config.widgets.iter()
+        .any(|w| w.widget_type == "ListView" || 
+             w.children.iter().any(|c| c.widget_type == "ListView"));
+    
+    if config.widgets.is_empty() {
+        None
+    } else {
+        Some(config)
+    }
+}
+
 /// Parse a code template from NCL content
 fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
     let parsed = parse_ncl_spec(content, "template")?;

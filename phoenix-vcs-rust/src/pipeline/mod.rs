@@ -880,6 +880,8 @@ pub async fn generate_code_term_based(
     let output_dir = output_dir.as_ref();
     tokio::fs::create_dir_all(output_dir).await?;
     
+    eprintln!("DEBUG generate_code_term_based: spec_content is {:?}", spec_content.map(|s| format!("{} chars", s.len())));
+    
     let mut files = Vec::new();
     
     for iu in ius {
@@ -917,6 +919,9 @@ pub async fn generate_code(
 ) -> Result<CodegenOutput> {
     let output_dir = output_dir.as_ref();
     let project_root = project_root.as_ref();
+    
+    eprintln!("DEBUG generate_code: called with {} IUs, spec_content={:?}", ius.len(), spec_content.map(|s| format!("{} chars", s.len())));
+    
     tokio::fs::create_dir_all(output_dir).await?;
     
     // DEFAULT: Use pure term morphism generation (no templates, no LLM)
@@ -1539,6 +1544,8 @@ pub mod formal;
 pub mod apply;
 pub mod template_formal;
 pub mod term_codegen;
+pub mod term_codegen_parsing;
+pub mod widget_config;
 pub mod nix_codegen;
 pub mod template_bundle;
 

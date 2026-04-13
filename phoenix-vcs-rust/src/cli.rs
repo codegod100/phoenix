@@ -1148,6 +1148,7 @@ async fn cmd_pipeline_single(
         // === IU CODE GENERATION ===
         // Convert IU graph to ImplementationUnits for pipeline
         let ius: Vec<_> = iu_graph.ius.clone();
+        eprintln!("DEBUG CLI: calling generate_code with {} IUs, bundle_content={} chars", ius.len(), bundle_content.len());
         let gen_output = crate::pipeline::generate_code(&ius, output_dir, specs_root, lang, Some(&bundle_content)).await?;
         
         // Convert to CodeFile format
