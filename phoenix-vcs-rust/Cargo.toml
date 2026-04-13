@@ -33,28 +33,20 @@ petgraph = "0.6"
 regex = "1.10"
 
 # Nickel language parser for NCL specs - use older version compatible with panproto's tree-sitter 0.25
-nickel-lang-core = "0.12"
+# Or use tree-sitter-nickel directly for simpler parsing
+tree-sitter-nickel = "0.5"
+tree-sitter = "0.25"
 indexmap = "2.2"
 
-# Panproto crates disabled due to native library conflict:
-# - nickel-lang-core 0.12 uses tree-sitter 0.22 (via tree-sitter-nickel 0.3.0)
-# - panproto-parse uses tree-sitter 0.25
-# - tree-sitter is a native library (links = "tree-sitter") and can only be linked once
-# 
-# To enable panproto, either:
-# 1. Fork panproto and update to use tree-sitter 0.22, OR
-# 2. Upgrade nickel-lang-core to version matching panproto's tree-sitter (0.25+), OR
-# 3. Remove nickel-lang-core and use panproto's NCL parsing instead
-#
-# Currently we need nickel-lang-core for NCL spec parsing, so panproto remains disabled.
-# panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
-# panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
-# panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
-# panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
+# Panproto crates - enabled with tree-sitter 0.25 compatible versions
+panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
+panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
+panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
+panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
 
 [features]
-default = []
-# panproto = ["dep:panproto-gat", "dep:panproto-schema", "dep:panproto-parse", "dep:panproto-project"]
+default = ["panproto"]
+panproto = ["dep:panproto-gat", "dep:panproto-schema", "dep:panproto-parse", "dep:panproto-project"]
 
 [dev-dependencies]
 tempfile = "3.10"
