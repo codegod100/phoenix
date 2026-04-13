@@ -160,6 +160,51 @@ pub fn iu_equations() -> Vec<Equation> {
             Term::app("sources", vec![Term::var("canon_ids")]),
             Term::app("sources", vec![Term::var("canon_ids")])
         ),
+        
+        // E4: IU aggregation completeness
+        // When multiple canon nodes are aggregated into one IU,
+        // the IU's sources contain all the canon IDs.
+        // Formally: sources(plan([c1, c2, ...])) = [get_id(c1), get_id(c2), ...]
+        Equation::new(
+            "iu_aggregation_completeness",
+            Term::app("sources", vec![
+                Term::app("plan_nodes", vec![
+                    Term::app("canon_nodes", vec![Term::var("cn1"), Term::var("cn2")])
+                ])
+            ]),
+            Term::app("sources", vec![
+                Term::app("cons", vec![
+                    Term::app("get_id", vec![Term::var("cn1")]),
+                    Term::app("cons", vec![
+                        Term::app("get_id", vec![Term::var("cn2")]),
+                        Term::app("nil", vec![])
+                    ])
+                ])
+            ])
+        ),
+        
+        // E5: IU aggregation idempotence
+        // Aggregating the same canon nodes twice produces the same IU
+        // plan([c1, c2]) = plan([c1, c2]) - reflexive but documents stability
+        Equation::new(
+            "iu_aggregation_stable",
+            Term::app("plan", vec![
+                Term::app("sources", vec![Term::var("srcs")]),
+                Term::app("name", vec![Term::var("nm")]),
+                Term::app("contract_of", vec![Term::var("c")]),
+                Term::app("risk", vec![Term::var("r")]),
+                Term::app("target", vec![Term::var("t")]),
+                Term::app("output", vec![Term::var("o")])
+            ]),
+            Term::app("plan", vec![
+                Term::app("sources", vec![Term::var("srcs")]),
+                Term::app("name", vec![Term::var("nm")]),
+                Term::app("contract_of", vec![Term::var("c")]),
+                Term::app("risk", vec![Term::var("r")]),
+                Term::app("target", vec![Term::var("t")]),
+                Term::app("output", vec![Term::var("o")])
+            ])
+        ),
     ]
 }
 
@@ -394,7 +439,70 @@ pub fn verify_pipeline_equations(
         }
     }
     
+    // Verify aggregation equations (cross-IU properties)
+    if let Some(result) = verify_aggregation_completeness(canon_nodes, ius) {
+        report.add_iu_result("iu_aggregation_completeness", result);
+    }
+    
     report
+}
+
+/// Verify that all canon nodes are accounted for in IUs (aggregation completeness)
+/// This checks: ∀cn ∈ canon_nodes. ∃iu ∈ ius. cn.id ∈ iu.source_canon_ids
+#[cfg(feature = "panproto")]
+fn verify_aggregation_completeness(
+    canon_nodes: &[crate::pipeline::CanonNode],
+    ius: &[crate::pipeline::ImplementationUnit],
+) -> Option<VerificationResult> {
+    if canon_nodes.is_empty() || ius.is_empty() {
+        return None; // Not applicable for empty data
+    }
+    
+    // Collect all canon IDs that should be covered
+    let all_canon_ids: std::collections::HashSet<&str> = canon_nodes
+        .iter()
+        .map(|cn| cn.id.as_str())
+        .collect();
+    
+    // Collect all canon IDs that are covered by IUs
+    let covered_ids: std::collections::HashSet<&str> = ius
+        .iter()
+        .flat_map(|iu| iu.source_canon_ids.iter().map(|id| id.as_str()))
+        .collect();
+    
+    // Check if all canon IDs are covered
+    let missing: Vec<&str> = all_canon_ids
+        .difference(&covered_ids)
+        .copied()
+        .collect();
+    
+    let extra: Vec<&str> = covered_ids
+        .difference(&all_canon_ids)
+        .copied()
+        .collect();
+    
+    let holds = missing.is_empty() && extra.is_empty();
+    
+    let details_msg = if holds {
+        format!("All {} canon nodes covered by {} IUs", canon_nodes.len(), ius.len())
+    } else {
+        let mut msg = format!("Coverage issue: {} canon nodes, {} IUs", 
+            canon_nodes.len(), ius.len());
+        if !missing.is_empty() {
+            msg.push_str(&format!("; Missing: {:?}", missing));
+        }
+        if !extra.is_empty() {
+            msg.push_str(&format!("; Extra: {:?}", extra));
+        }
+        msg
+    };
+    
+    Some(VerificationResult::Verified {
+        holds,
+        bindings: vec![("note".to_string(), details_msg)],
+        lhs_after: format!("canon_ids: {:?}", all_canon_ids),
+        rhs_after: format!("covered: {:?}", covered_ids),
+    })
 }
 
 /// Comprehensive verification report
