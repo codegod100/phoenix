@@ -1534,6 +1534,7 @@ pub mod apply;
 pub mod template_formal;
 pub mod term_codegen;
 pub mod nix_codegen;
+pub mod template_bundle;
 
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;

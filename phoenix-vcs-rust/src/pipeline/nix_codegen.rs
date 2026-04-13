@@ -17,10 +17,118 @@
 //! Term constructors form an initial algebra: Term(Σ_Nix, ∅)
 //! The morphism μ_spec→nix: ThSpec → ThNix preserves structure.
 
+#[cfg(feature = "panproto")]
+use panproto_gat::{Theory, Sort, SortKind, Operation};
+#[cfg(feature = "panproto")]
+use std::sync::Arc;
+
 use std::collections::HashMap;
 
 /// ThNix GAT — Nix expression theory
 pub struct ThNix;
+
+/// Returns the panproto Theory definition for ThNix
+#[cfg(feature = "panproto")]
+pub fn nix_theory() -> Theory {
+    Theory::new(
+        Arc::from("ThNix"),
+        vec![
+            // Root sort
+            Sort { name: Arc::from("Flake"), params: vec![], kind: SortKind::Structural },
+            // Component sorts
+            Sort { name: Arc::from("Input"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Outputs"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Package"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("DevShell"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("App"), params: vec![], kind: SortKind::Structural },
+            // Primitive sorts
+            Sort { name: Arc::from("Path"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("String"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("AttrSet"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("List"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Expr"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            // Flake construction
+            Operation {
+                name: Arc::from("mk_flake"),
+                inputs: vec![
+                    (Arc::from("description"), Arc::from("String")),
+                    (Arc::from("inputs"), Arc::from("List")),
+                    (Arc::from("outputs"), Arc::from("Outputs")),
+                ],
+                output: Arc::from("Flake"),
+            },
+            // Input construction
+            Operation {
+                name: Arc::from("mk_input"),
+                inputs: vec![
+                    (Arc::from("name"), Arc::from("String")),
+                    (Arc::from("url"), Arc::from("String")),
+                ],
+                output: Arc::from("Input"),
+            },
+            // Outputs construction
+            Operation {
+                name: Arc::from("mk_outputs"),
+                inputs: vec![
+                    (Arc::from("packages"), Arc::from("AttrSet")),
+                    (Arc::from("dev_shells"), Arc::from("AttrSet")),
+                    (Arc::from("apps"), Arc::from("AttrSet")),
+                ],
+                output: Arc::from("Outputs"),
+            },
+            // Package constructors
+            Operation {
+                name: Arc::from("mk_python_package"),
+                inputs: vec![
+                    (Arc::from("pname"), Arc::from("String")),
+                    (Arc::from("version"), Arc::from("String")),
+                    (Arc::from("src"), Arc::from("Path")),
+                    (Arc::from("deps"), Arc::from("List")),
+                ],
+                output: Arc::from("Package"),
+            },
+            Operation {
+                name: Arc::from("mk_rust_package"),
+                inputs: vec![
+                    (Arc::from("pname"), Arc::from("String")),
+                    (Arc::from("version"), Arc::from("String")),
+                    (Arc::from("src"), Arc::from("Path")),
+                ],
+                output: Arc::from("Package"),
+            },
+            // DevShell construction
+            Operation {
+                name: Arc::from("mk_dev_shell"),
+                inputs: vec![
+                    (Arc::from("build_inputs"), Arc::from("List")),
+                ],
+                output: Arc::from("DevShell"),
+            },
+            // App construction
+            Operation {
+                name: Arc::from("mk_app"),
+                inputs: vec![
+                    (Arc::from("program"), Arc::from("String")),
+                ],
+                output: Arc::from("App"),
+            },
+            // Primitives
+            Operation {
+                name: Arc::from("path_literal"),
+                inputs: vec![(Arc::from("path"), Arc::from("String"))],
+                output: Arc::from("Path"),
+            },
+            Operation {
+                name: Arc::from("string_literal"),
+                inputs: vec![(Arc::from("value"), Arc::from("String"))],
+                output: Arc::from("String"),
+            },
+        ],
+        vec![], // equations
+    )
+}
 
 /// Algebraic terms for ThNix
 /// 
@@ -148,20 +256,24 @@ fn build_outputs_term(
     
     let (packages, dev_shells, apps) = match build_type {
         "python" | "py" => {
+            // Base template deps + extra deps
+            let mut all_deps = vec!["textual".to_string()];  // Base for python-textual template
+            all_deps.extend(deps.iter().cloned());
+            
             let pkg = Box::new(NixTerm::PythonPackage {
                 pname: pname.clone(),
                 version: version.to_string(),
                 src: Box::new(NixTerm::PathLiteral("./.".to_string())),
                 format: "pyproject".to_string(),
                 build_system: vec!["hatchling".to_string()],
-                propagated_build_inputs: deps.to_vec(),
+                propagated_build_inputs: all_deps.clone(),
                 main_program: pname.clone(),
             });
             
             let dev_shell = Box::new(NixTerm::DevShell {
                 build_inputs: {
                     let mut inputs = vec!["python312".to_string()];
-                    inputs.extend(deps.iter().map(|d| format!("python312Packages.{}", d)));
+                    inputs.extend(all_deps.iter().map(|d| format!("python312Packages.{}", d)));
                     inputs
                 },
             });

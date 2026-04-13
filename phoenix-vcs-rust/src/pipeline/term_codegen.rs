@@ -555,7 +555,7 @@ pub fn generate_from_term(iu: &ImplementationUnit) -> String {
     )
 }
 
-fn to_pascal_case(s: &str) -> String {
+pub fn to_pascal_case(s: &str) -> String {
     s.split('-')
         .map(|word| {
             let mut chars = word.chars();

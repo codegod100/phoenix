@@ -1865,24 +1865,42 @@ fn generate_integrated_app(ius: &[crate::pipeline::ImplementationUnit], lang: &s
 }
 
 fn generate_python_integrated_app(ius: &[crate::pipeline::ImplementationUnit]) -> String {
-    let domain_modules: Vec<_> = ius.iter()
+    // Find the first non-app domain module to use as main
+    let domain_ius: Vec<_> = ius.iter()
         .filter(|iu| !iu.name.contains("app"))
-        .map(|iu| {
-            let name = iu.name.replace("-", "_");
-            format!("    from .{} import {}", 
-                name.to_lowercase(),
-                name.to_uppercase()
-            )
-        })
         .collect();
     
-    let module_list: Vec<_> = ius.iter()
-        .filter(|iu| !iu.name.contains("app"))
+    if domain_ius.is_empty() {
+        // Fallback if no domain modules
+        return r#"# phoenix: iu_id = "integrated-app"
+# phoenix: generated_by = formal_term_morphism
+
+class IntegratedApp:
+    def run(self):
+        print("No domain modules found")
+        return 1
+
+def main():
+    return IntegratedApp().run()
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
+"#.to_string();
+    }
+    
+    // Get the first domain module to use as entry point
+    let main_iu = domain_ius[0];
+    let main_name = main_iu.name.replace("-", "_");
+    let main_class = format!("{}App", crate::pipeline::term_codegen::to_pascal_case(&main_iu.name));
+    
+    // Generate imports for all domain modules
+    let domain_modules: Vec<_> = domain_ius.iter()
         .map(|iu| {
             let name = iu.name.replace("-", "_");
-            format!("        {}.{},", 
+            format!("from {} import {}App", 
                 name.to_lowercase(),
-                name.to_uppercase()
+                crate::pipeline::term_codegen::to_pascal_case(&iu.name)
             )
         })
         .collect();
@@ -1891,20 +1909,19 @@ fn generate_python_integrated_app(ius: &[crate::pipeline::ImplementationUnit]) -
 # phoenix: generated_by = formal_term_morphism
 # Integrated app entry point - wires all domain IUs together
 
+from textual.app import App
 {imports}
 
-class IntegratedApp:
+class IntegratedApp(App):
     """Main application integrating all domain modules."""
     
     def __init__(self):
-        # Initialize all domain modules
-{init_modules}
+        super().__init__()
+        # Domain modules available:
+        # {module_list}
     
-    def run(self):
-        """Run the integrated application."""
-        print("🚀 Starting integrated application...")
-        # Coordinate all modules
-        return 0
+    def on_mount(self):
+        self.title = "{title}"
 
 def main() -> int:
     """Entry point."""
@@ -1915,8 +1932,9 @@ if __name__ == "__main__":
     import sys
     sys.exit(main())
 "#,
-        imports = if domain_modules.is_empty() { "# No domain modules".to_string() } else { domain_modules.join("\n") },
-        init_modules = if module_list.is_empty() { "        pass  # No modules to initialize".to_string() } else { module_list.join("\n") }
+        imports = domain_modules.join("\n"),
+        module_list = domain_ius.iter().map(|iu| iu.name.clone()).collect::<Vec<_>>().join(", "),
+        title = main_iu.name.replace("-", " ").to_uppercase()
     )
 }
 
