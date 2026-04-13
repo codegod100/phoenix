@@ -36,7 +36,17 @@ regex = "1.10"
 nickel-lang-core = "0.12"
 indexmap = "2.2"
 
-# Panproto crates disabled due to tree-sitter conflict with nickel-lang-core
+# Panproto crates disabled due to native library conflict:
+# - nickel-lang-core 0.12 uses tree-sitter 0.22 (via tree-sitter-nickel 0.3.0)
+# - panproto-parse uses tree-sitter 0.25
+# - tree-sitter is a native library (links = "tree-sitter") and can only be linked once
+# 
+# To enable panproto, either:
+# 1. Fork panproto and update to use tree-sitter 0.22, OR
+# 2. Upgrade nickel-lang-core to version matching panproto's tree-sitter (0.25+), OR
+# 3. Remove nickel-lang-core and use panproto's NCL parsing instead
+#
+# Currently we need nickel-lang-core for NCL spec parsing, so panproto remains disabled.
 # panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
 # panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
 # panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }

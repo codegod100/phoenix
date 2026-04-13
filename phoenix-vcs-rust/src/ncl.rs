@@ -318,8 +318,14 @@ fn extract_structure(term: &nickel_lang_core::term::RichTerm) -> Result<ParsedNc
                     continue;
                 }
                 if let Some(ref value) = field.value {
+        
                     if let Some(s) = extract_string_from_term(value) {
                         fields.insert(key_str, s);
+                    }
+                } else {
+                    // Debug: field has no value
+                    if std::env::var("DEBUG_TEMPLATE_PARSE").is_ok() {
+                        eprintln!("DEBUG: Field '{}' has NO value", key_str);
                     }
                 }
             }
@@ -629,6 +635,12 @@ fn extract_string_from_term(term: &nickel_lang_core::term::RichTerm) -> Option<S
             // Extract the argument which should be a string with suffix
             extract_string_from_term(arg)
         }
+        // Handle string concatenation: left ++ right
+        Term::Op2(nickel_lang_core::term::BinaryOp::StringConcat, left, right) => {
+            let left_str = extract_string_from_term(left)?;
+            let right_str = extract_string_from_term(right)?;
+            Some(left_str + &right_str)
+        }
         _ => None,
     }
 }
@@ -749,6 +761,12 @@ fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
         template.output_path = generic.get("output_path").cloned().unwrap_or_else(|| "src/app.py".to_string());
         template.code_template = generic.get("code_template").cloned().unwrap_or_default();
         template.llm_prompt = generic.get("llm_prompt").cloned().unwrap_or_default();
+        
+        // Debug: print available fields
+        if std::env::var("DEBUG_TEMPLATE").is_ok() {
+            eprintln!("DEBUG: Template generic fields: {:?}", generic.keys().collect::<Vec<_>>());
+            eprintln!("DEBUG: llm_prompt length: {}", template.llm_prompt.len());
+        }
     }
     
     // Also check pyproject and flake for dependencies
