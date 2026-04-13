@@ -38,8 +38,10 @@ PYTHON-SPECIFIC REQUIREMENTS:
 
 TEXTUAL FRAMEWORK RULES:
 16. MUST import: from textual.app import App, ComposeResult
-17. MUST import: from textual.widgets import Static, Header, Footer, Log, Button
-18. MUST import: from textual.containers import Vertical, Horizontal, Container
+17. MUST import from textual.widgets: Static, Header, Footer, Log, Button, Label, Input, ListItem
+18. MUST import from textual.containers: Vertical, Horizontal, Container, Grid, Center, Middle
+19. CRITICAL IMPORT RULE: Container is ONLY in textual.containers, NEVER in textual.widgets
+20. Check your imports: If you use 'from textual.widgets import Container' your code WILL FAIL
 19. MUST define class {Name}App(App) - class name ends with 'App', inherits from App
 20. MUST define CSS class variable with valid Textual CSS
 21. MUST define compose(self) -> ComposeResult method

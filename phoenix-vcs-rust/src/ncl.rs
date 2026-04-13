@@ -633,109 +633,234 @@ fn node_text(node: Node, source: &str) -> Result<String, String> {
     Ok(source[start..end].to_string())
 }
 
-/// Extract flake config from a record node
+/// Extract flake config from a record node (tree-sitter version)
 fn extract_flake(node: Node, source: &str) -> Result<Option<FlakeConfig>, String> {
-    if node.kind() != "record" {
-        return Ok(None);
+    // Recursively find the uni_record inside the term hierarchy
+    fn find_uni_record(node: Node) -> Option<Node> {
+        match node.kind() {
+            "uni_record" => Some(node),
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_uni_record(child) {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
     }
     
-    let mut config = FlakeConfig::default();
+    let uni_record = match find_uni_record(node) {
+        Some(node) => node,
+        None => return Ok(None),
+    };
     
-    let mut cursor = node.walk();
-    for field_list in node.children_by_field_name("field_list", &mut cursor) {
-        let mut field_cursor = field_list.walk();
-        for field in field_list.children(&mut field_cursor) {
-            if field.kind() != "field" {
-                continue;
+    let mut config = FlakeConfig::default();
+    let mut cursor = uni_record.walk();
+    
+    // Iterate over field_decl and last_field nodes
+    for child in uni_record.children(&mut cursor) {
+        if child.kind() != "field_decl" && child.kind() != "last_field" {
+            continue;
+        }
+        
+        // Get field_def inside
+        let mut inner_cursor = child.walk();
+        let children: Vec<_> = child.children(&mut inner_cursor).collect();
+        let field_def = children.iter()
+            .find(|c| c.kind() == "field_def")
+            .copied();
+        
+        let field_def = match field_def {
+            Some(fd) => fd,
+            None => continue,
+        };
+        
+        // Extract name from field_path
+        let name = extract_field_name(field_def, source)?;
+        if name.is_empty() {
+            continue;
+        }
+        
+        // Extract value
+        let value_node = find_field_value_node(field_def);
+        
+        match name.as_str() {
+            "pname" => config.pname = extract_string_from_node(value_node, source)?,
+            "version" => config.version = extract_string_from_node(value_node, source)?,
+            "description" => config.description = extract_string_from_node(value_node, source)?,
+            "build_type" => config.build_type = extract_string_from_node(value_node, source)?,
+            "main_program" => config.main_program = extract_string_from_node(value_node, source)?,
+            "src_path" => config.src_path = extract_string_from_node(value_node, source)?,
+            "source_root" => config.source_root = extract_string_from_node(value_node, source)?,
+            "cargo_subdir" => config.cargo_subdir = extract_string_from_node(value_node, source)?,
+            "post_patch" => config.post_patch = extract_string_from_node(value_node, source)?,
+            "pre_build" => config.pre_build = extract_string_from_node(value_node, source)?,
+            "install_phase" => config.install_phase = extract_string_from_node(value_node, source)?,
+            "extra_nix" => config.extra_nix = extract_string_from_node(value_node, source)?,
+            "build_inputs" => {
+                if let Some(node) = value_node {
+                    config.build_inputs = extract_string_array(node, source)?;
+                }
             }
-            
-            let name_node = field.child_by_field_name("name")
-                .ok_or_else(|| "Field missing name".to_string())?;
-            let name = node_text(name_node, source)?;
-            
-            let value_node = field.child_by_field_name("value")
-                .ok_or_else(|| format!("Field '{}' missing value", name))?;
-            
-            match name.as_str() {
-                "pname" => config.pname = extract_string(value_node, source)?,
-                "version" => config.version = extract_string(value_node, source)?,
-                "description" => config.description = extract_string(value_node, source)?,
-                "build_type" => config.build_type = extract_string(value_node, source)?,
-                "main_program" => config.main_program = extract_string(value_node, source)?,
-                "src_path" => config.src_path = extract_string(value_node, source)?,
-                "source_root" => config.source_root = extract_string(value_node, source)?,
-                "cargo_subdir" => config.cargo_subdir = extract_string(value_node, source)?,
-                "post_patch" => config.post_patch = extract_string(value_node, source)?,
-                "pre_build" => config.pre_build = extract_string(value_node, source)?,
-                "install_phase" => config.install_phase = extract_string(value_node, source)?,
-                "extra_nix" => config.extra_nix = extract_string(value_node, source)?,
-                "build_inputs" => config.build_inputs = extract_string_array(value_node, source)?,
-                "native_build_inputs" => config.native_build_inputs = extract_string_array(value_node, source)?,
-                "propagated_build_inputs" => config.propagated_build_inputs = extract_string_array(value_node, source)?,
-                _ => {}
+            "native_build_inputs" => {
+                if let Some(node) = value_node {
+                    config.native_build_inputs = extract_string_array(node, source)?;
+                }
             }
+            "propagated_build_inputs" => {
+                if let Some(node) = value_node {
+                    config.propagated_build_inputs = extract_string_array(node, source)?;
+                }
+            }
+            _ => {}
         }
     }
     
     Ok(Some(config))
 }
 
-/// Extract pyproject config from a record node
+/// Extract pyproject config from a record node (tree-sitter version)
 fn extract_pyproject(node: Node, source: &str) -> Result<Option<PyProjectConfig>, String> {
-    if node.kind() != "record" {
-        return Ok(None);
+    // Recursively find the uni_record inside the term hierarchy
+    fn find_uni_record(node: Node) -> Option<Node> {
+        match node.kind() {
+            "uni_record" => Some(node),
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_uni_record(child) {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
     }
+    
+    let uni_record = match find_uni_record(node) {
+        Some(node) => node,
+        None => return Ok(None),
+    };
     
     let mut config = PyProjectConfig {
         requires_python: ">=3.12".to_string(),
         ..Default::default()
     };
     
-    let mut cursor = node.walk();
-    for field_list in node.children_by_field_name("field_list", &mut cursor) {
-        let mut field_cursor = field_list.walk();
-        for field in field_list.children(&mut field_cursor) {
-            if field.kind() != "field" {
-                continue;
-            }
-            
-            let name_node = field.child_by_field_name("name")
-                .ok_or_else(|| "Field missing name".to_string())?;
-            let name = node_text(name_node, source)?;
-            
-            let value_node = field.child_by_field_name("value")
-                .ok_or_else(|| format!("Field '{}' missing value", name))?;
-            
-            match name.as_str() {
-                "requires_python" => {
-                    if let Some(s) = extract_string(value_node, source)? {
-                        config.requires_python = s;
-                    }
+    let mut cursor = uni_record.walk();
+    
+    // Iterate over field_decl and last_field nodes
+    for child in uni_record.children(&mut cursor) {
+        if child.kind() != "field_decl" && child.kind() != "last_field" {
+            continue;
+        }
+        
+        // Get field_def inside
+        let mut inner_cursor = child.walk();
+        let children: Vec<_> = child.children(&mut inner_cursor).collect();
+        let field_def = children.iter()
+            .find(|c| c.kind() == "field_def")
+            .copied();
+        
+        let field_def = match field_def {
+            Some(fd) => fd,
+            None => continue,
+        };
+        
+        // Extract name from field_path
+        let name = extract_field_name(field_def, source)?;
+        if name.is_empty() {
+            continue;
+        }
+        
+        // Extract value
+        let value_node = find_field_value_node(field_def);
+        
+        match name.as_str() {
+            "requires_python" => {
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    config.requires_python = s;
                 }
-                "entry_point" => config.entry_point = extract_string(value_node, source)?,
-                "build_system" => config.build_system = extract_string_array(value_node, source)?,
-                "dependencies" => config.dependencies = extract_string_array(value_node, source)?,
-                "dev_dependencies" => config.dev_dependencies = extract_string_array(value_node, source)?,
-                "packages" => config.packages = extract_string_array(value_node, source)?,
-                _ => {}
             }
+            "entry_point" => config.entry_point = extract_string_from_node(value_node, source)?,
+            "build_system" => {
+                if let Some(node) = value_node {
+                    config.build_system = extract_string_array(node, source)?;
+                }
+            }
+            "dependencies" => {
+                if let Some(node) = value_node {
+                    config.dependencies = extract_string_array(node, source)?;
+                }
+            }
+            "dev_dependencies" => {
+                if let Some(node) = value_node {
+                    config.dev_dependencies = extract_string_array(node, source)?;
+                }
+            }
+            "packages" => {
+                if let Some(node) = value_node {
+                    config.packages = extract_string_array(node, source)?;
+                }
+            }
+            _ => {}
         }
     }
     
     Ok(Some(config))
 }
 
-/// Extract array of strings
+/// Extract array of strings (tree-sitter version)
 fn extract_string_array(node: Node, source: &str) -> Result<Vec<String>, String> {
     let mut result = Vec::new();
     
-    if node.kind() != "array" {
-        return Ok(result);
+    // Recursively find the array - in tree-sitter-nickel, arrays are 'atom' nodes containing '['
+    fn find_array(node: Node) -> Option<Node> {
+        let kind = node.kind();
+        
+        // Check if this is an array (atom containing '[')
+        if kind == "atom" {
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
+                if child.kind() == "[" {
+                    return Some(node); // This atom is an array
+                }
+            }
+        }
+        
+        // Recurse into wrapper nodes
+        match kind {
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_array(child) {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
     }
     
-    let mut cursor = node.walk();
-    for elem in node.children_by_field_name("elements", &mut cursor) {
-        if let Some(s) = extract_string(elem, source)? {
+    let array_node = match find_array(node) {
+        Some(node) => node,
+        None => return Ok(result),
+    };
+    
+    let mut cursor = array_node.walk();
+    for elem in array_node.children(&mut cursor) {
+        // Look for array elements - they can be terms or infix_expr etc
+        if elem.kind() == "," || elem.kind() == "[" || elem.kind() == "]" {
+            continue; // Skip delimiters
+        }
+        
+        // Try to extract string from the element
+        if let Some(s) = extract_string_from_node(Some(elem), source)? {
             result.push(s);
         }
     }
@@ -1185,5 +1310,44 @@ height: 50%"%m
         
         assert!(template.contains("def main()"), "Should contain function definition");
         assert!(template.contains("print(\"hello\")"), "Should contain print statement");
+    }
+
+    #[test]
+    fn test_parse_template_with_flake() {
+        let template = r#"
+        {
+            template_name = "python-test",
+            flake = {
+                build_type = "python",
+                propagated_build_inputs = ["textual"],
+            },
+        }
+        "#;
+        
+        let parsed = parse_ncl_spec(template, "test.ncl").expect("Should parse");
+        
+        assert!(parsed.flake.is_some(), "Should have flake config");
+        let flake = parsed.flake.unwrap();
+        assert_eq!(flake.build_type, Some("python".to_string()));
+        assert!(flake.propagated_build_inputs.contains(&"textual".to_string()));
+    }
+
+    #[test]
+    fn test_parse_template_array_deps() {
+        let template = r#"
+        {
+            flake = {
+                propagated_build_inputs = ["textual", "rich", "requests"],
+            },
+        }
+        "#;
+        
+        let parsed = parse_ncl_spec(template, "test.ncl").expect("Should parse");
+        let flake = parsed.flake.expect("Should have flake");
+        
+        assert_eq!(flake.propagated_build_inputs.len(), 3);
+        assert!(flake.propagated_build_inputs.contains(&"textual".to_string()));
+        assert!(flake.propagated_build_inputs.contains(&"rich".to_string()));
+        assert!(flake.propagated_build_inputs.contains(&"requests".to_string()));
     }
 }
