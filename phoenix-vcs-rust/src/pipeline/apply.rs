@@ -557,7 +557,46 @@ pub fn formal_plan_nodes_by_domain(nodes: &[CanonNode], lang: &str) -> Vec<Imple
     // Sort IUs by name for deterministic output
     ius.sort_by(|a, b| a.name.cmp(&b.name));
     
+    // Create integration IU that wires all domain modules together
+    let integration_iu = create_domain_integration_iu(&ius, lang);
+    ius.push(integration_iu);
+    
     ius
+}
+
+/// Create an integration IU for domain-clustered modules
+/// Wires all domain IUs into a unified application entry point
+fn create_domain_integration_iu(domain_ius: &[ImplementationUnit], lang: &str) -> ImplementationUnit {
+    let module_names: Vec<String> = domain_ius.iter()
+        .map(|iu| iu.name.clone())
+        .collect();
+    
+    let contract = format!(
+        "Integration module wiring {} domain modules into unified application: {}",
+        domain_ius.len(),
+        module_names.join(", ")
+    );
+    
+    // Collect all canon IDs from domain IUs
+    let all_canon_ids: Vec<String> = domain_ius.iter()
+        .flat_map(|iu| iu.source_canon_ids.clone())
+        .collect();
+    
+    let iu_id = format!("iu_integration_{}", 
+        crate::identity::sha256(&all_canon_ids.join(""))[..8].to_string()
+    );
+    
+    let ext = if lang == "python" { "py" } else { "rs" };
+    
+    ImplementationUnit {
+        iu_id,
+        name: "app".to_string(),
+        contract,
+        risk_tier: crate::evidence::RiskTier::High, // Integration is high risk
+        target_language: lang.to_string(),
+        source_canon_ids: all_canon_ids,
+        output_files: vec![format!("src/generated/app.{}", ext)],
+    }
 }
 
 #[cfg(test)]
