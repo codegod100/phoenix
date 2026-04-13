@@ -58,13 +58,21 @@ fn get_field<'a>(node: Node<'a>, name: &str, content: &'a str) -> Option<String>
 }
 
 /// Unwrap nested wrapper nodes to get to the actual content
+/// Also skips past comments to find the actual record
 fn unwrap<'a>(node: Node<'a>) -> Node<'a> {
     let mut current = node;
-    for _ in 0..15 {
+    for _ in 0..20 {
         match current.kind() {
             "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
                 let children: Vec<_> = current.children(&mut current.walk()).collect();
-                if let Some(&first) = children.first() {
+                // Skip comments at the start
+                let non_comment = children.iter().find(|&&c| {
+                    let kind = c.kind();
+                    kind != "comment" && kind != "line_comment" && kind != "block_comment"
+                });
+                if let Some(&child) = non_comment {
+                    current = child;
+                } else if let Some(&first) = children.first() {
                     current = first;
                 } else { break; }
             }
@@ -170,10 +178,9 @@ fn parse_widget<'a>(node: Node<'a>, id: &str, content: &'a str) -> Option<Widget
                 if parent.kind() == "atom" {
                     for (i, child) in parent.children(&mut parent.walk()).enumerate() {
                         if child.kind() == "term" || child.kind() == "uni_term" {
-                            // Generate id like "nav_list", "status" from index or look for id field
+                            // Generate id like "nav_list", "status" from index
                             let child_id = format!("{}_child_{}", id, i);
                             if let Some(parsed) = parse_widget(child, &child_id, content) {
-                                // Override with actual id if found in child record
                                 widget.children.push(parsed);
                             }
                         }
@@ -194,6 +201,15 @@ mod tests {
         let mut parser = tree_sitter::Parser::new();
         parser.set_language(&tree_sitter_nickel::LANGUAGE.into()).unwrap();
         parser.parse(text, None).unwrap()
+    }
+
+    #[test]
+    fn test_parse_real_spec() {
+        let spec = include_str!("/home/nandi/code/simple-tui/spec.ncl");
+        let config = extract_ui_config(spec).expect("Should parse real spec");
+        // Real spec should have at least header, sidebar, main
+        assert!(!config.widgets.is_empty(), "Should parse some widgets from real spec");
+        assert!(config.widgets.len() >= 4, "Should have at least 4 widgets");
     }
 
     #[test]

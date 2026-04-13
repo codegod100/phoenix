@@ -478,26 +478,8 @@ fn render_widget_inline(widget: &PythonTerm, out: &mut String) {
 pub fn iu_to_python_term(iu: &ImplementationUnit, spec_content: Option<&str>) -> PythonTerm {
     let class_name = to_pascal_case(&iu.name);
     
-    eprintln!("DEBUG iu_to_python_term: spec_content is {:?}", spec_content.map(|s| format!("{} chars", s.len())));
-    
     // Parse UI configuration from spec if available
-    let ui_config = spec_content.and_then(|s| {
-        eprintln!("DEBUG: about to call parse_ui_config with {} chars", s.len());
-        let cfg = parse_ui_config(s);
-        eprintln!("DEBUG: parse_ui_config returned: {:?}", cfg.is_some());
-        if let Some(ref c) = cfg {
-            eprintln!("DEBUG: Parsed {} widgets:", c.widgets.len());
-            for (i, w) in c.widgets.iter().enumerate() {
-                eprintln!("DEBUG:  Widget {}: {} (id={:?}, children={}, content={:?})", 
-                    i, w.widget_type, w.id, w.children.len(), w.content);
-                for (j, child) in w.children.iter().enumerate() {
-                    eprintln!("DEBUG:    Child {}: {} (id={:?}, content={:?}, subchildren={})",
-                        j, child.widget_type, child.id, child.content, child.children.len());
-                }
-            }
-        }
-        cfg
-    });
+    let ui_config = spec_content.and_then(|s| parse_ui_config(s));
     
     // Build imports based on spec
     let mut imports = vec![
