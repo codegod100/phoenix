@@ -205,6 +205,42 @@ pub fn iu_equations() -> Vec<Equation> {
                 Term::app("output", vec![Term::var("o")])
             ])
         ),
+        
+        // E6: Domain-based clustering (legacy pipeline semantics)
+        // Canon nodes with the same domain are clustered into the same IU
+        // Formally: ∀cn1, cn2. domain(cn1) = domain(cn2) → IU(cn1) = IU(cn2)
+        // This captures that clustering is a function of domain extraction
+        Equation::new(
+            "domain_clustering",
+            Term::app("cluster", vec![
+                Term::app("by_domain", vec![
+                    Term::var("cn1"),
+                    Term::var("cn2")
+                ])
+            ]),
+            Term::app("when_eq", vec![
+                Term::app("domain", vec![Term::var("cn1")]),
+                Term::app("domain", vec![Term::var("cn2")]),
+                Term::app("same_iu", vec![Term::var("cn1"), Term::var("cn2")])
+            ])
+        ),
+        
+        // E7: Domain clustering completeness
+        // All canon nodes with domain d are in IU(d)
+        // This ensures clustering is exhaustive within each domain
+        Equation::new(
+            "domain_clustering_complete",
+            Term::app("sources", vec![
+                Term::app("iu_of_domain", vec![Term::var("d")])
+            ]),
+            Term::app("map", vec![
+                Term::app("get_id", vec![]),
+                Term::app("filter", vec![
+                    Term::app("has_domain", vec![Term::var("d")]),
+                    Term::app("canon_nodes", vec![])
+                ])
+            ])
+        ),
     ]
 }
 
@@ -444,6 +480,11 @@ pub fn verify_pipeline_equations(
         report.add_iu_result("iu_aggregation_completeness", result);
     }
     
+    // Verify domain clustering (legacy pipeline semantics)
+    if let Some(result) = verify_domain_clustering(canon_nodes, ius) {
+        report.add_iu_result("domain_clustering", result);
+    }
+    
     report
 }
 
@@ -502,6 +543,176 @@ fn verify_aggregation_completeness(
         bindings: vec![("note".to_string(), details_msg)],
         lhs_after: format!("canon_ids: {:?}", all_canon_ids),
         rhs_after: format!("covered: {:?}", covered_ids),
+    })
+}
+
+/// Extract domain from a canon node statement (matches legacy pipeline logic)
+fn extract_domain(statement: &str) -> String {
+    let domains = [
+        ("auth", vec!["auth", "login", "user", "session", "password", "token"]),
+        ("database", vec!["db", "database", "query", "storage", "persist"]),
+        ("api", vec!["api", "endpoint", "route", "http", "request", "response"]),
+        ("validation", vec!["validate", "check", "verify", "sanitiz"]),
+        ("security", vec!["encrypt", "secure", "hash", "permission"]),
+    ];
+    
+    let lower = statement.to_lowercase();
+    for (name, keywords) in &domains {
+        for kw in keywords {
+            if lower.contains(kw) {
+                return name.to_string();
+            }
+        }
+    }
+    
+    "core".to_string()
+}
+
+/// Verify clustering semantics: canon nodes are clustered according to pipeline mode
+/// 
+/// Legacy pipeline clustering:
+/// - Python: Single "app" IU (no domain clustering, all canons aggregated)
+/// - Rust: Single "lib" IU (no domain clustering, all canons aggregated)
+/// - Other: Domain-based clustering using extract_domain()
+///
+/// Formal pipeline:
+/// - Each canon gets its own IU (no clustering, 1:1 mapping)
+#[cfg(feature = "panproto")]
+fn verify_domain_clustering(
+    canon_nodes: &[crate::pipeline::CanonNode],
+    ius: &[crate::pipeline::ImplementationUnit],
+) -> Option<VerificationResult> {
+    if canon_nodes.is_empty() || ius.is_empty() {
+        return None;
+    }
+    
+    // Detect clustering mode
+    let is_formal_mode = ius.len() == canon_nodes.len();
+    let is_single_iu = ius.len() == 1;
+    
+    let mut violations = Vec::new();
+    let mut clustering_summary = Vec::new();
+    
+    if is_formal_mode {
+        // Formal mode: 1:1 mapping, each canon in its own IU
+        for (cn, iu) in canon_nodes.iter().zip(ius.iter()) {
+            if iu.source_canon_ids.len() != 1 || iu.source_canon_ids[0] != cn.id {
+                violations.push(format!(
+                    "Formal mode violation: canon {} not in its own IU",
+                    cn.id[..8.min(cn.id.len())].to_string()
+                ));
+            }
+        }
+        clustering_summary.push("Formal mode: 1:1 canon-to-IU mapping".to_string());
+    } else if is_single_iu {
+        // Legacy Python/Rust mode: single IU aggregates all canons
+        let iu = &ius[0];
+        let expected_count = canon_nodes.len();
+        let actual_count = iu.source_canon_ids.len();
+        
+        if actual_count != expected_count {
+            violations.push(format!(
+                "Single IU mode: expected {} canons, found {}",
+                expected_count, actual_count
+            ));
+        }
+        
+        // Check that the IU name indicates aggregation (app/lib)
+        let clustering_type = if iu.name == "app" {
+            "Python: single 'app' IU"
+        } else if iu.name == "lib" {
+            "Rust: single 'lib' IU"
+        } else {
+            "Single IU aggregation"
+        };
+        clustering_summary.push(clustering_type.to_string());
+        
+        // Document the domains present in the aggregation
+        let domains: std::collections::HashSet<String> = canon_nodes
+            .iter()
+            .map(|cn| extract_domain(&cn.clean_statement))
+            .collect();
+        clustering_summary.push(format!("Aggregated domains: {:?}", domains));
+    } else {
+        // Domain-based clustering mode (fallback for other languages)
+        let mut domain_to_iu: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        
+        for iu in ius {
+            // Get IU's domain from first canon node
+            let iu_domain = if let Some(first_id) = iu.source_canon_ids.first() {
+                canon_nodes.iter()
+                    .find(|cn| &cn.id == first_id)
+                    .map(|cn| extract_domain(&cn.clean_statement))
+                    .unwrap_or_else(|| "core".to_string())
+            } else {
+                "core".to_string()
+            };
+            
+            // Check: canons in this IU should all have the same domain
+            for canon_id in &iu.source_canon_ids {
+                if let Some(cn) = canon_nodes.iter().find(|n| &n.id == canon_id) {
+                    let canon_domain = extract_domain(&cn.clean_statement);
+                    if canon_domain != iu_domain {
+                        violations.push(format!(
+                            "Mixed domains in IU '{}': expected '{}', found '{}'",
+                            iu.name, iu_domain, canon_domain
+                        ));
+                    }
+                }
+            }
+            
+            // Check: each domain appears in only one IU
+            if let Some(existing_iu) = domain_to_iu.get(&iu_domain) {
+                if existing_iu != &iu.name {
+                    violations.push(format!(
+                        "Domain '{}' split across IUs: '{}' and '{}'",
+                        iu_domain, existing_iu, iu.name
+                    ));
+                }
+            } else {
+                domain_to_iu.insert(iu_domain.clone(), iu.name.clone());
+            }
+        }
+        
+        clustering_summary.push(format!(
+            "Domain-based: {} domains → {} IUs",
+            domain_to_iu.len(), ius.len()
+        ));
+    }
+    
+    let holds = violations.is_empty();
+    let details_msg = if holds {
+        clustering_summary.join("; ")
+    } else {
+        format!("Clustering violations: {}", violations.join("; "))
+    };
+    
+    // Build canon domain map for display
+    let canon_domains: Vec<(String, String)> = canon_nodes
+        .iter()
+        .map(|cn| {
+            let short_id = cn.id[..cn.id.len().min(8)].to_string();
+            (short_id, extract_domain(&cn.clean_statement))
+        })
+        .collect();
+    
+    // Build IU summary for display
+    let iu_summary: Vec<(String, usize)> = ius
+        .iter()
+        .map(|iu| (iu.name.clone(), iu.source_canon_ids.len()))
+        .collect();
+    
+    Some(VerificationResult::Verified {
+        holds,
+        bindings: vec![
+            ("mode".to_string(), 
+                if is_formal_mode { "formal".to_string() } 
+                else if is_single_iu { "single_iu".to_string() }
+                else { "domain_based".to_string() }),
+            ("summary".to_string(), clustering_summary.join(" | ")),
+        ],
+        lhs_after: format!("canons: {:?}", canon_domains),
+        rhs_after: format!("IUs: {:?}", iu_summary),
     })
 }
 
