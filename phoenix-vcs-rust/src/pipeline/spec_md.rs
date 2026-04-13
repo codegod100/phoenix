@@ -450,7 +450,6 @@ pub fn validate_filled_spec(content: &str) -> Result<()> {
 pub async fn spec_md_to_ncl(
     spec_md: &str,
     bundles_dir: impl AsRef<Path>,
-    llm_client: &dyn LlmClient,
 ) -> Result<String> {
     // 1. Discover templates
     let bundles = discover_template_bundles(bundles_dir)?;
@@ -468,9 +467,10 @@ pub async fn spec_md_to_ncl(
     // 3. Build prompt
     let prompt = build_llm_prompt(spec_md, bundle);
     
-    // 4. Call LLM to fill template
+    // 4. Call LLM using existing infrastructure
     tracing::info!("Calling LLM to fill template...");
-    let filled = llm_client.complete(&prompt).await?;
+    let config = crate::llm::LlmConfig::default();
+    let filled = fill_template_with_llm(&prompt, &config).await?;
     
     // 5. Validate result
     validate_filled_spec(&filled)?;
@@ -480,70 +480,45 @@ pub async fn spec_md_to_ncl(
     Ok(filled)
 }
 
-/// Trait for LLM client (allows mocking in tests)
-#[async_trait::async_trait]
-pub trait LlmClient: Send + Sync {
-    async fn complete(&self, prompt: &str) -> Result<String>;
+/// Fill template using existing LLM infrastructure
+async fn fill_template_with_llm(prompt: &str, config: &crate::llm::LlmConfig) -> Result<String> {
+    // Reuse the existing LLM infrastructure with a spec-filling request
+    let request = crate::llm::CodeGenRequest {
+        requirements: vec![prompt.to_string()],
+        language: "nickel".to_string(),
+        module_name: "spec".to_string(),
+        iu_id: "spec_md_conversion".to_string(),
+        context: None,
+        module_apis: None,
+    };
+    
+    // Use existing generate_code_with_llm with a template-filling system prompt
+    let system_prompt = r#"You are a specification translator. 
+TASK: Read the spec.md and template.ncl provided, then output FILLED Nickel code.
+RULES:
+1. Replace every {{slot}} with a real value from the spec
+2. Output ONLY the filled Nickel record - no markdown, no explanation
+3. MUST include: name, template, build_type, ui_config
+4. Example output format:
+{
+  name = "MyApp",
+  template = "python-textual",
+  build_type = "python",
+  ui_config = {
+    theme = "dark",
+    layout = { type = "vertical", widgets = [{...}] }
+  }
 }
-
-/// Real LLM client using Fireworks API
-pub struct FireworksLlmClient {
-    api_key: String,
-    model: String,
-}
-
-impl FireworksLlmClient {
-    pub fn new(api_key: impl Into<String>) -> Self {
-        Self {
-            api_key: api_key.into(),
-            model: "accounts/fireworks/models/llama-v3p1-70b-instruct".to_string(),
-        }
+NOW FILL THIS TEMPLATE:"#;
+    
+    let filled = crate::llm::generate_code_with_llm(&request, config, Some(system_prompt)).await?;
+    
+    // Validate it's not empty or placeholder
+    if filled.trim().is_empty() || filled.contains("awaiting input") {
+        anyhow::bail!("LLM returned empty or placeholder spec");
     }
-}
-
-#[async_trait::async_trait]
-impl LlmClient for FireworksLlmClient {
-    async fn complete(&self, prompt: &str) -> Result<String> {
-        use reqwest::Client;
-        use serde_json::json;
-        
-        let client = Client::new();
-        let response = client
-            .post("https://api.fireworks.ai/inference/v1/chat/completions")
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .header("Content-Type", "application/json")
-            .json(&json!({
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": "You are a specification translator. Output only valid Nickel code."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.3,
-                "max_tokens": 4096,
-            }))
-            .send()
-            .await
-            .context("Failed to call Fireworks API")?;
-        
-        if !response.status().is_success() {
-            let error = response.text().await?;
-            anyhow::bail!("LLM API error: {}", error);
-        }
-        
-        let json: serde_json::Value = response.json().await?;
-        let content = json["choices"][0]["message"]["content"]
-            .as_str()
-            .context("No content in LLM response")?;
-        
-        // Clean up: remove markdown fences if present
-        let cleaned = content
-            .trim_start_matches("```nickel")
-            .trim_start_matches("```")
-            .trim_end_matches("```")
-            .trim();
-        
-        Ok(cleaned.to_string())
-    }
+    
+    Ok(filled)
 }
 
 #[cfg(test)]

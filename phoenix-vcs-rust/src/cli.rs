@@ -926,12 +926,9 @@ async fn cmd_pipeline_multi(
             }
             
             if let Some(bundles_dir) = bundles_dir {
-                let llm_client = crate::pipeline::spec_md::FireworksLlmClient::new(api_key);
-                
                 match crate::pipeline::spec_md::spec_md_to_ncl(
                     &spec_md_content,
                     &bundles_dir,
-                    &llm_client
                 ).await {
                     Ok(spec_ncl) => {
                         tokio::fs::write(&spec_ncl_path, spec_ncl).await?;
