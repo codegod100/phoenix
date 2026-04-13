@@ -308,18 +308,23 @@ async fn call_llm_for_contract(prompt: &str, config: &crate::llm::LlmConfig) -> 
 
 /// Validate generated Nickel satisfies the contract requirements
 fn validate_nickel_contract(generated: &str, bundle: &TemplateBundle) -> Result<()> {
-    // Check for required top-level fields that must be present
-    // Note: theory format uses phoenix_config (decomposed UI values)
-    let required_fields = ["id", "description", "theory", "phoenix_config"];
-    for field in &required_fields {
-        let has_field = generated.contains(&format!("{} =", field)) 
-            || generated.contains(&format!("{} |", field));
-        if !has_field {
-            anyhow::bail!(
-                "Generated spec missing required field: {}. Check that the LLM properly extracted values from the spec.",
-                field
-            );
-        }
+    // Check for required fields - support both theory format and legacy format
+    let theory_fields = ["id", "description", "theory", "phoenix_config"];
+    let legacy_fields = ["name", "template", "ui_config"];
+    
+    let is_theory_format = theory_fields.iter().all(|field| {
+        generated.contains(&format!("{} =", field)) || generated.contains(&format!("{} |", field))
+    });
+    
+    let is_legacy_format = legacy_fields.iter().all(|field| {
+        generated.contains(&format!("{} =", field)) || generated.contains(&format!("{} |", field))
+    });
+    
+    if !is_theory_format && !is_legacy_format {
+        anyhow::bail!(
+            "Generated spec missing required fields. Expected theory format (id, description, theory, phoenix_config) \
+             or legacy format (name, template, ui_config). Check that the LLM properly extracted values from the spec."
+        );
     }
     
     // Check template field has correct value from contract
