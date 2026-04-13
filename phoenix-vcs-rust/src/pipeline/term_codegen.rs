@@ -778,7 +778,7 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
             }
         }
         "ListView" => {
-            // ListView: create ListItem children from items prop
+            // ListView: create ListItem(Label) children from items prop
             if let Some((_, items_str)) = widget.props.iter().find(|(k, _)| k == "items") {
                 // Parse items like: ["Home", "Settings", "Logs"]
                 let items: Vec<_> = items_str
@@ -787,10 +787,16 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
                     .filter(|s| !s.trim().is_empty())
                     .map(|s| {
                         let label = s.trim().trim_matches('"').to_string();
-                        // Create Label widget for each item
+                        // Create ListItem containing Label for each item
                         Widget {
-                            widget_type: "Label".to_string(),
-                            args: vec![("content".to_string(), Str(label))],
+                            widget_type: "ListItem".to_string(),
+                            args: vec![("children".to_string(), List(vec![
+                                Widget {
+                                    widget_type: "Label".to_string(),
+                                    args: vec![("content".to_string(), Str(label))],
+                                    id: None,
+                                }
+                            ]))],
                             id: None,
                         }
                     })
