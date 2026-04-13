@@ -41,7 +41,7 @@ Instead of one big UIConfig sort, DECOMPOSE into separate sorts:
     { name = "ThREADME", kind = { type = "structural" } },
     { name = "ThIntegratedApp", kind = { type = "structural" } },
     
-    # UI value sorts (val kind = holds actual values)
+    # UI value sorts (kind with type and value_kind)
     { name = "ProjectName", kind = { type = "val", value_kind = "string" } },
     { name = "ProjectDescription", kind = { type = "val", value_kind = "string" } },
     { name = "LayoutType", kind = { type = "val", value_kind = "string" } },
@@ -139,7 +139,9 @@ Instead of one big UIConfig sort, DECOMPOSE into separate sorts:
 ## KEY INSIGHT: Decomposed Sorts
 
 - **val sorts**: Hold actual values (ProjectName = "Simple TUI")
+  - Use: `{ kind = { type = "val", value_kind = "string" } }`
 - **structural sorts**: Hold structure (WidgetTree, KeyBindings)
+  - Use: `{ kind = { type = "structural" } }`
 - Each concept has its own sort - no UIConfig wrapper!
 - ThNix composes the sorts together in compose_app
 

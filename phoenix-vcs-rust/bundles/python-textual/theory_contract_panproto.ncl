@@ -32,10 +32,10 @@ let rec
   ValKind = { type | String, value_kind | String },
   StructuralKind = { type | String },
   
-  # Sort declaration
+  # Sort declaration - kind can be any record with a 'type' field
   SortSpec = {
     name | String,
-    kind | ValKind or StructuralKind,
+    kind | { type | String },  # Accepts both { type = "val", value_kind = "..." } and { type = "structural" }
   },
   
   # Operation
