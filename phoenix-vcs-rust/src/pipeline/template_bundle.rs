@@ -48,16 +48,16 @@ pub enum FormalTheory {
     ThTemplate { template_path: String },
 }
 
-/// ThTextualBundle: Theory of Python Textual applications
+/// ThPythonTextual: Theory of Python Textual applications
 /// 
 /// This is a domain-specific theory for TUI apps. Each sort maps to a
 /// specific code artifact in the generated project.
 #[cfg(feature = "panproto")]
-pub fn textual_bundle_theory() -> Theory {
+pub fn python_textual_theory() -> Theory {
     use panproto_gat::{Sort, SortKind, Operation};
     
     Theory::new(
-        Arc::from("ThTextualBundle"),
+        Arc::from("ThPythonTextual"),
         vec![
             // Top-level bundle sorts
             Sort { name: Arc::from("TextualApp"), params: vec![], kind: SortKind::Structural },
@@ -109,7 +109,7 @@ pub fn textual_bundle_theory() -> Theory {
     )
 }
 
-/// Morphism: ThTextualBundle → ThPythonTextual
+/// Morphism: ThPythonTextual → ThCode
 /// 
 /// Maps each sort to its Python code representation:
 /// - Layout → CSS string in app.CSS
@@ -138,8 +138,8 @@ pub fn textual_bundle_to_python_morphism() -> panproto_gat::TheoryMorphism {
     op_map.insert(Arc::from("mk_app"), Arc::from("app_class"));
     
     TheoryMorphism::new(
-        Arc::from("μ_textual→python"),
-        Arc::from("ThTextualBundle"),
+        Arc::from("μ_python_textual→code"),
+        Arc::from("ThPythonTextual"),
         Arc::from("ThPythonTextual"),
         sort_map,
         op_map,
