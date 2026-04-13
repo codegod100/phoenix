@@ -277,10 +277,19 @@ fn extract_from_term(node: Node, source: &str, result: &mut ParsedNcl) -> Result
         "record" | "uni_record" => {
             extract_record_fields(node, source, result)
         }
-        "let_in" => {
-            // For now, just extract from the 'in' part (the body)
+        "let_in" | "let_in_block" | "let_expr" => {
+            // Extract from the 'in' part (the body)
             if let Some(body) = node.child_by_field_name("body") {
                 extract_from_term(body, source, result)?;
+            } else {
+                // Try to find body as the last child
+                // let_expr: [let_in_block or bindings], body
+                let mut cursor = node.walk();
+                let children: Vec<_> = node.children(&mut cursor).collect();
+                if children.len() >= 2 {
+                    let last_child = children.last().unwrap();
+                    extract_from_term(*last_child, source, result)?;
+                }
             }
             Ok(())
         }

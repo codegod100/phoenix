@@ -1108,15 +1108,20 @@ async fn cmd_pipeline_single(
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) == Some("ncl") {
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
-                if let Ok(parsed) = crate::ncl::parse_ncl_spec(&content, &path.to_string_lossy()) {
-                    // Explicit template takes precedence
-                    if parsed.template.is_some() {
-                        template_name = parsed.template.clone();
-                        break;
+                match crate::ncl::parse_ncl_spec(&content, &path.to_string_lossy()) {
+                    Ok(parsed) => {
+                        // Explicit template takes precedence
+                        if parsed.template.is_some() {
+                            template_name = parsed.template.clone();
+                            break;
+                        }
+                        // Fall back to build_type if no explicit template
+                        if template_name.is_none() && parsed.build_type.is_some() {
+                            template_name = parsed.build_type.clone();
+                        }
                     }
-                    // Fall back to build_type if no explicit template
-                    if template_name.is_none() && parsed.build_type.is_some() {
-                        template_name = parsed.build_type.clone();
+                    Err(_e) => {
+                        // Silently ignore parse errors
                     }
                 }
             }
