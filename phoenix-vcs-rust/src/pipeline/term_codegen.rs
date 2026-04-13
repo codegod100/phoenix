@@ -775,19 +775,19 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
                     .filter(|s| !s.trim().is_empty())
                     .map(|s| {
                         let label = s.trim().trim_matches('"').to_string();
-                        // Create ListItem(Label(label)) for each item
-                        Call {
-                            func: Box::new(Var("ListItem".to_string())),
-                            args: vec![Call {
-                                func: Box::new(Var("Label".to_string())),
-                                args: vec![Str(label)],
-                            }],
+                        // Create Label widget for each item
+                        Widget {
+                            widget_type: "Label".to_string(),
+                            args: vec![("content".to_string(), Str(label))],
+                            id: None,
                         }
                     })
                     .collect();
                 if !items.is_empty() {
                     args.push(("children".to_string(), List(items)));
                 }
+            } else if !children_terms.is_empty() {
+                args.push(("children".to_string(), List(children_terms)));
             }
         }
         "Vertical" | "Horizontal" => {
