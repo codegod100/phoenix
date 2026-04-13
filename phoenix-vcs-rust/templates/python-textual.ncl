@@ -38,8 +38,8 @@ PYTHON-SPECIFIC REQUIREMENTS:
 
 TEXTUAL FRAMEWORK RULES:
 16. MUST import: from textual.app import App, ComposeResult
-17. MUST import: from textual.widgets import Static, Header, Footer, Container
-18. MUST import: from textual.containers import Vertical, Horizontal
+17. MUST import: from textual.widgets import Static, Header, Footer, Log, Button
+18. MUST import: from textual.containers import Vertical, Horizontal, Container
 19. MUST define class {Name}App(App) - class name ends with 'App', inherits from App
 20. MUST define CSS class variable with valid Textual CSS
 21. MUST define compose(self) -> ComposeResult method
@@ -138,8 +138,8 @@ CORRECT WIDGET UPDATE PATTERN (copy this structure):
 # phoenix: iu_id = "{{iu_id}}"
 
 from textual.app import App, ComposeResult
-from textual.widgets import Static, Header, Footer
-from textual.containers import Vertical
+from textual.widgets import Static, Header, Footer, Log, Button
+from textual.containers import Vertical, Horizontal, Container
 from typing import NoReturn
 import sys
 
