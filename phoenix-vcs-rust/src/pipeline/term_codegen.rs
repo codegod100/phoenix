@@ -923,9 +923,10 @@ mod tests {
         
         // Verify widgets from spec appear in code
         assert!(code.contains("Header"), "Should contain Header widget");
-        assert!(code.contains("test-app"), "Should contain app name from spec");
+        assert!(code.contains("My App"), "Should contain header title from spec");
         assert!(code.contains("Vertical"), "Should contain Vertical container from sidebar widget");
         assert!(code.contains("Horizontal"), "Should contain Horizontal for sidebar|main split");
+        assert!(code.contains("id=\"header\""), "Should contain header widget with ID");
         assert!(code.contains("id=\"sidebar\""), "Should contain sidebar widget with ID");
         assert!(code.contains("id=\"main\""), "Should contain main widget with ID");
         
