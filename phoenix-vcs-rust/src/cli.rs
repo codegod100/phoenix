@@ -299,29 +299,53 @@ pub async fn run() -> Result<()> {
 
 /// Extract project name from spec content
 fn extract_project_name(spec_content: &str) -> String {
-    // Try to find name = "..." in spec
-    spec_content.lines()
-        .find(|l| l.contains("name =") && !l.trim().starts_with('#'))
+    // Try to find project_name in phoenix_config first (theory format)
+    let config_name = spec_content.lines()
+        .skip_while(|l| !l.contains("phoenix_config"))
+        .skip(1)  // Skip the phoenix_config = { line
+        .find(|l| l.contains("project_name =") && !l.trim().starts_with('#'))
         .and_then(|l| {
             l.split('=').nth(1)
                 .map(|s| {
                     s.trim()
-                        .trim_end_matches(',')  // Remove trailing comma FIRST
-                        .trim_matches('"')      // Then remove quotes
+                        .trim_end_matches(',')
+                        .trim_matches('"')
+                        .to_string()
+                })
+        });
+    
+    if let Some(name) = config_name {
+        return name;
+    }
+    
+    // Fallback: try to find name = "..." at top level (legacy format)
+    spec_content.lines()
+        .find(|l| {
+            let trimmed = l.trim();
+            // Must be at start of line (top level) and not in a nested structure
+            trimmed.starts_with("name =") && !trimmed.starts_with('#')
+        })
+        .and_then(|l| {
+            l.split('=').nth(1)
+                .map(|s| {
+                    s.trim()
+                        .trim_end_matches(',')
+                        .trim_matches('"')
                         .to_string()
                 })
         })
         .or_else(|| {
-            // Fallback: find id = "dev." prefix
+            // Fallback: find id = "dev.xxx" and extract xxx
             spec_content.lines()
                 .find(|l| l.contains("id = \"dev."))
                 .and_then(|l| {
                     l.split('=').nth(1)
                         .map(|s| {
                             s.trim()
-                                .trim_end_matches(',')  // Remove trailing comma FIRST
-                                .trim_matches('"')      // Then remove quotes
+                                .trim_end_matches(',')
+                                .trim_matches('"')
                                 .replace("dev.", "")
+                                .replace("phoenix.", "")
                                 .to_string()
                         })
                 })
