@@ -1387,6 +1387,9 @@ pub mod formal;
 // Apply formal morphisms to pipeline data
 pub mod apply;
 
+// Equations (algebraic laws) for pipeline theories
+pub mod equations;
+
 // Re-export key morphism types when panproto is enabled
 #[cfg(feature = "panproto")]
 pub use morphisms::{CodeMorphism, create_ncl_to_code_morphism, generate_with_morphism};
@@ -1407,4 +1410,14 @@ pub use apply::{
     apply_canonize, apply_plan, apply_codegen,
     pipeline_transform, format_term, demonstrate_pipeline_morphisms,
     code_file_term, trace_term_provenance,
+};
+
+// Re-export equation functions when panproto is enabled
+#[cfg(feature = "panproto")]
+pub use equations::{
+    clause_equations, canon_equations, iu_equations, code_equations,
+    clause_theory_with_equations, canon_theory_with_equations,
+    iu_theory_with_equations, code_theory_with_equations,
+    print_equations, verify_morphism_preserves_equations,
+    verify_all_equations,
 };

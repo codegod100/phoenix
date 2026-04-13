@@ -953,6 +953,21 @@ async fn cmd_pipeline_single(
         crate::pipeline::print_morphism_summary(&mu_plan);
         crate::pipeline::print_morphism_summary(&mu_codegen);
         
+        // Show equations for each theory
+        println!("   ⚖️  Algebraic Laws (Equations):");
+        crate::pipeline::print_equations("ThClause", &crate::pipeline::clause_equations());
+        crate::pipeline::print_equations("ThCanon", &crate::pipeline::canon_equations());
+        crate::pipeline::print_equations("ThIU", &crate::pipeline::iu_equations());
+        crate::pipeline::print_equations("ThCode", &crate::pipeline::code_equations());
+        
+        // Verify morphism equation preservation
+        println!("   ✓ Verifying morphism preservation of equations:");
+        let canon_results = crate::pipeline::verify_morphism_preserves_equations(&mu_canon, &crate::pipeline::canon_equations());
+        for (eq_name, preserved) in canon_results {
+            let status = if preserved { "✓" } else { "⚠" };
+            println!("     {} μ_canon preserves {}: {}", status, eq_name, if preserved { "yes" } else { "unchecked" });
+        }
+        
         // Demonstrate actual term transformations
         println!("   🔀 Term Transformations (morphism.apply_to_term()):");
         if !clause_graph.clauses.is_empty() {
