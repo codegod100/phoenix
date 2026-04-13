@@ -933,20 +933,23 @@ async fn cmd_pipeline_multi(
                     Ok(spec_ncl) => {
                         // Validate generated spec has actual content
                         if spec_ncl.trim().len() < 50 || spec_ncl.contains("awaiting input") {
-                            println!("⚠️  LLM generated empty/invalid spec - keeping existing spec.ncl");
-                        } else {
-                            // Backup existing spec.ncl if present
-                            if spec_ncl_path.exists() {
-                                let backup = spec_ncl_path.with_extension("ncl.bak");
-                                let _ = tokio::fs::copy(&spec_ncl_path, &backup).await;
-                            }
-                            tokio::fs::write(&spec_ncl_path, spec_ncl).await?;
-                            println!("✅ Generated spec.ncl from spec.md");
+                            anyhow::bail!(
+                                "LLM generated empty/invalid spec.ncl - template filling failed. Check your spec.md content and ensure FIREWORKS_API_KEY is valid."
+                            );
                         }
+                        // Backup existing spec.ncl if present
+                        if spec_ncl_path.exists() {
+                            let backup = spec_ncl_path.with_extension("ncl.bak");
+                            let _ = tokio::fs::copy(&spec_ncl_path, &backup).await;
+                        }
+                        tokio::fs::write(&spec_ncl_path, spec_ncl).await?;
+                        println!("✅ Generated spec.ncl from spec.md");
                     }
                     Err(e) => {
-                        println!("⚠️  Failed to convert spec.md: {}", e);
-                        println!("   Continuing with existing spec.ncl if present...");
+                        anyhow::bail!(
+                            "Failed to convert spec.md to spec.ncl: {}. Check: (1) FIREWORKS_API_KEY is set, (2) spec.md has valid content, (3) template bundle is correct.",
+                            e
+                        );
                     }
                 }
             } else {
