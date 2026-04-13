@@ -1549,6 +1549,9 @@ pub mod widget_config;
 pub mod nix_codegen;
 pub mod template_bundle;
 
+// Spec.md parsing and template selection
+pub mod spec_md;
+
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;
 
@@ -1594,7 +1597,7 @@ pub use equations::{
 /// This implements μ_flake: ThSpec → ThNix
 pub async fn generate_flake_from_spec(
     project_root: &Path,
-    spec_content: &str,
+    _spec_content: &str,
     target_language: &str,
 ) -> Result<PathBuf> {
     // Try to parse the spec to get proper config
