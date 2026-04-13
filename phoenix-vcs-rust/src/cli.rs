@@ -179,9 +179,9 @@ pub enum Commands {
         #[arg(long)]
         legacy: bool,
         
-        /// Cluster IUs by domain in formal pipeline (group by protocol/domain)
+        /// Disable domain clustering (default: cluster by domain, creating IUs per domain)
         #[arg(long)]
-        cluster_by_domain: bool,
+        no_cluster: bool,
     },
     
     /// Verify lens laws for the pipeline
@@ -280,8 +280,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Some(Commands::Init { name, bare }) => cmd_init(&cli.project_root, name, bare).await,
-        Some(Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy, cluster_by_domain }) => {
-            cmd_pipeline_multi(&cli.project_root, stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy, cluster_by_domain).await
+        Some(Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy, no_cluster }) => {
+            cmd_pipeline_multi(&cli.project_root, stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy, no_cluster).await
         }
         Some(Commands::VerifyLaws { lang }) => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -806,7 +806,7 @@ async fn cmd_pipeline_multi(
     skip_plan: bool,
     verify: bool,
     legacy: bool,
-    cluster_by_domain: bool,
+    no_cluster: bool,
 ) -> Result<()> {
     info!("Running Phoenix multi-language pipeline...");
     
@@ -834,7 +834,7 @@ async fn cmd_pipeline_multi(
     
     // Run pipeline for each language
     for lang in &languages {
-        if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy, cluster_by_domain).await {
+        if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy, no_cluster).await {
             println!("⚠️  {} failed: {}", lang, e);
         }
     }
@@ -858,7 +858,7 @@ async fn cmd_pipeline_single(
     _skip_plan: bool,
     verify: bool,
     legacy: bool,
-    cluster_by_domain: bool,
+    no_cluster: bool,
 ) -> Result<()> {
     info!("Running Phoenix pipeline for {}...", lang);
     
@@ -1025,16 +1025,16 @@ async fn cmd_pipeline_single(
         let unique_nodes = canon_graph.nodes.len();
         let duplicates = total_clauses.saturating_sub(unique_nodes);
         
-        let iu_graph = if cluster_by_domain {
-            // Domain-based clustering: group canon nodes by extracted domain
+        let iu_graph = if no_cluster {
+            // 1:1 mapping: each canon node → separate IU (disable clustering)
+            crate::pipeline::formal_plan_nodes(&canon_graph.nodes, lang)
+        } else {
+            // Domain-based clustering: group canon nodes by extracted domain (default)
             let ius = crate::pipeline::formal_plan_nodes_by_domain(&canon_graph.nodes, lang);
             crate::lens::IUGraph { ius }
-        } else {
-            // 1:1 mapping: each canon node → separate IU
-            crate::pipeline::formal_plan_nodes(&canon_graph.nodes, lang)
         };
         
-        let mode_str = if cluster_by_domain { "formal morphisms + domain clustering" } else { "formal morphisms" };
+        let mode_str = if no_cluster { "formal morphisms (1:1)" } else { "formal morphisms + domain clustering" };
         println!("   {} clauses → {} canons ({} dups) → {} IUs [{}]", 
             total_clauses, unique_nodes, duplicates, iu_graph.ius.len(), mode_str);
         
