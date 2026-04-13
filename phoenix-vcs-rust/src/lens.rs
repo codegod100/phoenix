@@ -287,9 +287,8 @@ pub fn canonicalize_lens() -> Lens<ClauseGraph, CanonGraph> {
 /// Forward: Partition canonical nodes into Implementation Units
 /// Backward: Decompose IUs back to canonical nodes
 ///
-/// For PyO3 architecture:
-/// - Python: Only TUI app (imports from freeq_pyo3)
-/// - Rust: Only PyO3 wrapper (wraps freeq-sdk)
+/// Architecture-agnostic: Generates IUs based on protocol/domain from specs,
+/// NOT hardcoded application knowledge.
 pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
     Lens {
         get: Box::new(move |canon| {
@@ -297,19 +296,9 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
             let mut ius = Vec::new();
             
             if lang == "python" || lang == "py" {
-                // Python TUI: Single app that imports from freeq_pyo3
-                // Look for NCL-style language declarations
-                let python_nodes: Vec<&CanonNode> = canon.nodes.iter()
-                    .filter(|n| n.clean_statement.contains("language = \"python\"") || 
-                                 n.clean_statement.contains("language = 'python'") ||
-                                 n.clean_statement.contains("interface"))
-                    .collect();
-                
-                // Check for OUTPUT_PATH in specs
-                let output_path = extract_output_path(&python_nodes, "src/app.py");
-                
-                let canon_ids: Vec<String> = python_nodes.iter().map(|n| n.id.clone()).collect();
-                let contract = "Textual TUI application importing IRCClient/ATProtoAuth from freeq_pyo3".to_string();
+                // Python: Single app IU
+                let contract = format!("Python {} application", target_language);
+                let canon_ids: Vec<String> = canon.nodes.iter().map(|n| n.id.clone()).collect();
                 let iu_id = crate::identity::iu_id("app", &contract, &canon_ids);
                 
                 ius.push(IU {
@@ -317,27 +306,16 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     name: "app".to_string(),
                     contract,
                     source_canon_ids: canon_ids,
-                    risk_tier: determine_risk_tier(&python_nodes),
+                    risk_tier: determine_risk_tier(&canon.nodes.iter().collect::<Vec<_>>()),
                     target_language: target_language.to_string(),
-                    output_files: vec![output_path],
+                    output_files: vec!["src/app.py".to_string()],
                 });
                 
-                println!("   Simplified Python: 1 IU (TUI → freeq_pyo3)");
+                println!("   Python: 1 IU (app)");
             } else if lang == "rust" || lang == "rs" {
-                // Rust PyO3: Single lib wrapping freeq-sdk
-                // Look for NCL-style language declarations
-                let rust_nodes: Vec<&CanonNode> = canon.nodes.iter()
-                    .filter(|n| n.clean_statement.contains("language = \"rust\"") || 
-                                 n.clean_statement.contains("language = 'rust'") ||
-                                 n.clean_statement.contains("language = \"pyo3\"") ||
-                                 n.clean_statement.contains("language = 'pyo3'"))
-                    .collect();
-                
-                // Check for OUTPUT_PATH in specs
-                let output_path = extract_output_path(&rust_nodes, "src/lib.rs");
-                
-                let canon_ids: Vec<String> = rust_nodes.iter().map(|n| n.id.clone()).collect();
-                let contract = "PyO3 bindings wrapping freeq-sdk for Python".to_string();
+                // Rust: Single library IU
+                let contract = format!("Rust {} library", target_language);
+                let canon_ids: Vec<String> = canon.nodes.iter().map(|n| n.id.clone()).collect();
                 let iu_id = crate::identity::iu_id("lib", &contract, &canon_ids);
                 
                 ius.push(IU {
@@ -345,12 +323,12 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     name: "lib".to_string(),
                     contract,
                     source_canon_ids: canon_ids,
-                    risk_tier: determine_risk_tier(&rust_nodes),
+                    risk_tier: determine_risk_tier(&canon.nodes.iter().collect::<Vec<_>>()),
                     target_language: target_language.to_string(),
-                    output_files: vec![output_path],
+                    output_files: vec!["src/lib.rs".to_string()],
                 });
                 
-                println!("   Simplified Rust: 1 IU (PyO3 → freeq-sdk)");
+                println!("   Rust: 1 IU (lib)");
             } else {
                 // Fallback: domain-based partitioning for other languages
                 let mut groups: HashMap<String, Vec<&CanonNode>> = HashMap::new();
@@ -625,27 +603,154 @@ impl SpecDocument {
         let lines: Vec<&str> = self.content.lines().collect();
         let mut current_section = String::new();
         
-        // Check if this is NCL content
-        let is_ncl = self.content.contains("language") && 
-                     self.content.contains("=") && 
-                     (self.content.contains("morphisms") || self.content.contains("generation"));
+        // Check if this is NCL content (panproto-style specs)
+        let is_ncl = self.path.ends_with(".ncl") || (
+            self.content.contains("=") && 
+            (self.content.contains("morphisms") || 
+             self.content.contains("compositions") ||
+             self.content.contains("protocols") ||
+             self.content.contains("requirements"))
+        );
         
         if is_ncl {
-            // NCL-style parsing
+            // Use proper Nickel parser with nickel-lang-core
+            match crate::ncl::parse_ncl_spec(&self.content, &self.path) {
+                Ok(parsed) => {
+                    // Handle requirements-style specs
+                    for req in &parsed.requirements {
+                        let raw_text = format!("[{}] {}: {}", 
+                            req.priority.to_uppercase(), 
+                            req.id, 
+                            req.description
+                        );
+                        let normalized = normalize_text(&raw_text);
+                        let id = crate::identity::canon_id(&normalized);
+                        
+                        let clause = Clause {
+                            id: id.clone(),
+                            clause_type: ClauseType::Requirement,
+                            text: normalized.clone(),
+                            raw_text: raw_text.clone(),
+                            section: format!("protocol:{}", req.protocol),
+                            source_file: self.path.clone(),
+                            line: 1, // Line info not available from AST
+                            clause_semhash: sha256(&format!("clause:{}", normalized)),
+                            context_semhash: sha256(&format!("protocol:{};req:{}", req.protocol, req.id)),
+                            language_marker: Some(req.language.clone()),
+                        };
+                        
+                        provenance.push(Provenance {
+                            canon_id: id,
+                            source_file: self.path.clone(),
+                            line_number: 1,
+                        });
+                        
+                        clauses.push(clause);
+                    }
+                    
+                    // Handle morphisms-style specs
+                    for morph in &parsed.morphisms {
+                        if morph.generation_content.is_some() {
+                            let raw_text = format!("Morphism {}: {} → {} [{}]", 
+                                morph.name,
+                                morph.domain,
+                                morph.codomain,
+                                morph.language
+                            );
+                            let normalized = normalize_text(&raw_text);
+                            let id = crate::identity::canon_id(&normalized);
+                            
+                            let clause = Clause {
+                                id: id.clone(),
+                                clause_type: ClauseType::Requirement,
+                                text: normalized.clone(),
+                                raw_text: raw_text.clone(),
+                                section: format!("morphism:{}", morph.name),
+                                source_file: self.path.clone(),
+                                line: 1,
+                                clause_semhash: sha256(&format!("clause:{}", normalized)),
+                                context_semhash: sha256(&format!("morphism:{}", morph.name)),
+                                language_marker: Some(morph.language.clone()),
+                            };
+                            
+                            provenance.push(Provenance {
+                                canon_id: id,
+                                source_file: self.path.clone(),
+                                line_number: 1,
+                            });
+                            
+                            clauses.push(clause);
+                        }
+                    }
+                    
+                    // Handle compositions-style specs (use 'result' field)
+                    for comp in &parsed.compositions {
+                        if comp.generation_content.is_some() {
+                            let raw_text = format!("Composition {}: bases {:?} → {} [{}]", 
+                                comp.name,
+                                comp.domain,  // first base
+                                comp.codomain, // result
+                                comp.language
+                            );
+                            let normalized = normalize_text(&raw_text);
+                            let id = crate::identity::canon_id(&normalized);
+                            
+                            let clause = Clause {
+                                id: id.clone(),
+                                clause_type: ClauseType::Requirement,
+                                text: normalized.clone(),
+                                raw_text: raw_text.clone(),
+                                section: format!("composition:{}", comp.name),
+                                source_file: self.path.clone(),
+                                line: 1,
+                                clause_semhash: sha256(&format!("clause:{}", normalized)),
+                                context_semhash: sha256(&format!("composition:{}", comp.name)),
+                                language_marker: Some(comp.language.clone()),
+                            };
+                            
+                            provenance.push(Provenance {
+                                canon_id: id,
+                                source_file: self.path.clone(),
+                                line_number: 1,
+                            });
+                            
+                            clauses.push(clause);
+                        }
+                    }
+                }
+                Err(e) => {
+                    // Fallback: create a single clause noting the parse error
+                    let raw_text = format!("NCL parse error (fallback): {}", e);
+                    let normalized = normalize_text(&raw_text);
+                    let id = crate::identity::canon_id(&normalized);
+                    
+                    let clause = Clause {
+                        id: id.clone(),
+                        clause_type: ClauseType::Requirement,
+                        text: normalized.clone(),
+                        raw_text,
+                        section: "ncl-parse-fallback".to_string(),
+                        source_file: self.path.clone(),
+                        line: 1,
+                        clause_semhash: sha256(&format!("clause:{}", normalized)),
+                        context_semhash: sha256("ncl-fallback"),
+                        language_marker: Some(self.target_language.clone()),
+                    };
+                    
+                    provenance.push(Provenance {
+                        canon_id: id,
+                        source_file: self.path.clone(),
+                        line_number: 1,
+                    });
+                    
+                    clauses.push(clause);
+                }
+            }
+            
+            // Also add generation directive clauses
             for (i, line) in lines.iter().enumerate() {
                 let trimmed = line.trim();
-                
-                // Track section from NCL structure
-                if trimmed.starts_with("morphism") && trimmed.contains("=") {
-                    current_section = trimmed.split("=").nth(1)
-                        .map(|s| s.trim().trim_matches('"').to_string())
-                        .unwrap_or_else(|| "morphism".to_string());
-                    continue;
-                }
-                
-                // Check for generation blocks (code generation directives)
                 if trimmed.contains("generation") && trimmed.contains("=") && trimmed.contains("{") {
-                    // Extract language from generation block
                     let language = if self.content.contains("language = \"rust\"") || 
                                       self.content.contains("language = 'rust'") {
                         "rust"
@@ -659,8 +764,7 @@ impl SpecDocument {
                         "unknown"
                     };
                     
-                    // Create a clause for this generation directive
-                    let raw_text = format!("Generation directive: {} for {}", trimmed, current_section);
+                    let raw_text = format!("Generation directive: {}", trimmed);
                     let normalized = normalize_text(&raw_text);
                     let id = crate::identity::canon_id(&normalized);
                     
@@ -668,12 +772,12 @@ impl SpecDocument {
                         id: id.clone(),
                         clause_type: ClauseType::Requirement,
                         text: normalized.clone(),
-                        raw_text: raw_text.clone(),
-                        section: current_section.clone(),
+                        raw_text,
+                        section: "generation".to_string(),
                         source_file: self.path.clone(),
                         line: i + 1,
                         clause_semhash: sha256(&format!("clause:{}", normalized)),
-                        context_semhash: sha256(&format!("section:{};text:{}", current_section, normalized)),
+                        context_semhash: sha256(&format!("section:generation;directive:{}", trimmed)),
                         language_marker: Some(language.to_string()),
                     };
                     
@@ -684,7 +788,6 @@ impl SpecDocument {
                     });
                     
                     clauses.push(clause);
-                    break; // Only need one generation clause per spec
                 }
             }
         } else {

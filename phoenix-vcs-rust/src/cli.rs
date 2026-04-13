@@ -41,8 +41,9 @@ pub struct Cli {
     #[arg(global = true, short, long)]
     pub verbose: bool,
     
+    /// Subcommand to run (defaults to pipeline if not specified)
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -254,31 +255,36 @@ pub async fn run() -> Result<()> {
     tracing::subscriber::set_global_default(subscriber)?;
     
     match cli.command {
-        Commands::Status => cmd_status(&cli.project_root).await,
-        Commands::Drift { json } => cmd_drift(&cli.project_root, json).await,
-        Commands::Boundary { file, json } => cmd_boundary(&cli.project_root, file, json).await,
-        Commands::Cascade { iu_id, failure_kind, details } => {
+        Some(Commands::Status) => cmd_status(&cli.project_root).await,
+        Some(Commands::Drift { json }) => cmd_drift(&cli.project_root, json).await,
+        Some(Commands::Boundary { file, json }) => cmd_boundary(&cli.project_root, file, json).await,
+        Some(Commands::Cascade { iu_id, failure_kind, details }) => {
             cmd_cascade(&cli.project_root, &iu_id, &failure_kind, details).await
         }
-        Commands::Invalidate { canon_ids } => cmd_invalidate(&cli.project_root, &canon_ids).await,
-        Commands::Shadow { old_version, new_version, old_file, new_file } => {
+        Some(Commands::Invalidate { canon_ids }) => cmd_invalidate(&cli.project_root, &canon_ids).await,
+        Some(Commands::Shadow { old_version, new_version, old_file, new_file }) => {
             cmd_shadow(old_version, new_version, old_file, new_file).await
         }
-        Commands::Hash { file } => cmd_hash(file).await,
-        Commands::CanonId { text } => cmd_canon_id(&text),
-        Commands::Evidence { tier } => cmd_evidence(tier.into()),
-        Commands::Waiver { file, waiver_type, expires, signed_by } => {
+        Some(Commands::Hash { file }) => cmd_hash(file).await,
+        Some(Commands::CanonId { text }) => cmd_canon_id(&text),
+        Some(Commands::Evidence { tier }) => cmd_evidence(tier.into()),
+        Some(Commands::Waiver { file, waiver_type, expires, signed_by }) => {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
-        Commands::Init { name, bare } => cmd_init(&cli.project_root, name, bare).await,
-        Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify } => {
+        Some(Commands::Init { name, bare }) => cmd_init(&cli.project_root, name, bare).await,
+        Some(Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify }) => {
             cmd_pipeline_multi(&cli.project_root, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await
         }
-        Commands::VerifyLaws { lang } => {
+        Some(Commands::VerifyLaws { lang }) => {
             cmd_verify_laws(&cli.project_root, &lang).await
         }
-        Commands::Reverse { lang, output, include_private, no_docs } => {
+        Some(Commands::Reverse { lang, output, include_private, no_docs }) => {
             cmd_reverse(&cli.project_root, &lang, output, include_private, no_docs).await
+        }
+        // Default: run pipeline with auto-detection (zero-config mode)
+        None => {
+            info!("No subcommand provided, running auto-detect pipeline...");
+            cmd_pipeline_multi(&cli.project_root, false, false, false, false, false).await
         }
     }
 }
@@ -513,12 +519,10 @@ async fn cmd_init(project_root: &Path, name: Option<String>, bare: bool) -> Resu
     let phoenix_dir = project_root.join(".phoenix");
     let manifests_dir = phoenix_dir.join("manifests");
     let graphs_dir = phoenix_dir.join("graphs");
-    let specs_dir = project_root.join("specs");
     let src_generated_dir = project_root.join("src").join("generated");
     
     tokio::fs::create_dir_all(&manifests_dir).await?;
     tokio::fs::create_dir_all(&graphs_dir).await?;
-    tokio::fs::create_dir_all(&specs_dir).await?;
     tokio::fs::create_dir_all(&src_generated_dir).await?;
     
     // Create initial manifest
@@ -606,7 +610,7 @@ async fn cmd_init(project_root: &Path, name: Option<String>, bare: bool) -> Resu
     max_response_time_ms = 100,
   },
 }"#;
-        let spec_path = specs_dir.join("example.ncl");
+        let spec_path = project_root.join("example.ncl");
         tokio::fs::write(&spec_path, example_spec).await?;
     }
     
@@ -621,14 +625,13 @@ async fn cmd_init(project_root: &Path, name: Option<String>, bare: bool) -> Resu
     println!("    graphs/ius.json                    # IU dependency graph");
     println!("    waivers.json                       # Manual edit waivers");
     println!("    state.json                         # Pipeline state");
-    println!("  specs/                               # Specification documents (.ncl files)");
     if !bare {
-        println!("    example.ncl                        # Example specification");
+        println!("  example.ncl                          # Specification (top-level .ncl files)");
     }
     println!("  src/generated/                       # Generated code goes here");
     println!("");
     println!("Next steps:");
-    println!("  1. Edit specs/ to add your requirements (.ncl format)");
+    println!("  1. Edit *.ncl files to add your requirements");
     println!("  2. Run: phoenix-vcs status            # Check project health");
     println!("  3. Run: phoenix-vcs drift             # Check for manual edits");
     if !bare {
@@ -731,9 +734,9 @@ pub async fn main() -> Result<()> {
 fn detect_all_languages(content: &str) -> Vec<String> {
     let mut has_rust = false;
     let mut has_python = false;
-    let mut has_pyo3 = false;
+    let mut has_typescript = false;
     
-    // Only NCL-style language declarations
+    // Check for NCL-style language declarations in outputs
     for line in content.lines() {
         let trimmed = line.trim();
         if trimmed.contains("language") && trimmed.contains("=") {
@@ -743,19 +746,39 @@ fn detect_all_languages(content: &str) -> Vec<String> {
             if trimmed.contains("\"python\"") || trimmed.contains("'python'") {
                 has_python = true;
             }
-            if trimmed.contains("\"pyo3\"") || trimmed.contains("'pyo3'") {
-                has_pyo3 = true;
+            if trimmed.contains("\"typescript\"") || trimmed.contains("'typescript'") {
+                has_typescript = true;
+            }
+        }
+    }
+    
+    // Also check flake build_type for language hints
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("build_type") && trimmed.contains("=") {
+            if trimmed.contains("\"rust\"") || trimmed.contains("'rust'") {
                 has_rust = true;
+            }
+            if trimmed.contains("\"python\"") || trimmed.contains("'python'") {
+                has_python = true;
+            }
+            if trimmed.contains("\"pyo3\"") || trimmed.contains("'pyo3'") 
+                || trimmed.contains("\"maturin\"") || trimmed.contains("'maturin'") {
+                has_rust = true;
+                has_python = true;
             }
         }
     }
     
     let mut languages = Vec::new();
-    if has_rust || has_pyo3 {
+    if has_rust {
         languages.push("rust".to_string());
     }
     if has_python {
         languages.push("python".to_string());
+    }
+    if has_typescript {
+        languages.push("typescript".to_string());
     }
     
     // If no markers found, default to rust
@@ -780,8 +803,8 @@ async fn cmd_pipeline_multi(
     // Clean generated directory before building to avoid cruft buildup
     clean_generated_dir(project_root).await?;
     
-    // Load all specs first to detect languages
-    let specs_dir = project_root.join("specs");
+    // Load all specs from project root (zero-config: .ncl files at top level)
+    let specs_dir = project_root.to_path_buf();
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
     let mut _file_count = 0;
@@ -832,8 +855,8 @@ async fn cmd_pipeline_single(
     let llm_available = crate::llm::is_llm_available(&llm_config);
     let full_url = format!("{}/chat/completions", llm_config.api_base);
     
-    // Load all specs from specs/ directory
-    let specs_dir = specs_root.join("specs");
+    // Load all specs from project root (zero-config: .ncl files at top level)
+    let specs_dir = specs_root.to_path_buf();
     let mut entries = tokio::fs::read_dir(&specs_dir).await?;
     let mut combined_content = String::new();
     let mut _file_count = 0;
@@ -994,6 +1017,16 @@ async fn cmd_pipeline_single(
         let file_path = output_dir.join(&file.path);
         tokio::fs::create_dir_all(file_path.parent().unwrap_or(output_dir)).await?;
         tokio::fs::write(&file_path, &file.content).await?;
+    }
+    
+    // Generate pyproject.toml for Python projects
+    if lang == "python" || lang == "py" {
+        let pyproject_path = output_dir.join("pyproject.toml");
+        if !pyproject_path.exists() {
+            let pyproject_content = generate_pyproject_toml(output_dir).await?;
+            tokio::fs::write(&pyproject_path, &pyproject_content).await?;
+            println!("   Generated: pyproject.toml");
+        }
     }
     
     // Test round-trip if verify flag is set
@@ -1225,41 +1258,147 @@ async fn clean_generated_dir(project_root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Generate project-wide flake.nix based on all specs
-async fn generate_project_flake(project_root: &Path, all_specs_content: &str) -> Result<()> {
-    // Detect project name from spec
-    let project_name = all_specs_content.lines()
-        .find(|l| l.contains("id = \"dev.") || l.contains("name = \""))
-        .and_then(|l| {
-            if let Some(start) = l.find('"') {
-                if let Some(end) = l.rfind('"') {
-                    return Some(l[start+1..end].to_string());
+/// Generate pyproject.toml for Python projects
+async fn generate_pyproject_toml(project_root: &Path) -> Result<String> {
+    // Try to get project name from spec.ncl
+    let spec_path = project_root.join("spec.ncl");
+    let pname = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        extract_pname_from_ncl(&content)
+            .unwrap_or_else(|| "my-app".to_string())
+    } else {
+        "my-app".to_string()
+    };
+    
+    let pname_underscore = pname.replace("-", "_");
+    
+    Ok(format!(r#"[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{}"
+version = "0.1.0"
+description = "Generated by Phoenix VCS"
+requires-python = ">=3.12"
+
+[project.scripts]
+{} = "app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+"#, pname, pname_underscore))
+}
+
+/// Extract pname from NCL content
+fn extract_pname_from_ncl(content: &str) -> Option<String> {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("pname") && trimmed.contains("=") {
+            // Extract value between quotes
+            if let Some(start) = trimmed.find('"') {
+                if let Some(end) = trimmed[start+1..].find('"') {
+                    return Some(trimmed[start+1..start+1+end].to_string());
                 }
             }
+            if let Some(start) = trimmed.find('\'') {
+                if let Some(end) = trimmed[start+1..].find('\'') {
+                    return Some(trimmed[start+1..start+1+end].to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Generate project-wide flake.nix based on all specs
+async fn generate_project_flake(project_root: &Path, all_specs_content: &str) -> Result<()> {
+    // Try to parse the spec to get proper flake config
+    let flake_config = if all_specs_content.contains("flake = {") || all_specs_content.contains("build_type") {
+        // Find and parse the spec file
+        let spec_files: Vec<_> = walkdir::WalkDir::new(project_root)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+            .filter(|e| e.path().extension().map_or(false, |ext| ext == "ncl"))
+            .filter(|e| !e.path().file_stem().map_or(false, |s| s.to_string_lossy().starts_with('_')))
+            .collect();
+        
+        if let Some(spec_file) = spec_files.first() {
+            let parsed = crate::ncl::parse_ncl_file(spec_file.path()).ok();
+            
+            // If build_type is present but no flake config, merge with template
+            let merged = parsed.and_then(|mut p| {
+                if p.flake.is_none() && p.build_type.is_some() {
+                    // Get template directory from PHOENIX_TEMPLATE_DIR or use default
+                    let template_dir = std::env::var("PHOENIX_TEMPLATE_DIR")
+                        .map(PathBuf::from)
+                        .unwrap_or_else(|_| {
+                            // Try to find templates relative to binary
+                            std::env::current_exe()
+                                .ok()
+                                .and_then(|exe| exe.parent().map(|p| p.join("templates")))
+                                .unwrap_or_else(|| PathBuf::from("templates"))
+                        });
+                    
+                    // Merge template - this populates self.flake from template
+                    p.merge_template(&template_dir);
+                    Some(p)
+                } else {
+                    Some(p)
+                }
+            });
+            
+            merged.and_then(|p| p.flake)
+        } else {
             None
+        }
+    } else {
+        None
+    };
+    
+    // Detect project name from spec or use flake pname
+    let project_name = flake_config.as_ref()
+        .and_then(|f| f.pname.clone())
+        .or_else(|| {
+            all_specs_content.lines()
+                .find(|l| l.contains("id = \"dev.") || l.contains("name = \""))
+                .and_then(|l| {
+                    if let Some(start) = l.find('"') {
+                        if let Some(end) = l.rfind('"') {
+                            return Some(l[start+1..end].to_string());
+                        }
+                    }
+                    None
+                })
         })
         .unwrap_or_else(|| "phoenix-project".to_string());
     
-    // Detect if this has a flake.packages section (new format)
-    let has_packages = all_specs_content.contains("flake = {") && 
-                       all_specs_content.contains("packages = {");
-    
-    let flake_content = if has_packages {
-        // Generate full flake with packages, apps, devShells
-        generate_full_flake(&project_name, all_specs_content)
+    let flake_content = if flake_config.is_some() {
+        // Generate from flake config
+        generate_flake_from_config(&project_name, flake_config.as_ref().unwrap())
+            .map_err(|e| anyhow::anyhow!("Failed to generate flake from spec config: {}", e))?
     } else {
-        // Generate simple devShell only (legacy format)
-        generate_simple_flake(all_specs_content)
+        // Detect if this has a flake.packages section (legacy format)
+        let has_packages = all_specs_content.contains("flake = {") && 
+                           all_specs_content.contains("packages = {");
+        
+        if has_packages {
+            // Generate full flake with packages, apps, devShells
+            generate_full_flake(&project_name, all_specs_content)
+        } else {
+            // Generate simple devShell only (legacy format)
+            generate_simple_flake(&project_name, all_specs_content)
+        }
     };
     
     // Write flake.nix to project root
     let flake_path = project_root.join("flake.nix");
     tokio::fs::write(&flake_path, flake_content).await?;
     
-    if has_packages {
-        println!("   flake.nix -> packages, apps, devShell");
+    if flake_config.is_some() {
+        println!("   flake.nix -> generated from spec config");
     } else {
-        println!("   flake.nix -> devShell only");
+        println!("   flake.nix -> devShell only (no flake config in spec)");
     }
     
     Ok(())
@@ -1411,40 +1550,91 @@ EOF
     )
 }
 
-/// Generate simple devShell-only flake (legacy format)
-fn generate_simple_flake(spec_content: &str) -> String {
+/// Generate flake with packages and devShell
+fn generate_simple_flake(project_name: &str, spec_content: &str) -> String {
     // NCL-style language detection only
-    let needs_rust = spec_content.contains("language = \"rust\"") || 
+    let needs_rust = spec_content.contains("language = \"rust\"") ||
                      spec_content.contains("language = 'rust'") ||
                      spec_content.contains("language = \"pyo3\"") ||
                      spec_content.contains("language = 'pyo3'");
-    let needs_python = spec_content.contains("language = \"python\"") || 
+    let needs_python = spec_content.contains("language = \"python\"") ||
                        spec_content.contains("language = 'python'");
-    let needs_tls = spec_content.to_lowercase().contains("tls") || 
+    let needs_tls = spec_content.to_lowercase().contains("tls") ||
                     spec_content.to_lowercase().contains("ssl");
-    let needs_pyo3 = spec_content.contains("language = \"pyo3\"") || 
-                     spec_content.contains("language = 'pyo3'");
-    
+    let needs_pyo3 = spec_content.contains("language = \"pyo3\"") ||
+                     spec_content.contains("language = 'pyo3'") ||
+                     spec_content.contains("framework = \"pyo3\"") ||
+                     spec_content.contains("framework = 'pyo3'");
+
     let mut packages = vec![];
-    
+
     if needs_rust {
         packages.extend(vec!["cargo", "rustc", "rustfmt", "clippy"]);
     }
-    
+
     if needs_pyo3 {
         packages.extend(vec!["maturin", "python312"]);
     } else if needs_python {
         packages.push("python312");
     }
-    
+
     if needs_tls {
         packages.extend(vec!["openssl", "pkg-config"]);
     }
-    
+
     let packages_str = packages.iter()
         .map(|p| format!("            {}\n", p))
         .collect::<String>();
-    
+
+    // Build the package section based on project type
+    let package_section = if needs_pyo3 {
+        // PyO3/maturin package
+        format!(r#"        packages.default = pkgs.python312Packages.buildPythonPackage {{
+          pname = "{}";
+          version = "0.1.0";
+          src = ./.;
+          pyproject = true;
+          format = "pyproject";
+          nativeBuildInputs = with pkgs; [ maturin cargo rustc ];
+          propagatedBuildInputs = with pkgs.python312Packages; [
+            textual
+            pillow
+          ];
+          maturinBuildFlags = [ "--release" ];
+          meta.mainProgram = "{}";
+        }};"#, project_name, project_name)
+    } else if needs_python {
+        // Python application package
+        format!(r#"        packages.default = pkgs.python312Packages.buildPythonApplication {{
+          pname = "{}";
+          version = "0.1.0";
+          src = ./.;
+          pyproject = true;
+          build-system = with pkgs.python312Packages; [ hatchling ];
+          propagatedBuildInputs = with pkgs.python312Packages; [
+            textual
+            httpx
+            websockets
+          ];
+          meta.mainProgram = "{}";
+        }};"#, project_name, project_name.replace("-", "_"))
+    } else if needs_rust {
+        // Rust package
+        format!(r#"        packages.default = pkgs.rustPlatform.buildRustPackage {{
+          pname = "{}";
+          version = "0.1.0";
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+          nativeBuildInputs = [ pkgs.pkg-config ];
+          buildInputs = [ pkgs.openssl ];
+        }};"#, project_name)
+    } else {
+        // Generic shell script placeholder
+        format!(r#"        packages.default = pkgs.writeShellScriptBin "{}" '''
+          echo "Phoenix generated app"
+        '';"#, project_name)
+    };
+
     format!(r#"{{
   description = "Phoenix development environment";
 
@@ -1456,9 +1646,10 @@ fn generate_simple_flake(spec_content: &str) -> String {
   outputs = {{ self, nixpkgs, flake-utils }}:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.{{system}};
+        pkgs = nixpkgs.legacyPackages.${{system}};
       in
       {{
+{}
         devShells.default = pkgs.mkShell {{
           buildInputs = with pkgs; [
 {}
@@ -1467,6 +1658,152 @@ fn generate_simple_flake(spec_content: &str) -> String {
       }});
 }}
 "#,
+        package_section,
         packages_str
     )
+}
+
+/// Generate flake from FlakeConfig (spec-driven)
+fn generate_flake_from_config(_project_name: &str, config: &crate::ncl::FlakeConfig) -> Result<String> {
+    let pname = config.pname.as_deref().unwrap_or("app");
+    let version = config.version.as_deref().unwrap_or("0.1.0");
+    let description = config.description.as_deref().unwrap_or("Phoenix generated application");
+    let build_type = config.build_type.as_deref().unwrap_or("python");
+    
+    // For Python projects, mainProgram should match the console script (underscores)
+    // which is pname with dashes replaced by underscores
+    let main_program_default = if build_type == "python" || build_type == "pyo3" || build_type == "maturin" {
+        pname.replace("-", "_")
+    } else {
+        pname.to_string()
+    };
+    // Always use underscores for Python projects, even if spec specifies otherwise
+    let main_program = if build_type == "python" || build_type == "pyo3" || build_type == "maturin" {
+        config.main_program.as_deref().map(|s| s.replace("-", "_")).unwrap_or_else(|| main_program_default.clone())
+    } else {
+        config.main_program.as_deref().unwrap_or(&main_program_default).to_string()
+    };
+    
+    // Build package lists - values come from merged template + spec config
+    let native_build_inputs = format!("[ {} ]", config.native_build_inputs.join(" "));
+    let propagated_inputs = format!("[ {} ]", config.propagated_build_inputs.join(" "));
+    let build_inputs = config.build_inputs.join(" ");
+    
+    // Build optional hook lines
+    let post_patch_line = config.post_patch.as_ref()
+        .map(|s| format!("\n          postPatch = ''\n{}\n          '';", s))
+        .unwrap_or_default();
+    
+    // If pre_build is set, we override the entire buildPhase (but NOT installPhase - that's separate)
+    let build_phase_override = config.pre_build.as_ref()
+        .map(|s| format!("\n          buildPhase = ''\n{}\n          '';", s))
+        .unwrap_or_default();
+    
+    // Source path (default: ./.)
+    let src_path = config.src_path.as_deref().unwrap_or("./.");
+    let src_line = format!("\n          src = {};", src_path);
+    
+    // Source root subdirectory - use postUnpack to cd into it
+    let source_root_line = config.source_root.as_ref()
+        .map(|s| format!("\n          postUnpack = ''\n            cd $sourceRoot/{}\n            export sourceRoot=$(pwd)\n          '';", s))
+        .unwrap_or_default();
+    
+    let extra_nix_lines = config.extra_nix.as_ref()
+        .map(|s| format!("\n{};", s))
+        .unwrap_or_default();
+    
+    // BuildAndTestSubdir for workspace builds
+    let cargo_subdir_line = config.cargo_subdir.as_ref()
+        .map(|s| format!("\n          buildAndTestSubdir = \"{}\";", s))
+        .unwrap_or_default();
+    
+    // Install phase override
+    let install_phase_line = config.install_phase.as_ref()
+        .map(|s| format!("\n          installPhase = ''\n{}\n          '';", s))
+        .unwrap_or_default();
+    
+    // Generate package section based on build_type
+    let package_section = match build_type {
+        "maturin-workspace" => {
+            format!(r#"        packages.default = pkgs.rustPlatform.buildRustPackage {{
+          pname = "{}";
+          version = "{}";{}{}
+          nativeBuildInputs = with pkgs; [ maturin cargo rustc python312 ] ++ (with pkgs.python312Packages; [ pip ]);
+          buildInputs = with pkgs; [ openssl ];
+          propagatedBuildInputs = with pkgs.python312Packages; {};{}{}{}
+          meta = {{
+            description = "{}";
+            mainProgram = "{}";
+          }};
+        }};"#, pname, version, src_line, extra_nix_lines, propagated_inputs, cargo_subdir_line, build_phase_override, install_phase_line, description, main_program)
+        }
+        
+        "pyo3" | "maturin" => format!(r#"        packages.default = pkgs.python312Packages.buildPythonPackage {{
+          pname = "{}";
+          version = "{}";{}{}
+          format = "pyproject";
+          nativeBuildInputs = with pkgs; {};
+          propagatedBuildInputs = with pkgs.python312Packages; {};{}
+          maturinBuildFlags = [ "--release" ];{}
+          meta = {{
+            description = "{}";
+            mainProgram = "{}";
+          }};
+        }};"#, pname, version, src_line, source_root_line, native_build_inputs, propagated_inputs, post_patch_line, build_phase_override, description, main_program),
+        
+        "python" => format!(r#"        packages.default = pkgs.python312Packages.buildPythonApplication {{
+          pname = "{}";
+          version = "{}";
+          src = ./.;
+          pyproject = true;
+          build-system = with pkgs.python312Packages; [ hatchling ];
+          propagatedBuildInputs = with pkgs.python312Packages; {};
+          meta = {{
+            description = "{}";
+            mainProgram = "{}";
+          }};
+        }};"#, pname, version, propagated_inputs, description, main_program),
+        
+        "rust" => format!(r#"        packages.default = pkgs.rustPlatform.buildRustPackage {{
+          pname = "{}";
+          version = "{}";
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+          nativeBuildInputs = with pkgs; {};
+          meta = {{
+            description = "{}";
+            mainProgram = "{}";
+          }};
+        }};"#, pname, version, native_build_inputs, description, main_program),
+        
+        _ => return Err(anyhow::anyhow!("Unsupported build_type: {}. Use 'python', 'rust', 'pyo3', or 'maturin'", build_type)),
+    };
+    
+    Ok(format!(r#"{{
+  description = "{}";
+
+  inputs = {{
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  }};
+
+  outputs = {{ self, nixpkgs, flake-utils }}:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${{system}};
+      in
+      {{
+{}
+        devShells.default = pkgs.mkShell {{
+          buildInputs = with pkgs; [
+            {}
+          ];
+        }};
+      }});
+}}
+"#,
+        description,
+        package_section,
+        build_inputs
+    ))
 }

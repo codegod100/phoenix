@@ -1,7 +1,6 @@
 //! Phoenix Pipeline — Native Rust Implementation
 //!
-//! Implements the spec-to-code pipeline using native panproto crates
-//! instead of the TypeScript/WASM wrapper.
+//! Implements the spec-to-code pipeline using nickel-lang-core for NCL parsing.
 //!
 //! Pipeline stages:
 //!   SPEC ──[μ_ingest]──► CLAUSE ──[μ_canon]──► CANON ──[μ_plan]──► IU ──[μ_codegen]──► CODE
@@ -13,7 +12,7 @@ use std::path::Path;
 use anyhow::Result;
 use serde::{Serialize, Deserialize};
 
-use crate::identity::{sha256, canon_id, iu_id, file_hash};
+use crate::identity::{canon_id, iu_id, file_hash, clause_semhash, context_semhash, normalize_text};
 
 /// Pipeline state tracking
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,29 +32,29 @@ pub struct StageStatus {
 
 /// μ_ingest: Parse specifications into content-addressed clauses
 ///
-/// Input: Nickel (.ncl) files in `specs/` directory
+/// Input: Nickel (.ncl) files in project root directory
 /// Output: Clauses with canon IDs (semantic hashes) filtered by target language
 pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> Result<IngestOutput> {
-    let specs_dir = project_root.as_ref().join("specs");
-    
-    if !specs_dir.exists() {
-        anyhow::bail!("No specs/ directory found. Create one with .ncl files.");
-    }
+    let project_path = project_root.as_ref();
     
     println!("🎯 Target language: {}", target_lang);
     
     let mut clauses = Vec::new();
-    let mut entries = tokio::fs::read_dir(&specs_dir).await?;
+    let mut entries = tokio::fs::read_dir(&project_path).await?;
     let mut ncl_count = 0;
     
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
+        // Only process .ncl files at top level
+        if !path.is_file() {
+            continue;
+        }
         let ext = path.extension().and_then(|e| e.to_str());
         
         if ext == Some("ncl") {
             ncl_count += 1;
             let content = tokio::fs::read_to_string(&path).await?;
-            match parse_ncl_spec(&content, &path, target_lang) {
+            match parse_ncl_spec_to_clauses(&content, &path, target_lang) {
                 Ok(ncl_clauses) => {
                     let gen_count = ncl_clauses.len();
                     println!("   🗂️  {}: {} generation directives", 
@@ -81,185 +80,169 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
     })
 }
 
-/// Parse NCL (Nickel) spec file into clauses
+/// Parse NCL (Nickel) spec file into clauses using nickel-lang-core
 /// 
 /// Extracts generation directives from panproto-style .ncl files
 /// Each morphism with a generation block becomes a clause
-fn parse_ncl_spec(content: &str, source_path: &Path, target_lang: &str) -> Result<Vec<Clause>> {
+fn parse_ncl_spec_to_clauses(_content: &str, source_path: &Path, target_lang: &str) -> Result<Vec<Clause>> {
     let mut clauses = Vec::new();
-    let lines: Vec<&str> = content.lines().collect();
     
-    // Track if we're in a morphisms section and capturing generation info
-    let mut in_morphisms = false;
-    let mut brace_depth = 0;
-    let mut current_morphism: Option<(String, String, String, Option<String>)> = None; // (name, domain, codomain, output_path)
-    let mut capturing_generation = false;
-    let mut generation_content = String::new();
+    // Parse the NCL file
+    let parsed = crate::ncl::parse_ncl_file(source_path)
+        .map_err(|e| anyhow::anyhow!("NCL parse error: {}", e))?;
     
-    for (i, line) in lines.iter().enumerate() {
-        let trimmed = line.trim();
+    // Extract morphisms if present
+    for morphism in &parsed.morphisms {
+        // Check if this morphism matches target language
+        let should_include = match target_lang {
+            "rust" => morphism.language == "rust" 
+                || morphism.language == "both" 
+                || morphism.language == "pyo3"
+                || morphism.output_path.as_deref().unwrap_or("").ends_with(".rs"),
+            "python" | "py" => morphism.language == "python" 
+                || morphism.language == "both"
+                || morphism.output_path.as_deref().unwrap_or("").ends_with(".py"),
+            _ => true,
+        };
         
-        // Track brace depth for section detection
-        brace_depth += trimmed.chars().filter(|&c| c == '{').count() as i32;
-        brace_depth -= trimmed.chars().filter(|&c| c == '}').count() as i32;
-        
-        // Detect morphisms section
-        if trimmed.contains("morphisms") && trimmed.contains("=") && trimmed.contains("[") {
-            in_morphisms = true;
-            continue;
-        }
-        
-        // Detect individual morphism entry
-        if in_morphisms && trimmed.starts_with("{") && trimmed.contains("morphism") {
-            // Extract morphism name
-            if let Some(name_start) = trimmed.find("morphism") {
-                let after_morphism = &trimmed[name_start..];
-                if let Some(eq_pos) = after_morphism.find("=") {
-                    let after_eq = &after_morphism[eq_pos+1..];
-                    let name = after_eq.split(|c: char| c == ',' || c == '}').next()
-                        .unwrap_or("")
-                        .trim()
-                        .trim_matches('"')
-                        .to_string();
-                    
-                    // Extract domain/codomain for language detection
-                    let domain = lines.iter().skip(i).take(10)
-                        .find(|l| l.contains("domain"))
-                        .and_then(|l| l.split("=").nth(1))
-                        .map(|s| s.trim().trim_matches(',').trim_matches('"').to_string())
-                        .unwrap_or_default();
-                    
-                    let codomain = lines.iter().skip(i).take(10)
-                        .find(|l| l.contains("codomain"))
-                        .and_then(|l| l.split("=").nth(1))
-                        .map(|s| s.trim().trim_matches(',').trim_matches('"').to_string())
-                        .unwrap_or_default();
-                    
-                    current_morphism = Some((name, domain, codomain, None));
-                }
-            }
-            continue;
-        }
-        
-        // Detect output_path in morphism
-        if let Some((ref name, ref domain, ref codomain, ref mut output_path)) = current_morphism {
-            // Clone values we need to avoid borrow issues later
-            let name_clone = name.clone();
-            let domain_clone = domain.clone();
-            let codomain_clone = codomain.clone();
+        if should_include && morphism.generation_content.is_some() {
+            // Create a clause from this morphism
+            let raw_text = format!("Morphism {}: {} → {} generating {} {:?}", 
+                morphism.name, 
+                morphism.domain,
+                morphism.codomain,
+                morphism.language,
+                morphism.output_path
+            );
+            let normalized = normalize_text(&raw_text);
+            let id = canon_id(&normalized);
+            let clause_hash = clause_semhash(&normalized);
             
-            if trimmed.contains("output_path") && trimmed.contains("=") {
-                if let Some(path) = trimmed.split("=").nth(1) {
-                    let path_clean = path.trim().trim_matches(',').trim_matches('"').trim_matches('"').to_string();
-                    *output_path = Some(path_clean);
-                }
-            }
-            
-            // Detect generation block
-            if trimmed.contains("generation") && trimmed.contains("=") && trimmed.contains("{") {
-                capturing_generation = true;
-                generation_content.clear();
-                continue;
-            }
-            
-            // Capture generation content
-            if capturing_generation {
-                if brace_depth <= 0 && trimmed.contains("}") {
-                    // End of generation block
-                    capturing_generation = false;
-                    
-                    // Determine language from generation block or path
-                    let language = if generation_content.contains("language") {
-                        generation_content.lines()
-                            .find(|l| l.contains("language"))
-                            .and_then(|l| l.split("=").nth(1))
-                            .map(|s| s.trim().trim_matches(',').trim_matches('"').to_string())
-                            .unwrap_or_else(|| infer_lang_from_path(output_path.as_deref().unwrap_or("")))
-                    } else {
-                        infer_lang_from_path(output_path.as_deref().unwrap_or(""))
-                    };
-                    
-                    // Check if this morphism matches target language
-                    let should_include = match target_lang {
-                        "rust" => language == "rust" || output_path.as_deref().unwrap_or("").ends_with(".rs"),
-                        "python" | "py" => language == "python" || output_path.as_deref().unwrap_or("").ends_with(".py"),
-                        _ => true,
-                    };
-                    
-                    if should_include {
-                        // Create a clause from this morphism
-                        let raw_text = format!("Morphism {}: {} → {} generating {} {:?}", 
-                            name_clone, 
-                            domain_clone,
-                            codomain_clone,
-                            language,
-                            output_path
-                        );
-                        let normalized = normalize_text(&raw_text);
-                        let id = canon_id(&normalized);
-                        let clause_hash = clause_semhash(&normalized);
-                        
-                        clauses.push(Clause {
-                            id: id.clone(),
-                            clause_type: ClauseType::Requirement,
-                            text: normalized.clone(),
-                            raw_text: raw_text.clone(),
-                            section: format!("morphism_{}", name_clone),
-                            source_file: source_path.to_string_lossy().to_string(),
-                            line: i + 1,
-                            clause_semhash: clause_hash.clone(),
-                            context_semhash: context_semhash(&normalized, &[&format!("morphism_{}", name_clone)], &clause_hash, ""),
-                            language_marker: Some(language),
-                        });
-                    }
-                    
-                    current_morphism = None;
-                } else {
-                    generation_content.push_str(trimmed);
-                    generation_content.push('\n');
-                }
-            }
+            clauses.push(Clause {
+                id: id.clone(),
+                clause_type: ClauseType::Requirement,
+                text: normalized.clone(),
+                raw_text: raw_text.clone(),
+                section: format!("morphism_{}", morphism.name),
+                source_file: source_path.to_string_lossy().to_string(),
+                line: 0,
+                clause_semhash: clause_hash.clone(),
+                context_semhash: context_semhash(
+                    &normalized, 
+                    &[format!("morphism_{}", morphism.name)], 
+                    Some(&clause_hash), 
+                    None
+                ),
+                language_marker: Some(morphism.language.clone()),
+            });
         }
+    }
+    
+    // Extract compositions if present (same structure as morphisms)
+    for comp in &parsed.compositions {
+        // Check if this composition matches target language
+        let should_include = match target_lang {
+            "rust" => comp.language == "rust" 
+                || comp.language == "both" 
+                || comp.language == "pyo3"
+                || comp.output_path.as_deref().unwrap_or("").ends_with(".rs"),
+            "python" | "py" => comp.language == "python" 
+                || comp.language == "both"
+                || comp.output_path.as_deref().unwrap_or("").ends_with(".py"),
+            _ => true,
+        };
         
-        // Also check for standalone OUTPUT_PATH directives (from markdown-style specs)
-        if trimmed.contains("OUTPUT_PATH") && trimmed.contains(":") {
-            if let Some(path) = trimmed.split(':').nth(1) {
-                let path_clean = path.trim().to_string();
-                let language = infer_lang_from_path(&path_clean);
-                
-                let should_include = match target_lang {
-                    "rust" => language == "rust" || path_clean.ends_with(".rs"),
-                    "python" | "py" => language == "python" || path_clean.ends_with(".py"),
-                    _ => true,
-                };
-                
-                if should_include {
-                    let raw_text = format!("Output file: {}", path_clean);
-                    let normalized = normalize_text(&raw_text);
-                    let id = canon_id(&normalized);
-                    let clause_hash = clause_semhash(&normalized);
-                    
-                    clauses.push(Clause {
-                        id: id.clone(),
-                        clause_type: ClauseType::Constraint,
-                        text: normalized.clone(),
-                        raw_text: raw_text.clone(),
-                        section: "output_paths".to_string(),
-                        source_file: source_path.to_string_lossy().to_string(),
-                        line: i + 1,
-                        clause_semhash: clause_hash.clone(),
-                        context_semhash: context_semhash(&normalized, &["output_paths"], &clause_hash, ""),
-                        language_marker: Some(language),
-                    });
-                }
-            }
+        if should_include && comp.generation_content.is_some() {
+            // Create a clause from this composition
+            let raw_text = format!("Composition {}: {} → {} generating {} {:?}", 
+                comp.name, 
+                comp.domain,
+                comp.codomain,
+                comp.language,
+                comp.output_path
+            );
+            let normalized = normalize_text(&raw_text);
+            let id = canon_id(&normalized);
+            let clause_hash = clause_semhash(&normalized);
+            
+            clauses.push(Clause {
+                id: id.clone(),
+                clause_type: ClauseType::Requirement,
+                text: normalized.clone(),
+                raw_text: raw_text.clone(),
+                section: format!("composition_{}", comp.name),
+                source_file: source_path.to_string_lossy().to_string(),
+                line: 0,
+                clause_semhash: clause_hash.clone(),
+                context_semhash: context_semhash(
+                    &normalized, 
+                    &[format!("composition_{}", comp.name)], 
+                    Some(&clause_hash), 
+                    None
+                ),
+                language_marker: Some(comp.language.clone()),
+            });
+        }
+    }
+    
+    // Extract requirements if present
+    for req in &parsed.requirements {
+        let should_include = match target_lang {
+            "rust" => req.language == "rust" || req.language == "both",
+            "python" | "py" => req.language == "python" || req.language == "both",
+            _ => true,
+        };
+        
+        if should_include {
+            let raw_text = format!("{}: {} [{}]", req.id, req.description, req.priority);
+            let normalized = normalize_text(&raw_text);
+            let id = canon_id(&normalized);
+            let clause_hash = clause_semhash(&normalized);
+            
+            clauses.push(Clause {
+                id: id.clone(),
+                clause_type: ClauseType::Requirement,
+                text: normalized.clone(),
+                raw_text: raw_text.clone(),
+                section: format!("req_{}", req.id),
+                source_file: source_path.to_string_lossy().to_string(),
+                line: 0,
+                clause_semhash: clause_hash.clone(),
+                context_semhash: context_semhash(
+                    &normalized, 
+                    &[format!("req_{}", req.id)], 
+                    Some(&clause_hash), 
+                    None
+                ),
+                language_marker: Some(req.language.clone()),
+            });
         }
     }
     
     Ok(clauses)
 }
 
+/// Infer language from file path
 fn infer_lang_from_path(path: &str) -> String {
+    if path.ends_with(".rs") {
+        "rust".to_string()
+    } else if path.ends_with(".py") {
+        "python".to_string()
+    } else if path.contains("pyo3") || path.contains("ffi") {
+        "pyo3".to_string()
+    } else {
+        "both".to_string()
+    }
+}
+
+/// Old line-based parser (deprecated - use parse_ncl_spec_to_clauses)
+#[allow(dead_code)]
+fn parse_ncl_spec_deprecated(_content: &str, _source_path: &Path, _target_lang: &str) -> Result<Vec<Clause>> {
+    anyhow::bail!("Use parse_ncl_spec_to_clauses with nickel-lang-core instead")
+}
+
+/// Infer language from file path (legacy, kept for compatibility)
+fn _infer_lang_from_path(path: &str) -> String {
     if path.ends_with(".rs") {
         "rust".to_string()
     } else if path.ends_with(".py") {
@@ -355,6 +338,12 @@ pub fn generate_flake_nix(
     // Dev shell
     flake.push_str("      in\n");
     flake.push_str("      {\n");
+    flake.push_str("        # Default package (placeholder - use 'nix develop' for dev shell)\n");
+    flake.push_str("        packages.default = pkgs.writeShellScriptBin \"phoenix-app\" ''\n");
+    flake.push_str("          echo \"Phoenix-generated application\"\n");
+    flake.push_str("          echo \"Use 'nix develop' to enter the development shell\"\n");
+    flake.push_str("        '';\n");
+    flake.push_str("\n");
     flake.push_str("        devShells.default = pkgs.mkShell {\n");
     flake.push_str("          inherit buildInputs;\n");
     
@@ -405,28 +394,6 @@ fn map_to_nixpkg(pkg: &str) -> String {
     pkg.to_string()
 }
 
-fn normalize_text(text: &str) -> String {
-    text.to_lowercase()
-        .replace(|c: char| !c.is_alphanumeric() && c != ' ', " ")
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-fn clause_semhash(text: &str) -> String {
-    sha256(&format!("clause:{}", text))
-}
-
-fn context_semhash(text: &str, section_context: &[&str], prev_hash: &str, next_hash: &str) -> String {
-    let context = format!(
-        "section:{};prev:{};next:{};text:{}",
-        section_context.join("|"),
-        prev_hash,
-        next_hash,
-        text
-    );
-    sha256(&context)
-}
 
 /// Output of ingest phase
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -643,8 +610,8 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
     let lang = target_language.to_lowercase().trim().to_string();
     
     if lang == "python" || lang == "py" {
-        // Python only needs the TUI app - it imports from freeq_pyo3
-        let contract = "Textual TUI application that imports IRCClient and ATProtoAuth from freeq_pyo3 module".to_string();
+        // Python: Single app IU
+        let contract = format!("Python {} application", target_language);
         let iu_id = iu_id("app", &contract, &[]);
         
         ius.push(ImplementationUnit {
@@ -652,7 +619,6 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
             name: "app".to_string(),
             contract,
             source_canon_ids: canon_output.nodes.iter()
-                .filter(|n| n.clean_statement.contains("[python]") || n.clean_statement.contains("interface"))
                 .map(|n| n.id.clone())
                 .collect(),
             risk_tier: determine_risk_tier(&canon_output.nodes),
@@ -660,11 +626,10 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
             output_files: vec!["src/app.py".to_string()],
         });
         
-        println!("   🎯 Simplified Python architecture: 1 IU (TUI app importing from freeq_pyo3)");
+        println!("   🎯 Python: 1 IU (src/app.py)");
     } else if lang == "rust" || lang == "rs" {
-        // Rust/PyO3 project: create PyO3 wrapper module
-        // This wraps freeq-sdk for Python consumption
-        let contract = "PyO3 bindings wrapping freeq-sdk IRCClient and ATProtoAuth for Python".to_string();
+        // Rust: Single library IU
+        let contract = format!("Rust {} library", target_language);
         let iu_id = iu_id("lib", &contract, &[]);
         
         ius.push(ImplementationUnit {
@@ -672,7 +637,6 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
             name: "lib".to_string(),
             contract,
             source_canon_ids: canon_output.nodes.iter()
-                .filter(|n| n.clean_statement.contains("[rust]") || n.clean_statement.contains("[pyo3]"))
                 .map(|n| n.id.clone())
                 .collect(),
             risk_tier: determine_risk_tier(&canon_output.nodes),
@@ -680,7 +644,7 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
             output_files: vec!["src/lib.rs".to_string()],
         });
         
-        println!("   🎯 Simplified Rust architecture: 1 IU (PyO3 wrapper for freeq-sdk)");
+        println!("   🎯 Rust: 1 IU (src/lib.rs)");
     } else {
         // Fallback: create domain-based IUs for other languages
         for (domain_key, group_nodes) in groups {
@@ -847,8 +811,11 @@ pub struct ImplementationUnit {
 pub async fn generate_code(
     ius: &[ImplementationUnit],
     output_dir: impl AsRef<Path>,
+    project_root: impl AsRef<Path>,
+    target_language: &str,
 ) -> Result<CodegenOutput> {
     let output_dir = output_dir.as_ref();
+    let project_root = project_root.as_ref();
     tokio::fs::create_dir_all(output_dir).await?;
     
     let mut files = Vec::new();
@@ -872,7 +839,77 @@ pub async fn generate_code(
         });
     }
     
+    // Generate pyproject.toml for Python projects
+    if target_language == "python" || target_language == "py" {
+        let pyproject_path = project_root.join("pyproject.toml");
+        if !pyproject_path.exists() {
+            let pyproject_content = generate_pyproject_toml(project_root).await?;
+            tokio::fs::write(&pyproject_path, &pyproject_content).await?;
+            files.push(GeneratedFile {
+                path: "pyproject.toml".to_string(),
+                iu_id: "pyproject".to_string(),
+                hash: file_hash(&pyproject_content),
+                size: pyproject_content.len(),
+            });
+            println!("   Generated: pyproject.toml");
+        }
+    }
+    
     Ok(CodegenOutput { files })
+}
+
+/// Generate pyproject.toml for Python projects
+async fn generate_pyproject_toml(project_root: impl AsRef<Path>) -> Result<String> {
+    let project_root = project_root.as_ref();
+    
+    // Try to get project name from spec.ncl
+    let spec_path = project_root.join("spec.ncl");
+    let pname = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        extract_pname_from_ncl(&content)
+            .unwrap_or_else(|| "my-app".to_string())
+    } else {
+        "my-app".to_string()
+    };
+    
+    let pname_underscore = pname.replace("-", "_");
+    
+    Ok(format!(r#"[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{}"
+version = "0.1.0"
+description = "Generated by Phoenix VCS"
+requires-python = ">=3.12"
+
+[project.scripts]
+{} = "app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+"#, pname, pname_underscore))
+}
+
+/// Extract pname from NCL content
+fn extract_pname_from_ncl(content: &str) -> Option<String> {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("pname") && trimmed.contains("=") {
+            // Extract value between quotes
+            if let Some(start) = trimmed.find('"') {
+                if let Some(end) = trimmed[start+1..].find('"') {
+                    return Some(trimmed[start+1..start+1+end].to_string());
+                }
+            }
+            if let Some(start) = trimmed.find('\'') {
+                if let Some(end) = trimmed[start+1..].find('\'') {
+                    return Some(trimmed[start+1..start+1+end].to_string());
+                }
+            }
+        }
+    }
+    None
 }
 
 fn generate_skeleton_code(iu: &ImplementationUnit, all_ius: Option<&[ImplementationUnit]>) -> String {
@@ -1162,7 +1199,7 @@ pub async fn run_pipeline(
     println!("\n▶ Phase: CODEGEN");
     println!("   μ_codegen: ThIU → ThCode (generative morphism)");
     let output_dir = project_root.join("src").join("generated");
-    let codegen_output = generate_code(&plan_output.ius, &output_dir).await?;
+    let codegen_output = generate_code(&plan_output.ius, &output_dir, project_root, target_language).await?;
     let files_count = codegen_output.files.len();
     println!("   ✓ Generated {} files", files_count);
     for file in &codegen_output.files {

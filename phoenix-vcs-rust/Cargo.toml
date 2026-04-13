@@ -32,15 +32,19 @@ tracing-subscriber = "0.3"
 petgraph = "0.6"
 regex = "1.10"
 
-# Panproto crates for native Rust pipeline
-panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
-panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
-panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
-panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
+# Nickel language parser for NCL specs - use older version compatible with panproto's tree-sitter 0.25
+nickel-lang-core = "0.12"
+indexmap = "2.2"
+
+# Panproto crates disabled due to tree-sitter conflict with nickel-lang-core
+# panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
+# panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
+# panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
+# panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
 
 [features]
-default = ["panproto"]
-panproto = ["dep:panproto-gat", "dep:panproto-schema", "dep:panproto-parse", "dep:panproto-project"]
+default = []
+# panproto = ["dep:panproto-gat", "dep:panproto-schema", "dep:panproto-parse", "dep:panproto-project"]
 
 [dev-dependencies]
 tempfile = "3.10"
