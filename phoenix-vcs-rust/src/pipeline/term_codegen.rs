@@ -863,12 +863,18 @@ fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
             }
         }
         "Vertical" | "Horizontal" => {
-            // Containers: title if present, then children
+            // Containers: title as first child (Static), then other children
+            let mut all_children = Vec::new();
             if let Some(ref title) = widget.title {
-                args.push(("content".to_string(), Str(title.clone())));
+                all_children.push(Widget {
+                    widget_type: "Static".to_string(),
+                    args: vec![("content".to_string(), Str(title.clone()))],
+                    id: None,
+                });
             }
-            if !children_terms.is_empty() {
-                args.push(("children".to_string(), List(children_terms)));
+            all_children.extend(children_terms);
+            if !all_children.is_empty() {
+                args.push(("children".to_string(), List(all_children)));
             }
         }
         _ => {

@@ -210,6 +210,20 @@ fn parse_widget<'a>(node: Node<'a>, default_id: &str, content: &'a str) -> Optio
         widget.props.push(("css_class".to_string(), val));
     }
     
+    // Grid layout properties
+    if let Some(val) = get_field(record, "row", content) {
+        widget.props.push(("row".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "col", content) {
+        widget.props.push(("col".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "col_span", content) {
+        widget.props.push(("col_span".to_string(), val));
+    }
+    if let Some(val) = get_field(record, "row_span", content) {
+        widget.props.push(("row_span".to_string(), val));
+    }
+    
     // List properties
     if let Some(val) = get_field(record, "items", content) {
         widget.props.push(("items".to_string(), val));

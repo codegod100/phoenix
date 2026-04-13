@@ -1356,6 +1356,53 @@ pub fn extract_ui_config(content: &str) -> Option<crate::pipeline::widget_config
                             }
                         }
                         
+                        // Extract layout properties from ui_config.layout
+                        if name == "type" && depth >= 4 && depth <= 8 {
+                            // This might be layout.type = "grid"
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                let value = node_text(value_node).trim().to_string();
+                                if value.contains("grid") || value.contains("vertical") || value.contains("horizontal") {
+                                    config.layout_type = Some(value.trim_matches('"').to_string());
+                                }
+                            }
+                        }
+                        if name == "columns" && depth >= 4 && depth <= 8 {
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                let value = node_text(value_node).trim().to_string();
+                                if let Ok(n) = value.parse::<i32>() {
+                                    config.grid_columns = Some(n);
+                                }
+                            }
+                        }
+                        if name == "rows" && depth >= 4 && depth <= 8 {
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                let value = node_text(value_node).trim().to_string();
+                                config.grid_rows = Some(value.trim_matches('"').to_string());
+                            }
+                        }
+                        if name == "gap" && depth >= 4 && depth <= 8 {
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                let value = node_text(value_node).trim().to_string();
+                                if let Ok(n) = value.parse::<i32>() {
+                                    config.grid_gap = Some(n);
+                                }
+                            }
+                        }
+                        
+                        // Extract focus config
+                        if name == "initial" && depth >= 5 && depth <= 10 {
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                let value = node_text(value_node).trim().to_string();
+                                config.focus_initial = Some(value.trim_matches('"').to_string());
+                            }
+                        }
+                        if name == "wrap" && depth >= 5 && depth <= 10 {
+                            if let Some(&value_node) = def_children.iter().nth(2) {
+                                let value = node_text(value_node).trim().to_string();
+                                config.focus_wrap = value == "true";
+                            }
+                        }
+                        
                         // Extract name field for title (look for static_string value)
                         if name == "name" && config.title.is_none() {
                             if let Some(&value_node) = def_children.iter().find(|&&n| n.kind() == "static_string") {

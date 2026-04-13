@@ -15,6 +15,11 @@ pub struct UIConfig {
     pub styles: Vec<(String, String, String)>, // (selector, property, value)
     pub focus_initial: Option<String>,
     pub focus_wrap: bool,
+    // Grid layout properties
+    pub layout_type: Option<String>,  // "grid", "vertical", "horizontal"
+    pub grid_columns: Option<i32>,
+    pub grid_rows: Option<String>,    // e.g., "1fr 3fr auto"
+    pub grid_gap: Option<i32>,
 }
 
 /// Widget configuration - algebraic tree structure
@@ -110,6 +115,10 @@ pub fn default_ui_config(name: &str) -> UIConfig {
         styles: default_styles(),
         focus_initial: None,
         focus_wrap: false,
+        layout_type: None,
+        grid_columns: None,
+        grid_rows: None,
+        grid_gap: None,
     }
 }
 
