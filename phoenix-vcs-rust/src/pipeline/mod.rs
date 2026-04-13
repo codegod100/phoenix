@@ -1419,5 +1419,7 @@ pub use equations::{
     clause_theory_with_equations, canon_theory_with_equations,
     iu_theory_with_equations, code_theory_with_equations,
     print_equations, verify_morphism_preserves_equations,
-    verify_all_equations,
+    verify_all_equations, verify_pipeline_equations,
+    print_morphism_preservation_results,
+    VerificationResult, VerificationReport, MorphismPreservationResult,
 };

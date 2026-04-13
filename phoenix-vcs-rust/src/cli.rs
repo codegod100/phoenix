@@ -960,13 +960,16 @@ async fn cmd_pipeline_single(
         crate::pipeline::print_equations("ThIU", &crate::pipeline::iu_equations());
         crate::pipeline::print_equations("ThCode", &crate::pipeline::code_equations());
         
-        // Verify morphism equation preservation
+        // Verify morphism equation preservation with detailed results
         println!("   ✓ Verifying morphism preservation of equations:");
         let canon_results = crate::pipeline::verify_morphism_preserves_equations(&mu_canon, &crate::pipeline::canon_equations());
-        for (eq_name, preserved) in canon_results {
-            let status = if preserved { "✓" } else { "⚠" };
-            println!("     {} μ_canon preserves {}: {}", status, eq_name, if preserved { "yes" } else { "unchecked" });
-        }
+        crate::pipeline::print_morphism_preservation_results("μ_canon", &canon_results);
+        
+        let plan_results = crate::pipeline::verify_morphism_preserves_equations(&mu_plan, &crate::pipeline::iu_equations());
+        crate::pipeline::print_morphism_preservation_results("μ_plan", &plan_results);
+        
+        let codegen_results = crate::pipeline::verify_morphism_preserves_equations(&mu_codegen, &crate::pipeline::code_equations());
+        crate::pipeline::print_morphism_preservation_results("μ_codegen", &codegen_results);
         
         // Demonstrate actual term transformations
         println!("   🔀 Term Transformations (morphism.apply_to_term()):");
@@ -999,8 +1002,20 @@ async fn cmd_pipeline_single(
     let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
     let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
     
+    // Comprehensive equation verification
+    #[cfg(feature = "panproto")]
+    {
+        println!("\n   🔍 Comprehensive Equation Verification:");
+        let report = crate::pipeline::verify_pipeline_equations(
+            &clause_graph.clauses,
+            &canon_graph.nodes,
+            &iu_graph.ius,
+        );
+        report.print_summary();
+    }
+    
     // Print phase summaries - concise format
-    println!("   {} clauses → {} canons ({} dups) → {} IUs", 
+    println!("\n   {} clauses → {} canons ({} dups) → {} IUs", 
         total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
     
     if stub {

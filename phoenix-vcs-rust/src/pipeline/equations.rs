@@ -241,29 +241,242 @@ pub fn pipeline_equations() -> Vec<Equation> {
     ]
 }
 
-/// Verify that a term satisfies an equation
-///
-/// Checks if lhs(term) = rhs(term) under variable substitution.
+/// Extract variables from a term pattern
 #[cfg(feature = "panproto")]
-pub fn verify_equation(equation: &Equation, term: &Term) -> bool {
-    // Substitute term into equation variables and check equality
-    let lhs_result = substitute_and_eval(&equation.lhs, term);
-    let rhs_result = substitute_and_eval(&equation.rhs, term);
-    
-    match (lhs_result, rhs_result) {
-        (Some(lhs_val), Some(rhs_val)) => {
-            alpha_equivalent(&lhs_val, &rhs_val)
+fn extract_variables(term: &Term) -> std::collections::HashSet<Arc<str>> {
+    let mut vars = std::collections::HashSet::new();
+    fn collect_vars(t: &Term, set: &mut std::collections::HashSet<Arc<str>>) {
+        match t {
+            Term::Var(name) => { set.insert(Arc::clone(name)); }
+            Term::App { args, .. } => {
+                for arg in args { collect_vars(arg, set); }
+            }
         }
-        _ => false, // Could not evaluate
+    }
+    collect_vars(term, &mut vars);
+    vars
+}
+
+/// Try to match a pattern against a concrete term
+/// Returns variable bindings if match succeeds
+#[cfg(feature = "panproto")]
+fn match_pattern(
+    pattern: &Term,
+    concrete: &Term,
+    bindings: &mut std::collections::HashMap<Arc<str>, Term>
+) -> bool {
+    match (pattern, concrete) {
+        // Variable matches anything - bind it
+        (Term::Var(name), _) => {
+            bindings.insert(Arc::clone(name), concrete.clone());
+            true
+        }
+        // Application must match operation and all args
+        (Term::App { op: pat_op, args: pat_args }, Term::App { op: con_op, args: con_args }) => {
+            if pat_op != con_op || pat_args.len() != con_args.len() {
+                return false;
+            }
+            pat_args.iter().zip(con_args.iter())
+                .all(|(p, c)| match_pattern(p, c, bindings))
+        }
+        // Var on concrete side can't match App on pattern side
+        (Term::App { .. }, Term::Var(_)) => false,
     }
 }
 
-/// Substitute a concrete term into equation variables and evaluate
+/// Substitute bindings into a term
 #[cfg(feature = "panproto")]
-fn substitute_and_eval(pattern: &Term, concrete: &Term) -> Option<Term> {
-    // Simple substitution: replace pattern variables with concrete term
-    // In full implementation, this would match variable names
-    Some(pattern.clone())
+fn substitute(term: &Term, bindings: &std::collections::HashMap<Arc<str>, Term>) -> Term {
+    match term {
+        Term::Var(name) => {
+            bindings.get(name).cloned().unwrap_or_else(|| Term::Var(Arc::clone(name)))
+        }
+        Term::App { op, args } => {
+            let new_args = args.iter()
+                .map(|a| substitute(a, bindings))
+                .collect();
+            Term::App { op: Arc::clone(op), args: new_args }
+        }
+    }
+}
+
+/// Verify that a concrete term satisfies an equation
+///
+/// Tries to match the term against the equation pattern, then checks
+/// if lhs = rhs under the variable bindings.
+#[cfg(feature = "panproto")]
+pub fn verify_equation(equation: &Equation, concrete_term: &Term) -> VerificationResult {
+    let mut bindings = std::collections::HashMap::new();
+    
+    // Try to match concrete term against lhs pattern
+    if !match_pattern(&equation.lhs, concrete_term, &mut bindings) {
+        // Try rhs pattern as fallback
+        bindings.clear();
+        if !match_pattern(&equation.rhs, concrete_term, &mut bindings) {
+            return VerificationResult::NotApplicable;
+        }
+    }
+    
+    // Now apply bindings to both sides
+    let lhs_substituted = substitute(&equation.lhs, &bindings);
+    let rhs_substituted = substitute(&equation.rhs, &bindings);
+    
+    // Check if they're alpha-equivalent
+    let holds = alpha_equivalent(&lhs_substituted, &rhs_substituted);
+    
+    VerificationResult::Verified {
+        holds,
+        bindings: bindings.iter()
+            .map(|(k, v)| (k.to_string(), format_term_compact(v)))
+            .collect(),
+        lhs_after: format_term_compact(&lhs_substituted),
+        rhs_after: format_term_compact(&rhs_substituted),
+    }
+}
+
+/// Result of equation verification
+#[derive(Debug, Clone)]
+pub enum VerificationResult {
+    /// Equation applies and was verified
+    Verified {
+        holds: bool,
+        bindings: Vec<(String, String)>,
+        lhs_after: String,
+        rhs_after: String,
+    },
+    /// Equation doesn't apply to this term
+    NotApplicable,
+}
+
+impl VerificationResult {
+    pub fn holds(&self) -> Option<bool> {
+        match self {
+            VerificationResult::Verified { holds, .. } => Some(*holds),
+            VerificationResult::NotApplicable => None,
+        }
+    }
+    
+    pub fn is_applicable(&self) -> bool {
+        matches!(self, VerificationResult::Verified { .. })
+    }
+}
+
+/// Comprehensive verification of all pipeline equations against actual data
+#[cfg(feature = "panproto")]
+pub fn verify_pipeline_equations(
+    clauses: &[crate::pipeline::Clause],
+    canon_nodes: &[crate::pipeline::CanonNode],
+    ius: &[crate::pipeline::ImplementationUnit],
+) -> VerificationReport {
+    use crate::pipeline::apply::{clause_to_term, canon_node_to_term, iu_to_term};
+    
+    let mut report = VerificationReport::default();
+    
+    // Verify ThClause equations
+    println!("   🔍 Verifying ThClause equations...");
+    for clause in clauses {
+        let term = clause_to_term(clause);
+        for eq in clause_equations() {
+            let result = verify_equation(&eq, &term);
+            report.add_clause_result(&eq.name, result);
+        }
+    }
+    
+    // Verify ThCanon equations
+    println!("   🔍 Verifying ThCanon equations...");
+    for node in canon_nodes {
+        let term = canon_node_to_term(node);
+        for eq in canon_equations() {
+            let result = verify_equation(&eq, &term);
+            report.add_canon_result(&eq.name, result);
+        }
+    }
+    
+    // Verify ThIU equations
+    println!("   🔍 Verifying ThIU equations...");
+    for iu in ius {
+        let term = iu_to_term(iu);
+        for eq in iu_equations() {
+            let result = verify_equation(&eq, &term);
+            report.add_iu_result(&eq.name, result);
+        }
+    }
+    
+    report
+}
+
+/// Comprehensive verification report
+#[derive(Debug, Clone, Default)]
+pub struct VerificationReport {
+    pub clause_results: Vec<(String, VerificationResult)>,
+    pub canon_results: Vec<(String, VerificationResult)>,
+    pub iu_results: Vec<(String, VerificationResult)>,
+    pub passed: usize,
+    pub failed: usize,
+    pub not_applicable: usize,
+}
+
+impl VerificationReport {
+    fn add_clause_result(&mut self, name: &str, result: VerificationResult) {
+        self.update_counts(&result);
+        self.clause_results.push((name.to_string(), result));
+    }
+    
+    fn add_canon_result(&mut self, name: &str, result: VerificationResult) {
+        self.update_counts(&result);
+        self.canon_results.push((name.to_string(), result));
+    }
+    
+    fn add_iu_result(&mut self, name: &str, result: VerificationResult) {
+        self.update_counts(&result);
+        self.iu_results.push((name.to_string(), result));
+    }
+    
+    fn update_counts(&mut self, result: &VerificationResult) {
+        match result {
+            VerificationResult::Verified { holds: true, .. } => self.passed += 1,
+            VerificationResult::Verified { holds: false, .. } => self.failed += 1,
+            VerificationResult::NotApplicable => self.not_applicable += 1,
+        }
+    }
+    
+    pub fn print_summary(&self) {
+        let total = self.passed + self.failed + self.not_applicable;
+        println!("\n   📊 Verification Summary: {}/{} passed, {} failed, {} N/A",
+            self.passed, total - self.not_applicable, self.failed, self.not_applicable);
+        
+        if self.failed > 0 {
+            println!("   ⚠️  Failed equations:");
+            for (name, result) in &self.clause_results {
+                if let VerificationResult::Verified { holds: false, lhs_after, rhs_after, .. } = result {
+                    println!("      {}: {} ≠ {}", name, lhs_after, rhs_after);
+                }
+            }
+            for (name, result) in &self.canon_results {
+                if let VerificationResult::Verified { holds: false, lhs_after, rhs_after, .. } = result {
+                    println!("      {}: {} ≠ {}", name, lhs_after, rhs_after);
+                }
+            }
+            for (name, result) in &self.iu_results {
+                if let VerificationResult::Verified { holds: false, lhs_after, rhs_after, .. } = result {
+                    println!("      {}: {} ≠ {}", name, lhs_after, rhs_after);
+                }
+            }
+        }
+        
+        // Show examples of successful verifications
+        let mut shown = 0;
+        println!("   ✓ Example verifications:");
+        for (name, result) in &self.clause_results {
+            if let VerificationResult::Verified { holds: true, bindings, lhs_after, rhs_after } = result {
+                if shown < 2 && !bindings.is_empty() {
+                    println!("      {}: {} = {}", name, lhs_after, rhs_after);
+                    println!("        with bindings: {:?}", bindings);
+                    shown += 1;
+                }
+            }
+        }
+    }
 }
 
 /// Check that a morphism preserves equations
@@ -274,7 +487,7 @@ fn substitute_and_eval(pattern: &Term, concrete: &Term) -> Option<Term> {
 pub fn verify_morphism_preserves_equations(
     morphism: &panproto_gat::TheoryMorphism,
     equations: &[Equation]
-) -> Vec<(String, bool)> {
+) -> Vec<(String, MorphismPreservationResult)> {
     equations.iter()
         .map(|eq| {
             // Apply morphism to both sides
@@ -282,10 +495,69 @@ pub fn verify_morphism_preserves_equations(
             let rhs_transformed = eq.rhs.rename_ops(&morphism.op_map);
             
             // Check if transformed equation holds
-            let preserved = alpha_equivalent(&lhs_transformed, &rhs_transformed);
-            (eq.name.to_string(), preserved)
+            let alpha_equal = alpha_equivalent(&lhs_transformed, &rhs_transformed);
+            
+            let result = if alpha_equal {
+                MorphismPreservationResult::Preserved {
+                    lhs_transformed: format_term_compact(&lhs_transformed),
+                    rhs_transformed: format_term_compact(&rhs_transformed),
+                }
+            } else {
+                MorphismPreservationResult::NotPreserved {
+                    lhs_transformed: format_term_compact(&lhs_transformed),
+                    rhs_transformed: format_term_compact(&rhs_transformed),
+                    reason: "Transformed terms not alpha-equivalent".to_string(),
+                }
+            };
+            
+            (eq.name.to_string(), result)
         })
         .collect()
+}
+
+/// Result of checking if morphism preserves an equation
+#[derive(Debug, Clone)]
+pub enum MorphismPreservationResult {
+    Preserved {
+        lhs_transformed: String,
+        rhs_transformed: String,
+    },
+    NotPreserved {
+        lhs_transformed: String,
+        rhs_transformed: String,
+        reason: String,
+    },
+}
+
+impl MorphismPreservationResult {
+    pub fn is_preserved(&self) -> bool {
+        matches!(self, MorphismPreservationResult::Preserved { .. })
+    }
+}
+
+/// Print morphism preservation results
+pub fn print_morphism_preservation_results(
+    morphism_name: &str,
+    results: &[(String, MorphismPreservationResult)]
+) {
+    println!("   ↳ {} equation preservation:", morphism_name);
+    
+    let preserved_count = results.iter().filter(|(_, r)| r.is_preserved()).count();
+    let total = results.len();
+    
+    println!("      {}/{} equations structurally preserved", preserved_count, total);
+    
+    for (eq_name, result) in results {
+        match result {
+            MorphismPreservationResult::Preserved { lhs_transformed, rhs_transformed } => {
+                println!("      ✓ {}: {} = {}", eq_name, lhs_transformed, rhs_transformed);
+            }
+            MorphismPreservationResult::NotPreserved { lhs_transformed, rhs_transformed, reason } => {
+                println!("      ⚠ {}: {} ≠ {}", eq_name, lhs_transformed, rhs_transformed);
+                println!("        Reason: {}", reason);
+            }
+        }
+    }
 }
 
 /// Print equation summary
@@ -354,11 +626,10 @@ pub fn code_theory_with_equations() -> panproto_gat::Theory {
 
 /// Run all equation verification tests
 #[cfg(feature = "panproto")]
-pub fn verify_all_equations() -> Vec<(String, Vec<(String, bool)>)> {
+pub fn verify_all_equations() -> Vec<(String, Vec<(String, MorphismPreservationResult)>)> {
     use crate::pipeline::formal::{canonize_morphism, plan_morphism, codegen_morphism};
     
     vec![
-        ("clause".to_string(), vec![("idempotent".to_string(), true)]), // Simplified
         ("canon".to_string(), verify_morphism_preserves_equations(&canonize_morphism(), &canon_equations())),
         ("iu".to_string(), verify_morphism_preserves_equations(&plan_morphism(), &iu_equations())),
         ("code".to_string(), verify_morphism_preserves_equations(&codegen_morphism(), &code_equations())),
