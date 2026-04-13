@@ -931,8 +931,18 @@ async fn cmd_pipeline_multi(
                     &bundles_dir,
                 ).await {
                     Ok(spec_ncl) => {
-                        tokio::fs::write(&spec_ncl_path, spec_ncl).await?;
-                        println!("✅ Generated spec.ncl from spec.md");
+                        // Validate generated spec has actual content
+                        if spec_ncl.trim().len() < 50 || spec_ncl.contains("awaiting input") {
+                            println!("⚠️  LLM generated empty/invalid spec - keeping existing spec.ncl");
+                        } else {
+                            // Backup existing spec.ncl if present
+                            if spec_ncl_path.exists() {
+                                let backup = spec_ncl_path.with_extension("ncl.bak");
+                                let _ = tokio::fs::copy(&spec_ncl_path, &backup).await;
+                            }
+                            tokio::fs::write(&spec_ncl_path, spec_ncl).await?;
+                            println!("✅ Generated spec.ncl from spec.md");
+                        }
                     }
                     Err(e) => {
                         println!("⚠️  Failed to convert spec.md: {}", e);

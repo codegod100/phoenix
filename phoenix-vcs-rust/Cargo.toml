@@ -31,7 +31,6 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 petgraph = "0.6"
 regex = "1.10"
-async-trait = "0.1"
 
 # Nickel language parser for NCL specs - use older version compatible with panproto's tree-sitter 0.25
 # Or use tree-sitter-nickel directly for simpler parsing
