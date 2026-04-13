@@ -48,6 +48,104 @@ pub enum FormalTheory {
     ThTemplate { template_path: String },
 }
 
+/// ThTextualBundle: Theory of Python Textual applications
+/// 
+/// This is a domain-specific theory for TUI apps. Each sort maps to a
+/// specific code artifact in the generated project.
+#[cfg(feature = "panproto")]
+pub fn textual_bundle_theory() -> Theory {
+    use panproto_gat::{Sort, SortKind, Operation};
+    
+    Theory::new(
+        Arc::from("ThTextualBundle"),
+        vec![
+            // Top-level bundle sorts
+            Sort { name: Arc::from("TextualApp"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("CSS"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("ComposeMethod"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("EventHandler"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            // Layout operations
+            Operation {
+                name: Arc::from("layout_to_css"),
+                inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
+                output: Arc::from("CSS"),
+            },
+            // Widget operations
+            Operation {
+                name: Arc::from("widget_to_compose"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("ComposeMethod"),
+            },
+            // Key binding operations
+            Operation {
+                name: Arc::from("keybinding_to_handler"),
+                inputs: vec![(Arc::from("binding"), Arc::from("KeyBinding"))],
+                output: Arc::from("EventHandler"),
+            },
+            // Theme operations
+            Operation {
+                name: Arc::from("theme_to_css_vars"),
+                inputs: vec![(Arc::from("theme"), Arc::from("Theme"))],
+                output: Arc::from("CSS"),
+            },
+            // App composition
+            Operation {
+                name: Arc::from("mk_app"),
+                inputs: vec![
+                    (Arc::from("layout_css"), Arc::from("CSS")),
+                    (Arc::from("compose"), Arc::from("ComposeMethod")),
+                    (Arc::from("handlers"), Arc::from("List[EventHandler]")),
+                ],
+                output: Arc::from("TextualApp"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
+/// Morphism: ThTextualBundle → ThPythonTextual
+/// 
+/// Maps each sort to its Python code representation:
+/// - Layout → CSS string in app.CSS
+/// - Widget → yield statement in compose()
+/// - KeyBinding → @on decorated method
+/// - Theme → CSS variable definitions
+#[cfg(feature = "panproto")]
+pub fn textual_bundle_to_python_morphism() -> panproto_gat::TheoryMorphism {
+    use panproto_gat::TheoryMorphism;
+    use std::collections::HashMap;
+    
+    let mut sort_map = HashMap::new();
+    sort_map.insert(Arc::from("TextualApp"), Arc::from("AppClass"));
+    sort_map.insert(Arc::from("Layout"), Arc::from("CSS"));
+    sort_map.insert(Arc::from("Widget"), Arc::from("Yield"));
+    sort_map.insert(Arc::from("KeyBinding"), Arc::from("Method"));
+    sort_map.insert(Arc::from("Theme"), Arc::from("CSS"));
+    sort_map.insert(Arc::from("ComposeMethod"), Arc::from("Method"));
+    sort_map.insert(Arc::from("EventHandler"), Arc::from("Method"));
+    
+    let mut op_map = HashMap::new();
+    op_map.insert(Arc::from("layout_to_css"), Arc::from("css_string"));
+    op_map.insert(Arc::from("widget_to_compose"), Arc::from("yield_widget"));
+    op_map.insert(Arc::from("keybinding_to_handler"), Arc::from("on_decorator"));
+    op_map.insert(Arc::from("theme_to_css_vars"), Arc::from("css_vars"));
+    op_map.insert(Arc::from("mk_app"), Arc::from("app_class"));
+    
+    TheoryMorphism::new(
+        Arc::from("μ_textual→python"),
+        Arc::from("ThTextualBundle"),
+        Arc::from("ThPythonTextual"),
+        sort_map,
+        op_map,
+    )
+}
+
 /// Template bundle definition
 /// Maps template names to their required files and theories
 #[derive(Debug, Clone)]

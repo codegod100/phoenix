@@ -358,6 +358,88 @@ pub fn code_theory() -> Theory {
     )
 }
 
+/// ThSpec: Theory of specification documents
+///
+/// Sorts:
+///   - Spec: Root specification record
+///   - UIConfig: UI configuration section
+///   - Layout: Layout configuration (grid, flex, etc.)
+///   - Widget: Individual widget definition
+///   - WidgetType: Type tag (Header, Footer, ListView, etc.)
+///   - WidgetId: Unique widget identifier
+///   - WidgetProps: Property record (key-value pairs)
+///   - PropValue: Scalar value (String | Number | Bool | Array)
+///   - Theme: Theme configuration
+///   - KeyBinding: Key → action mapping
+///   - DataModel: Data schema definitions
+///
+/// Operations:
+///   - parse_spec: String → Spec
+///   - get_layout: Spec → Layout
+///   - get_widgets: Layout → List[Widget]
+///   - get_props: Widget → WidgetProps
+///   - get_prop: WidgetProps × String → PropValue
+///   - mk_widget: WidgetType × WidgetId × WidgetProps → Widget
+#[cfg(feature = "panproto")]
+pub fn spec_theory() -> Theory {
+    Theory::new(
+        Arc::from("ThSpec"),
+        vec![
+            Sort { name: Arc::from("Spec"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("UIConfig"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetProps"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("PropValue"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("DataModel"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("parse_spec"),
+                inputs: vec![(Arc::from("source"), Arc::from("String"))],
+                output: Arc::from("Spec"),
+            },
+            Operation {
+                name: Arc::from("get_layout"),
+                inputs: vec![(Arc::from("spec"), Arc::from("Spec"))],
+                output: Arc::from("Layout"),
+            },
+            Operation {
+                name: Arc::from("get_widgets"),
+                inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
+                output: Arc::from("List[Widget]"),
+            },
+            Operation {
+                name: Arc::from("get_props"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("WidgetProps"),
+            },
+            Operation {
+                name: Arc::from("get_prop"),
+                inputs: vec![
+                    (Arc::from("props"), Arc::from("WidgetProps")),
+                    (Arc::from("key"), Arc::from("String")),
+                ],
+                output: Arc::from("PropValue"),
+            },
+            Operation {
+                name: Arc::from("mk_widget"),
+                inputs: vec![
+                    (Arc::from("widget_type"), Arc::from("WidgetType")),
+                    (Arc::from("id"), Arc::from("WidgetId")),
+                    (Arc::from("props"), Arc::from("WidgetProps")),
+                ],
+                output: Arc::from("Widget"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
 /// ThDomain: Theory of domain extraction from canon nodes
 ///
 /// Sorts:
@@ -562,6 +644,85 @@ pub fn codegen_morphism() -> TheoryMorphism {
         sort_map,
         op_map,
     )
+}
+
+/// μ_spec→code: TheoryMorphism ThSpec → ThCode
+///
+/// Maps specification sorts directly to code artifacts:
+/// - Spec → AppClass
+/// - Layout → CSS + Container
+/// - Widget → Widget constructor call
+/// - WidgetProps → Constructor kwargs
+/// - KeyBinding → @on decorated method
+#[cfg(feature = "panproto")]
+pub fn spec_to_code_morphism() -> TheoryMorphism {
+    let domain = spec_theory();
+    let codomain = code_theory();
+    
+    let mut sort_map = HashMap::new();
+    // Spec structure maps to code structure
+    sort_map.insert(Arc::from("Spec"), Arc::from("Code"));
+    sort_map.insert(Arc::from("Layout"), Arc::from("Code"));  // CSS + layout container
+    sort_map.insert(Arc::from("Widget"), Arc::from("Code")); // Widget yield
+    sort_map.insert(Arc::from("WidgetProps"), Arc::from("Code")); // kwargs
+    sort_map.insert(Arc::from("KeyBinding"), Arc::from("Code")); // @on method
+    sort_map.insert(Arc::from("Theme"), Arc::from("Code")); // CSS vars
+    
+    let mut op_map = HashMap::new();
+    // Operations map to code generation
+    op_map.insert(Arc::from("parse_spec"), Arc::from("generate"));
+    op_map.insert(Arc::from("get_layout"), Arc::from("generate"));
+    op_map.insert(Arc::from("get_widgets"), Arc::from("generate"));
+    op_map.insert(Arc::from("mk_widget"), Arc::from("generate"));
+    
+    TheoryMorphism::new(
+        Arc::from("μ_spec→code"),
+        Arc::from("ThSpec"),
+        Arc::from("ThCode"),
+        sort_map,
+        op_map,
+    )
+}
+
+/// Verification: Check that every SpecSort has a morphism to Code
+/// 
+/// This prevents "dashboard hallucination" where spec properties
+/// don't map to generated code.
+#[cfg(feature = "panproto")]
+pub fn verify_spec_completeness(spec: &crate::pipeline::widget_config::UIConfig, generated_code: &str) -> Vec<String> {
+    let mut gaps = vec![];
+    
+    // Check layout properties
+    if let Some(ref layout_type) = spec.layout_type {
+        if layout_type == "grid" && !generated_code.contains("grid-") {
+            gaps.push(format!("Layout.type='grid' not mapped to CSS grid-* properties"));
+        }
+    }
+    if let Some(cols) = spec.grid_columns {
+        if cols > 0 && !generated_code.contains(&format!("grid-template-columns: repeat({},", cols)) {
+            gaps.push(format!("Layout.grid_columns={} not in CSS", cols));
+        }
+    }
+    
+    // Check widget properties
+    for widget in &spec.widgets {
+        for (key, val) in &widget.props {
+            if !generated_code.contains(key) && !generated_code.contains(val) {
+                gaps.push(format!("Widget {}.{}={} not in generated code", 
+                    widget.id.as_deref().unwrap_or("?"), key, val));
+            }
+        }
+        // Check for width, height CSS
+        if let Some((_, width)) = widget.props.iter().find(|(k, _)| k == "width") {
+            if !generated_code.contains(&format!("width: {}", width)) && 
+               !generated_code.contains(&format!("width:{}", width)) {
+                gaps.push(format!("Widget {}.width={} not in CSS", 
+                    widget.id.as_deref().unwrap_or("?"), width));
+            }
+        }
+    }
+    
+    gaps
 }
 
 /// Build instance of ThCanon from actual canon nodes
