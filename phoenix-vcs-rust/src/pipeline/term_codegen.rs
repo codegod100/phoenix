@@ -222,6 +222,9 @@ pub enum PythonTerm {
     
     // List of widgets (for children)
     List(Vec<PythonTerm>),
+    
+    // Comment for provenance
+    Comment(String),
 }
 
 use PythonTerm::*;
@@ -387,6 +390,10 @@ fn term_to_python_with_indent(term: &PythonTerm, out: &mut String, indent: usize
                 if i > 0 { out.push_str(", "); }
                 term_to_python_with_indent(item, out, indent);
             }
+        }
+        
+        Comment(text) => {
+            out.push_str(&format!("{}# {}\n", ind, text));
         }
         
         _ => {
@@ -695,12 +702,18 @@ fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<Pyt
     
     // Find and yield Header widget (first widget or look for type="Header")
     if let Some(header) = config.widgets.iter().find(|w| w.widget_type == "Header") {
+        body.push(Comment(format!(
+            "Spec: header = {{ type = \"{}\", title = \"{}\" }}",
+            header.widget_type,
+            header.title.as_deref().unwrap_or("")
+        )));
         body.push(Yield {
             widget: Box::new(build_widget_term(header)),
         });
     } else {
         // Default header
         let header_title = config.title.clone().unwrap_or_else(|| "App".to_string());
+        body.push(Comment("Spec: [default] header".to_string()));
         body.push(Yield {
             widget: Box::new(Widget {
                 widget_type: "Header".to_string(),
@@ -716,8 +729,22 @@ fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<Pyt
     // Build main layout with sidebar and content in a Horizontal split
     if config.widgets.len() >= 3 {
         // Horizontal split: sidebar | main  
-        let sidebar_term = build_widget_term(&config.widgets[1]); // sidebar
-        let main_term = build_widget_term(&config.widgets[2]); // main content
+        let sidebar = &config.widgets[1];
+        let main = &config.widgets[2];
+        
+        body.push(Comment(format!(
+            "Spec: sidebar = {{ type = \"{}\", title = \"{}\" }}",
+            sidebar.widget_type,
+            sidebar.title.as_deref().unwrap_or("")
+        )));
+        let sidebar_term = build_widget_term(sidebar);
+        
+        body.push(Comment(format!(
+            "Spec: main = {{ type = \"{}\", title = \"{}\" }}",
+            main.widget_type,
+            main.title.as_deref().unwrap_or("")
+        )));
+        let main_term = build_widget_term(main);
         
         body.push(Yield {
             widget: Box::new(Widget {
@@ -730,6 +757,7 @@ fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<Pyt
         });
     } else {
         // Fallback: simple vertical
+        body.push(Comment("Spec: [default] content area".to_string()));
         body.push(Yield {
             widget: Box::new(Widget {
                 widget_type: "Vertical".to_string(),
@@ -741,11 +769,16 @@ fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<Pyt
     
     // Find and yield Footer widget (last widget or look for type="Footer")
     if let Some(footer) = config.widgets.iter().find(|w| w.widget_type == "Footer") {
+        body.push(Comment(format!(
+            "Spec: footer = {{ type = \"{}\" }}",
+            footer.widget_type
+        )));
         body.push(Yield {
             widget: Box::new(build_widget_term(footer)),
         });
     } else {
         // Default footer
+        body.push(Comment("Spec: [default] footer".to_string()));
         body.push(Yield {
             widget: Box::new(Widget {
                 widget_type: "Footer".to_string(),
