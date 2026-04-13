@@ -872,7 +872,37 @@ async fn cmd_pipeline_single(
         }
     }
     
-    println!("{}: {} → code", lang, if llm_available { "LLM" } else { "skeleton" });
+    // Parse specs to extract explicit template (per agents.md - always be explicit)
+    let mut template_name = None;
+    let mut entries2 = tokio::fs::read_dir(&specs_dir).await?;
+    while let Some(entry) = entries2.next_entry().await? {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("ncl") {
+            if let Ok(content) = tokio::fs::read_to_string(&path).await {
+                if let Ok(parsed) = crate::ncl::parse_ncl_spec(&content, &path.to_string_lossy()) {
+                    // Explicit template takes precedence
+                    if parsed.template.is_some() {
+                        template_name = parsed.template.clone();
+                        break;
+                    }
+                    // Fall back to build_type if no explicit template
+                    if template_name.is_none() && parsed.build_type.is_some() {
+                        template_name = parsed.build_type.clone();
+                    }
+                }
+            }
+        }
+    }
+    
+    // EXPLICIT template is REQUIRED per agents.md
+    let template_name = template_name.expect(
+        "No template specified in spec.\n\
+         Add to your spec.ncl:\n\
+         template = 'python-textual'  # for TUI\n\
+         template = 'python-flask'    # for web\n\
+         template = 'rust'            # for Rust\n\
+         Or: build_type = 'python' | 'rust' | 'pyo3'"
+    );
     
     if llm_available {
         println!("   LLM: {}", full_url);
@@ -938,7 +968,7 @@ async fn cmd_pipeline_single(
         for (i, iu) in domain_ius.iter().enumerate() {
             print!("     [{}/{}] {}...", i + 1, domain_ius.len(), iu.name);
             
-            match crate::lens::generate_code_with_llm(iu, &llm_config, Some(&iu_graph.ius), None).await {
+            match crate::lens::generate_code_with_llm(iu, &llm_config, Some(&iu_graph.ius), None, Some(&template_name)).await {
                 Ok(generated_code) => {
                     let hash = crate::identity::file_hash(&generated_code);
                     let path = iu.output_files.first()
@@ -978,7 +1008,7 @@ async fn cmd_pipeline_single(
         if let Some(app_iu) = app_iu_opt {
             print!("     [{}/{}] {}...", domain_ius.len() + 1, iu_graph.ius.len(), app_iu.name);
             
-            match crate::lens::generate_code_with_llm(app_iu, &llm_config, Some(&iu_graph.ius), Some(domain_apis)).await {
+            match crate::lens::generate_code_with_llm(app_iu, &llm_config, Some(&iu_graph.ius), Some(domain_apis), Some(&template_name)).await {
                 Ok(generated_code) => {
                     let hash = crate::identity::file_hash(&generated_code);
                     let path = app_iu.output_files.first()
@@ -1258,35 +1288,114 @@ async fn clean_generated_dir(project_root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Generate pyproject.toml for Python projects
+/// Generate pyproject.toml for Python projects from NCL spec + template
 async fn generate_pyproject_toml(project_root: &Path) -> Result<String> {
-    // Try to get project name from spec.ncl
     let spec_path = project_root.join("spec.ncl");
-    let pname = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
-        extract_pname_from_ncl(&content)
-            .unwrap_or_else(|| "my-app".to_string())
+    
+    // Parse the NCL spec to get configuration
+    let (pname, pyproject_config) = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        let mut parsed = crate::ncl::parse_ncl_spec(&content, "spec.ncl")
+            .map_err(|e| anyhow::anyhow!("Failed to parse spec.ncl: {}", e))?;
+        
+        // Load and merge template based on build_type
+        // NO FALLBACKS per agents.md - must be explicit
+        let template_dir = std::env::var("PHOENIX_TEMPLATE_DIR")
+            .map(PathBuf::from)
+            .ok()
+            .or_else(|| {
+                std::env::current_exe()
+                    .ok()
+                    .and_then(|exe| exe.parent().map(|p| p.join("templates")))
+            })
+            .expect("Cannot find templates directory.\n\
+                     Set PHOENIX_TEMPLATE_DIR or ensure templates/ is next to binary.");
+        
+        if !template_dir.exists() {
+            panic!(
+                "Templates directory not found: {}\n\
+                 Set PHOENIX_TEMPLATE_DIR env var to the correct templates location.",
+                template_dir.display()
+            );
+        }
+        parsed.merge_template(&template_dir);
+        
+        // Get project name
+        let name = parsed.name
+            .or_else(|| parsed.flake.as_ref().and_then(|f| f.pname.clone()))
+            .unwrap_or_else(|| "my-app".to_string());
+        
+        // Get pyproject config (will use template default if not in spec)
+        let pyproject = parsed.pyproject
+            .unwrap_or_else(|| crate::ncl::PyProjectConfig::python_default());
+        
+        (name, pyproject)
     } else {
-        "my-app".to_string()
+        // Fallback if no spec.ncl
+        ("my-app".to_string(), crate::ncl::PyProjectConfig::python_default())
     };
     
     let pname_underscore = pname.replace("-", "_");
     
+    // Build dependencies section
+    let deps_str = if pyproject_config.dependencies.is_empty() {
+        String::new()
+    } else {
+        format!("\ndependencies = [\n{}\n]", 
+            pyproject_config.dependencies.iter()
+                .map(|d| format!("  \"{}\",", d))
+                .collect::<Vec<_>>()
+                .join("\n"))
+    };
+    
+    // Build build-system section
+    let build_system_str = if pyproject_config.build_system.is_empty() {
+        r#"requires = ["hatchling"]
+build-backend = "hatchling.build""#.to_string()
+    } else {
+        format!("requires = [{}]\nbuild-backend = \"hatchling.build\"",
+            pyproject_config.build_system.iter()
+                .map(|s| format!("\"{}\"", s))
+                .collect::<Vec<_>>()
+                .join(", "))
+    };
+    
+    // Get entry point (default to src.app:main)
+    let entry_point = pyproject_config.entry_point
+        .unwrap_or_else(|| "src.app:main".to_string());
+    
+    // Get packages (default to ["src"])
+    let packages_str = if pyproject_config.packages.is_empty() {
+        r#"packages = ["src"]"#.to_string()
+    } else {
+        format!("packages = [{}]",
+            pyproject_config.packages.iter()
+                .map(|p| format!("\"{}\"", p))
+                .collect::<Vec<_>>()
+                .join(", "))
+    };
+    
     Ok(format!(r#"[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+{}
 
 [project]
 name = "{}"
 version = "0.1.0"
 description = "Generated by Phoenix VCS"
-requires-python = ">=3.12"
+requires-python = "{}"{}
 
 [project.scripts]
-{} = "app:main"
+{} = "{}"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
-"#, pname, pname_underscore))
+{}
+"#, 
+        build_system_str,
+        pname, 
+        pyproject_config.requires_python,
+        deps_str,
+        pname_underscore,
+        entry_point,
+        packages_str))
 }
 
 /// Extract pname from NCL content
@@ -1386,8 +1495,9 @@ async fn generate_project_flake(project_root: &Path, all_specs_content: &str) ->
             // Generate full flake with packages, apps, devShells
             generate_full_flake(&project_name, all_specs_content)
         } else {
-            // Generate simple devShell only (legacy format)
-            generate_simple_flake(&project_name, all_specs_content)
+            // Generate simple devShell only (legacy format) - may error if build type unknown
+            generate_simple_flake(project_root, &project_name, all_specs_content)
+                .map_err(|e| anyhow::anyhow!("Failed to generate flake: {}. Please add explicit flake configuration or specify build_type in your spec file.", e))?
         }
     };
     
@@ -1550,21 +1660,107 @@ EOF
     )
 }
 
+/// Scan Python files in src/ directory for imports and map to nixpkgs
+fn detect_python_deps(project_root: &Path) -> Vec<String> {
+    let mut deps = std::collections::HashSet::new();
+    let src_dir = project_root.join("src");
+    
+    if !src_dir.exists() {
+        return vec![];
+    }
+    
+    // Map of import names to nixpkgs attributes
+    let import_to_nixpkg: std::collections::HashMap<&str, &str> = [
+        ("flask", "flask"),
+        ("textual", "textual"),
+        ("httpx", "httpx"),
+        ("websockets", "websockets"),
+        ("requests", "requests"),
+        ("fastapi", "fastapi"),
+        ("django", "django"),
+        ("numpy", "numpy"),
+        ("pandas", "pandas"),
+        ("pillow", "pillow"),
+        ("sqlalchemy", "sqlalchemy"),
+        ("pytest", "pytest"),
+        ("click", "click"),
+        ("typer", "typer"),
+        ("rich", "rich"),
+        ("pydantic", "pydantic"),
+    ].into();
+    
+    // Simple regex-like scanning for imports
+    for entry in walkdir::WalkDir::new(&src_dir).max_depth(2) {
+        if let Ok(entry) = entry {
+            let path = entry.path();
+            if path.extension().map_or(false, |e| e == "py") {
+                if let Ok(content) = std::fs::read_to_string(path) {
+                    for line in content.lines() {
+                        let line = line.trim();
+                        // Match "import X" or "from X import ..."
+                        if line.starts_with("import ") {
+                            let imp = line[7..].split(',').next().unwrap_or("").trim();
+                            let base = imp.split('.').next().unwrap_or(imp);
+                            if let Some(&nixpkg) = import_to_nixpkg.get(base) {
+                                deps.insert(nixpkg.to_string());
+                            }
+                        } else if line.starts_with("from ") {
+                            let parts: Vec<&str> = line[5..].split_whitespace().collect();
+                            if !parts.is_empty() {
+                                let base = parts[0].split('.').next().unwrap_or(parts[0]);
+                                if let Some(&nixpkg) = import_to_nixpkg.get(base) {
+                                    deps.insert(nixpkg.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    deps.into_iter().collect()
+}
+
 /// Generate flake with packages and devShell
-fn generate_simple_flake(project_name: &str, spec_content: &str) -> String {
-    // NCL-style language detection only
+/// 
+/// Errors if build type cannot be determined from spec content.
+fn generate_simple_flake(project_root: &Path, project_name: &str, spec_content: &str) -> Result<String> {
+    // NCL-style language detection - check both 'language' and 'build_type' patterns
     let needs_rust = spec_content.contains("language = \"rust\"") ||
                      spec_content.contains("language = 'rust'") ||
                      spec_content.contains("language = \"pyo3\"") ||
-                     spec_content.contains("language = 'pyo3'");
+                     spec_content.contains("language = 'pyo3'") ||
+                     spec_content.contains("build_type = \"rust\"") ||
+                     spec_content.contains("build_type = 'rust'") ||
+                     spec_content.contains("build_type = \"pyo3\"") ||
+                     spec_content.contains("build_type = 'pyo3'");
     let needs_python = spec_content.contains("language = \"python\"") ||
-                       spec_content.contains("language = 'python'");
+                       spec_content.contains("language = 'python'") ||
+                       spec_content.contains("build_type = \"python\"") ||
+                       spec_content.contains("build_type = 'python'");
     let needs_tls = spec_content.to_lowercase().contains("tls") ||
                     spec_content.to_lowercase().contains("ssl");
     let needs_pyo3 = spec_content.contains("language = \"pyo3\"") ||
                      spec_content.contains("language = 'pyo3'") ||
                      spec_content.contains("framework = \"pyo3\"") ||
-                     spec_content.contains("framework = 'pyo3'");
+                     spec_content.contains("framework = 'pyo3'") ||
+                     spec_content.contains("build_type = \"pyo3\"") ||
+                     spec_content.contains("build_type = 'pyo3'") ||
+                     spec_content.contains("build_type = \"maturin\"") ||
+                     spec_content.contains("build_type = 'maturin'");
+
+    // Fail hard if we can't determine build type
+    if !needs_rust && !needs_python && !needs_pyo3 {
+        anyhow::bail!(
+            "Cannot determine build type from spec.\n\
+             Add one of the following to your spec file:\n\
+             - build_type = 'python'  # For Python applications\n\
+             - build_type = 'rust'    # For Rust applications\n\
+             - build_type = 'pyo3'    # For PyO3/maturin projects\n\
+             Or add a flake = {{ ... }} section with explicit configuration."
+        );
+    }
 
     let mut packages = vec![];
 
@@ -1604,21 +1800,33 @@ fn generate_simple_flake(project_name: &str, spec_content: &str) -> String {
           meta.mainProgram = "{}";
         }};"#, project_name, project_name)
     } else if needs_python {
-        // Python application package
-        format!(r#"        packages.default = pkgs.python312Packages.buildPythonApplication {{
+        // Python application package - auto-detect deps from imports
+        let python_deps = detect_python_deps(project_root);
+        let deps_str = if python_deps.is_empty() {
+            "# No external Python deps detected in src/".to_string()
+        } else {
+            format!("propagatedBuildInputs = with pkgs.python312Packages; [ {} ];", 
+                    python_deps.join(" "))
+        };
+        
+        format!(r#"        packages.default = (pkgs.python312Packages.buildPythonApplication {{
           pname = "{}";
           version = "0.1.0";
           src = ./.;
-          pyproject = true;
+          format = "pyproject";
           build-system = with pkgs.python312Packages; [ hatchling ];
-          propagatedBuildInputs = with pkgs.python312Packages; [
-            textual
-            httpx
-            websockets
-          ];
+          {}
+          # Fix PYTHONPATH in wrapper to include the installed package
+          postInstall = ''
+            for f in $out/bin/*; do
+              if [ -f "$f" ]; then
+                wrapProgram "$f" --prefix PYTHONPATH : "$out/lib/python3.12/site-packages"
+              fi
+            done
+          '';
           meta.mainProgram = "{}";
-        }};"#, project_name, project_name.replace("-", "_"))
-    } else if needs_rust {
+        }});"#, project_name, deps_str, project_name.replace("-", "_"))
+    } else {
         // Rust package
         format!(r#"        packages.default = pkgs.rustPlatform.buildRustPackage {{
           pname = "{}";
@@ -1628,14 +1836,9 @@ fn generate_simple_flake(project_name: &str, spec_content: &str) -> String {
           nativeBuildInputs = [ pkgs.pkg-config ];
           buildInputs = [ pkgs.openssl ];
         }};"#, project_name)
-    } else {
-        // Generic shell script placeholder
-        format!(r#"        packages.default = pkgs.writeShellScriptBin "{}" '''
-          echo "Phoenix generated app"
-        '';"#, project_name)
     };
 
-    format!(r#"{{
+    Ok(format!(r#"{{
   description = "Phoenix development environment";
 
   inputs = {{
@@ -1660,7 +1863,7 @@ fn generate_simple_flake(project_name: &str, spec_content: &str) -> String {
 "#,
         package_section,
         packages_str
-    )
+    ))
 }
 
 /// Generate flake from FlakeConfig (spec-driven)

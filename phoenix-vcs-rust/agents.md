@@ -115,20 +115,30 @@ design = {
 }
 ```
 
-### Flake Configuration (Optional)
+### Template Selection (REQUIRED)
 
-Build environment can be specified but is also inferable:
+**ALWAYS be explicit about template selection. NEVER infer from requirements.**
+
+Templates define HOW code is generated. The spec MUST declare which template to use:
 
 ```nickel
-flake = {
-  pname = "my-app",
-  version = "0.1.0",
-  build_type = "python",  # rust | python | pyo3
-  build_inputs = ["python312" "python312Packages.textual"],
+{
+  # Explicit template selection - REQUIRED
+  template = "python-textual",  # or "python-flask", "rust", etc.
+  
+  # Alternative: explicit build_type with template inference
+  build_type = "python",  # Uses templates/python.ncl
+  
+  requirements = [
+    { description = "...", protocol = "UI" },
+  ],
 }
 ```
 
-If omitted, Phoenix infers from:
-- Protocol names (UI → python, Auth → rust)
-- Project structure
-- Imports in existing code
+**Available templates:**
+- `python-textual` - Terminal UI with Textual framework
+- `python-flask` - Web API with Flask framework
+- `python` - Generic Python (requires explicit dependencies)
+- `rust` - Rust application
+
+**NO INFERENCE** - Phoenix does NOT guess the framework from requirement text like "terminal" or "web". The spec author MUST explicitly choose the template.

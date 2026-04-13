@@ -47,9 +47,15 @@ pub struct ParsedNcl {
     pub compositions: Vec<NclMorphism>,
     /// Flake configuration (merged from template + spec)
     pub flake: Option<FlakeConfig>,
+    /// PyProject configuration (for Python projects)
+    pub pyproject: Option<PyProjectConfig>,
     /// Generic record content
     pub generic: Option<HashMap<String, String>>,
+    /// Template name to use for code generation (e.g., "python-textual", "rust")
+    /// Takes precedence over build_type inference
+    pub template: Option<String>,
     /// Build type specified in spec (e.g., "python", "rust", "pyo3")
+    /// Used for both template selection and flake configuration
     pub build_type: Option<String>,
     /// Top-level name from spec (used as pname if no flake.pname)
     pub name: Option<String>,
@@ -60,10 +66,16 @@ pub struct ParsedNcl {
 }
 
 impl ParsedNcl {
-    /// Load and merge template configuration based on build_type
+    /// Load and merge template configuration
+    /// 
+    /// Priority: explicit `template` field > `build_type` field > none
     pub fn merge_template(&mut self, template_dir: impl AsRef<Path>) {
-        if let Some(ref build_type) = self.build_type {
-            let template_path = template_dir.as_ref().join(format!("{}.ncl", build_type));
+        // Determine which template to load: explicit template > build_type > none
+        let template_name = self.template.clone()
+            .or_else(|| self.build_type.clone());
+        
+        if let Some(ref template_name) = template_name {
+            let template_path = template_dir.as_ref().join(format!("{}.ncl", template_name));
             if let Ok(template_content) = std::fs::read_to_string(&template_path) {
                 if let Ok(template_parsed) = parse_ncl_spec(&template_content, &template_path.to_string_lossy()) {
                     // Create a spec FlakeConfig from top-level fields if no flake section exists
@@ -73,7 +85,7 @@ impl ParsedNcl {
                             pname: Some(name.clone()),
                             version: self.version.clone(),
                             description: self.description.clone(),
-                            build_type: self.build_type.clone(),
+                            build_type: self.build_type.clone().or_else(|| template_parsed.build_type.clone()),
                             ..Default::default()
                         })
                     });
@@ -81,6 +93,16 @@ impl ParsedNcl {
                     // Merge template flake config into spec
                     if let Some(template_flake) = template_parsed.flake {
                         self.flake = Some(merge_flake_configs(&template_flake, spec_flake.as_ref()));
+                    }
+                    
+                    // Merge pyproject config - spec overrides template
+                    if self.pyproject.is_none() {
+                        if let Some(template_pyproject) = template_parsed.pyproject {
+                            self.pyproject = Some(template_pyproject);
+                        } else if template_name.starts_with("python") {
+                            // Use default Python config
+                            self.pyproject = Some(PyProjectConfig::python_default());
+                        }
                     }
                 }
             }
@@ -128,6 +150,31 @@ pub struct FlakeConfig {
     pub pre_build: Option<String>,    // Optional hook script (also used for custom buildPhase)
     pub install_phase: Option<String>, // Custom install phase
     pub extra_nix: Option<String>,    // Any extra Nix expression lines
+}
+
+/// PyProject.toml configuration for Python projects
+#[derive(Debug, Clone, Default)]
+pub struct PyProjectConfig {
+    pub build_system: Vec<String>,     // e.g., ["hatchling", "setuptools", "poetry-core"]
+    pub requires_python: String,       // e.g., ">=3.12"
+    pub dependencies: Vec<String>,     // Runtime dependencies
+    pub dev_dependencies: Vec<String>, // Dev/test dependencies
+    pub entry_point: Option<String>,   // Module path for console script (e.g., "src.app:main")
+    pub packages: Vec<String>,         // Packages to include (e.g., ["src"])
+}
+
+impl PyProjectConfig {
+    /// Create default Python config
+    pub fn python_default() -> Self {
+        Self {
+            build_system: vec!["hatchling".to_string()],
+            requires_python: ">=3.12".to_string(),
+            dependencies: vec![],
+            dev_dependencies: vec![],
+            entry_point: Some("src.app:main".to_string()),
+            packages: vec!["src".to_string()],
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -231,6 +278,18 @@ fn extract_structure(term: &nickel_lang_core::term::RichTerm) -> Result<ParsedNc
                 }
             }
             
+            // Extract pyproject config if present
+            if field_names.contains_key("pyproject") {
+                if let Some(pyproject) = extract_pyproject_config(&record_data.fields) {
+                    result.pyproject = Some(pyproject);
+                }
+            }
+            
+            // Extract template if present at top level (takes precedence over build_type)
+            if let Some(template_str) = get_field_string(&record_data.fields, "template") {
+                result.template = Some(template_str);
+            }
+            
             // Extract build_type if present at top level
             if let Some(build_type_str) = get_field_string(&record_data.fields, "build_type") {
                 result.build_type = Some(build_type_str);
@@ -247,23 +306,25 @@ fn extract_structure(term: &nickel_lang_core::term::RichTerm) -> Result<ParsedNc
                 result.description = Some(desc_str);
             }
             
-            // If nothing else found, try generic extraction
-            if result.theory.is_none() 
-                && result.requirements.is_empty()
-                && result.morphisms.is_empty()
-                && result.compositions.is_empty() {
-                let mut fields = HashMap::new();
-                for (key, field) in &record_data.fields {
-                    let key_str = key.ident().to_string();
-                    if let Some(ref value) = field.value {
-                        if let Some(s) = extract_string_from_term(value) {
-                            fields.insert(key_str, s);
-                        }
+            // ALWAYS extract top-level string fields to generic (for templates)
+            // regardless of whether structured content exists
+            let mut fields = HashMap::new();
+            for (key, field) in &record_data.fields {
+                let key_str = key.ident().to_string();
+                // Skip already-extracted structured sections
+                if ["theory", "requirements", "morphisms", "compositions", 
+                    "flake", "pyproject", "template", "build_type", "name", "version", "description"]
+                    .contains(&key_str.as_str()) {
+                    continue;
+                }
+                if let Some(ref value) = field.value {
+                    if let Some(s) = extract_string_from_term(value) {
+                        fields.insert(key_str, s);
                     }
                 }
-                if !fields.is_empty() {
-                    result.generic = Some(fields);
-                }
+            }
+            if !fields.is_empty() {
+                result.generic = Some(fields);
             }
             
             Ok(result)
@@ -345,6 +406,29 @@ fn extract_flake_config(
     })
 }
 
+/// Extract pyproject configuration
+fn extract_pyproject_config(
+    fields: &IndexMap<nickel_lang_core::identifier::LocIdent, nickel_lang_core::term::record::Field>
+) -> Option<PyProjectConfig> {
+    let pyproject_field = fields.get(&Ident::from("pyproject"))?;
+    let pyproject_term = pyproject_field.value.as_ref()?;
+    
+    let record_data = match pyproject_term.as_ref() {
+        Term::RecRecord(r, _, _) => &r.fields,
+        Term::Record(r) => &r.fields,
+        _ => return None,
+    };
+    
+    Some(PyProjectConfig {
+        build_system: get_field_array(record_data, "build_system"),
+        requires_python: get_field_string(record_data, "requires_python").unwrap_or_else(|| ">=3.12".to_string()),
+        dependencies: get_field_array(record_data, "dependencies"),
+        dev_dependencies: get_field_array(record_data, "dev_dependencies"),
+        entry_point: get_field_string(record_data, "entry_point"),
+        packages: get_field_array(record_data, "packages"),
+    })
+}
+
 /// Extract all requirements from a record
 fn extract_requirements_all(
     fields: &IndexMap<nickel_lang_core::identifier::LocIdent, nickel_lang_core::term::record::Field>
@@ -415,11 +499,16 @@ fn extract_requirement(term: &nickel_lang_core::term::RichTerm) -> Option<NclReq
         _ => return None,
     };
     
-    let id = get_field_string(record_data, "id")?;
     let description = get_field_string(record_data, "description").unwrap_or_default();
     let priority = get_field_string(record_data, "priority").unwrap_or_else(|| "must".to_string());
     let protocol = get_field_string(record_data, "protocol").unwrap_or_default();
     let language = infer_language(&protocol);
+    
+    // id is auto-generated from description hash if not provided
+    let id = get_field_string(record_data, "id").unwrap_or_else(|| {
+        let normalized = crate::identity::normalize_text(&description);
+        crate::identity::canon_id(&normalized)
+    });
     
     Some(NclRequirement {
         id,
@@ -512,6 +601,7 @@ fn get_field_string(
 }
 
 /// Extract string value from term
+/// Handles multiline strings with interpolations (e.g., m%"{{var}}"%m)
 fn extract_string_from_term(term: &nickel_lang_core::term::RichTerm) -> Option<String> {
     match term.as_ref() {
         Term::Str(s) => Some(s.to_string()),
@@ -520,10 +610,24 @@ fn extract_string_from_term(term: &nickel_lang_core::term::RichTerm) -> Option<S
             for chunk in chunks {
                 match chunk {
                     nickel_lang_core::term::StrChunk::Literal(s) => result.push_str(s),
-                    _ => return None, // Interpolated strings not supported for simple extraction
+                    nickel_lang_core::term::StrChunk::Expr(expr, _) => {
+                        // Convert interpolation to {{...}} placeholder format
+                        result.push_str("{{");
+                        if let Term::Var(id) = expr.as_ref() {
+                            result.push_str(&id.to_string());
+                        } else {
+                            result.push_str("expr");
+                        }
+                        result.push_str("}}");
+                    }
                 }
             }
             Some(result)
+        }
+        // Handle function application: m%"..."%m is parsed as App(m, string_with_suffix)
+        Term::App(arg, _) => {
+            // Extract the argument which should be a string with suffix
+            extract_string_from_term(arg)
         }
         _ => None,
     }
@@ -612,6 +716,92 @@ pub fn parse_ncl_specs_in_dir<P: AsRef<Path>>(dir: P) -> Result<HashMap<String, 
     }
     
     Ok(results)
+}
+
+/// Load a code template from templates directory
+/// 
+/// Templates are NCL files that contain code generation templates
+/// like `python-flask.ncl`, `rust.ncl`, etc.
+pub fn load_code_template(template_dir: impl AsRef<Path>, template_name: &str) -> Result<CodeTemplate, String> {
+    let template_path = template_dir.as_ref().join(format!("{}.ncl", template_name));
+    
+    if !template_path.exists() {
+        return Err(format!("Template file not found: {:?}", template_path));
+    }
+    
+    let content = std::fs::read_to_string(&template_path)
+        .map_err(|e| format!("Failed to read template: {}", e))?;
+    
+    parse_code_template(&content)
+}
+
+/// Parse a code template from NCL content
+fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
+    // Parse the template NCL
+    let parsed = parse_ncl_spec(content, "template")?;
+    
+    // Extract template fields
+    let mut template = CodeTemplate::default();
+    
+    if let Some(ref generic) = parsed.generic {
+        template.language = generic.get("language").cloned().unwrap_or_default();
+        template.framework = generic.get("framework").cloned();
+        template.output_path = generic.get("output_path").cloned().unwrap_or_else(|| "src/app.py".to_string());
+        template.code_template = generic.get("code_template").cloned().unwrap_or_default();
+        template.llm_prompt = generic.get("llm_prompt").cloned().unwrap_or_default();
+    }
+    
+    // Also check pyproject and flake for dependencies
+    if let Some(ref pyproject) = parsed.pyproject {
+        template.dependencies = pyproject.dependencies.clone();
+        template.entry_point = pyproject.entry_point.clone();
+    }
+    
+    Ok(template)
+}
+
+/// Code template for generating files
+#[derive(Debug, Clone, Default)]
+pub struct CodeTemplate {
+    pub language: String,
+    pub framework: Option<String>,
+    pub output_path: String,
+    pub code_template: String,
+    pub llm_prompt: String,  // LLM prompt template for code generation
+    pub dependencies: Vec<String>,
+    pub entry_point: Option<String>,
+}
+
+impl CodeTemplate {
+    /// Render the template with variable substitutions
+    pub fn render(&self, vars: &std::collections::HashMap<String, String>) -> String {
+        let mut result = self.code_template.clone();
+        
+        // Simple Mustache-style {{var}} substitution
+        for (key, value) in vars {
+            let placeholder = format!("{{{{{}}}}}", key);
+            result = result.replace(&placeholder, value);
+        }
+        
+        result
+    }
+    
+    /// Render the LLM prompt with variable substitutions
+    pub fn render_prompt(&self, vars: &std::collections::HashMap<String, String>) -> String {
+        if self.llm_prompt.is_empty() {
+            return String::new();
+        }
+        
+        let mut result = self.llm_prompt.clone();
+        
+        // Simple Mustache-style {{var}} substitution
+        for (key, value) in vars {
+            let placeholder = format!("{{{{{}}}}}", key);
+            result = result.replace(&placeholder, value);
+        }
+        
+        result
+    }
 }
 
 #[cfg(test)]

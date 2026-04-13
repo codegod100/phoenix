@@ -84,10 +84,11 @@ struct ResponseMessage {
 pub async fn generate_code_with_llm(
     request: &CodeGenRequest,
     config: &LlmConfig,
+    template_prompt: Option<&str>,
 ) -> Result<String> {
     let client = reqwest::Client::new();
     
-    let prompt = build_generation_prompt(request);
+    let prompt = build_generation_prompt(request, template_prompt);
     
     let api_request = FireworksRequest {
         model: config.model.clone(),
@@ -144,89 +145,24 @@ pub async fn generate_code_with_llm(
 }
 
 /// Build the prompt for code generation
-fn build_generation_prompt(request: &CodeGenRequest) -> String {
-    // Limit to top 20 most important requirements to avoid overwhelming the LLM
-    let top_requirements: Vec<String> = request
-        .requirements
-        .iter()
-        .filter(|r| r.contains("REQUIREMENT:"))
-        .take(20)
-        .cloned()
-        .collect();
+fn build_generation_prompt(request: &CodeGenRequest, template_prompt: Option<&str>) -> String {
+    // Template MUST provide llm_prompt - no fallback per agents.md
+    let template = template_prompt.expect(
+        "No llm_prompt found in template.\n\
+         Templates must define llm_prompt field.\n\
+         Create: templates/python-textual.ncl (for TUI) or templates/python-flask.ncl (for web)\n\
+         Example:\n\
+         {{\n           llm_prompt = m%'...prompt text...'%,\n         }}"
+    );
     
-    // If no REQUIREMENT lines found, just take first 20
-    let req_list = if top_requirements.is_empty() {
-        request
-            .requirements
-            .iter()
-            .take(20)
-            .enumerate()
-            .map(|(i, r)| format!("{}. {}", i + 1, r.chars().take(200).collect::<String>()))
-            .collect::<Vec<_>>()
-            .join("\n")
-    } else {
-        top_requirements
-            .iter()
-            .enumerate()
-            .map(|(i, r)| format!("{}. {}", i + 1, r.chars().take(200).collect::<String>()))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
-    
-    let api_section = if let Some(apis) = &request.module_apis {
-        let mut section = "\n\nAvailable Module APIs:\n".to_string();
-        for api in apis {
-            section.push_str(&format!("\nModule '{}':\n", api.name));
-            if !api.classes.is_empty() {
-                section.push_str(&format!("  Classes: {}\n", api.classes.join(", ")));
-            }
-            if !api.functions.is_empty() {
-                section.push_str(&format!("  Functions: {}\n", api.functions.join(", ")));
-            }
-            section.push_str(&format!("  Import: from {} import {}\n", 
-                api.name, 
-                api.exports.join(", ")));
-        }
-        section.push_str("\nIMPORTANT: Only use imports that are listed above.\n");
-        section
-    } else {
-        String::new()
-    };
-    
-    // Determine the correct comment syntax for the target language
-    let comment_prefix = match request.language.as_str() {
-        "rust" => "//",
-        "typescript" => "//",
-        "python" => "#",
-        _ => "#",  // Default to Python-style
-    };
-    
-    format!(r#"You are a CODE GENERATOR ONLY. Your entire response must be valid {} code.
-
-ABSOLUTE RULES - VIOLATION = INVALID OUTPUT:
-1. NO explanations, NO reasoning, NO markdown ```, NO numbered lists, NO emojis
-2. START with: {} phoenix: iu_id = "{}"
-3. FORBIDDEN: Any line containing `mod ` or `pub mod` - these cause compile errors
-4. FORBIDDEN: Multiple files or modules - ONLY ONE self-contained file
-5. FORBIDDEN: Extra boilerplate (config, error, models, services, utils, types modules)
-6. Generate EXACTLY what the spec code block shows - no additions, no creativity
-7. All code must be inline in a single file - no external references
-
-Module: {}
-IU ID: {}
-
-Requirements:
-{}{}
-
-OUTPUT ONLY RAW CODE. ZERO TEXT BEFORE/AFTER."#,
-        request.language,
-        comment_prefix,
-        request.iu_id,
-        request.module_name,
-        request.iu_id,
-        req_list,
-        api_section,
-    )
+    // Render template prompt with variable substitutions
+    let mut prompt = template.to_string();
+    prompt = prompt.replace("{{iu_id}}", &request.iu_id);
+    prompt = prompt.replace("{{name}}", &request.module_name);
+    prompt = prompt.replace("{{language}}", &request.language);
+    let req_list = request.requirements.join("\n");
+    prompt = prompt.replace("{{requirements}}", &req_list);
+    prompt
 }
 
 /// Clean up LLM response (remove markdown code fences and thinking text)
@@ -340,7 +276,8 @@ pub async fn generate_code_batch(
     for request in requests {
         let config = config.clone();
         let handle = tokio::spawn(async move {
-            generate_code_with_llm(&request, &config).await
+            // Batch mode requires templates to be set in request or will fail
+            generate_code_with_llm(&request, &config, None).await
         });
         handles.push(handle);
     }

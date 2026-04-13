@@ -1036,111 +1036,31 @@ fn generate_integration_skeleton(iu: &IU) -> String {
     }
 }
 
-fn generate_python_app_skeleton(iu: &IU, module_names: &[String]) -> String {
-    let imports = module_names.iter()
-        .map(|name| format!("from .{} import *", name))
-        .collect::<Vec<_>>()
-        .join("\n");
-    
-    let init_calls = module_names.iter()
-        .map(|name| {
-            let class_name = name.split('_').map(|s| {
-                let mut chars = s.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            }).collect::<String>();
-            format!(
-                "        self.{}_manager = {}Manager()  # TODO: Initialize from {} module",
-                name, class_name, name
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    
-    format!(
-        r#"# phoenix: iu_id = "{}"
-"""
-Integrated Application Entry Point
-Wires together all domain modules into a unified application.
-"""
-
-{}
-
-
-class App:
-    """Main application class integrating all modules."""
-    
-    def __init__(self):
-        """Initialize all domain managers."""
-{}
-        self.running = False
-    
-    def start(self) -> None:
-        """Start the application."""
-        self.running = True
-        print("Application started")
-        self._main_loop()
-    
-    def stop(self) -> None:
-        """Stop the application."""
-        self.running = False
-        print("Application stopped")
-    
-    def _main_loop(self) -> None:
-        """Main application loop."""
-        while self.running:
-            # TODO: Implement main application logic
-            pass
-    
-    def health_check(self) -> dict:
-        """Check health of all modules."""
-        return {{
-            "status": "healthy",
-            "modules": {{}}
-        }}
-
-
-def main() -> int:
-    """Application entry point."""
-    app = App()
-    try:
-        app.start()
-        return 0
-    except KeyboardInterrupt:
-        app.stop()
-        return 0
-    except Exception as e:
-        print(f"Error: {{e}}")
-        return 1
-
-
-if __name__ == "__main__":
-    exit(main())
-"#,
-        iu.iu_id,
-        imports,
-        init_calls
-    )
+fn generate_python_app_skeleton(_iu: &IU, _module_names: &[String]) -> String {
+    // Skeleton generation requires explicit template - NO INFERENCE per agents.md
+    panic!(
+        "Skeleton generation removed.\n\
+         Template MUST be explicitly specified.\n\
+         Add to your spec.ncl:\n\
+         template = 'python-textual'  # for TUI apps\n\
+         template = 'python-flask'    # for web apps\n\
+         template = 'rust'            # for Rust apps\n\
+         Or use build_type = 'python' | 'rust' | 'pyo3'"
+    );
 }
 
 fn generate_rust_app_skeleton(_iu: &IU, _module_names: &[String]) -> String {
-    // TODO: Generate Rust integration skeleton
-    r#"// phoenix: iu_id = integration
-// TODO: Generate Rust app integration
-fn main() {
-    println!("Integration app placeholder");
-}
-"#.to_string()
+    panic!(
+        "Rust app template not yet implemented.\n\
+         Create templates/rust-app.ncl with code generation template."
+    );
 }
 
 fn generate_typescript_app_skeleton(_iu: &IU, _module_names: &[String]) -> String {
-    // TODO: Generate TypeScript integration skeleton
-    r#"// phoenix: iu_id = integration
-// TODO: Generate TypeScript app integration
-console.log("Integration app placeholder");
-"#.to_string()
+    panic!(
+        "TypeScript app template not yet implemented.\n\
+         Create templates/typescript-app.ncl with code generation template."
+    );
 }
 
 /// Generate code using LLM (async version for actual intelligent generation)
@@ -1149,27 +1069,55 @@ pub async fn generate_code_with_llm(
     config: &crate::llm::LlmConfig, 
     all_ius: Option<&[IU]>,
     module_apis: Option<Vec<crate::llm::ModuleApi>>,
+    template_name: Option<&str>,  // EXPLICIT template selection per agents.md
 ) -> anyhow::Result<String> {
+    // Load template for LLM prompt - MUST be explicit per agents.md
+    let template_name = template_name.expect(
+        "Template MUST be explicitly specified.\n\
+         Add to your spec.ncl:\n\
+         template = 'python-textual'  # for TUI apps\n\
+         template = 'python-flask'    # for web apps\n\
+         template = 'rust'            # for Rust apps\n\
+         Or use build_type = 'python' to use templates/python.ncl"
+    );
+    
+    // Template directory must exist - NO FALLBACKS per agents.md
+    let template_dir = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|p| p.join("templates")))
+        .expect("Cannot determine template directory from executable path.\n\
+                 Set PHOENIX_TEMPLATE_DIR env var or ensure templates/ is next to binary.");
+    
+    if !template_dir.exists() {
+        panic!(
+            "Templates directory not found: {}\n\
+             Ensure templates/ directory exists at this location or set PHOENIX_TEMPLATE_DIR env var.",
+            template_dir.display()
+        );
+    }
+    
+    let template = crate::ncl::load_code_template(&template_dir, template_name)
+        .expect(&format!("Failed to load template '{}' from {}", template_name, template_dir.display()));
+    
+    let llm_prompt = Some(template.llm_prompt.as_str());
+    
     // Special handling for integration app IU
     if iu.name == "app" {
-        return generate_app_integration_with_llm(iu, config, all_ius, module_apis).await;
+        return generate_app_integration_with_llm(iu, config, all_ius, module_apis, llm_prompt).await;
     }
     
     // Extract actual requirement lines from the contract
-    // The contract format is "Implements N requirements: req1; req2; ..."
-    // We want to parse out just the requirement statements
     let requirements: Vec<String> = iu.contract
-        .split("Implements ")  // Remove prefix
+        .split("Implements ")
         .nth(1)
-        .and_then(|s| s.split(": ").nth(1))  // Get part after ": "
+        .and_then(|s| s.split(": ").nth(1))
         .map(|s| s.split("; ").map(|r| r.to_string()).collect::<Vec<String>>())
         .unwrap_or_default()
         .into_iter()
-        .filter(|r: &String| !r.is_empty() && r.len() > 10)  // Filter out empty/short
-        .take(15)  // Limit to top 15 to avoid overwhelming LLM
+        .filter(|r: &String| !r.is_empty() && r.len() > 10)
+        .take(15)
         .collect();
     
-    // If we couldn't parse requirements, create a generic one
     let requirements = if requirements.is_empty() {
         vec![format!("Implement {} module", iu.name)]
     } else {
@@ -1182,10 +1130,10 @@ pub async fn generate_code_with_llm(
         module_name: iu.name.clone(),
         iu_id: iu.iu_id.clone(),
         context: None,
-        module_apis: None,  // Domain modules don't need APIs of other modules
+        module_apis: None,
     };
     
-    crate::llm::generate_code_with_llm(&request, config).await
+    crate::llm::generate_code_with_llm(&request, config, llm_prompt).await
 }
 
 /// Generate integration app using LLM
@@ -1194,6 +1142,7 @@ async fn generate_app_integration_with_llm(
     config: &crate::llm::LlmConfig, 
     all_ius: Option<&[IU]>,
     module_apis: Option<Vec<crate::llm::ModuleApi>>,
+    template_prompt: Option<&str>,
 ) -> anyhow::Result<String> {
     let module_names: Vec<String> = all_ius.map(|ius| {
         ius.iter()
@@ -1239,7 +1188,7 @@ async fn generate_app_integration_with_llm(
         module_apis,
     };
     
-    crate::llm::generate_code_with_llm(&request, config).await
+    crate::llm::generate_code_with_llm(&request, config, template_prompt).await
 }
 
 fn generate_rust(iu: &IU) -> String {
