@@ -842,6 +842,113 @@ async fn cmd_pipeline_multi(
 ) -> Result<()> {
     info!("Running Phoenix multi-language pipeline...");
     
+    // Check for spec.md and convert to spec.ncl if present
+    let spec_md_path = project_root.join("spec.md");
+    let spec_ncl_path = project_root.join("spec.ncl");
+    
+    if spec_md_path.exists() {
+        println!("📄 Found spec.md - converting to spec.ncl...");
+        let spec_md_content = tokio::fs::read_to_string(&spec_md_path).await?;
+        
+        // Get API key from environment
+        let api_key = std::env::var("FIREWORKS_API_KEY")
+            .or_else(|_| std::env::var("OPENAI_API_KEY"))
+            .unwrap_or_default();
+        
+        if api_key.is_empty() {
+            println!("⚠️  No FIREWORKS_API_KEY or OPENAI_API_KEY found - skipping spec.md conversion");
+            println!("   Set FIREWORKS_API_KEY to enable spec.md → spec.ncl conversion");
+        } else {
+            // Discover template bundles - try multiple locations
+            let mut bundles_dir: Option<std::path::PathBuf> = None;
+            
+            // First: check PHOENIX_BUNDLES_DIR environment variable
+            if let Ok(env_dir) = std::env::var("PHOENIX_BUNDLES_DIR") {
+                let candidate = std::path::PathBuf::from(env_dir);
+                if candidate.exists() {
+                    bundles_dir = Some(candidate);
+                    println!("   Using bundles from PHOENIX_BUNDLES_DIR");
+                }
+            }
+            
+            // Try: exe_dir/bundles (for installed binary)
+            if bundles_dir.is_none() {
+                if let Ok(exe) = std::env::current_exe() {
+                    if let Some(exe_dir) = exe.parent() {
+                        let candidate = exe_dir.join("bundles");
+                        if candidate.exists() {
+                            bundles_dir = Some(candidate);
+                        }
+                    }
+                }
+            }
+            
+            // Try: exe_dir/../bundles (for cargo install layout)
+            if bundles_dir.is_none() {
+                if let Ok(exe) = std::env::current_exe() {
+                    if let Some(exe_dir) = exe.parent() {
+                        let candidate = exe_dir.parent()
+                            .map(|p| p.join("bundles"))
+                            .unwrap_or_else(|| exe_dir.join("bundles"));
+                        if candidate.exists() {
+                            bundles_dir = Some(candidate);
+                        }
+                    }
+                }
+            }
+            
+            // Try: project_root/../phoenix-vcs-rust/bundles (for dev from simple-tui)
+            if bundles_dir.is_none() {
+                if let Some(parent) = project_root.parent() {
+                    let candidate = parent.join("phoenix-vcs-rust").join("bundles");
+                    if candidate.exists() {
+                        bundles_dir = Some(candidate);
+                    }
+                }
+            }
+            
+            // Try: CARGO_MANIFEST_DIR/bundles (when running via cargo)
+            if bundles_dir.is_none() {
+                if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
+                    let candidate = std::path::PathBuf::from(manifest_dir).join("bundles");
+                    if candidate.exists() {
+                        bundles_dir = Some(candidate);
+                    }
+                }
+            }
+            
+            // Fallback: project_root/bundles
+            if bundles_dir.is_none() {
+                let candidate = project_root.join("bundles");
+                if candidate.exists() {
+                    bundles_dir = Some(candidate);
+                }
+            }
+            
+            if let Some(bundles_dir) = bundles_dir {
+                let llm_client = crate::pipeline::spec_md::FireworksLlmClient::new(api_key);
+                
+                match crate::pipeline::spec_md::spec_md_to_ncl(
+                    &spec_md_content,
+                    &bundles_dir,
+                    &llm_client
+                ).await {
+                    Ok(spec_ncl) => {
+                        tokio::fs::write(&spec_ncl_path, spec_ncl).await?;
+                        println!("✅ Generated spec.ncl from spec.md");
+                    }
+                    Err(e) => {
+                        println!("⚠️  Failed to convert spec.md: {}", e);
+                        println!("   Continuing with existing spec.ncl if present...");
+                    }
+                }
+            } else {
+                println!("⚠️  No template bundles found - checked multiple locations");
+                println!("   Set PHOENIX_BUNDLES_DIR to specify bundle location");
+            }
+        }
+    }
+    
     // Clean generated directory before building to avoid cruft buildup
     clean_generated_dir(project_root).await?;
     
