@@ -62,9 +62,9 @@ pub fn layout_theory() -> Theory {
             Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("Grid"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("Flex"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Columns"), params: vec![], kind: SortKind::Scalar },
-            Sort { name: Arc::from("Rows"), params: vec![], kind: SortKind::Scalar },
-            Sort { name: Arc::from("Gap"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Columns"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Rows"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Gap"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("CSS"), params: vec![], kind: SortKind::Structural },
         ],
         vec![
@@ -99,8 +99,8 @@ pub fn widget_theory() -> Theory {
         Arc::from("ThWidget"),
         vec![
             Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Scalar },
-            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("Props"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("Children"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("PythonCode"), params: vec![], kind: SortKind::Structural },
@@ -138,9 +138,9 @@ pub fn keybinding_theory() -> Theory {
         Arc::from("ThKeyBinding"),
         vec![
             Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Key"), params: vec![], kind: SortKind::Scalar },
-            Sort { name: Arc::from("Action"), params: vec![], kind: SortKind::Scalar },
-            Sort { name: Arc::from("Context"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Key"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Action"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Context"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("PythonMethod"), params: vec![], kind: SortKind::Structural },
         ],
         vec![
@@ -175,8 +175,8 @@ pub fn theme_theory() -> Theory {
         Arc::from("ThTheme"),
         vec![
             Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Color"), params: vec![], kind: SortKind::Scalar },
-            Sort { name: Arc::from("Style"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Color"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Style"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("CSSVars"), params: vec![], kind: SortKind::Structural },
         ],
         vec![
