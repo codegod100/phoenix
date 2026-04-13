@@ -111,6 +111,12 @@ impl ParsedNcl {
             }
         }
     }
+    
+    /// Convert to a panproto Theory (when panproto feature is enabled)
+    #[cfg(feature = "panproto")]
+    pub fn to_panproto_theory(&self) -> panproto_gat::Theory {
+        crate::ncl_panproto::requirements_to_theory(self)
+    }
 }
 
 /// Theory data from NCL
@@ -868,27 +874,58 @@ fn extract_string_array(node: Node, source: &str) -> Result<Vec<String>, String>
     Ok(result)
 }
 
-/// Extract requirements from array
+/// Extract requirements from array (tree-sitter version)
 fn extract_requirements(node: Node, source: &str) -> Result<Vec<NclRequirement>, String> {
     let mut result = Vec::new();
     
-    if node.kind() != "array" {
-        return Ok(result);
+    // Recursively find the array - in tree-sitter-nickel, arrays are 'atom' nodes containing '['
+    fn find_array(node: Node) -> Option<Node> {
+        match node.kind() {
+            "atom" => {
+                // Check if this atom contains '[' (it's an array)
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if child.kind() == "[" {
+                        return Some(node);
+                    }
+                }
+                None
+            }
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_array(child) {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
     }
     
-    let mut cursor = node.walk();
-    for elem in node.children(&mut cursor) {
-        if elem.kind() == "record" {
-            if let Some(req) = extract_requirement(elem, source)? {
-                result.push(req);
-            }
+    let array_node = match find_array(node) {
+        Some(node) => node,
+        None => return Ok(result),
+    };
+    
+    let mut cursor = array_node.walk();
+    for elem in array_node.children(&mut cursor) {
+        // Skip delimiters
+        if elem.kind() == "," || elem.kind() == "[" || elem.kind() == "]" {
+            continue;
+        }
+        
+        // Each element is a term containing a record
+        if let Some(req) = extract_requirement(elem, source)? {
+            result.push(req);
         }
     }
     
     Ok(result)
 }
 
-/// Extract single requirement from record
+/// Extract single requirement from record (tree-sitter version)
 fn extract_requirement(node: Node, source: &str) -> Result<Option<NclRequirement>, String> {
     let mut id = String::new();
     let mut description = String::new();
@@ -896,29 +933,62 @@ fn extract_requirement(node: Node, source: &str) -> Result<Option<NclRequirement
     let mut protocol = String::new();
     let mut language = String::new();
     
-    let mut cursor = node.walk();
-    for field_list in node.children_by_field_name("field_list", &mut cursor) {
-        let mut field_cursor = field_list.walk();
-        for field in field_list.children(&mut field_cursor) {
-            if field.kind() != "field" {
-                continue;
+    // Recursively find the uni_record inside the term hierarchy
+    fn find_uni_record(node: Node) -> Option<Node> {
+        match node.kind() {
+            "uni_record" => Some(node),
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_uni_record(child) {
+                        return Some(found);
+                    }
+                }
+                None
             }
-            
-            let name_node = field.child_by_field_name("name")
-                .ok_or_else(|| "Field missing name".to_string())?;
-            let name = node_text(name_node, source)?;
-            
-            let value_node = field.child_by_field_name("value")
-                .ok_or_else(|| format!("Field '{}' missing value", name))?;
-            
-            match name.as_str() {
-                "id" => id = extract_string(value_node, source)?.unwrap_or_default(),
-                "description" => description = extract_string(value_node, source)?.unwrap_or_default(),
-                "priority" => priority = extract_string(value_node, source)?.unwrap_or_else(|| "must".to_string()),
-                "protocol" => protocol = extract_string(value_node, source)?.unwrap_or_default(),
-                "language" => language = extract_string(value_node, source)?.unwrap_or_default(),
-                _ => {}
-            }
+            _ => None,
+        }
+    }
+    
+    let uni_record = match find_uni_record(node) {
+        Some(node) => node,
+        None => return Ok(None),
+    };
+    
+    let mut cursor = uni_record.walk();
+    for child in uni_record.children(&mut cursor) {
+        if child.kind() != "field_decl" && child.kind() != "last_field" {
+            continue;
+        }
+        
+        // Get field_def inside
+        let mut inner_cursor = child.walk();
+        let children: Vec<_> = child.children(&mut inner_cursor).collect();
+        let field_def = children.iter()
+            .find(|c| c.kind() == "field_def")
+            .copied();
+        
+        let field_def = match field_def {
+            Some(fd) => fd,
+            None => continue,
+        };
+        
+        // Extract name from field_path
+        let name = extract_field_name(field_def, source)?;
+        if name.is_empty() {
+            continue;
+        }
+        
+        // Extract value
+        let value_node = find_field_value_node(field_def);
+        
+        match name.as_str() {
+            "id" => id = extract_string_from_node(value_node, source)?.unwrap_or_default(),
+            "description" => description = extract_string_from_node(value_node, source)?.unwrap_or_default(),
+            "priority" => priority = extract_string_from_node(value_node, source)?.unwrap_or_else(|| "must".to_string()),
+            "protocol" => protocol = extract_string_from_node(value_node, source)?.unwrap_or_default(),
+            "language" => language = extract_string_from_node(value_node, source)?.unwrap_or_default(),
+            _ => {}
         }
     }
     
@@ -941,27 +1011,58 @@ fn extract_requirement(node: Node, source: &str) -> Result<Option<NclRequirement
     }))
 }
 
-/// Extract morphisms from array
+/// Extract morphisms from array (tree-sitter version)
 fn extract_morphisms(node: Node, source: &str) -> Result<Vec<NclMorphism>, String> {
     let mut result = Vec::new();
     
-    if node.kind() != "array" {
-        return Ok(result);
+    // Recursively find the array - in tree-sitter-nickel, arrays are 'atom' nodes containing '['
+    fn find_array(node: Node) -> Option<Node> {
+        match node.kind() {
+            "atom" => {
+                // Check if this atom contains '[' (it's an array)
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if child.kind() == "[" {
+                        return Some(node);
+                    }
+                }
+                None
+            }
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_array(child) {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            _ => None,
+        }
     }
     
-    let mut cursor = node.walk();
-    for elem in node.children(&mut cursor) {
-        if elem.kind() == "record" {
-            if let Some(morph) = extract_morphism(elem, source)? {
-                result.push(morph);
-            }
+    let array_node = match find_array(node) {
+        Some(node) => node,
+        None => return Ok(result),
+    };
+    
+    let mut cursor = array_node.walk();
+    for elem in array_node.children(&mut cursor) {
+        // Skip delimiters
+        if elem.kind() == "," || elem.kind() == "[" || elem.kind() == "]" {
+            continue;
+        }
+        
+        // Each element is a term containing a record
+        if let Some(morph) = extract_morphism(elem, source)? {
+            result.push(morph);
         }
     }
     
     Ok(result)
 }
 
-/// Extract single morphism from record
+/// Extract single morphism from record (tree-sitter version)
 fn extract_morphism(node: Node, source: &str) -> Result<Option<NclMorphism>, String> {
     let mut name = String::new();
     let mut domain = String::new();
@@ -970,42 +1071,77 @@ fn extract_morphism(node: Node, source: &str) -> Result<Option<NclMorphism>, Str
     let mut language = String::new();
     let mut generation_content = None;
     
-    let mut cursor = node.walk();
-    for field_list in node.children_by_field_name("field_list", &mut cursor) {
-        let mut field_cursor = field_list.walk();
-        for field in field_list.children(&mut field_cursor) {
-            if field.kind() != "field" {
-                continue;
+    // Recursively find the uni_record inside the term hierarchy
+    fn find_uni_record(node: Node) -> Option<Node> {
+        match node.kind() {
+            "uni_record" => Some(node),
+            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    if let Some(found) = find_uni_record(child) {
+                        return Some(found);
+                    }
+                }
+                None
             }
-            
-            let name_node = field.child_by_field_name("name")
-                .ok_or_else(|| "Field missing name".to_string())?;
-            let field_name = node_text(name_node, source)?;
-            
-            let value_node = field.child_by_field_name("value")
-                .ok_or_else(|| format!("Field '{}' missing value", field_name))?;
-            
-            match field_name.as_str() {
-                "morphism" | "name" | "result" => {
-                    name = extract_string(value_node, source)?.unwrap_or_default();
-                }
-                "domain" => {
-                    domain = extract_string(value_node, source)?.unwrap_or_default();
-                }
-                "codomain" => {
-                    codomain = extract_string(value_node, source)?.unwrap_or_default();
-                }
-                "output_path" => {
-                    output_path = extract_string(value_node, source)?;
-                }
-                "language" => {
-                    language = extract_string(value_node, source)?.unwrap_or_default();
-                }
-                "generation" => {
-                    generation_content = extract_generation(value_node, source)?;
-                }
-                _ => {}
+            _ => None,
+        }
+    }
+    
+    let uni_record = match find_uni_record(node) {
+        Some(node) => node,
+        None => return Ok(None),
+    };
+    
+    let mut cursor = uni_record.walk();
+    for child in uni_record.children(&mut cursor) {
+        if child.kind() != "field_decl" && child.kind() != "last_field" {
+            continue;
+        }
+        
+        // Get field_def inside
+        let mut inner_cursor = child.walk();
+        let children: Vec<_> = child.children(&mut inner_cursor).collect();
+        let field_def = children.iter()
+            .find(|c| c.kind() == "field_def")
+            .copied();
+        
+        let field_def = match field_def {
+            Some(fd) => fd,
+            None => continue,
+        };
+        
+        // Extract name from field_path
+        let field_name = extract_field_name(field_def, source)?;
+        if field_name.is_empty() {
+            continue;
+        }
+        
+        // Extract value
+        let value_node = find_field_value_node(field_def);
+        
+        match field_name.as_str() {
+            "morphism" | "name" | "result" => {
+                name = extract_string_from_node(value_node, source)?.unwrap_or_default();
             }
+            "domain" => {
+                domain = extract_string_from_node(value_node, source)?.unwrap_or_default();
+            }
+            "codomain" => {
+                codomain = extract_string_from_node(value_node, source)?.unwrap_or_default();
+            }
+            "output_path" => {
+                output_path = extract_string_from_node(value_node, source)?;
+            }
+            "language" => {
+                language = extract_string_from_node(value_node, source)?.unwrap_or_default();
+            }
+            "generation" => {
+                if let Some(node) = value_node {
+                    generation_content = extract_generation(node, source)?;
+                }
+            }
+            _ => {}
         }
     }
     
@@ -1349,5 +1485,34 @@ height: 50%"%m
         assert!(flake.propagated_build_inputs.contains(&"textual".to_string()));
         assert!(flake.propagated_build_inputs.contains(&"rich".to_string()));
         assert!(flake.propagated_build_inputs.contains(&"requests".to_string()));
+    }
+
+    #[test]
+    fn test_parse_requirements() {
+        let template = r#"
+        {
+            requirements = [
+                {
+                    description = "Display a simple UI",
+                    protocol = "UI",
+                    priority = "must",
+                },
+                {
+                    description = "Handle keyboard input",
+                    protocol = "Input",
+                },
+            ],
+        }
+        "#;
+        
+        let parsed = parse_ncl_spec(template, "test.ncl").expect("Should parse");
+        
+        assert_eq!(parsed.requirements.len(), 2);
+        assert_eq!(parsed.requirements[0].description, "Display a simple UI");
+        assert_eq!(parsed.requirements[0].protocol, "UI");
+        assert_eq!(parsed.requirements[0].priority, "must");
+        assert_eq!(parsed.requirements[1].description, "Handle keyboard input");
+        assert_eq!(parsed.requirements[1].protocol, "Input");
+        assert_eq!(parsed.requirements[1].priority, "must"); // Default
     }
 }

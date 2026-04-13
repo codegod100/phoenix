@@ -3,6 +3,8 @@
 pub mod cli;
 pub mod spec;
 pub mod ncl;
+#[cfg(feature = "panproto")]
+pub mod ncl_panproto;
 pub mod pipeline;
 pub mod status;
 pub mod drift;
