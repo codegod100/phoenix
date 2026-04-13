@@ -953,6 +953,13 @@ async fn cmd_pipeline_single(
         crate::pipeline::print_morphism_summary(&mu_plan);
         crate::pipeline::print_morphism_summary(&mu_codegen);
         
+        // Demonstrate actual term transformations
+        println!("   🔀 Term Transformations (morphism.apply_to_term()):");
+        if !clause_graph.clauses.is_empty() {
+            let sample_clause = &clause_graph.clauses[0];
+            crate::pipeline::demonstrate_pipeline_morphisms(sample_clause);
+        }
+        
         // Use pre-cloned content to create NCL→Code morphism
         if let Ok(parsed) = crate::ncl::parse_ncl_spec(&content_for_morphism, "combined.ncl") {
             let theory = parsed.to_panproto_theory();

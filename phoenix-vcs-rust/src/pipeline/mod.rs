@@ -1384,6 +1384,9 @@ pub mod morphisms;
 // Formal GAT theory definitions
 pub mod formal;
 
+// Apply formal morphisms to pipeline data
+pub mod apply;
+
 // Re-export key morphism types when panproto is enabled
 #[cfg(feature = "panproto")]
 pub use morphisms::{CodeMorphism, create_ncl_to_code_morphism, generate_with_morphism};
@@ -1395,4 +1398,13 @@ pub use formal::{
     canonize_morphism, plan_morphism, codegen_morphism,
     canon_theory_instance, iu_theory_instance,
     print_theory_summary, print_morphism_summary,
+};
+
+// Re-export apply functions when panproto is enabled
+#[cfg(feature = "panproto")]
+pub use apply::{
+    clause_to_term, canon_node_to_term, iu_to_term,
+    apply_canonize, apply_plan, apply_codegen,
+    pipeline_transform, format_term, demonstrate_pipeline_morphisms,
+    code_file_term, trace_term_provenance,
 };
