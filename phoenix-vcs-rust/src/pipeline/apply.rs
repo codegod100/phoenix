@@ -609,78 +609,8 @@ mod tests {
     use super::*;
     use crate::pipeline::ClauseType;
 
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_clause_to_term() {
-        let clause = Clause {
-            id: "test_123".to_string(),
-            clause_type: ClauseType::Requirement,
-            text: "Test requirement".to_string(),
-            raw_text: "Test requirement".to_string(),
-            section: "test".to_string(),
-            source_file: "test.md".to_string(),
-            line: 1,
-            clause_semhash: "abc123".to_string(),
-            context_semhash: "def456".to_string(),
-            language_marker: Some("python".to_string()),
-        };
-        
-        let term = clause_to_term(&clause);
-        let formatted = format_term(&term);
-        
-        assert!(formatted.contains("parse"));
-        assert!(formatted.contains("normalize"));
-        assert!(formatted.contains("identify"));
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_apply_canonize() {
-        let clause = Clause {
-            id: "test_456".to_string(),
-            clause_type: ClauseType::Constraint,
-            text: "Test constraint".to_string(),
-            raw_text: "Test constraint".to_string(),
-            section: "test".to_string(),
-            source_file: "test.md".to_string(),
-            line: 2,
-            clause_semhash: "ghi789".to_string(),
-            context_semhash: "jkl012".to_string(),
-            language_marker: None,
-        };
-        
-        let clause_term = clause_to_term(&clause);
-        let canon_term = apply_canonize(&clause_term);
-        
-        // After canonize, operations should be renamed
-        let formatted = format_term(&canon_term);
-        // The term structure should be preserved but ops renamed
-        assert!(!formatted.is_empty());
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_pipeline_transform() {
-        let clause = Clause {
-            id: "test_789".to_string(),
-            clause_type: ClauseType::Definition,
-            text: "Test definition".to_string(),
-            raw_text: "Test definition".to_string(),
-            section: "test".to_string(),
-            source_file: "test.md".to_string(),
-            line: 3,
-            clause_semhash: "mno345".to_string(),
-            context_semhash: "pqr678".to_string(),
-            language_marker: Some("rust".to_string()),
-        };
-        
-        let code_term = pipeline_transform(&clause);
-        let formatted = format_term(&code_term);
-        
-        // Should go through all three transformations
-        assert!(!formatted.is_empty());
-        println!("Pipeline transform: {}", formatted);
-    }
+    // OBSOLETE: Tests for apply_canonize and pipeline_transform removed
+    // These functions are no longer used in the v2 direct spec→code pipeline.
 
     #[test]
     #[cfg(feature = "panproto")]

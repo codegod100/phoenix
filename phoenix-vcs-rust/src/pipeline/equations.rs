@@ -984,34 +984,10 @@ fn format_term_compact(term: &Term) -> String {
     }
 }
 
-/// Create a theory with equations included
-#[cfg(feature = "panproto")]
-pub fn clause_theory_with_equations() -> panproto_gat::Theory {
-    use crate::pipeline::formal::clause_theory;
-    
-    let mut theory = clause_theory();
-    theory.eqs = clause_equations();
-    theory
-}
+// OBSOLETE: clause_theory_with_equations, canon_theory_with_equations, iu_theory_with_equations removed
+// These theories are no longer used in the v2 direct spec→code pipeline.
 
-#[cfg(feature = "panproto")]
-pub fn canon_theory_with_equations() -> panproto_gat::Theory {
-    use crate::pipeline::formal::canon_theory;
-    
-    let mut theory = canon_theory();
-    theory.eqs = canon_equations();
-    theory
-}
-
-#[cfg(feature = "panproto")]
-pub fn iu_theory_with_equations() -> panproto_gat::Theory {
-    use crate::pipeline::formal::iu_theory;
-    
-    let mut theory = iu_theory();
-    theory.eqs = iu_equations();
-    theory
-}
-
+/// Create ThCode with equations
 #[cfg(feature = "panproto")]
 pub fn code_theory_with_equations() -> panproto_gat::Theory {
     use crate::pipeline::formal::code_theory;
@@ -1024,11 +1000,9 @@ pub fn code_theory_with_equations() -> panproto_gat::Theory {
 /// Run all equation verification tests
 #[cfg(feature = "panproto")]
 pub fn verify_all_equations() -> Vec<(String, Vec<(String, MorphismPreservationResult)>)> {
-    use crate::pipeline::formal::{canonize_morphism, plan_morphism, codegen_morphism};
+    use crate::pipeline::formal::codegen_morphism;
     
     vec![
-        ("canon".to_string(), verify_morphism_preserves_equations(&canonize_morphism(), &canon_equations())),
-        ("iu".to_string(), verify_morphism_preserves_equations(&plan_morphism(), &iu_equations())),
         ("code".to_string(), verify_morphism_preserves_equations(&codegen_morphism(), &code_equations())),
     ]
 }
@@ -1037,28 +1011,8 @@ pub fn verify_all_equations() -> Vec<(String, Vec<(String, MorphismPreservationR
 mod tests {
     use super::*;
 
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_clause_equations() {
-        let eqs = clause_equations();
-        assert!(!eqs.is_empty());
-        
-        // Check that normalize_idempotent exists
-        let has_normalize_idempotent = eqs.iter()
-            .any(|eq| eq.name.as_ref() == "normalize_idempotent");
-        assert!(has_normalize_idempotent);
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_canon_equations() {
-        let eqs = canon_equations();
-        assert!(!eqs.is_empty());
-        
-        let has_idempotent = eqs.iter()
-            .any(|eq| eq.name.as_ref() == "canonize_idempotent");
-        assert!(has_idempotent);
-    }
+    // OBSOLETE: Tests for clause_equations, canon_equations, iu_equations removed
+    // These equation sets are no longer used in the v2 direct spec→code pipeline.
 
     #[test]
     #[cfg(feature = "panproto")]
@@ -1072,27 +1026,5 @@ mod tests {
         let formatted = format_term_compact(&eq.lhs);
         assert!(formatted.contains("f"));
         assert!(formatted.contains("$x"));
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_theory_with_equations() {
-        let theory = clause_theory_with_equations();
-        assert!(!theory.eqs.is_empty());
-        assert_eq!(theory.name.as_ref(), "ThClause");
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_morphism_equation_preservation() {
-        use crate::pipeline::formal::canonize_morphism;
-        
-        let morphism = canonize_morphism();
-        let eqs = canon_equations();
-        
-        let results = verify_morphism_preserves_equations(&morphism, &eqs);
-        
-        // All equations should be preserved (or at least checked)
-        assert_eq!(results.len(), eqs.len());
     }
 }

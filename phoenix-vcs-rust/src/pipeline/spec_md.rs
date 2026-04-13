@@ -52,26 +52,35 @@ pub fn discover_template_bundles(bundles_dir: impl AsRef<Path>) -> Result<Vec<Te
 
 /// Load a single template bundle from directory
 fn load_bundle(bundle_path: &Path) -> Result<Option<TemplateBundle>> {
-    // Use contract-based template
-    let contract_file = bundle_path.join("template_contract.ncl");
-    let prompt_file = bundle_path.join("prompt_contract.md");
+    // Use panproto theory contract ONLY - no fallbacks per agents.md
+    let contract_file = bundle_path.join("theory_contract_panproto.ncl");
+    let prompt_file = bundle_path.join("prompt_theory.md");
     let bundle_file = bundle_path.join("bundle.ncl");
     
-    // Must have contract template
+    // Fail hard if theory contract missing (per agents.md)
     if !contract_file.exists() {
-        return Ok(None);
+        anyhow::bail!(
+            "Template bundle at {} missing required theory_contract_panproto.ncl.\n\
+             This file defines the panproto TheoryDocument contract.\n\
+             Per agents.md: no fallbacks - bundle must provide panproto theory format.",
+            bundle_path.display()
+        );
     }
     
     let contract_content = std::fs::read_to_string(&contract_file)
         .with_context(|| format!("Failed to read {:?}", contract_file))?;
     
-    // Prompt is optional - we'll use default if not present
-    let prompt_template = if prompt_file.exists() {
-        std::fs::read_to_string(&prompt_file)
-            .with_context(|| format!("Failed to read {:?}", prompt_file))?
-    } else {
-        default_contract_prompt()
-    };
+    // Fail hard if theory prompt missing (per agents.md)
+    if !prompt_file.exists() {
+        anyhow::bail!(
+            "Template bundle at {} missing required prompt_theory.md.\n\
+             This file defines how the LLM generates the theory document.",
+            bundle_path.display()
+        );
+    }
+    
+    let prompt_template = std::fs::read_to_string(&prompt_file)
+        .with_context(|| format!("Failed to read {:?}", prompt_file))?;
     
     // Load metadata if present
     let metadata = if bundle_file.exists() {
@@ -149,47 +158,9 @@ fn extract_string_value(line: &str) -> String {
     line.to_string()
 }
 
-/// Default prompt when prompt_contract.md is missing
-fn default_contract_prompt() -> String {
-    r#"# Task: Generate Nickel Spec from Markdown Using Contracts
-
-You are a specification generator. Your task is to read a human-readable spec 
-and generate a valid Nickel configuration that satisfies a given contract.
-
-## Input Specification (Markdown)
-```markdown
-{{spec_content}}
-```
-
-## Target Contract (Nickel)
-```nickel
-{{contract_content}}
-```
-
-## Contract Explanation
-
-The contract defines a record with:
-- **Fields with `| Type`**: These are CONTRACTS - you MUST provide values of that type
-- **Fields with `=`**: These are FIXED values - do NOT change them
-- **`let ContractName = {...} in {}`**: Type definitions for nested structures
-
-## Generation Rules
-
-1. **Satisfy ALL contracts**: Every field marked with `| Type` must have a value
-2. **Keep FIXED values**: Never change fields with `=` (like `template = "python-textual"`)
-3. **Extract from spec**: All values must come from the markdown spec provided
-4. **Use proper Nickel syntax**:
-   - Strings: `"value"` (with quotes)
-   - Numbers: `42` (no quotes)
-   - Booleans: `true` or `false`
-   - Arrays: `[item1, item2]`
-   - Records: `{ field = value, ... }`
-
-## Output
-
-Output ONLY the complete Nickel record. No markdown code fences, no explanations.
-The output must be valid Nickel syntax."#.to_string()
-}
+// OBSOLETE: default_contract_prompt removed per agents.md
+// Per agents.md: "NEVER use fallbacks - fail hard with clear errors"
+// Template bundles MUST provide prompt_theory.md - no default prompts.
 
 /// Select best template for a given spec
 fn select_template_for_spec<'a>(spec_md: &str, bundles: &'a [TemplateBundle]) -> Option<&'a TemplateBundle> {

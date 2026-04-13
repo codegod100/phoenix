@@ -27,7 +27,7 @@
         };
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            cargo rustc rustfmt clippy openssl pkg-config
+            cargo rustc rustfmt clippy openssl pkg-config nickel
           ];
           nativeBuildInputs = with pkgs; [
             pkg-config

@@ -307,6 +307,53 @@ fn parse_widget<'a>(node: Node<'a>, default_id: &str, content: &'a str) -> Optio
     Some(widget)
 }
 
+/// Direct extraction of widgets from NCL (no UIConfig intermediate)
+pub fn extract_widgets_direct(ncl_content: &str) -> Vec<crate::pipeline::term_codegen::WidgetData> {
+    // For now, delegate to extract_ui_config and convert
+    // In a full implementation, this would parse directly to WidgetData
+    if let Some(ui_config) = extract_ui_config(ncl_content) {
+        ui_config.widgets.iter().map(|w| convert_widget_config(w)).collect()
+    } else {
+        vec![]
+    }
+}
+
+/// Direct extraction of title from NCL
+pub fn extract_title_direct(ncl_content: &str) -> Option<String> {
+    if let Some(ui_config) = extract_ui_config(ncl_content) {
+        ui_config.title
+    } else {
+        None
+    }
+}
+
+/// Direct extraction of layout from NCL
+pub fn extract_layout_direct(ncl_content: &str) -> crate::pipeline::term_codegen::LayoutData {
+    if let Some(ui_config) = extract_ui_config(ncl_content) {
+        crate::pipeline::term_codegen::LayoutData {
+            layout_type: ui_config.layout_type,
+            grid_columns: ui_config.grid_columns,
+            grid_rows: ui_config.grid_rows,
+            grid_gap: ui_config.grid_gap,
+            styles: ui_config.styles,
+        }
+    } else {
+        crate::pipeline::term_codegen::LayoutData::default()
+    }
+}
+
+/// Convert WidgetConfig to WidgetData
+fn convert_widget_config(w: &WidgetConfig) -> crate::pipeline::term_codegen::WidgetData {
+    crate::pipeline::term_codegen::WidgetData {
+        widget_type: w.widget_type.clone(),
+        id: w.id.clone(),
+        content: w.content.clone(),
+        title: w.title.clone(),
+        children: w.children.iter().map(|c| convert_widget_config(c)).collect(),
+        props: w.props.clone(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

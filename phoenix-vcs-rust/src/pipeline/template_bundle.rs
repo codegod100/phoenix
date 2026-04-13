@@ -198,13 +198,11 @@ pub fn theme_theory() -> Theory {
     )
 }
 
-/// ThPythonTextual: Theory of Python Textual applications
+/// ThPythonTextual: Unified theory for Python Textual bundle
 /// 
-/// Composes sub-theories as sorts:
-/// - Sort Layout → ThLayout (maps to CSS)
-/// - Sort Widget → ThWidget (maps to compose())
-/// - Sort KeyBinding → ThKeyBinding (maps to @on methods)
-/// - Sort Theme → ThTheme (maps to CSS vars)
+/// This is the single sort of ThSpec, loaded from spec.ncl.
+/// Contains sub-theories as sorts that generate different artifacts,
+/// plus ThIntegratedApp which is the colimit used by ThNix.
 #[cfg(feature = "panproto")]
 pub fn python_textual_theory() -> Theory {
     use panproto_gat::{Sort, SortKind, Operation};
@@ -212,47 +210,80 @@ pub fn python_textual_theory() -> Theory {
     Theory::new(
         Arc::from("ThPythonTextual"),
         vec![
-            // Sub-theories as sorts
-            Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
-            // Output sorts (code artifacts)
-            Sort { name: Arc::from("AppClass"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CSS"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ComposeMethod"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("EventHandler"), params: vec![], kind: SortKind::Structural },
+            // Sub-theories as sorts - each generates one artifact type
+            Sort { name: Arc::from("ThPyproject"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("ThNix"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("ThApp"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("ThCSS"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("ThREADME"), params: vec![], kind: SortKind::Structural },
+            // Composed sort - colimit of sub-theories into cohesive app
+            Sort { name: Arc::from("ThIntegratedApp"), params: vec![], kind: SortKind::Structural },
+            // Config sort (from spec.ncl ui_config)
+            Sort { name: Arc::from("Config"), params: vec![], kind: SortKind::Structural },
         ],
         vec![
-            // Operations compose sub-theory morphisms
+            // Each sub-theory has a generate operation
             Operation {
-                name: Arc::from("layout_to_css"),
-                inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
-                output: Arc::from("CSS"),
-            },
-            Operation {
-                name: Arc::from("widget_to_compose"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("ComposeMethod"),
-            },
-            Operation {
-                name: Arc::from("keybinding_to_handler"),
-                inputs: vec![(Arc::from("binding"), Arc::from("KeyBinding"))],
-                output: Arc::from("EventHandler"),
-            },
-            Operation {
-                name: Arc::from("theme_to_css_vars"),
-                inputs: vec![(Arc::from("theme"), Arc::from("Theme"))],
-                output: Arc::from("CSS"),
-            },
-            Operation {
-                name: Arc::from("mk_app"),
+                name: Arc::from("generate_pyproject"),
                 inputs: vec![
-                    (Arc::from("layout_css"), Arc::from("CSS")),
-                    (Arc::from("compose"), Arc::from("ComposeMethod")),
-                    (Arc::from("handlers"), Arc::from("List[EventHandler]")),
+                    (Arc::from("theory"), Arc::from("ThPyproject")),
+                    (Arc::from("config"), Arc::from("Config")),
                 ],
-                output: Arc::from("AppClass"),
+                output: Arc::from("TOML"),
+            },
+            Operation {
+                name: Arc::from("generate_nix"),
+                inputs: vec![
+                    (Arc::from("theory"), Arc::from("ThNix")),
+                    (Arc::from("config"), Arc::from("Config")),
+                ],
+                output: Arc::from("Nix"),
+            },
+            Operation {
+                name: Arc::from("generate_app"),
+                inputs: vec![
+                    (Arc::from("theory"), Arc::from("ThApp")),
+                    (Arc::from("config"), Arc::from("Config")),
+                ],
+                output: Arc::from("Python"),
+            },
+            Operation {
+                name: Arc::from("generate_css"),
+                inputs: vec![
+                    (Arc::from("theory"), Arc::from("ThCSS")),
+                    (Arc::from("config"), Arc::from("Config")),
+                ],
+                output: Arc::from("CSS"),
+            },
+            Operation {
+                name: Arc::from("generate_readme"),
+                inputs: vec![
+                    (Arc::from("theory"), Arc::from("ThREADME")),
+                    (Arc::from("config"), Arc::from("Config")),
+                ],
+                output: Arc::from("Markdown"),
+            },
+            // Composition: integrate sub-theories into cohesive application
+            Operation {
+                name: Arc::from("compose_app"),
+                inputs: vec![
+                    (Arc::from("pyproject"), Arc::from("TOML")),
+                    (Arc::from("app"), Arc::from("Python")),
+                    (Arc::from("css"), Arc::from("CSS")),
+                    (Arc::from("readme"), Arc::from("Markdown")),
+                    (Arc::from("config"), Arc::from("Config")),
+                ],
+                output: Arc::from("ThIntegratedApp"),
+            },
+            // ThNix uses this to generate flake.nix from integrated app
+            Operation {
+                name: Arc::from("generate_nix_from_app"),
+                inputs: vec![
+                    (Arc::from("nix_theory"), Arc::from("ThNix")),
+                    (Arc::from("integrated"), Arc::from("ThIntegratedApp")),
+                    (Arc::from("config"), Arc::from("Config")),
+                ],
+                output: Arc::from("Nix"),
             },
         ],
         vec![], // equations
@@ -261,31 +292,35 @@ pub fn python_textual_theory() -> Theory {
 
 /// Morphism: ThPythonTextual → ThCode
 /// 
-/// Maps each sort to its Python code representation:
-/// - Layout → CSS string in app.CSS
-/// - Widget → yield statement in compose()
-/// - KeyBinding → @on decorated method
-/// - Theme → CSS variable definitions
+/// Maps sub-theory sorts to their code artifact outputs:
+/// - ThPyproject → TOML (pyproject.toml content)
+/// - ThNix → Nix (flake.nix content)
+/// - ThApp → Python (app.py content)
+/// - ThCSS → CSS (styles.css content)
+/// - ThREADME → Markdown (README.md content)
+/// - ThIntegratedApp → AppClass (complete application)
 #[cfg(feature = "panproto")]
 pub fn textual_bundle_to_python_morphism() -> panproto_gat::TheoryMorphism {
     use panproto_gat::TheoryMorphism;
     use std::collections::HashMap;
     
     let mut sort_map = HashMap::new();
-    sort_map.insert(Arc::from("TextualApp"), Arc::from("AppClass"));
-    sort_map.insert(Arc::from("Layout"), Arc::from("CSS"));
-    sort_map.insert(Arc::from("Widget"), Arc::from("Yield"));
-    sort_map.insert(Arc::from("KeyBinding"), Arc::from("Method"));
-    sort_map.insert(Arc::from("Theme"), Arc::from("CSS"));
-    sort_map.insert(Arc::from("ComposeMethod"), Arc::from("Method"));
-    sort_map.insert(Arc::from("EventHandler"), Arc::from("Method"));
+    sort_map.insert(Arc::from("ThPyproject"), Arc::from("TOML"));
+    sort_map.insert(Arc::from("ThNix"), Arc::from("Nix"));
+    sort_map.insert(Arc::from("ThApp"), Arc::from("Python"));
+    sort_map.insert(Arc::from("ThCSS"), Arc::from("CSS"));
+    sort_map.insert(Arc::from("ThREADME"), Arc::from("Markdown"));
+    sort_map.insert(Arc::from("ThIntegratedApp"), Arc::from("AppClass"));
+    sort_map.insert(Arc::from("Config"), Arc::from("Record"));
     
     let mut op_map = HashMap::new();
-    op_map.insert(Arc::from("layout_to_css"), Arc::from("css_string"));
-    op_map.insert(Arc::from("widget_to_compose"), Arc::from("yield_widget"));
-    op_map.insert(Arc::from("keybinding_to_handler"), Arc::from("on_decorator"));
-    op_map.insert(Arc::from("theme_to_css_vars"), Arc::from("css_vars"));
-    op_map.insert(Arc::from("mk_app"), Arc::from("app_class"));
+    op_map.insert(Arc::from("generate_pyproject"), Arc::from("toml_string"));
+    op_map.insert(Arc::from("generate_nix"), Arc::from("nix_string"));
+    op_map.insert(Arc::from("generate_app"), Arc::from("python_string"));
+    op_map.insert(Arc::from("generate_css"), Arc::from("css_string"));
+    op_map.insert(Arc::from("generate_readme"), Arc::from("markdown_string"));
+    op_map.insert(Arc::from("compose_app"), Arc::from("compose_app"));
+    op_map.insert(Arc::from("generate_nix_from_app"), Arc::from("nix_from_app"));
     
     TheoryMorphism::new(
         Arc::from("μ_python_textual→code"),

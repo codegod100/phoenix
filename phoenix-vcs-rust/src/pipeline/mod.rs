@@ -1011,6 +1011,37 @@ pub async fn generate_code(
     Ok(CodegenOutput { files })
 }
 
+/// Direct spec→code generation (bypasses ThClause/ThCanon/ThIU)
+/// 
+/// Maps UIConfig (from NCL spec) directly to code via ThPythonTextual theory.
+/// This is the modern pipeline that uses NCL contracts for structure.
+pub async fn generate_code_from_spec(
+    ui_config: &crate::pipeline::widget_config::UIConfig,
+    output_dir: impl AsRef<Path>,
+    target_language: &str,
+) -> Result<CodegenOutput> {
+    let output_dir = output_dir.as_ref();
+    tokio::fs::create_dir_all(output_dir).await?;
+    
+    let mut files = Vec::new();
+    
+    // Use term_codegen to generate from UIConfig directly
+    // This maps ThPythonTextual sorts to code
+    let code = crate::pipeline::term_codegen::generate_from_ui_config(ui_config, target_language);
+    
+    let file_path = output_dir.join("app.py");
+    tokio::fs::write(&file_path, &code).await?;
+    
+    files.push(GeneratedFile {
+        path: "app.py".to_string(),
+        iu_id: "app".to_string(),
+        hash: file_hash(&code),
+        size: code.len(),
+    });
+    
+    Ok(CodegenOutput { files })
+}
+
 /// Extract pname from NCL content
 fn extract_pname_from_ncl(content: &str) -> Option<String> {
     for line in content.lines() {
@@ -1280,82 +1311,55 @@ pub struct GeneratedFile {
     pub size: usize,
 }
 
-/// Run the complete pipeline
+/// Run the complete pipeline using direct spec→code generation
+/// 
+/// NEW: Bypasses ThClause/ThCanon/ThIU since NCL contracts provide structure.
+/// Direct flow: spec.ncl → UIConfig → ThPythonTextual → Code
 pub async fn run_pipeline(
     project_root: impl AsRef<Path>,
     target_language: &str,
 ) -> Result<PipelineResult> {
     let project_root = project_root.as_ref();
     
-    // Phase 1: Ingest
-    println!("▶ Phase: INGEST");
-    println!("   μ_ingest: ThSpec → ThClause (lensing morphism)");
-    let ingest_output = ingest_specs(project_root, target_language).await?;
-    let clauses_count = ingest_output.clauses.len();
-    println!("   ✓ Parsed {} clauses", clauses_count);
+    // Phase 1: Direct Spec Parse
+    println!("▶ Phase: DIRECT SPEC→CODE");
+    println!("   μ_spec→code: ThSpec → ThPythonTextual → Code");
     
-    // Phase 2: Canonicalize
-    println!("\n▶ Phase: CANONICALIZE");
-    println!("   μ_canon: ThClause → ThCanon (quotient morphism)");
-    let canon_output = canonicalize_clauses(ingest_output.clauses).await?;
-    let nodes_count = canon_output.nodes.len();
-    println!("   ✓ {} canonical nodes ({} duplicates collapsed)", 
-        nodes_count,
-        canon_output.total_duplicates
-    );
-    
-    // Phase 3: Plan
-    println!("\n▶ Phase: PLAN");
-    println!("   μ_plan: ThCanon → ThIU (partition morphism)");
-    let canon_output_struct = CanonicalOutput {
-        nodes: canon_output.nodes,
-        total_duplicates: 0,
-    };
-    let plan_output = plan_ius(&canon_output_struct, target_language).await?;
-    let ius_count = plan_output.ius.len();
-    println!("   ✓ {} Implementation Units", ius_count);
-    
-    // Phase 4: Codegen
-    println!("\n▶ Phase: CODEGEN");
-    println!("   μ_codegen: ThIU → ThCode (generative morphism)");
-    
-    // Check which mode we're in
-    if std::env::var("PHOENIX_TEMPLATE_MODE").is_err() {
-        println!("   ├─ DEFAULT: Pure term morphism (no LLM, no templates)");
-        println!("   │  ├─ μ_iu→term: ThIU → ThPythonTextual");
-        println!("   │  ├─ μ_term→code: ThPythonTextual → String");
-        println!("   │  └─ Composition: μ_codegen = μ_term→code ∘ μ_iu→term");
-        println!("   │");
-        println!("   └─ Set PHOENIX_TEMPLATE_MODE=1 for template-based generation");
+    // Parse spec directly to UIConfig (structured data)
+    let spec_path = project_root.join("spec.ncl");
+    let ui_config = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        crate::ncl_parse::extract_ui_config(&content)
+            .ok_or_else(|| anyhow::anyhow!("Failed to parse spec.ncl"))?
     } else {
-        println!("   ├─ TEMPLATE MODE: Formal template application");
-        println!("   │  ├─ μ_iu_to_vars: ThIU → ThTemplateVars");
-        println!("   │  ├─ μ_template_render: ThTemplateVars × ThTemplate → ThCode");
-        println!("   │  └─ With formal validation equations");
-        println!("   │");
-        println!("   └─ Unset PHOENIX_TEMPLATE_MODE for term-based generation");
-    }
+        return Err(anyhow::anyhow!("No spec.ncl found in project root"));
+    };
     
+    let widgets_count = ui_config.widgets.len();
+    println!("   ✓ Parsed {} widgets from spec", widgets_count);
+    
+    // Phase 2: Generate Code via Term Morphisms
+    println!("\n▶ Phase: TERM MORPHISM");
+    let textual_theory = crate::pipeline::template_bundle::python_textual_theory();
+    println!("   ✓ ThPythonTextual theory ({} sorts)", textual_theory.sorts.len());
+    println!("   ├─ Layout → CSS (grid-template-*)");
+    println!("   ├─ Widget → compose() yields");
+    println!("   └─ Theme → CSS variables");
+    
+    // Generate code
     let output_dir = project_root.join("src").join("generated");
-    let codegen_output = generate_code(&plan_output.ius, &output_dir, project_root, target_language, None).await?;
-    let files_count = codegen_output.files.len();
+    let direct_output = generate_code_from_spec(&ui_config, &output_dir, target_language).await?;
+    let files_count = direct_output.files.len();
     println!("   ✓ Generated {} files", files_count);
     
-    // Report formal validation status
-    if std::env::var("PHOENIX_STRICT_VALIDATION").is_ok() {
-        println!("   🔒 Strict validation mode: All equations enforced");
-    } else {
-        println!("   ⚠️  Validation warnings enabled (set PHOENIX_STRICT_VALIDATION=1 to enforce)");
-    }
-    for file in &codegen_output.files {
+    for file in &direct_output.files {
         println!("     - {}", file.path);
     }
     
     // Update manifest
     let manifest = crate::drift::GeneratedManifest {
-        version: "1.0.0".to_string(),
+        version: "2.0.0".to_string(),
         generated_at: chrono::Utc::now().to_rfc3339(),
-        files: codegen_output.files.iter().map(|f| {
+        files: direct_output.files.iter().map(|f| {
             (f.path.clone(), crate::drift::FileEntry {
                 iu_id: f.iu_id.clone(),
                 hash: f.hash.clone(),
@@ -1366,37 +1370,23 @@ pub async fn run_pipeline(
     };
     manifest.save(project_root)?;
     
-    // Update IU graph
-    let iu_graph: Vec<crate::cascade::IUDef> = plan_output.ius.iter().map(|iu| {
-        crate::cascade::IUDef {
-            iu_id: iu.iu_id.clone(),
-            dependencies: None, // Would be filled by dependency analysis
-            risk_tier: match iu.risk_tier {
-                crate::evidence::RiskTier::Low => crate::cascade::RiskTier::Low,
-                crate::evidence::RiskTier::Medium => crate::cascade::RiskTier::Medium,
-                crate::evidence::RiskTier::High => crate::cascade::RiskTier::High,
-                crate::evidence::RiskTier::Critical => crate::cascade::RiskTier::Critical,
-            },
-            output_files: vec![format!("src/generated/{}.rs", iu.name)],
-            source_canon_ids: Some(iu.source_canon_ids.clone()),
-        }
-    }).collect();
-    
+    // Save IU graph (for backwards compatibility)
     let ius_path = project_root.join(".phoenix").join("graphs").join("ius.json");
     let ius_data = serde_json::json!({
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "pipeline": "direct_spec_to_code",
         "generated_at": chrono::Utc::now().to_rfc3339(),
-        "ius": iu_graph,
+        "widgets": ui_config.widgets.len(),
+        "files": files_count,
     });
     tokio::fs::write(&ius_path, serde_json::to_string_pretty(&ius_data)?).await?;
     
-    // Note: flake.nix is generated by template_bundle::generate_bundle using ThNix formal theory
-    // Bundle files are the single source of truth for project scaffolding
+    // Note: flake.nix and pyproject.toml generated by template_bundle
     
     Ok(PipelineResult {
-        clauses_parsed: clauses_count,
-        canonical_nodes: nodes_count,
-        implementation_units: ius_count,
+        clauses_parsed: 0,
+        canonical_nodes: widgets_count,
+        implementation_units: 1,
         files_generated: files_count,
         output_directory: output_dir.to_string_lossy().to_string(),
     })
@@ -1440,9 +1430,8 @@ pub use morphisms::{CodeMorphism, create_ncl_to_code_morphism, generate_with_mor
 // Re-export formal theory types when panproto is enabled
 #[cfg(feature = "panproto")]
 pub use formal::{
-    clause_theory, canon_theory, iu_theory, code_theory,
+    code_theory,
     canonize_morphism, plan_morphism, codegen_morphism,
-    canon_theory_instance, iu_theory_instance,
     print_theory_summary, print_morphism_summary,
 };
 
@@ -1461,11 +1450,9 @@ pub use apply::{
 // Re-export equation functions when panproto is enabled
 #[cfg(feature = "panproto")]
 pub use equations::{
-    clause_equations, canon_equations, iu_equations, code_equations,
-    clause_theory_with_equations, canon_theory_with_equations,
-    iu_theory_with_equations, code_theory_with_equations,
+    code_equations,
     print_equations, verify_morphism_preserves_equations,
-    verify_all_equations, verify_pipeline_equations,
+    verify_all_equations,
     print_morphism_preservation_results,
     VerificationResult, VerificationReport, MorphismPreservationResult,
 };

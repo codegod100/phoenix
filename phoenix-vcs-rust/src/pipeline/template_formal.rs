@@ -108,39 +108,10 @@ pub fn template_theory() -> Theory {
     )
 }
 
-/// μ_iu_to_vars: Morphism ThIU → ThTemplateVars
-///
-/// Transforms an ImplementationUnit into template variable bindings.
-/// This is where the formal theory meets actual template rendering.
+/// OBSOLETE: μ_iu_to_vars removed - use direct spec→code pipeline
 #[cfg(feature = "panproto")]
 pub fn iu_to_vars_morphism() -> TheoryMorphism {
-    let domain = crate::pipeline::formal::iu_theory();
-    let codomain = template_vars_theory();
-    
-    let mut sort_map = HashMap::new();
-    sort_map.insert(Arc::from("IU"), Arc::from("TemplateVars"));
-    sort_map.insert(Arc::from("String"), Arc::from("VarValue"));
-    sort_map.insert(Arc::from("OutputPath"), Arc::from("VarValue"));
-    
-    let mut op_map = HashMap::new();
-    // Map IU.plan_single to make_vars
-    op_map.insert(
-        Arc::from("plan_single"),
-        Arc::from("make_vars"),
-    );
-    // Map output_path to getting the name binding
-    op_map.insert(
-        Arc::from("output_path"),
-        Arc::from("bind"),
-    );
-    
-    TheoryMorphism::new(
-        Arc::from("μ_iu_to_vars"),
-        Arc::from("ThIU"),
-        Arc::from("ThTemplateVars"),
-        sort_map,
-        op_map,
-    )
+    panic!("iu_to_vars_morphism is obsolete - use direct spec→code pipeline")
 }
 
 /// Template validation equations
@@ -226,23 +197,10 @@ pub fn template_render_morphism() -> TheoryMorphism {
     )
 }
 
-/// Composition: μ_codegen = μ_template_render ∘ μ_iu_to_vars
-/// This gives us the full pipeline: IU → TemplateVars → Code
+/// OBSOLETE: codegen_morphism_composed removed - use direct spec→code pipeline
 #[cfg(feature = "panproto")]
 pub fn codegen_morphism_composed() -> TheoryMorphism {
-    // In a full implementation, this would compose the morphisms
-    // For now, we return the conceptual composition
-    let iu_to_vars = iu_to_vars_morphism();
-    let template_render = template_render_morphism();
-    
-    // The composition is: IU -(μ_iu_to_vars)→ TemplateVars -(μ_template_render)→ Code
-    TheoryMorphism::new(
-        Arc::from("μ_codegen_formal"),
-        Arc::from("ThIU"),
-        Arc::from("ThCode"),
-        iu_to_vars.sort_map, // Simplified - should be composed
-        iu_to_vars.op_map,   // Simplified - should be composed
-    )
+    panic!("codegen_morphism_composed is obsolete - use direct spec→code pipeline")
 }
 
 // ============================================================================

@@ -1,10 +1,16 @@
 //! Formal GAT theories for the Phoenix pipeline
 //!
-//! This module defines the pipeline stages as proper panproto GAT theories:
-//! - ThClause: Raw parsed requirements
-//! - ThCanon: Deduplicated canonical nodes  
-//! - ThIU: Implementation units for code generation
+//! ThSpec has exactly ONE sort: ThPythonTextual
+//! The spec.ncl file IS the theory document that defines the code generation theory.
+//!
+//! Theory hierarchy:
+//! - ThSpec: Specification theory (one sort: ThPythonTextual)
+//! - ThPythonTextual: Python Textual code generation theory (defined in spec.ncl)
+//!   - Sorts: Header, Sidebar, Footer, ListView, Log, etc.
+//!   - Operations: header(), sidebar(), compose(), bind_key(), etc.
 //! - ThCode: Generated code artifacts
+//!
+//! Pipeline: ThSpec.load(spec.ncl) → ThPythonTextual → ThCode.generate(ui_config)
 //!
 //! Each theory has sorts (types) and operations (transformations).
 //! Morphisms between theories are structure-preserving maps.
@@ -19,286 +25,18 @@ use std::sync::Arc;
 use crate::pipeline::{Clause, CanonNode, ImplementationUnit};
 use crate::identity::{canon_id, clause_semhash, normalize_text};
 
-/// ThClause: Theory of parsed specification clauses
-///
-/// Sorts:
-///   - Clause: A requirement/constraint from the spec
-///   - ClauseType: Classification (Requirement, Constraint, etc.)
-///   - ClauseText: Normalized text content
-///   - Source: Origin file and line
-///
-/// Operations:
-///   - parse: String → Clause
-///   - classify: Clause → ClauseType
-///   - normalize: String → ClauseText
-///   - identify: Clause → CanonId
-#[cfg(feature = "panproto")]
-pub fn clause_theory() -> Theory {
-    Theory::new(
-        Arc::from("ThClause"),
-        vec![
-            Sort { name: Arc::from("Clause"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ClauseType"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ClauseText"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CanonId"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Source"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("parse"),
-                inputs: vec![(Arc::from("raw"), Arc::from("String"))],
-                output: Arc::from("Clause"),
-            },
-            Operation {
-                name: Arc::from("classify"),
-                inputs: vec![(Arc::from("clause"), Arc::from("Clause"))],
-                output: Arc::from("ClauseType"),
-            },
-            Operation {
-                name: Arc::from("normalize"),
-                inputs: vec![(Arc::from("raw"), Arc::from("String"))],
-                output: Arc::from("ClauseText"),
-            },
-            Operation {
-                name: Arc::from("identify"),
-                inputs: vec![(Arc::from("clause"), Arc::from("Clause"))],
-                output: Arc::from("CanonId"),
-            },
-        ],
-        vec![], // equations
-    )
-}
+// OBSOLETE: ThClause, ThCanon, ThIU theories removed
+// Use direct spec→code pipeline with ThPythonTextual and ThNix
 
-/// ThCanon: Theory of canonical (deduplicated) nodes
+/// OBSOLETE: ThUI removed - use ThPythonTextual loaded from spec.ncl
 ///
-/// Sorts:
-///   - CanonNode: Unique canonical requirement
-///   - NodeType: Classification
-///   - NodeText: Normalized content
-///   - CanonId: Content-addressed identifier
-///   - CanonEdge: Link between nodes
-///   - Confidence: Float 0-1
-///
-/// Operations:
-///   - canonize: Clause → CanonNode
-///   - merge: CanonNode × CanonNode → CanonNode
-///   - connect: CanonNode × CanonNode → CanonEdge
-///   - get_id: CanonNode → CanonId
-///   - get_type: CanonNode → NodeType
+/// ThUI was an intermediate theory between spec and code.
+/// Now ThSpec directly contains ThPythonTextual as its single sort,
+/// and ThPythonTextual's sorts (Header, Sidebar, etc.) come from spec.ncl.
 #[cfg(feature = "panproto")]
-pub fn canon_theory() -> Theory {
-    Theory::new(
-        Arc::from("ThCanon"),
-        vec![
-            Sort { name: Arc::from("CanonNode"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("NodeType"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("NodeText"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CanonId"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CanonEdge"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Confidence"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("canonize"),
-                inputs: vec![(Arc::from("clause"), Arc::from("Clause"))],
-                output: Arc::from("CanonNode"),
-            },
-            Operation {
-                name: Arc::from("merge"),
-                inputs: vec![
-                    (Arc::from("left"), Arc::from("CanonNode")),
-                    (Arc::from("right"), Arc::from("CanonNode")),
-                ],
-                output: Arc::from("CanonNode"),
-            },
-            Operation {
-                name: Arc::from("connect"),
-                inputs: vec![
-                    (Arc::from("from"), Arc::from("CanonNode")),
-                    (Arc::from("to"), Arc::from("CanonNode")),
-                ],
-                output: Arc::from("CanonEdge"),
-            },
-            Operation {
-                name: Arc::from("get_id"),
-                inputs: vec![(Arc::from("node"), Arc::from("CanonNode"))],
-                output: Arc::from("CanonId"),
-            },
-            Operation {
-                name: Arc::from("get_type"),
-                inputs: vec![(Arc::from("node"), Arc::from("CanonNode"))],
-                output: Arc::from("NodeType"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// ThIU: Theory of Implementation Units
-///
-/// Sorts:
-///   - IU: Implementation unit
-///   - IUName: Module name
-///   - Contract: Specification contract
-///   - RiskTier: Safety classification
-///   - Language: Target language
-///   - OutputPath: File path
-///
-/// Operations:
-///   - plan: CanonNode[] → IU[]
-///   - name: IU → IUName
-///   - contract_of: IU → Contract
-///   - risk: IU → RiskTier
-///   - target: IU → Language
-///   - output: IU → OutputPath
-#[cfg(feature = "panproto")]
-pub fn iu_theory() -> Theory {
-    Theory::new(
-        Arc::from("ThIU"),
-        vec![
-            Sort { name: Arc::from("IU"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("IUName"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Contract"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("RiskTier"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Language"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("OutputPath"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CanonRef"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("plan"),
-                inputs: vec![(Arc::from("nodes"), Arc::from("CanonNode"))], // Actually list
-                output: Arc::from("IU"),
-            },
-            Operation {
-                name: Arc::from("name"),
-                inputs: vec![(Arc::from("iu"), Arc::from("IU"))],
-                output: Arc::from("IUName"),
-            },
-            Operation {
-                name: Arc::from("contract_of"),
-                inputs: vec![(Arc::from("iu"), Arc::from("IU"))],
-                output: Arc::from("Contract"),
-            },
-            Operation {
-                name: Arc::from("risk"),
-                inputs: vec![(Arc::from("iu"), Arc::from("IU"))],
-                output: Arc::from("RiskTier"),
-            },
-            Operation {
-                name: Arc::from("target"),
-                inputs: vec![(Arc::from("iu"), Arc::from("IU"))],
-                output: Arc::from("Language"),
-            },
-            Operation {
-                name: Arc::from("output"),
-                inputs: vec![(Arc::from("iu"), Arc::from("IU"))],
-                output: Arc::from("OutputPath"),
-            },
-            Operation {
-                name: Arc::from("sources"),
-                inputs: vec![(Arc::from("iu"), Arc::from("IU"))],
-                output: Arc::from("CanonRef"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// ThUI: Theory of UI widget configurations
-///
-/// Sorts:
-///   - UIConfig: Complete UI configuration
-///   - Widget: Individual widget (Header, Footer, Container, etc.)
-///   - WidgetType: Type classification (Header, Footer, Vertical, Horizontal, ListView, Static, Log)
-///   - WidgetId: Unique identifier for widget
-///   - WidgetTitle: Display title
-///   - WidgetContent: Static content text
-///   - WidgetProps: Additional properties (show_clock, items, subtitle, etc.)
-///   - WidgetChildren: Nested child widgets
-///   - CSSRule: Styling rule
-///
-/// Operations:
-///   - parse_spec: SpecContent → UIConfig
-///   - extract_widgets: UIConfig → List[Widget]
-///   - get_widget_type: Widget → WidgetType
-///   - get_widget_id: Widget → WidgetId
-///   - get_widget_title: Widget → WidgetTitle
-///   - get_widget_content: Widget → WidgetContent
-///   - get_widget_props: Widget → WidgetProps
-///   - get_children: Widget → WidgetChildren
-///   - map_to_textual: WidgetType → TextualWidget
-///   - generate_compose: UIConfig → PythonCode
-#[cfg(feature = "panproto")]
+#[deprecated(since = "2.0.0", note = "Use ThPythonTextual loaded from spec.ncl")]
 pub fn ui_theory() -> Theory {
-    Theory::new(
-        Arc::from("ThUI"),
-        vec![
-            Sort { name: Arc::from("UIConfig"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetTitle"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetContent"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetProps"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetChildren"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("SpecContent"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CSSRule"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("parse_spec"),
-                inputs: vec![(Arc::from("spec"), Arc::from("SpecContent"))],
-                output: Arc::from("UIConfig"),
-            },
-            Operation {
-                name: Arc::from("extract_widgets"),
-                inputs: vec![(Arc::from("config"), Arc::from("UIConfig"))],
-                output: Arc::from("WidgetChildren"),
-            },
-            Operation {
-                name: Arc::from("get_widget_type"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetType"),
-            },
-            Operation {
-                name: Arc::from("get_widget_id"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetId"),
-            },
-            Operation {
-                name: Arc::from("get_widget_title"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetTitle"),
-            },
-            Operation {
-                name: Arc::from("get_widget_content"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetContent"),
-            },
-            Operation {
-                name: Arc::from("get_widget_props"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetProps"),
-            },
-            Operation {
-                name: Arc::from("get_children"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetChildren"),
-            },
-            Operation {
-                name: Arc::from("map_to_textual"),
-                inputs: vec![(Arc::from("wtype"), Arc::from("WidgetType"))],
-                output: Arc::from("TextualWidget"),
-            },
-            Operation {
-                name: Arc::from("generate_compose"),
-                inputs: vec![(Arc::from("config"), Arc::from("UIConfig"))],
-                output: Arc::from("ComposeBody"),
-            },
-        ],
-        vec![], // equations
-    )
+    panic!("ThUI is obsolete - ThPythonTextual is loaded from spec.ncl")
 }
 
 /// ThCode: Theory of generated code
@@ -358,82 +96,42 @@ pub fn code_theory() -> Theory {
     )
 }
 
-/// ThSpec: Theory of specification documents
+/// ThSpec: Theory of Phoenix specifications
+///
+/// ThSpec has exactly ONE sort: ThPythonTextual
+/// The spec.ncl file IS the theory document that defines ThPythonTextual.
 ///
 /// Sorts:
-///   - Spec: Root specification record
-///   - UIConfig: UI configuration section
-///   - Layout: Layout configuration (grid, flex, etc.)
-///   - Widget: Individual widget definition
-///   - WidgetType: Type tag (Header, Footer, ListView, etc.)
-///   - WidgetId: Unique widget identifier
-///   - WidgetProps: Property record (key-value pairs)
-///   - PropValue: Scalar value (String | Number | Bool | Array)
-///   - Theme: Theme configuration
-///   - KeyBinding: Key → action mapping
-///   - DataModel: Data schema definitions
+///   - ThPythonTextual: The Python Textual code generation theory
 ///
 /// Operations:
-///   - parse_spec: String → Spec
-///   - get_layout: Spec → Layout
-///   - get_widgets: Layout → List[Widget]
-///   - get_props: Widget → WidgetProps
-///   - get_prop: WidgetProps × String → PropValue
-///   - mk_widget: WidgetType × WidgetId × WidgetProps → Widget
+///   - load: Path → ThPythonTextual (load theory from spec.ncl)
+///   - generate: ThPythonTextual × UIConfig → Code (generate app from theory + instance)
 #[cfg(feature = "panproto")]
 pub fn spec_theory() -> Theory {
     Theory::new(
         Arc::from("ThSpec"),
         vec![
-            Sort { name: Arc::from("Spec"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("UIConfig"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetProps"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("PropValue"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("DataModel"), params: vec![], kind: SortKind::Structural },
+            // ThSpec has exactly ONE sort: the target theory
+            Sort { 
+                name: Arc::from("ThPythonTextual"), 
+                params: vec![], 
+                kind: SortKind::Structural 
+            },
         ],
         vec![
             Operation {
-                name: Arc::from("parse_spec"),
-                inputs: vec![(Arc::from("source"), Arc::from("String"))],
-                output: Arc::from("Spec"),
+                name: Arc::from("load"),
+                inputs: vec![(Arc::from("path"), Arc::from("Path"))],
+                output: Arc::from("ThPythonTextual"),
             },
             Operation {
-                name: Arc::from("get_layout"),
-                inputs: vec![(Arc::from("spec"), Arc::from("Spec"))],
-                output: Arc::from("Layout"),
-            },
-            Operation {
-                name: Arc::from("get_widgets"),
-                inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
-                output: Arc::from("List[Widget]"),
-            },
-            Operation {
-                name: Arc::from("get_props"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("WidgetProps"),
-            },
-            Operation {
-                name: Arc::from("get_prop"),
+                name: Arc::from("generate"),
                 inputs: vec![
-                    (Arc::from("props"), Arc::from("WidgetProps")),
-                    (Arc::from("key"), Arc::from("String")),
+                    (Arc::from("theory"), Arc::from("ThPythonTextual")),
+                    (Arc::from("config"), Arc::from("UIConfig")),
                 ],
-                output: Arc::from("PropValue"),
-            },
-            Operation {
-                name: Arc::from("mk_widget"),
-                inputs: vec![
-                    (Arc::from("widget_type"), Arc::from("WidgetType")),
-                    (Arc::from("id"), Arc::from("WidgetId")),
-                    (Arc::from("props"), Arc::from("WidgetProps")),
-                ],
-                output: Arc::from("Widget"),
+                output: Arc::from("Code"),
             },
         ],
         vec![], // equations
@@ -490,190 +188,55 @@ pub fn domain_theory() -> Theory {
     )
 }
 
-/// μ_domain: TheoryMorphism ThCanon → ThDomain
-///
-/// Maps canonical nodes to their extracted domains
+/// OBSOLETE: μ_domain removed - use direct spec→code pipeline
 #[cfg(feature = "panproto")]
 pub fn domain_morphism() -> TheoryMorphism {
-    let domain = canon_theory();
-    let codomain = domain_theory();
-    
-    let mut sort_map = HashMap::new();
-    sort_map.insert(
-        Arc::from("CanonNode"),
-        Arc::from("Domain"),
-    );
-    sort_map.insert(
-        Arc::from("NodeText"),
-        Arc::from("Statement"),
-    );
-    
-    let mut op_map = HashMap::new();
-    op_map.insert(
-        Arc::from("get_statement"), // From canon node
-        Arc::from("extract_domain"),
-    );
-    
-    TheoryMorphism::new(
-        Arc::from("μ_domain"),
-        Arc::from("ThCanon"),
-        Arc::from("ThDomain"),
-        sort_map,
-        op_map,
-    )
+    panic!("domain_morphism is obsolete - use direct spec→code pipeline")
 }
 
-/// μ_canon: TheoryMorphism ThClause → ThCanon
-///
-/// Maps clauses to canonical nodes (quotient by semantic equivalence)
+/// OBSOLETE: μ_canon removed - use direct spec→code pipeline
 #[cfg(feature = "panproto")]
 pub fn canonize_morphism() -> TheoryMorphism {
-    let domain = clause_theory();
-    let codomain = canon_theory();
-    
-    let mut sort_map = HashMap::new();
-    sort_map.insert(
-        Arc::from("Clause"),
-        Arc::from("CanonNode"),
-    );
-    sort_map.insert(
-        Arc::from("ClauseType"),
-        Arc::from("NodeType"),
-    );
-    sort_map.insert(
-        Arc::from("ClauseText"),
-        Arc::from("NodeText"),
-    );
-    sort_map.insert(
-        Arc::from("CanonId"),
-        Arc::from("CanonId"),
-    );
-    
-    let mut op_map = HashMap::new();
-    op_map.insert(
-        Arc::from("identify"),
-        Arc::from("get_id"),
-    );
-    op_map.insert(
-        Arc::from("classify"),
-        Arc::from("get_type"),
-    );
-    
-    TheoryMorphism::new(
-        Arc::from("μ_canon"),
-        Arc::from("ThClause"),
-        Arc::from("ThCanon"),
-        sort_map,
-        op_map,
-    )
+    panic!("canonize_morphism is obsolete - use direct spec→code pipeline")
 }
 
-/// μ_plan: TheoryMorphism ThCanon → ThIU
-///
-/// Maps canonical nodes to implementation units (partition by concern)
+/// OBSOLETE: μ_plan removed - use direct spec→code pipeline
 #[cfg(feature = "panproto")]
 pub fn plan_morphism() -> TheoryMorphism {
-    let domain = canon_theory();
-    let codomain = iu_theory();
-    
-    let mut sort_map = HashMap::new();
-    sort_map.insert(
-        Arc::from("CanonNode"),
-        Arc::from("IU"),
-    );
-    sort_map.insert(
-        Arc::from("CanonId"),
-        Arc::from("CanonRef"),
-    );
-    
-    let mut op_map = HashMap::new();
-    op_map.insert(
-        Arc::from("get_id"),
-        Arc::from("sources"),
-    );
-    op_map.insert(
-        Arc::from("get_type"),
-        Arc::from("risk"),
-    );
-    
-    TheoryMorphism::new(
-        Arc::from("μ_plan"),
-        Arc::from("ThCanon"),
-        Arc::from("ThIU"),
-        sort_map,
-        op_map,
-    )
+    panic!("plan_morphism is obsolete - use direct spec→code pipeline")
 }
 
-/// μ_codegen: TheoryMorphism ThIU → ThCode
-///
-/// Maps implementation units to generated code
+/// OBSOLETE: μ_codegen removed - use direct spec→code pipeline
 #[cfg(feature = "panproto")]
 pub fn codegen_morphism() -> TheoryMorphism {
-    let domain = iu_theory();
-    let codomain = code_theory();
-    
-    let mut sort_map = HashMap::new();
-    sort_map.insert(
-        Arc::from("IU"),
-        Arc::from("Code"),
-    );
-    sort_map.insert(
-        Arc::from("Contract"),
-        Arc::from("Template"),
-    );
-    sort_map.insert(
-        Arc::from("OutputPath"),
-        Arc::from("CodeFile"),
-    );
-    
-    let mut op_map = HashMap::new();
-    op_map.insert(
-        Arc::from("contract_of"),
-        Arc::from("generate"),
-    );
-    op_map.insert(
-        Arc::from("output"),
-        Arc::from("file"),
-    );
-    
-    TheoryMorphism::new(
-        Arc::from("μ_codegen"),
-        Arc::from("ThIU"),
-        Arc::from("ThCode"),
-        sort_map,
-        op_map,
-    )
+    panic!("codegen_morphism is obsolete - use direct spec→code pipeline")
 }
 
 /// μ_spec→code: TheoryMorphism ThSpec → ThCode
 ///
-/// Maps specification sorts directly to code artifacts:
-/// - Spec → AppClass
-/// - Layout → CSS + Container
-/// - Widget → Widget constructor call
-/// - WidgetProps → Constructor kwargs
-/// - KeyBinding → @on decorated method
+/// ThSpec has one sort: ThPythonTextual
+/// The morphism composes: load(spec.ncl) → generate(theory, ui_config) → Code
+///
+/// Sort mapping:
+/// - ThPythonTextual → Code (the target theory generates code)
+///
+/// Operation mapping:
+/// - load → read (load theory from file)
+/// - generate → generate (apply theory to generate code)
 #[cfg(feature = "panproto")]
 pub fn spec_to_code_morphism() -> TheoryMorphism {
-    let domain = spec_theory();
-    let codomain = code_theory();
+    let _domain = spec_theory();
+    let _codomain = code_theory();
     
     let mut sort_map = HashMap::new();
-    // Spec structure maps to code structure
-    sort_map.insert(Arc::from("Spec"), Arc::from("Code"));
-    sort_map.insert(Arc::from("Layout"), Arc::from("Code"));  // CSS + layout container
-    sort_map.insert(Arc::from("Widget"), Arc::from("Code")); // Widget yield
-    sort_map.insert(Arc::from("WidgetProps"), Arc::from("Code")); // kwargs
-    sort_map.insert(Arc::from("KeyBinding"), Arc::from("Code")); // @on method
-    sort_map.insert(Arc::from("Theme"), Arc::from("Code")); // CSS vars
+    // ThSpec's single sort maps to Code generation
+    sort_map.insert(Arc::from("ThPythonTextual"), Arc::from("Code"));
     
     let mut op_map = HashMap::new();
-    // Operations map to code generation
-    op_map.insert(Arc::from("parse_spec"), Arc::from("generate"));
-    op_map.insert(Arc::from("get_layout"), Arc::from("generate"));
-    op_map.insert(Arc::from("get_widgets"), Arc::from("generate"));
-    op_map.insert(Arc::from("mk_widget"), Arc::from("generate"));
+    // Theory loading maps to file reading
+    op_map.insert(Arc::from("load"), Arc::from("read"));
+    // Theory application maps to code generation
+    op_map.insert(Arc::from("generate"), Arc::from("generate"));
     
     TheoryMorphism::new(
         Arc::from("μ_spec→code"),
@@ -725,63 +288,8 @@ pub fn verify_spec_completeness(spec: &crate::pipeline::widget_config::UIConfig,
     gaps
 }
 
-/// Build instance of ThCanon from actual canon nodes
-#[cfg(feature = "panproto")]
-pub fn canon_theory_instance(nodes: &[CanonNode]) -> Theory {
-    let mut theory = canon_theory();
-    
-    // Add a sort for each unique node type found
-    let mut seen_types = std::collections::HashSet::new();
-    for node in nodes {
-        let type_name = format!("{:?}", node.node_type);
-        if seen_types.insert(type_name.clone()) {
-            theory.sorts.push(Sort {
-                name: Arc::from(type_name),
-                params: vec![],
-                kind: SortKind::Structural,
-            });
-        }
-    }
-    
-    // Add a sort for each specific node
-    for (idx, node) in nodes.iter().enumerate() {
-        theory.sorts.push(Sort {
-            name: Arc::from(format!("Node_{}_{}", idx, &node.id[..8.min(node.id.len())])),
-            params: vec![],
-            kind: SortKind::Structural,
-        });
-    }
-    
-    theory
-}
-
-/// Build instance of ThIU from actual implementation units
-#[cfg(feature = "panproto")]
-pub fn iu_theory_instance(ius: &[ImplementationUnit]) -> Theory {
-    let mut theory = iu_theory();
-    
-    // Add a sort for each specific IU
-    for (idx, iu) in ius.iter().enumerate() {
-        theory.sorts.push(Sort {
-            name: Arc::from(format!("IU_{}_{}", idx, iu.name)),
-            params: vec![],
-            kind: SortKind::Structural,
-        });
-    }
-    
-    // Add operations for each IU
-    for (idx, iu) in ius.iter().enumerate() {
-        theory.ops.push(Operation {
-            name: Arc::from(format!("generate_{}", iu.name)),
-            inputs: vec![
-                (Arc::from("template"), Arc::from("Template")),
-            ],
-            output: Arc::from(format!("IU_{}_{}", idx, iu.name)),
-        });
-    }
-    
-    theory
-}
+// OBSOLETE: canon_theory_instance and iu_theory_instance removed
+// Use direct spec→code pipeline
 
 /// Print formal theory summary
 #[cfg(feature = "panproto")]
@@ -830,58 +338,14 @@ pub fn print_morphism_summary(morphism: &TheoryMorphism) {
 mod tests {
     use super::*;
 
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_clause_theory() {
-        let theory = clause_theory();
-        assert_eq!(theory.name.as_ref(), "ThClause");
-        assert_eq!(theory.sorts.len(), 5);
-        assert_eq!(theory.ops.len(), 4);
-    }
+    // OBSOLETE: Tests for ThClause, ThCanon, ThIU removed
+    // These theories are no longer used in the v2 direct spec→code pipeline.
+    // The pipeline now uses ThPythonTextual and ThNix theories directly.
 
     #[test]
     #[cfg(feature = "panproto")]
-    fn test_canon_theory() {
-        let theory = canon_theory();
-        assert_eq!(theory.name.as_ref(), "ThCanon");
-        assert_eq!(theory.sorts.len(), 6);
-        assert_eq!(theory.ops.len(), 5);
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_iu_theory() {
-        let theory = iu_theory();
-        assert_eq!(theory.name.as_ref(), "ThIU");
-        assert_eq!(theory.sorts.len(), 7);
-        assert_eq!(theory.ops.len(), 7);
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_canonize_morphism() {
-        let morphism = canonize_morphism();
-        assert_eq!(morphism.name.as_ref(), "μ_canon");
-        assert_eq!(morphism.domain.as_ref(), "ThClause");
-        assert_eq!(morphism.codomain.as_ref(), "ThCanon");
-        assert!(!morphism.sort_map.is_empty());
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_plan_morphism() {
-        let morphism = plan_morphism();
-        assert_eq!(morphism.name.as_ref(), "μ_plan");
-        assert_eq!(morphism.domain.as_ref(), "ThCanon");
-        assert_eq!(morphism.codomain.as_ref(), "ThIU");
-    }
-
-    #[test]
-    #[cfg(feature = "panproto")]
-    fn test_codegen_morphism() {
-        let morphism = codegen_morphism();
-        assert_eq!(morphism.name.as_ref(), "μ_codegen");
-        assert_eq!(morphism.domain.as_ref(), "ThIU");
-        assert_eq!(morphism.codomain.as_ref(), "ThCode");
+    fn test_code_theory() {
+        let theory = code_theory();
+        assert_eq!(theory.name.as_ref(), "ThCode");
     }
 }
