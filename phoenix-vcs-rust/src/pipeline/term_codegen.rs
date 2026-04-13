@@ -215,6 +215,8 @@ pub enum PythonTerm {
     Int(i64),
     Bool(bool),
     SelfAttr(String),
+    // Variables and expressions
+    Var(String),
     Call { func: Box<ExprTerm>, args: Vec<ExprTerm> },
     Null,
 }
@@ -284,10 +286,10 @@ fn term_to_python_with_indent(term: &PythonTerm, out: &mut String, indent: usize
             
             // CSS
             out.push_str(&format!("{}    CSS = \"\"\"\n", ind));
-            term_to_python_with_indent(css, out, indent + 1);
+            term_to_python_with_indent(css, out, indent + 1);  // CSS content at +1
             out.push_str(&format!("{}    \"\"\"\n\n", ind));
             
-            // Methods
+            // Methods - pass indent + 1 so methods are inside class
             for method in methods {
                 term_to_python_with_indent(method, out, indent + 1);
                 out.push('\n');
@@ -296,23 +298,23 @@ fn term_to_python_with_indent(term: &PythonTerm, out: &mut String, indent: usize
         
         CSS { rules } => {
             for rule in rules {
-                out.push_str(&format!("{}    {} {{\n", ind, rule.selector));
+                out.push_str(&format!("{}{} {{\n", ind, rule.selector));
                 for (prop, val) in &rule.properties {
-                    out.push_str(&format!("{}        {}: {};\n", ind, prop, val));
+                    out.push_str(&format!("{}    {}: {};\n", ind, prop, val));
                 }
-                out.push_str(&format!("{}    }}\n", ind));
+                out.push_str(&format!("{}}}\n", ind));
             }
         }
         
         Method { name, params, return_type, body } => {
             let params_str = params.iter()
-                .map(|(n, t)| format!("{}: {}", n, t))
+                .map(|(n, t)| if t.is_empty() { n.clone() } else { format!("{}: {}", n, t) })
                 .collect::<Vec<_>>()
                 .join(", ");
-            out.push_str(&format!("{}    def {}({}) -> {}:\n", ind, name, params_str, return_type));
+            out.push_str(&format!("{}def {}({}) -> {}:\n", ind, name, params_str, return_type));
             
             for stmt in body {
-                term_to_python_with_indent(stmt, out, indent + 2);
+                term_to_python_with_indent(stmt, out, indent + 1);
             }
         }
         
@@ -337,8 +339,29 @@ fn term_to_python_with_indent(term: &PythonTerm, out: &mut String, indent: usize
         }
         
         Yield { widget } => {
+            // Yield is a statement, widget is an expression - don't double-indent
             out.push_str(&format!("{}yield ", ind));
-            term_to_python_with_indent(widget, out, indent);
+            // Extract widget type and render with args
+            if let PythonTerm::Widget { widget_type, args, id } = widget.as_ref() {
+                let mut all_args = Vec::new();
+                for (key, val) in args {
+                    if key == "content" {
+                        // Wrap content in Static() widget
+                        if let PythonTerm::Str(s) = val {
+                            all_args.push(format!("Static(\"{}\")", s));
+                        }
+                    } else if key == "children" {
+                        // Render children expressions directly
+                        all_args.push(expr_to_string(val));
+                    }
+                }
+                if let Some(id_val) = id {
+                    all_args.push(format!("id=\"{}\"", id_val));
+                }
+                out.push_str(&format!("{}({})\n", widget_type, all_args.join(", ")));
+            } else {
+                out.push_str("# TODO: non-widget yield\n");
+            }
         }
         
         Assign { target, value } => {
@@ -381,6 +404,7 @@ fn term_to_python_with_indent(term: &PythonTerm, out: &mut String, indent: usize
 
 fn expr_to_python(expr: &ExprTerm, out: &mut String) {
     match expr {
+        Var(name) => out.push_str(name),
         Str(s) => out.push_str(&format!("\"{}\"", s)),
         Int(n) => out.push_str(&n.to_string()),
         Bool(b) => out.push_str(if *b { "True" } else { "False" }),
@@ -396,6 +420,13 @@ fn expr_to_python(expr: &ExprTerm, out: &mut String) {
         }
         _ => out.push_str("None"),
     }
+}
+
+/// Convert expression to string (convenience wrapper)
+fn expr_to_string(expr: &ExprTerm) -> String {
+    let mut s = String::new();
+    expr_to_python(expr, &mut s);
+    s
 }
 
 // ============================================================================
@@ -455,7 +486,7 @@ pub fn iu_to_python_term(iu: &ImplementationUnit) -> PythonTerm {
                 id: None,
             }),
         },
-        // yield Vertical(Static(...), ...)
+        // yield Vertical(Static(iu.name), id="content")
         Yield {
             widget: Box::new(Widget {
                 widget_type: "Vertical".to_string(),
@@ -502,18 +533,15 @@ pub fn iu_to_python_term(iu: &ImplementationUnit) -> PythonTerm {
     let main_body = vec![
         // app = {Name}App()
         Assign {
-            target: Box::new(Widget { widget_type: "app".to_string(), args: vec![], id: None }),
+            target: Box::new(Var("app".to_string())),
             value: Box::new(Call {
-                func: Box::new(Widget { widget_type: format!("{}App", class_name), args: vec![], id: None }),
+                func: Box::new(Var(format!("{}App", class_name))),
                 args: vec![],
             }),
         },
         // app.run()
         ExprStmt {
-            expr: Box::new(Call {
-                func: Box::new(Widget { widget_type: "app.run".to_string(), args: vec![], id: None }),
-                args: vec![],
-            }),
+            expr: Box::new(Var("app.run()".to_string())),
         },
         // return 0
         Return { value: Box::new(Int(0)) },
