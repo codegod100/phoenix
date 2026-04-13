@@ -433,6 +433,7 @@ mod tests {
             risk_tier: RiskTier::Low,
             target_language: "python".to_string(),
             output_files: vec![format!("{}.py", name)],
+            spec_content: None,
         }
     }
     

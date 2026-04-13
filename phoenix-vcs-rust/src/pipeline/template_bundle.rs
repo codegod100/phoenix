@@ -287,7 +287,7 @@ pub fn generate_bundle(
             FormalTheory::ThPythonTextual => {
                 // Generate from first IU (or create integrated app)
                 if let Some(iu) = ius.first() {
-                    crate::pipeline::term_codegen::generate_from_term(iu)
+                    crate::pipeline::term_codegen::generate_from_term(iu, Some(spec_content))
                 } else {
                     "# No IUs to generate".to_string()
                 }

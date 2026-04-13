@@ -219,6 +219,9 @@ pub enum PythonTerm {
     Var(String),
     Call { func: Box<ExprTerm>, args: Vec<ExprTerm> },
     Null,
+    
+    // List of widgets (for children)
+    List(Vec<PythonTerm>),
 }
 
 use PythonTerm::*;
@@ -396,6 +399,14 @@ fn term_to_python_with_indent(term: &PythonTerm, out: &mut String, indent: usize
             out.push_str(if *b { "True" } else { "False" });
         }
         
+        List(items) => {
+            // Render list of widgets as function args
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 { out.push_str(", "); }
+                term_to_python_with_indent(item, out, indent);
+            }
+        }
+        
         _ => {
             out.push_str(&format!("{}# TODO: {:?}\n", ind, term));
         }
@@ -436,7 +447,8 @@ fn expr_to_string(expr: &ExprTerm) -> String {
 /// μ_iu_to_python: Morphism from ImplementationUnit to PythonTerm
 /// 
 /// This constructs the code term algebraically from the IU, no templates.
-pub fn iu_to_python_term(iu: &ImplementationUnit) -> PythonTerm {
+/// If spec_content is provided, parses UI configuration from spec.
+pub fn iu_to_python_term(iu: &ImplementationUnit, spec_content: Option<&str>) -> PythonTerm {
     let class_name = to_pascal_case(&iu.name);
     
     // Build imports
@@ -571,8 +583,10 @@ pub fn iu_to_python_term(iu: &ImplementationUnit) -> PythonTerm {
 }
 
 /// Generate code from IU using pure term morphism
-pub fn generate_from_term(iu: &ImplementationUnit) -> String {
-    let term = iu_to_python_term(iu);
+/// 
+/// Optionally takes spec_content to parse UI configuration from spec
+pub fn generate_from_term(iu: &ImplementationUnit, spec_content: Option<&str>) -> String {
+    let term = iu_to_python_term(iu, spec_content);
     let code = term_to_python(&term);
     
     // Add IU provenance as comment
@@ -595,6 +609,363 @@ pub fn to_pascal_case(s: &str) -> String {
         .collect()
 }
 
+// ============================================================================
+// Spec Parsing Helpers
+// ============================================================================
+
+/// Parsed UI configuration from spec
+#[derive(Debug, Default)]
+struct UIConfig {
+    title: Option<String>,
+    show_clock: bool,
+    has_list: bool,
+    widgets: Vec<WidgetConfig>,
+    styles: Vec<(String, String, String)>, // (selector, property, value)
+}
+
+#[derive(Debug)]
+struct WidgetConfig {
+    widget_type: String,
+    id: Option<String>,
+    content: Option<String>,
+    title: Option<String>,
+    children: Vec<WidgetConfig>,
+}
+
+/// Parse UI configuration from spec content
+fn parse_ui_config(spec_content: &str) -> Option<UIConfig> {
+    let mut config = UIConfig::default();
+    
+    // Extract title from header widget
+    if let Some(header_title) = extract_string_field(spec_content, r#"header.*title\s*=\s*""#) {
+        config.title = Some(header_title);
+        config.show_clock = spec_content.contains(r#"show_clock\s*=\s*true"#) || 
+                          spec_content.contains("show_clock = true");
+    }
+    
+    // Check for list widget
+    config.has_list = spec_content.contains(r#"type\s*=\s*"List""#) || 
+                      spec_content.contains(r#"type = "List""#);
+    
+    // Parse widgets from layout section
+    config.widgets = parse_widgets_from_layout(spec_content);
+    
+    // Parse styles
+    config.styles = parse_styles(spec_content);
+    
+    if config.widgets.is_empty() && config.title.is_none() {
+        None
+    } else {
+        Some(config)
+    }
+}
+
+/// Extract a string field using regex pattern
+fn extract_string_field(spec_content: &str, pattern: &str) -> Option<String> {
+    use regex::Regex;
+    if let Ok(re) = Regex::new(&format!("{}([^\"]+)\"", pattern)) {
+        re.captures(spec_content)
+            .and_then(|cap| cap.get(1))
+            .map(|m| m.as_str().to_string())
+    } else {
+        None
+    }
+}
+
+/// Parse widgets from layout section
+fn parse_widgets_from_layout(spec_content: &str) -> Vec<WidgetConfig> {
+    let mut widgets = Vec::new();
+    
+    // Look for widgets section
+    if let Some(widgets_start) = spec_content.find("widgets = {") {
+        let widgets_section = &spec_content[widgets_start..];
+        
+        // Parse header
+        if widgets_section.contains("header = {") {
+            let title = extract_nested_string(widgets_section, "header", "title");
+            widgets.push(WidgetConfig {
+                widget_type: "Header".to_string(),
+                id: None,
+                content: None,
+                title,
+                children: vec![],
+            });
+        }
+        
+        // Parse sidebar
+        if let Some(sidebar_children) = extract_children_array(widgets_section, "sidebar") {
+            let children = parse_child_widgets(&sidebar_children);
+            widgets.push(WidgetConfig {
+                widget_type: "Vertical".to_string(),
+                id: Some("sidebar".to_string()),
+                content: Some("Navigation".to_string()),
+                title: Some("Navigation".to_string()),
+                children,
+            });
+        }
+        
+        // Parse main content
+        if let Some(main_children) = extract_children_array(widgets_section, "main") {
+            let children = parse_child_widgets(&main_children);
+            widgets.push(WidgetConfig {
+                widget_type: "Vertical".to_string(),
+                id: Some("main".to_string()),
+                content: None,
+                title: Some("Main Content".to_string()),
+                children,
+            });
+        }
+        
+        // Parse footer
+        if widgets_section.contains("footer = {") {
+            widgets.push(WidgetConfig {
+                widget_type: "Footer".to_string(),
+                id: None,
+                content: None,
+                title: None,
+                children: vec![],
+            });
+        }
+    }
+    
+    widgets
+}
+
+/// Extract nested string value like `header = { title = "..." }`
+fn extract_nested_string(section: &str, parent: &str, field: &str) -> Option<String> {
+    let pattern = format!(r#"{} = {{[^}}]*{}\s*=\s*"([^"]+)""#, parent, field);
+    extract_regex(&pattern, section, 1)
+}
+
+/// Extract children array from a container widget
+fn extract_children_array(section: &str, parent: &str) -> Option<String> {
+    // Look for parent = { ... children = [ ... ] ... }
+    let pattern = format!(r#"{} = {{[^}}]*children = \[(.*?)\]"#, parent);
+    extract_regex(&pattern, section, 1)
+}
+
+/// Parse child widgets from array content
+fn parse_child_widgets(children_str: &str) -> Vec<WidgetConfig> {
+    let mut children = Vec::new();
+    
+    // Simple parsing of { type = "...", id = "...", ... } patterns
+    for block in children_str.split("},") {
+        if let Some(widget_type) = extract_field(block, "type") {
+            let id = extract_field(block, "id");
+            let content = extract_field(block, "content");
+            let title = extract_field(block, "title");
+            
+            children.push(WidgetConfig {
+                widget_type: map_widget_type(&widget_type),
+                id,
+                content,
+                title,
+                children: vec![],
+            });
+        }
+    }
+    
+    children
+}
+
+/// Extract a simple field like `type = "Static"`
+fn extract_field(block: &str, field: &str) -> Option<String> {
+    let pattern = format!(r#"{}\s*=\s*"([^"]+)""#, field);
+    extract_regex(&pattern, block, 1)
+}
+
+/// Map spec widget types to Textual widget types
+fn map_widget_type(spec_type: &str) -> String {
+    match spec_type {
+        "Static" => "Static",
+        "List" => "ListView",
+        "ListView" => "ListView",
+        "Container" => "Container",
+        "LogView" => "Log",
+        _ => "Static",
+    }.to_string()
+}
+
+/// Extract using regex pattern
+fn extract_regex(pattern: &str, text: &str, group: usize) -> Option<String> {
+    use regex::Regex;
+    Regex::new(pattern).ok()
+        .and_then(|re| re.captures(text))
+        .and_then(|cap| cap.get(group))
+        .map(|m| m.as_str().to_string())
+}
+
+/// Parse styles from spec
+fn parse_styles(spec_content: &str) -> Vec<(String, String, String)> {
+    let mut styles = Vec::new();
+    
+    // Extract colors
+    if let Some(colors_start) = spec_content.find("colors = {") {
+        let colors_section = &spec_content[colors_start..];
+        if let Some(end) = colors_section.find("    },") {
+            let colors = &colors_section[..end];
+            for line in colors.lines() {
+                if let Some((prop, val)) = line.trim().split_once(" = ") {
+                    let prop = prop.trim();
+                    let val = val.trim().trim_matches(',').trim_matches('"');
+                    if !prop.is_empty() && !val.is_empty() {
+                        styles.push(("Screen".to_string(), prop.replace("_", "-"), val.to_string()));
+                    }
+                }
+            }
+        }
+    }
+    
+    styles
+}
+
+/// Build CSS from spec config
+fn build_css_from_spec(config: Option<&UIConfig>) -> PythonTerm {
+    let mut rules = vec![
+        CSSRule {
+            selector: "Screen".to_string(),
+            properties: vec![
+                ("align".to_string(), "center middle".to_string()),
+                ("background".to_string(), "$surface".to_string()),
+            ],
+        },
+    ];
+    
+    // Add styles from spec
+    if let Some(cfg) = config {
+        for (selector, prop, val) in &cfg.styles {
+            rules.push(CSSRule {
+                selector: selector.clone(),
+                properties: vec![(prop.clone(), val.clone())],
+            });
+        }
+        
+        // Add title styles if we have content
+        if !cfg.widgets.is_empty() {
+            rules.push(CSSRule {
+                selector: "#title".to_string(),
+                properties: vec![
+                    ("text-style".to_string(), "bold".to_string()),
+                    ("text-align".to_string(), "center".to_string()),
+                    ("color".to_string(), "$accent".to_string()),
+                ],
+            });
+        }
+    }
+    
+    CSS { rules }
+}
+
+/// Build compose method body from spec config
+fn build_compose_body_from_spec(config: Option<&UIConfig>, default_name: &str) -> Vec<PythonTerm> {
+    if let Some(cfg) = config {
+        build_compose_from_widgets(cfg, default_name)
+    } else {
+        build_default_compose(default_name)
+    }
+}
+
+/// Build compose from parsed widget config
+fn build_compose_from_widgets(config: &UIConfig, _default_name: &str) -> Vec<PythonTerm> {
+    let mut body = Vec::new();
+    
+    // yield Header with clock
+    body.push(Yield {
+        widget: Box::new(Widget {
+            widget_type: "Header".to_string(),
+            args: vec![("show_clock".to_string(), Bool(config.show_clock))],
+            id: None,
+        }),
+    });
+    
+    // Build main layout with sidebar and content
+    if config.widgets.len() >= 3 {
+        // Horizontal split: sidebar | main
+        let sidebar = build_widget_term(&config.widgets[1]); // sidebar
+        let main = build_widget_term(&config.widgets[2]); // main content
+        
+        body.push(Yield {
+            widget: Box::new(Widget {
+                widget_type: "Horizontal".to_string(),
+                args: vec![
+                    ("sidebar".to_string(), sidebar),
+                    ("main".to_string(), main),
+                ],
+                id: Some("content".to_string()),
+            }),
+        });
+    } else {
+        // Fallback: simple vertical
+        body.push(Yield {
+            widget: Box::new(Widget {
+                widget_type: "Vertical".to_string(),
+                args: vec![("content".to_string(), Str("App".to_string()))],
+                id: Some("content".to_string()),
+            }),
+        });
+    }
+    
+    // yield Footer
+    body.push(Yield {
+        widget: Box::new(Widget {
+            widget_type: "Footer".to_string(),
+            args: vec![],
+            id: None,
+        }),
+    });
+    
+    body
+}
+
+/// Build widget term from config
+fn build_widget_term(widget: &WidgetConfig) -> PythonTerm {
+    let children_terms: Vec<PythonTerm> = widget.children.iter()
+        .map(|c| build_widget_term(c))
+        .collect();
+    
+    let args = if let Some(content) = &widget.content {
+        vec![("content".to_string(), Str(content.clone()))]
+    } else if !children_terms.is_empty() {
+        // For containers with children
+        vec![("children".to_string(), List(children_terms))]
+    } else {
+        vec![]
+    };
+    
+    Widget {
+        widget_type: widget.widget_type.clone(),
+        args,
+        id: widget.id.clone(),
+    }
+}
+
+/// Build default compose when no spec
+fn build_default_compose(default_name: &str) -> Vec<PythonTerm> {
+    vec![
+        Yield {
+            widget: Box::new(Widget {
+                widget_type: "Header".to_string(),
+                args: vec![("show_clock".to_string(), Bool(true))],
+                id: None,
+            }),
+        },
+        Yield {
+            widget: Box::new(Widget {
+                widget_type: "Vertical".to_string(),
+                args: vec![("content".to_string(), Str(default_name.to_string()))],
+                id: Some("content".to_string()),
+            }),
+        },
+        Yield {
+            widget: Box::new(Widget {
+                widget_type: "Footer".to_string(),
+                args: vec![],
+                id: None,
+            }),
+        },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -610,13 +981,14 @@ mod tests {
             risk_tier: RiskTier::Low,
             target_language: "python".to_string(),
             output_files: vec![format!("{}.py", name)],
+            spec_content: None,
         }
     }
     
     #[test]
     fn test_term_construction() {
         let iu = make_test_iu("simple-tui");
-        let term = iu_to_python_term(&iu);
+        let term = iu_to_python_term(&iu, None);
         
         // Verify structure
         if let Module { imports, classes, .. } = term {
@@ -630,7 +1002,7 @@ mod tests {
     #[test]
     fn test_term_to_python() {
         let iu = make_test_iu("simple-tui");
-        let code = generate_from_term(&iu);
+        let code = generate_from_term(&iu, None);
         
         // Debug: print the actual code
         eprintln!("Generated code:\n{}", code);

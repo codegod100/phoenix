@@ -683,6 +683,7 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
             risk_tier: determine_risk_tier(&canon_output.nodes),
             target_language: target_language.to_string(),
             output_files: vec!["src/app.py".to_string()],
+            spec_content: None,
         });
         
         println!("   🎯 Python: 1 IU (src/app.py)");
@@ -701,6 +702,7 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
             risk_tier: determine_risk_tier(&canon_output.nodes),
             target_language: target_language.to_string(),
             output_files: vec!["src/lib.rs".to_string()],
+            spec_content: None,
         });
         
         println!("   🎯 Rust: 1 IU (src/lib.rs)");
@@ -736,6 +738,7 @@ pub async fn plan_ius(canon_output: &CanonicalOutput, target_language: &str) -> 
                     name.to_lowercase().replace("-", "_"),
                     ext
                 )],
+                spec_content: None,
             });
         }
         
@@ -782,7 +785,7 @@ fn create_integration_iu(domain_ius: &[ImplementationUnit], target_language: &st
         risk_tier: crate::evidence::RiskTier::High, // Integration is high risk
         target_language: target_language.to_string(),
         output_files: vec![format!("src/generated/app.{}", ext)],
-        //entry_point: true,
+        spec_content: None,
     }
 }
 
@@ -861,6 +864,7 @@ pub struct ImplementationUnit {
     pub risk_tier: crate::evidence::RiskTier,
     pub target_language: String,
     pub output_files: Vec<String>,
+    pub spec_content: Option<String>,  // Raw spec section for context-aware generation
 }
 
 /// μ_codegen: Generate code from Implementation Units
@@ -871,6 +875,7 @@ pub struct ImplementationUnit {
 pub async fn generate_code_term_based(
     ius: &[ImplementationUnit],
     output_dir: impl AsRef<Path>,
+    spec_content: Option<&str>,
 ) -> Result<CodegenOutput> {
     let output_dir = output_dir.as_ref();
     tokio::fs::create_dir_all(output_dir).await?;
@@ -886,7 +891,7 @@ pub async fn generate_code_term_based(
         let file_path = output_dir.join(format!("{}.py", iu.name));
         
         // Use pure term morphism: IU → PythonTerm → String
-        let code = term_codegen::generate_from_term(iu);
+        let code = term_codegen::generate_from_term(iu, spec_content);
         
         tokio::fs::write(&file_path, &code).await?;
         
@@ -908,6 +913,7 @@ pub async fn generate_code(
     output_dir: impl AsRef<Path>,
     project_root: impl AsRef<Path>,
     target_language: &str,
+    spec_content: Option<&str>,
 ) -> Result<CodegenOutput> {
     let output_dir = output_dir.as_ref();
     let project_root = project_root.as_ref();
@@ -919,7 +925,7 @@ pub async fn generate_code(
         println!("   🧮 Using pure term morphism generation (no templates)");
         println!("      μ_iu→term: ThIU → ThPythonTextual");
         println!("      μ_term→code: ThPythonTextual → String");
-        return generate_code_term_based(ius, output_dir).await;
+        return generate_code_term_based(ius, output_dir, spec_content).await;
     }
     
     // FALLBACK: Template-based generation with formal validation
@@ -1439,7 +1445,7 @@ pub async fn run_pipeline(
     }
     
     let output_dir = project_root.join("src").join("generated");
-    let codegen_output = generate_code(&plan_output.ius, &output_dir, project_root, target_language).await?;
+    let codegen_output = generate_code(&plan_output.ius, &output_dir, project_root, target_language, None).await?;
     let files_count = codegen_output.files.len();
     println!("   ✓ Generated {} files", files_count);
     

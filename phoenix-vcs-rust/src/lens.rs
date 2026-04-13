@@ -309,6 +309,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     risk_tier: determine_risk_tier(&canon.nodes.iter().collect::<Vec<_>>()),
                     target_language: target_language.to_string(),
                     output_files: vec!["src/app.py".to_string()],
+                    spec_content: None,
                 });
                 
                 println!("   Python: 1 IU (app)");
@@ -326,6 +327,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                     risk_tier: determine_risk_tier(&canon.nodes.iter().collect::<Vec<_>>()),
                     target_language: target_language.to_string(),
                     output_files: vec!["src/lib.rs".to_string()],
+                    spec_content: None,
                 });
                 
                 println!("   Rust: 1 IU (lib)");
@@ -366,6 +368,7 @@ pub fn plan_lens(target_language: &'static str) -> Lens<CanonGraph, IUGraph> {
                             domain.to_lowercase().replace("-", "_"),
                             ext
                         )],
+                        spec_content: None,
                     });
                 }
                 
@@ -453,6 +456,7 @@ fn create_integration_iu(domain_ius: &[IU], target_language: &str) -> IU {
         risk_tier: crate::evidence::RiskTier::High,
         target_language: target_language.to_string(),
         output_files: vec![format!("src/generated/app.{}", ext)],
+        spec_content: None,
     }
 }
 
@@ -515,6 +519,7 @@ pub fn codegen_lens() -> Lens<IUGraph, CodeGraph> {
                     risk_tier: crate::evidence::RiskTier::Low,
                     target_language: "rust".to_string(),
                     output_files: vec![file.path.clone()],
+                    spec_content: None,
                 });
             }
             

@@ -1148,7 +1148,7 @@ async fn cmd_pipeline_single(
         // === IU CODE GENERATION ===
         // Convert IU graph to ImplementationUnits for pipeline
         let ius: Vec<_> = iu_graph.ius.clone();
-        let gen_output = crate::pipeline::generate_code(&ius, output_dir, specs_root, lang).await?;
+        let gen_output = crate::pipeline::generate_code(&ius, output_dir, specs_root, lang, Some(&bundle_content)).await?;
         
         // Convert to CodeFile format
         for file in gen_output.files {
@@ -1380,6 +1380,7 @@ async fn cmd_verify_laws(_project_root: &Path, lang: &str) -> Result<()> {
                         risk_tier: crate::evidence::RiskTier::Low,
                         target_language: "rust".to_string(),
                         output_files: vec!["src/generated/validation.rs".to_string()],
+                        spec_content: None,
                     },
                 ],
             };

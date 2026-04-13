@@ -395,6 +395,7 @@ pub fn term_to_iu(term: &Term, iu_id: String) -> Option<ImplementationUnit> {
                 target_language,
                 source_canon_ids,
                 output_files,
+                spec_content: None,
             })
         }
         _ => None,
@@ -474,6 +475,7 @@ pub fn formal_plan(node: &CanonNode, lang: &str) -> Option<ImplementationUnit> {
         target_language: lang.to_string(),
         source_canon_ids: vec![node.id.clone()],
         output_files: vec![format!("src/app.{}", if lang == "python" { "py" } else { "rs" })],
+        spec_content: None,
     })
 }
 
@@ -550,6 +552,7 @@ pub fn formal_plan_nodes_by_domain(nodes: &[CanonNode], lang: &str) -> Vec<Imple
             target_language: lang.to_string(),
             source_canon_ids: canon_ids,
             output_files: vec![output_file],
+            spec_content: None,
         };
         
         ius.push(iu);
@@ -597,6 +600,7 @@ fn create_domain_integration_iu(domain_ius: &[ImplementationUnit], lang: &str) -
         target_language: lang.to_string(),
         source_canon_ids: all_canon_ids,
         output_files: vec![format!("src/generated/app.{}", ext)],
+        spec_content: None,
     }
 }
 
