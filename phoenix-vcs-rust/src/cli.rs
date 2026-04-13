@@ -926,25 +926,40 @@ async fn cmd_pipeline_single(
     let (clause_graph, _ingest_comp) = (ingest_lens.get)(&spec);
     let total_clauses = clause_graph.clauses.len();
     
-    // Create and report formal theory morphism (when panproto is enabled)
+    // Create and report formal theories and morphisms (when panproto is enabled)
     #[cfg(feature = "panproto")]
     {
-        // Use pre-cloned content to create formal theory
+        println!("   📐 Formal Pipeline Theories:");
+        
+        // Show base theories
+        let th_clause = crate::pipeline::clause_theory();
+        let th_canon = crate::pipeline::canon_theory();
+        let th_iu = crate::pipeline::iu_theory();
+        let th_code = crate::pipeline::code_theory();
+        
+        crate::pipeline::print_theory_summary(&th_clause, "ThClause");
+        crate::pipeline::print_theory_summary(&th_canon, "ThCanon");
+        crate::pipeline::print_theory_summary(&th_iu, "ThIU");
+        crate::pipeline::print_theory_summary(&th_code, "ThCode");
+        
+        println!("   ↳ Pipeline Morphisms:");
+        
+        // Show canonical morphisms
+        let mu_canon = crate::pipeline::canonize_morphism();
+        let mu_plan = crate::pipeline::plan_morphism();
+        let mu_codegen = crate::pipeline::codegen_morphism();
+        
+        crate::pipeline::print_morphism_summary(&mu_canon);
+        crate::pipeline::print_morphism_summary(&mu_plan);
+        crate::pipeline::print_morphism_summary(&mu_codegen);
+        
+        // Use pre-cloned content to create NCL→Code morphism
         if let Ok(parsed) = crate::ncl::parse_ncl_spec(&content_for_morphism, "combined.ncl") {
             let theory = parsed.to_panproto_theory();
             match crate::pipeline::morphisms::create_ncl_to_code_morphism(&theory, lang) {
                 Ok(morphism) => {
-                    println!("   🧮 Formal TheoryMorphism: {} → {}", 
-                        morphism.domain, morphism.codomain);
-                    if !morphism.sort_map.is_empty() {
-                        println!("      Sort mappings:");
-                        for (src, tgt) in &morphism.sort_map {
-                            println!("        {} → {}", src, tgt);
-                        }
-                    }
-                    if !morphism.op_map.is_empty() {
-                        println!("      Operation mappings: {}", morphism.op_map.len());
-                    }
+                    println!("   🧮 NCL Requirements → Code:");
+                    crate::pipeline::print_morphism_summary(&morphism);
                 }
                 Err(e) => {
                     println!("   ⚠️  Formal morphism error: {}", e);

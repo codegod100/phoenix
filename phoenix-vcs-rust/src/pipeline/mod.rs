@@ -1381,6 +1381,18 @@ pub struct PipelineResult {
 // Formal panproto morphisms module
 pub mod morphisms;
 
+// Formal GAT theory definitions
+pub mod formal;
+
 // Re-export key morphism types when panproto is enabled
 #[cfg(feature = "panproto")]
 pub use morphisms::{CodeMorphism, create_ncl_to_code_morphism, generate_with_morphism};
+
+// Re-export formal theory types when panproto is enabled
+#[cfg(feature = "panproto")]
+pub use formal::{
+    clause_theory, canon_theory, iu_theory, code_theory,
+    canonize_morphism, plan_morphism, codegen_morphism,
+    canon_theory_instance, iu_theory_instance,
+    print_theory_summary, print_morphism_summary,
+};
