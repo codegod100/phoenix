@@ -497,12 +497,33 @@ pub fn iu_to_python_term(iu: &ImplementationUnit, spec_content: Option<&str>) ->
         },
     ];
     
-    // Add ListView import if needed
+    // Detect needed widget types from config
     if let Some(ref cfg) = ui_config {
-        if cfg.has_list {
+        let mut extra_widgets: Vec<String> = vec![];
+        
+        // Collect all widget types used
+        let all_types: Vec<_> = cfg.widgets.iter()
+            .map(|w| w.widget_type.clone())
+            .chain(cfg.widgets.iter().flat_map(|w| w.children.iter().map(|c| c.widget_type.clone())))
+            .collect();
+        
+        for wtype in all_types {
+            match wtype.as_str() {
+                "ListView" if !extra_widgets.contains(&"ListView".to_string()) => {
+                    extra_widgets.push("ListView".to_string());
+                    extra_widgets.push("ListItem".to_string());
+                }
+                "Log" if !extra_widgets.contains(&"Log".to_string()) => {
+                    extra_widgets.push("Log".to_string());
+                }
+                _ => {}
+            }
+        }
+        
+        if !extra_widgets.is_empty() {
             imports.push(ImportFrom {
                 module: "textual.widgets".to_string(),
-                names: vec!["ListView".to_string(), "ListItem".to_string()],
+                names: extra_widgets,
             });
         }
     }
