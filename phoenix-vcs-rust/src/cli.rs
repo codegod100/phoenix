@@ -297,6 +297,38 @@ pub async fn run() -> Result<()> {
     }
 }
 
+/// Extract project name from spec content
+fn extract_project_name(spec_content: &str) -> String {
+    // Try to find name = "..." in spec
+    spec_content.lines()
+        .find(|l| l.contains("name =") && !l.trim().starts_with('#'))
+        .and_then(|l| {
+            l.split('=').nth(1)
+                .map(|s| {
+                    s.trim()
+                        .trim_end_matches(',')  // Remove trailing comma FIRST
+                        .trim_matches('"')      // Then remove quotes
+                        .to_string()
+                })
+        })
+        .or_else(|| {
+            // Fallback: find id = "dev." prefix
+            spec_content.lines()
+                .find(|l| l.contains("id = \"dev."))
+                .and_then(|l| {
+                    l.split('=').nth(1)
+                        .map(|s| {
+                            s.trim()
+                                .trim_end_matches(',')  // Remove trailing comma FIRST
+                                .trim_matches('"')      // Then remove quotes
+                                .replace("dev.", "")
+                                .to_string()
+                        })
+                })
+        })
+        .unwrap_or_else(|| "phoenix-project".to_string())
+}
+
 async fn cmd_status(project_root: &Path) -> Result<()> {
     info!("Running Phoenix VCS status check...");
     
@@ -924,6 +956,10 @@ async fn cmd_pipeline_single(
     #[cfg(feature = "panproto")]
     let content_for_morphism = combined_content.clone();
     
+    // Extract project name and clone content before combined_content is moved
+    let project_name = extract_project_name(&combined_content);
+    let bundle_content = combined_content.clone();  // For bundle generation
+    
     // Removed: "📁 Scanned {} files" - too verbose
     
     let spec = crate::lens::SpecDocument {
@@ -1091,6 +1127,25 @@ async fn cmd_pipeline_single(
         println!("   🧮 Using formal term-based code generation (no LLM)");
         println!("      μ_codegen: ThIU → ThPythonTextual → String");
         
+        // === BUNDLE GENERATION ===
+        // Generate template bundle files (flake.nix, pyproject.toml, README.md)
+        let template = &template_name;  // template_name is already unwrapped String
+        if let Some(bundle) = crate::pipeline::template_bundle::get_bundle(template) {
+            println!("   📦 Template bundle: {} ({} files)", bundle.name, bundle.files.len());
+            let bundle_files = crate::pipeline::template_bundle::generate_bundle(
+                &bundle,
+                &project_name,
+                &bundle_content,
+                &iu_graph.ius,
+            );
+            for (path, content) in bundle_files {
+                let full_path = output_dir.join(&path);
+                tokio::fs::write(&full_path, content).await?;
+                println!("   📄 Bundle: {}", path.display());
+            }
+        }
+        
+        // === IU CODE GENERATION ===
         // Convert IU graph to ImplementationUnits for pipeline
         let ius: Vec<_> = iu_graph.ius.clone();
         let gen_output = crate::pipeline::generate_code(&ius, output_dir, specs_root, lang).await?;
