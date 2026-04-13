@@ -1,23 +1,26 @@
 //! Spec Parsing - Formal tree-sitter based extraction
 //! 
-//! This module now delegates to the formal ADT in widget_config.rs
-//! and the tree-sitter based extraction in ncl.rs.
-//! 
-//! The old string-based parsing has been replaced with proper AST traversal
-//! for robust, deterministic spec extraction.
+//! This module delegates to the formal ADT in widget_config.rs
+//! and the tree-sitter based extraction in ncl_parse.rs.
 
 // Re-export the formal ADT types
 pub use crate::pipeline::widget_config::{UIConfig, WidgetConfig, map_widget_type, default_ui_config};
 
 /// Parse UI configuration using formal tree-sitter extraction
 /// 
-/// This is the main entry point - delegates to the formal parser
-/// which uses tree-sitter for robust AST-based extraction.
+/// Tries V2 flat array schema first (widgets = [...]), then falls back to V1
+/// nested schema (ui_config.layout.widgets = { ... }).
 pub fn parse_ui_config(spec_content: &str) -> Option<UIConfig> {
-    eprintln!("DEBUG parse_ui_config: called with {} chars", spec_content.len());
-    let result = crate::ncl::extract_ui_config(spec_content);
-    eprintln!("DEBUG parse_ui_config: result = {:?}", result.as_ref().map(|r| format!("{} widgets", r.widgets.len())));
-    result
+    // Try V2 first (flat array - simpler and more reliable)
+    let v2_result = crate::ncl_parse::extract_ui_config_v2(spec_content);
+    if let Some(ref config) = v2_result {
+        if !config.widgets.is_empty() {
+            return v2_result;
+        }
+    }
+    
+    // Fall back to V1 (nested records)
+    crate::ncl::extract_ui_config(spec_content)
 }
 
 /// Build compose body from parsed spec widgets

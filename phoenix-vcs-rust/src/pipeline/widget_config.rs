@@ -13,6 +13,8 @@ pub struct UIConfig {
     pub show_clock: bool,
     pub has_list: bool,
     pub styles: Vec<(String, String, String)>, // (selector, property, value)
+    pub focus_initial: Option<String>,
+    pub focus_wrap: bool,
 }
 
 /// Widget configuration - algebraic tree structure
@@ -106,6 +108,8 @@ pub fn default_ui_config(name: &str) -> UIConfig {
         show_clock: true,
         has_list: false,
         styles: default_styles(),
+        focus_initial: None,
+        focus_wrap: false,
     }
 }
 

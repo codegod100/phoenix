@@ -828,7 +828,7 @@ mod tests {
     #[test]
     fn test_no_hallucination() {
         let iu = make_test_iu("simple-tui");
-        let code = generate_from_term(&iu);
+        let code = generate_from_term(&iu, None);
         
         // Should NOT contain "Dashboard" - only what's in IU
         assert!(!code.contains("Dashboard"));
