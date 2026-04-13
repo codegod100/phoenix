@@ -48,10 +48,163 @@ pub enum FormalTheory {
     ThTemplate { template_path: String },
 }
 
+/// ThLayout: Theory of layout configurations
+/// 
+/// Sorts: Grid, Flex, Columns, Rows, Gap
+/// Morphism: μ_layout→css: ThLayout → String (CSS output)
+#[cfg(feature = "panproto")]
+pub fn layout_theory() -> Theory {
+    use panproto_gat::{Sort, SortKind, Operation};
+    
+    Theory::new(
+        Arc::from("ThLayout"),
+        vec![
+            Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Grid"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Flex"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Columns"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Rows"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Gap"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("CSS"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("mk_grid"),
+                inputs: vec![
+                    (Arc::from("cols"), Arc::from("Columns")),
+                    (Arc::from("rows"), Arc::from("Rows")),
+                    (Arc::from("gap"), Arc::from("Gap")),
+                ],
+                output: Arc::from("Grid"),
+            },
+            Operation {
+                name: Arc::from("to_css"),
+                inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
+                output: Arc::from("CSS"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
+/// ThWidget: Theory of UI widgets
+///
+/// Sorts: WidgetType, WidgetId, Props, Children
+/// Morphism: μ_widget→yield: ThWidget → String (Python yield)
+#[cfg(feature = "panproto")]
+pub fn widget_theory() -> Theory {
+    use panproto_gat::{Sort, SortKind, Operation};
+    
+    Theory::new(
+        Arc::from("ThWidget"),
+        vec![
+            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Props"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Children"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("PythonCode"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("mk_widget"),
+                inputs: vec![
+                    (Arc::from("widget_type"), Arc::from("WidgetType")),
+                    (Arc::from("id"), Arc::from("WidgetId")),
+                    (Arc::from("props"), Arc::from("Props")),
+                    (Arc::from("children"), Arc::from("Children")),
+                ],
+                output: Arc::from("Widget"),
+            },
+            Operation {
+                name: Arc::from("to_python"),
+                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
+                output: Arc::from("PythonCode"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
+/// ThKeyBinding: Theory of keyboard bindings
+///
+/// Sorts: Key, Action, Context
+/// Morphism: μ_key→method: ThKeyBinding → String (@on method)
+#[cfg(feature = "panproto")]
+pub fn keybinding_theory() -> Theory {
+    use panproto_gat::{Sort, SortKind, Operation};
+    
+    Theory::new(
+        Arc::from("ThKeyBinding"),
+        vec![
+            Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Key"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Action"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Context"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("PythonMethod"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("mk_binding"),
+                inputs: vec![
+                    (Arc::from("key"), Arc::from("Key")),
+                    (Arc::from("action"), Arc::from("Action")),
+                    (Arc::from("context"), Arc::from("Context")),
+                ],
+                output: Arc::from("KeyBinding"),
+            },
+            Operation {
+                name: Arc::from("to_method"),
+                inputs: vec![(Arc::from("binding"), Arc::from("KeyBinding"))],
+                output: Arc::from("PythonMethod"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
+/// ThTheme: Theory of UI themes
+///
+/// Sorts: Color, Style, Variable
+/// Morphism: μ_theme→vars: ThTheme → String (CSS variables)
+#[cfg(feature = "panproto")]
+pub fn theme_theory() -> Theory {
+    use panproto_gat::{Sort, SortKind, Operation};
+    
+    Theory::new(
+        Arc::from("ThTheme"),
+        vec![
+            Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
+            Sort { name: Arc::from("Color"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("Style"), params: vec![], kind: SortKind::Scalar },
+            Sort { name: Arc::from("CSSVars"), params: vec![], kind: SortKind::Structural },
+        ],
+        vec![
+            Operation {
+                name: Arc::from("mk_theme"),
+                inputs: vec![
+                    (Arc::from("primary"), Arc::from("Color")),
+                    (Arc::from("accent"), Arc::from("Color")),
+                ],
+                output: Arc::from("Theme"),
+            },
+            Operation {
+                name: Arc::from("to_css_vars"),
+                inputs: vec![(Arc::from("theme"), Arc::from("Theme"))],
+                output: Arc::from("CSSVars"),
+            },
+        ],
+        vec![], // equations
+    )
+}
+
 /// ThPythonTextual: Theory of Python Textual applications
 /// 
-/// This is a domain-specific theory for TUI apps. Each sort maps to a
-/// specific code artifact in the generated project.
+/// Composes sub-theories as sorts:
+/// - Sort Layout → ThLayout (maps to CSS)
+/// - Sort Widget → ThWidget (maps to compose())
+/// - Sort KeyBinding → ThKeyBinding (maps to @on methods)
+/// - Sort Theme → ThTheme (maps to CSS vars)
 #[cfg(feature = "panproto")]
 pub fn python_textual_theory() -> Theory {
     use panproto_gat::{Sort, SortKind, Operation};
@@ -59,42 +212,39 @@ pub fn python_textual_theory() -> Theory {
     Theory::new(
         Arc::from("ThPythonTextual"),
         vec![
-            // Top-level bundle sorts
-            Sort { name: Arc::from("TextualApp"), params: vec![], kind: SortKind::Structural },
+            // Sub-theories as sorts
             Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
+            // Output sorts (code artifacts)
+            Sort { name: Arc::from("AppClass"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("CSS"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("ComposeMethod"), params: vec![], kind: SortKind::Structural },
             Sort { name: Arc::from("EventHandler"), params: vec![], kind: SortKind::Structural },
         ],
         vec![
-            // Layout operations
+            // Operations compose sub-theory morphisms
             Operation {
                 name: Arc::from("layout_to_css"),
                 inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
                 output: Arc::from("CSS"),
             },
-            // Widget operations
             Operation {
                 name: Arc::from("widget_to_compose"),
                 inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
                 output: Arc::from("ComposeMethod"),
             },
-            // Key binding operations
             Operation {
                 name: Arc::from("keybinding_to_handler"),
                 inputs: vec![(Arc::from("binding"), Arc::from("KeyBinding"))],
                 output: Arc::from("EventHandler"),
             },
-            // Theme operations
             Operation {
                 name: Arc::from("theme_to_css_vars"),
                 inputs: vec![(Arc::from("theme"), Arc::from("Theme"))],
                 output: Arc::from("CSS"),
             },
-            // App composition
             Operation {
                 name: Arc::from("mk_app"),
                 inputs: vec![
@@ -102,7 +252,7 @@ pub fn python_textual_theory() -> Theory {
                     (Arc::from("compose"), Arc::from("ComposeMethod")),
                     (Arc::from("handlers"), Arc::from("List[EventHandler]")),
                 ],
-                output: Arc::from("TextualApp"),
+                output: Arc::from("AppClass"),
             },
         ],
         vec![], // equations
@@ -140,7 +290,7 @@ pub fn textual_bundle_to_python_morphism() -> panproto_gat::TheoryMorphism {
     TheoryMorphism::new(
         Arc::from("μ_python_textual→code"),
         Arc::from("ThPythonTextual"),
-        Arc::from("ThPythonTextual"),
+        Arc::from("ThCode"),
         sort_map,
         op_map,
     )
