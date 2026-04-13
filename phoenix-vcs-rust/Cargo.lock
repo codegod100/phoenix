@@ -1791,6 +1791,7 @@ dependencies = [
  "clap",
  "hex",
  "indexmap",
+ "nickel-lang",
  "panproto-gat",
  "panproto-parse",
  "panproto-project",

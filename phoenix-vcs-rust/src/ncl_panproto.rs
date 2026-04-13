@@ -42,44 +42,22 @@ pub fn load_spec_content_as_theory(content: &str, source_name: &str) -> Result<T
     result
 }
 
-/// Extract UI config from theory spec content using Nickel export
+/// Extract UI config from theory spec content using Nickel language crate
 /// 
-/// This evaluates the Nickel content and extracts the ui_config field.
+/// This evaluates the Nickel content directly (no subprocess needed)
+/// and extracts the ui_config field.
 #[cfg(feature = "panproto")]
 pub fn extract_ui_config_from_theory(content: &str) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
-    use std::io::Write;
+    use nickel_lang::Context;
     
-    // Check if nickel is available
-    match std::process::Command::new("nickel").arg("--version").output() {
-        Ok(_) => {},
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return Err("Nickel binary not found in PATH. Run: nix develop".into());
-        }
-        Err(e) => return Err(format!("Failed to run nickel: {}", e).into()),
-    }
+    // Evaluate the Nickel content
+    let mut ctx = Context::new();
+    let expr = ctx.eval_deep_for_export(content)
+        .map_err(|e| format!("Nickel evaluation failed: {:?}", e))?;
     
-    // Use nickel export to convert to JSON (no --format raw - we need the full JSON)
-    let mut child = std::process::Command::new("nickel")
-        .args(["export"])  // Removed --format raw, we need JSON object
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()?;
-    
-    // Write content to nickel's stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(content.as_bytes())?;
-    }
-    
-    let output = child.wait_with_output()?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Nickel export failed: {}", stderr).into());
-    }
-    
-    let json_str = String::from_utf8(output.stdout)?;
-    let doc: serde_json::Value = serde_json::from_str(&json_str)?;
+    // Convert to JSON value
+    let doc: serde_json::Value = expr.to_serde()
+        .map_err(|e| format!("Failed to convert to JSON: {}", e))?;
     
     // ui_config is at TOP LEVEL in TheoryDocument (extra field ignored by panproto)
     doc.get("ui_config")
