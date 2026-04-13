@@ -252,7 +252,7 @@ fn build_outputs_term(
     version: &str,
     deps: &[String],
 ) -> NixTerm {
-    let pname = project_name.to_lowercase().replace("-", "_");
+    let pname = project_name.to_lowercase().replace(" ", "-").replace("_", "-");
     
     let (packages, dev_shells, apps) = match build_type {
         "python" | "py" => {

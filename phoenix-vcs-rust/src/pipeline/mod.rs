@@ -1060,6 +1060,9 @@ async fn generate_pyproject_toml(project_root: impl AsRef<Path>) -> Result<Strin
         ("my-app".to_string(), crate::ncl::PyProjectConfig::python_default())
     };
     
+    // Sanitize package name: lowercase, spaces→hyphens for project name
+    let pname = pname.to_lowercase().replace(" ", "-").replace("_", "-");
+    // Underscore version for Python identifiers
     let pname_underscore = pname.replace("-", "_");
     
     // Build dependencies section
