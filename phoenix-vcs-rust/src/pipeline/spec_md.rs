@@ -480,45 +480,60 @@ pub async fn spec_md_to_ncl(
     Ok(filled)
 }
 
-/// Fill template using existing LLM infrastructure
+/// Fill template using existing LLM infrastructure  
 async fn fill_template_with_llm(prompt: &str, config: &crate::llm::LlmConfig) -> Result<String> {
-    // Reuse the existing LLM infrastructure with a spec-filling request
-    let request = crate::llm::CodeGenRequest {
-        requirements: vec![prompt.to_string()],
-        language: "nickel".to_string(),
-        module_name: "spec".to_string(),
-        iu_id: "spec_md_conversion".to_string(),
-        context: None,
-        module_apis: None,
-    };
+    // Build a direct API call instead of using generate_code_with_llm
+    // because we need more control over the prompt structure
+    use reqwest::Client;
+    use serde_json::json;
     
-    // Use existing generate_code_with_llm with a template-filling system prompt
-    let system_prompt = r#"You are a specification translator. 
-TASK: Read the spec.md and template.ncl provided, then output FILLED Nickel code.
-RULES:
-1. Replace every {{slot}} with a real value from the spec
-2. Output ONLY the filled Nickel record - no markdown, no explanation
-3. MUST include: name, template, build_type, ui_config
-4. Example output format:
-{
-  name = "MyApp",
-  template = "python-textual",
-  build_type = "python",
-  ui_config = {
-    theme = "dark",
-    layout = { type = "vertical", widgets = [{...}] }
-  }
-}
-NOW FILL THIS TEMPLATE:"#;
+    let client = Client::new();
+    let response = client
+        .post(&format!("{}/chat/completions", config.api_base))
+        .header("Authorization", format!("Bearer {}", config.api_key.as_deref().unwrap_or("")))
+        .header("Content-Type", "application/json")
+        .json(&json!({
+            "model": config.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a specification translator. You read markdown specs and fill Nickel templates. Output ONLY valid Nickel code. Never say you need files or input - the spec and template are already provided in the user message."
+                },
+                {
+                    "role": "user", 
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.2,
+            "max_tokens": config.max_tokens,
+        }))
+        .send()
+        .await
+        .context("Failed to call LLM API")?;
     
-    let filled = crate::llm::generate_code_with_llm(&request, config, Some(system_prompt)).await?;
-    
-    // Validate it's not empty or placeholder
-    if filled.trim().is_empty() || filled.contains("awaiting input") {
-        anyhow::bail!("LLM returned empty or placeholder spec");
+    if !response.status().is_success() {
+        let error = response.text().await?;
+        anyhow::bail!("LLM API error: {}", error);
     }
     
-    Ok(filled)
+    let json: serde_json::Value = response.json().await?;
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .context("No content in LLM response")?;
+    
+    // Clean up: remove markdown fences if present
+    let cleaned = content
+        .trim_start_matches("```nickel")
+        .trim_start_matches("```")
+        .trim_end_matches("```")
+        .trim();
+    
+    // Validate it's not empty or placeholder
+    if cleaned.trim().is_empty() || cleaned.contains("awaiting input") || cleaned.contains("Missing input") {
+        anyhow::bail!("LLM returned empty or placeholder spec: {}", cleaned);
+    }
+    
+    Ok(cleaned.to_string())
 }
 
 #[cfg(test)]
