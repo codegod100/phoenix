@@ -174,6 +174,10 @@ pub enum Commands {
         /// Verify lens laws after each phase
         #[arg(long)]
         verify: bool,
+        
+        /// Use legacy lens-based pipeline (default is formal morphism-based)
+        #[arg(long)]
+        legacy: bool,
     },
     
     /// Verify lens laws for the pipeline
@@ -272,8 +276,8 @@ pub async fn run() -> Result<()> {
             cmd_waiver(file, waiver_type.into(), expires, signed_by)
         }
         Some(Commands::Init { name, bare }) => cmd_init(&cli.project_root, name, bare).await,
-        Some(Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify }) => {
-            cmd_pipeline_multi(&cli.project_root, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await
+        Some(Commands::Pipeline { stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy }) => {
+            cmd_pipeline_multi(&cli.project_root, stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy).await
         }
         Some(Commands::VerifyLaws { lang }) => {
             cmd_verify_laws(&cli.project_root, &lang).await
@@ -284,7 +288,7 @@ pub async fn run() -> Result<()> {
         // Default: run pipeline with auto-detection (zero-config mode)
         None => {
             info!("No subcommand provided, running auto-detect pipeline...");
-            cmd_pipeline_multi(&cli.project_root, false, false, false, false, false).await
+            cmd_pipeline_multi(&cli.project_root, false, false, false, false, false, false).await
         }
     }
 }
@@ -797,6 +801,7 @@ async fn cmd_pipeline_multi(
     skip_canonicalize: bool,
     skip_plan: bool,
     verify: bool,
+    legacy: bool,
 ) -> Result<()> {
     info!("Running Phoenix multi-language pipeline...");
     
@@ -824,7 +829,7 @@ async fn cmd_pipeline_multi(
     
     // Run pipeline for each language
     for lang in &languages {
-        if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify).await {
+        if let Err(e) = cmd_pipeline_single(project_root, project_root, lang, stub, skip_ingest, skip_canonicalize, skip_plan, verify, legacy).await {
             println!("⚠️  {} failed: {}", lang, e);
         }
     }
@@ -847,6 +852,7 @@ async fn cmd_pipeline_single(
     _skip_canonicalize: bool,
     _skip_plan: bool,
     verify: bool,
+    legacy: bool,
 ) -> Result<()> {
     info!("Running Phoenix pipeline for {}...", lang);
     
@@ -993,14 +999,33 @@ async fn cmd_pipeline_single(
         }
     }
     
-    // Now run the full composed pipeline starting from the clause graph
-    let canon_lens = crate::lens::canonicalize_lens();
-    let (canon_graph, _canon_comp) = (canon_lens.get)(&clause_graph);
-    let unique_nodes = canon_graph.nodes.len();
-    let duplicates = total_clauses.saturating_sub(unique_nodes);
-    
-    let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
-    let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
+    // Use either formal morphism-driven pipeline or legacy lens-based pipeline
+    let (canon_graph, iu_graph) = if legacy {
+        // Legacy lens-based pipeline (for comparison/testing)
+        let canon_lens = crate::lens::canonicalize_lens();
+        let (canon_graph, _canon_comp) = (canon_lens.get)(&clause_graph);
+        
+        let plan_lens = crate::lens::plan_lens(Box::leak(lang.to_string().into_boxed_str()));
+        let (iu_graph, _plan_comp) = (plan_lens.get)(&canon_graph);
+        
+        println!("   {} clauses → {} canons → {} IUs [legacy lens-based]", 
+            total_clauses, canon_graph.nodes.len(), iu_graph.ius.len());
+        
+        (canon_graph, iu_graph)
+    } else {
+        // Formal morphism-driven pipeline (default)
+        // This applies the composed morphism: μ_codegen ∘ μ_plan ∘ μ_canon
+        let canon_graph = crate::pipeline::formal_canonicalize(&clause_graph.clauses);
+        let unique_nodes = canon_graph.nodes.len();
+        let duplicates = total_clauses.saturating_sub(unique_nodes);
+        
+        let iu_graph = crate::pipeline::formal_plan_nodes(&canon_graph.nodes, lang);
+        
+        println!("   {} clauses → {} canons ({} dups) → {} IUs [formal morphisms]", 
+            total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
+        
+        (canon_graph, iu_graph)
+    };
     
     // Comprehensive equation verification
     #[cfg(feature = "panproto")]
@@ -1014,10 +1039,6 @@ async fn cmd_pipeline_single(
         report.print_summary();
     }
     
-    // Print phase summaries - concise format
-    println!("\n   {} clauses → {} canons ({} dups) → {} IUs", 
-        total_clauses, unique_nodes, duplicates, iu_graph.ius.len());
-    
     if stub {
         // STUB MODE: Print IUs and their output files, but don't invoke codegen
         println!("   STUB: {} IUs planned", iu_graph.ius.len());
@@ -1027,7 +1048,7 @@ async fn cmd_pipeline_single(
                 .cloned()
                 .unwrap_or_else(|| format!("src/generated/{}.rs", iu.name));
             println!("   [{}/{}] {} → {}", i + 1, iu_graph.ius.len(), iu.name, output_path);
-            println!("        IU ID: {}...", &iu.iu_id[..16]);
+            println!("        IU ID: {}...", &iu.iu_id[..iu.iu_id.len().min(16)]);
             println!("        Clauses: {} canons", iu.source_canon_ids.len());
         }
         
