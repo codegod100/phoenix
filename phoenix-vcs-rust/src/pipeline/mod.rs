@@ -1412,6 +1412,7 @@ pub use apply::{
     pipeline_transform, format_term, demonstrate_pipeline_morphisms,
     code_file_term, trace_term_provenance,
     formal_canonize, formal_plan, formal_canonicalize, formal_plan_nodes,
+    formal_plan_nodes_by_domain,
 };
 
 // Re-export equation functions when panproto is enabled

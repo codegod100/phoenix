@@ -504,6 +504,62 @@ pub fn formal_plan_nodes(nodes: &[CanonNode], lang: &str) -> crate::lens::IUGrap
     IUGraph { ius }
 }
 
+/// Build IU graph using formal morphisms with domain-based clustering
+///
+/// Groups canon nodes by extracted domain, creating one IU per domain
+/// This implements the μ_domain ∘ μ_plan morphism composition
+#[cfg(feature = "panproto")]
+pub fn formal_plan_nodes_by_domain(nodes: &[CanonNode], lang: &str) -> Vec<ImplementationUnit> {
+    use std::collections::HashMap;
+    
+    // Group canon nodes by domain
+    let mut domain_groups: HashMap<String, Vec<&CanonNode>> = HashMap::new();
+    for node in nodes {
+        let domain = extract_domain_simple(&node.clean_statement);
+        domain_groups.entry(domain.to_string()).or_default().push(node);
+    }
+    
+    // Create one IU per domain
+    let mut ius = Vec::new();
+    for (domain, domain_nodes) in domain_groups {
+        let canon_ids: Vec<String> = domain_nodes.iter().map(|n| n.id.clone()).collect();
+        
+        // Create IU ID from domain and canon IDs
+        let iu_id = format!("iu_{}_{}", 
+            domain,
+            crate::identity::sha256(&canon_ids.join(""))[..8].to_string()
+        );
+        
+        // Create contract describing the domain
+        let contract = format!(
+            "Domain '{}' implementation with {} requirements",
+            domain,
+            domain_nodes.len()
+        );
+        
+        // Determine output file based on domain
+        let ext = if lang == "python" { "py" } else { "rs" };
+        let output_file = format!("src/generated/_{}_.{}", domain, ext);
+        
+        let iu = ImplementationUnit {
+            iu_id,
+            name: domain.clone(),
+            contract,
+            risk_tier: crate::evidence::RiskTier::Medium,
+            target_language: lang.to_string(),
+            source_canon_ids: canon_ids,
+            output_files: vec![output_file],
+        };
+        
+        ius.push(iu);
+    }
+    
+    // Sort IUs by name for deterministic output
+    ius.sort_by(|a, b| a.name.cmp(&b.name));
+    
+    ius
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
