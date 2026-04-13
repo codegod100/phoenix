@@ -3,17 +3,14 @@
 # This template generates a panproto TheoryDocument that can be loaded
 # by panproto_theory_dsl::load() as ThPythonTextual.
 #
-# The TheoryDocument structure is:
+# CRITICAL: TheoryDocument format is FLAT - sorts and ops at top level
 # {
 #   id = "...",
 #   description = "...",
-#   theory = {          # <-- TheorySpec record
-#     theory = "...",   # Theory name inside the spec
-#     extends = [...],
-#     sorts = [...],
-#     ops = [...],
-#     ui_config = {...},  # Instance data nested inside
-#   }
+#   theory = "...",      # <-- String, not record!
+#   sorts = [...],       # <-- Top level
+#   ops = [...],         # <-- Top level
+#   ui_config = {...},   # <-- Top level (extra, ignored by panproto)
 # }
 
 # Forward declarations for recursive types
@@ -54,7 +51,7 @@ let rec
     output | String,
   },
   
-  # UI configuration nested inside theory
+  # UI configuration - at TOP LEVEL
   UIConfig = {
     name | String,
     description | String,
@@ -67,27 +64,32 @@ let rec
     },
     key_bindings | Array KeyBinding,
     styles | { _ : String },
-    # Phoenix metadata
     template | String,
     build_type | String,
     version | String,
-  },
-  
-  # TheorySpec - the theory definition record
-  TheorySpec = {
-    theory | String,           # Theory name
-    extends | Array String,    # Parent theories
-    sorts | Array SortSpec,    # Sort declarations
-    ops | Array OpSpec,        # Operation declarations
-    ui_config | UIConfig,      # Instance data (nested)
   }
 
-# The panproto TheoryDocument format
+# The panproto TheoryDocument format (FLAT structure)
 in {
   # Required TheoryDocument fields
   id | String,
   description | String,
   
-  # Theory definition - TheorySpec record containing sorts, ops, ui_config
-  theory | TheorySpec,
+  # Theory name (string, not record)
+  theory | String,
+  
+  # Sort declarations - at TOP LEVEL
+  sorts | Array SortSpec,
+  
+  # Operations - at TOP LEVEL  
+  ops | Array OpSpec,
+  
+  # UI configuration - at TOP LEVEL (extra field, ignored by panproto)
+  ui_config | UIConfig,
+  
+  # Extra metadata (ignored by panproto)
+  template | String,
+  build_type | String,
+  version | String,
+  spec_version | String,
 }
