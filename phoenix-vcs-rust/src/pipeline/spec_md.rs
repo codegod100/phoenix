@@ -1,18 +1,18 @@
-//! Spec.md → Template → Spec.ncl Pipeline
+//! Spec.md → Contract Template → Spec.ncl Pipeline
 //!
-//! Human-readable specs → LLM-filled templates → Machine-readable specs
+//! Human-readable specs → LLM generates Nickel satisfying contracts → Machine-readable specs
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use anyhow::{Result, Context};
 
-/// A template bundle containing template.ncl and prompt.md
+/// A template bundle containing contract template and prompt
 #[derive(Debug, Clone)]
 pub struct TemplateBundle {
     pub id: String,
     pub name: String,
     pub path: PathBuf,
-    pub template_content: String,
+    pub contract_content: String,
     pub prompt_template: String,
     pub metadata: BundleMetadata,
 }
@@ -20,32 +20,11 @@ pub struct TemplateBundle {
 /// Bundle metadata from bundle.ncl or bundle.toml
 #[derive(Debug, Clone, Default)]
 pub struct BundleMetadata {
+    pub name: String,
     pub language: String,
     pub framework: String,
     pub description: String,
     pub keywords: Vec<String>, // For matching specs to templates
-}
-
-/// Slot in a template that needs to be filled
-#[derive(Debug, Clone)]
-pub struct TemplateSlot {
-    pub name: String,
-    pub description: String,
-    pub slot_type: SlotType,
-    pub required: bool,
-    pub default_value: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-pub enum SlotType {
-    String,
-    Number,
-    Bool,
-    Array,      // Nickel array
-    Record,     // Nickel record
-    WidgetTree, // Special: array of widgets
-    KeyBindings, // Special: array of key bindings
-    Styles,     // Special: CSS/styles record
 }
 
 /// Discovers all template bundles in the bundles/ directory
@@ -73,316 +52,336 @@ pub fn discover_template_bundles(bundles_dir: impl AsRef<Path>) -> Result<Vec<Te
 
 /// Load a single template bundle from directory
 fn load_bundle(bundle_path: &Path) -> Result<Option<TemplateBundle>> {
-    let template_file = bundle_path.join("template.ncl");
-    let prompt_file = bundle_path.join("prompt.md");
+    // Use contract-based template
+    let contract_file = bundle_path.join("template_contract.ncl");
+    let prompt_file = bundle_path.join("prompt_contract.md");
     let bundle_file = bundle_path.join("bundle.ncl");
     
-    // Must have template.ncl
-    if !template_file.exists() {
+    // Must have contract template
+    if !contract_file.exists() {
         return Ok(None);
     }
     
-    let template_content = std::fs::read_to_string(&template_file)
-        .with_context(|| format!("Failed to read {:?}", template_file))?;
+    let contract_content = std::fs::read_to_string(&contract_file)
+        .with_context(|| format!("Failed to read {:?}", contract_file))?;
     
     // Prompt is optional - we'll use default if not present
     let prompt_template = if prompt_file.exists() {
         std::fs::read_to_string(&prompt_file)
             .with_context(|| format!("Failed to read {:?}", prompt_file))?
     } else {
-        default_prompt_template()
+        default_contract_prompt()
     };
     
     // Load metadata if present
     let metadata = if bundle_file.exists() {
         load_bundle_metadata(&bundle_file)?
     } else {
-        BundleMetadata {
-            language: "unknown".to_string(),
-            framework: "unknown".to_string(),
-            description: bundle_path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("unknown")
-                .to_string(),
-            keywords: vec![],
-        }
+        BundleMetadata::default()
     };
     
+    // Extract bundle ID from directory name
     let id = bundle_path.file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("unknown")
         .to_string();
     
+    let name = if metadata.name.is_empty() {
+        id.clone()
+    } else {
+        metadata.name.clone()
+    };
+    
     Ok(Some(TemplateBundle {
-        id: id.clone(),
-        name: id.clone(),
+        id,
+        name,
         path: bundle_path.to_path_buf(),
-        template_content,
+        contract_content,
         prompt_template,
         metadata,
     }))
 }
 
-/// Load bundle metadata from bundle.ncl
+/// Load metadata from bundle.ncl
 fn load_bundle_metadata(bundle_file: &Path) -> Result<BundleMetadata> {
-    // For now, parse simple metadata from bundle.ncl
-    // In future, use proper Nickel evaluation
     let content = std::fs::read_to_string(bundle_file)?;
     
+    // Simple NCL parsing - extract key = value pairs
     let mut metadata = BundleMetadata::default();
     
-    // Simple extraction: look for field = "value" patterns
     for line in content.lines() {
         let line = line.trim();
-        if line.starts_with("language") && line.contains('=') {
-            metadata.language = extract_string_value(line).unwrap_or_else(|| "unknown".to_string());
-        } else if line.starts_with("framework") && line.contains('=') {
-            metadata.framework = extract_string_value(line).unwrap_or_else(|| "unknown".to_string());
-        } else if line.starts_with("description") && line.contains('=') {
-            metadata.description = extract_string_value(line).unwrap_or_else(|| "".to_string());
+        if line.starts_with("language = ") {
+            metadata.language = extract_string_value(line);
+        } else if line.starts_with("framework = ") {
+            metadata.framework = extract_string_value(line);
+        } else if line.starts_with("description = ") {
+            metadata.description = extract_string_value(line);
+        } else if line.starts_with("name = ") {
+            metadata.name = extract_string_value(line);
+        } else if line.starts_with("keywords = ") {
+            // Parse array like ["keyword1", "keyword2"]
+            if let Some(start) = line.find('[') {
+                if let Some(end) = line.find(']') {
+                    let arr = &line[start+1..end];
+                    metadata.keywords = arr.split(',')
+                        .map(|s| extract_string_value(s.trim()))
+                        .filter(|s| !s.is_empty())
+                        .collect();
+                }
+            }
         }
     }
     
     Ok(metadata)
 }
 
-fn extract_string_value(line: &str) -> Option<String> {
-    // Extract "value" from field = "value" or field = value
-    let parts: Vec<&str> = line.split('=').collect();
-    if parts.len() >= 2 {
-        let value = parts[1].trim()
-            .trim_matches(',')
-            .trim()
-            .trim_matches('"');
-        Some(value.to_string())
-    } else {
-        None
+fn extract_string_value(line: &str) -> String {
+    // Extract value from key = "value" or key = value
+    if let Some(eq_pos) = line.find('=') {
+        let value = line[eq_pos+1..].trim();
+        // Remove quotes if present
+        if value.starts_with('"') && value.ends_with('"') {
+            return value[1..value.len()-1].to_string();
+        }
+        return value.to_string();
     }
+    line.to_string()
 }
 
-/// Default prompt template when bundle doesn't provide one
-fn default_prompt_template() -> String {
-    r#"# Task: Fill Template from Spec
+/// Default prompt when prompt_contract.md is missing
+fn default_contract_prompt() -> String {
+    r#"# Task: Generate Nickel Spec from Markdown Using Contracts
 
-You are a specification translator. Your job is to read a human-readable spec 
-and fill in a Nickel template to produce a machine-readable specification.
+You are a specification generator. Your task is to read a human-readable spec 
+and generate a valid Nickel configuration that satisfies a given contract.
 
-## Input
-
-### Spec (Human Language)
+## Input Specification (Markdown)
 ```markdown
 {{spec_content}}
 ```
 
-### Template (With Slots)
+## Target Contract (Nickel)
 ```nickel
-{{template_content}}
+{{contract_content}}
 ```
 
-## Instructions
+## Contract Explanation
 
-1. Read the spec carefully and identify:
-   - App name and description
-   - UI components needed (header, sidebar, list, log, etc.)
-   - Layout structure (grid, vertical, horizontal)
-   - Key bindings and actions
-   - Data/state management needs
-   - Styling preferences
+The contract defines a record with:
+- **Fields with `| Type`**: These are CONTRACTS - you MUST provide values of that type
+- **Fields with `=`**: These are FIXED values - do NOT change them
+- **`let ContractName = {...} in {}`**: Type definitions for nested structures
 
-2. Fill in each {{slot}} in the template with valid Nickel syntax.
-   Replace all {{placeholders}} with concrete values.
+## Generation Rules
 
-3. Output ONLY valid Nickel code. No markdown fences, no explanations.
-
-4. Ensure the output is syntactically valid Nickel.
+1. **Satisfy ALL contracts**: Every field marked with `| Type` must have a value
+2. **Keep FIXED values**: Never change fields with `=` (like `template = "python-textual"`)
+3. **Extract from spec**: All values must come from the markdown spec provided
+4. **Use proper Nickel syntax**:
+   - Strings: `"value"` (with quotes)
+   - Numbers: `42` (no quotes)
+   - Booleans: `true` or `false`
+   - Arrays: `[item1, item2]`
+   - Records: `{ field = value, ... }`
 
 ## Output
 
-Produce the filled template as valid Nickel code:"#.to_string()
+Output ONLY the complete Nickel record. No markdown code fences, no explanations.
+The output must be valid Nickel syntax."#.to_string()
 }
 
-/// Extract slots from template content
-pub fn extract_slots(template_content: &str) -> Vec<TemplateSlot> {
-    let mut slots = Vec::new();
-    let mut seen = std::collections::HashSet::new();
-    
-    // Look for {{slot_name}} or {{slot_name:description}} patterns
-    // Also look for # SLOT: name - description comments
-    
-    // Pattern 1: {{slot_name}}
-    for line in template_content.lines() {
-        // Check for SLOT comment
-        if line.trim().starts_with("# SLOT:") {
-            if let Some(slot) = parse_slot_comment(line) {
-                if seen.insert(slot.name.clone()) {
-                    slots.push(slot);
-                }
-            }
-        }
-        
-        // Check for {{slot}} in content
-        if line.contains("{{") && line.contains("}}") {
-            if let Some(slot) = parse_bracket_slot(line) {
-                if seen.insert(slot.name.clone()) {
-                    slots.push(slot);
-                }
-            }
-        }
-    }
-    
-    slots
-}
-
-fn parse_slot_comment(line: &str) -> Option<TemplateSlot> {
-    // Parse: # SLOT: name - Description (type)
-    let line = line.trim().trim_start_matches("# SLOT:").trim();
-    
-    let parts: Vec<&str> = line.split("-").collect();
-    let name = parts.get(0)?.trim().to_string();
-    let description = parts.get(1).map(|s| s.trim().to_string()).unwrap_or_default();
-    
-    // Infer type from name or description
-    let slot_type = infer_slot_type(&name, &description);
-    
-    Some(TemplateSlot {
-        name,
-        description,
-        slot_type,
-        required: true,
-        default_value: None,
-    })
-}
-
-fn parse_bracket_slot(line: &str) -> Option<TemplateSlot> {
-    // Extract slot name from {{slot_name}} or {{slot_name:hint}}
-    let start = line.find("{{")? + 2;
-    let end = line.find("}}")?;
-    let content = &line[start..end];
-    
-    let name = if content.contains(':') {
-        content.split(':').next()?.trim().to_string()
-    } else {
-        content.trim().to_string()
-    };
-    
-    if name.is_empty() || name == "spec_content" || name == "template_content" {
-        return None; // Skip template variables
-    }
-    
-    let slot_type = infer_slot_type(&name, "");
-    
-    Some(TemplateSlot {
-        name,
-        description: format!("Inferred from template"),
-        slot_type,
-        required: true,
-        default_value: None,
-    })
-}
-
-fn infer_slot_type(name: &str, description: &str) -> SlotType {
-    let combined = format!("{} {}", name, description).to_lowercase();
-    
-    if combined.contains("widget") || combined.contains("children") {
-        SlotType::WidgetTree
-    } else if combined.contains("key") || combined.contains("binding") || combined.contains("shortcut") {
-        SlotType::KeyBindings
-    } else if combined.contains("style") || combined.contains("css") || combined.contains("color") {
-        SlotType::Styles
-    } else if combined.contains("model") || combined.contains("state") || combined.contains("config") {
-        SlotType::Record
-    } else if combined.contains("list") || combined.contains("array") || combined.contains("items") {
-        SlotType::Array
-    } else if combined.contains("number") || combined.contains("count") || combined.contains("size") {
-        SlotType::Number
-    } else if combined.contains("bool") || combined.contains("enable") || combined.contains("show") {
-        SlotType::Bool
-    } else {
-        SlotType::String
-    }
-}
-
-/// Select best template bundle for a spec.md
-pub fn select_template_for_spec<'a>(spec_md: &str, bundles: &'a [TemplateBundle]) -> Option<&'a TemplateBundle> {
-    // Look for explicit template hint
-    let hint = extract_template_hint(spec_md);
-    if let Some(ref hint_id) = hint {
-        if let Some(bundle) = bundles.iter().find(|b| b.id == *hint_id) {
-            return Some(bundle);
-        }
+/// Select best template for a given spec
+fn select_template_for_spec<'a>(spec_md: &str, bundles: &'a [TemplateBundle]) -> Option<&'a TemplateBundle> {
+    if bundles.is_empty() {
+        return None;
     }
     
     // Score each bundle based on keyword matching
     let spec_lower = spec_md.to_lowercase();
+    let mut best_score = 0;
+    let mut best_bundle = None;
     
-    let mut scored: Vec<(f32, &TemplateBundle)> = bundles.iter()
-        .map(|bundle| {
-            let mut score = 0.0;
-            
-            // Keyword matching
-            for keyword in &bundle.metadata.keywords {
-                if spec_lower.contains(&keyword.to_lowercase()) {
-                    score += 1.0;
-                }
-            }
-            
-            // Framework mentions
-            if spec_lower.contains(&bundle.metadata.framework.to_lowercase()) {
-                score += 2.0;
-            }
-            
-            // Language mentions
-            if spec_lower.contains(&bundle.metadata.language.to_lowercase()) {
-                score += 1.5;
-            }
-            
-            (score, bundle)
-        })
-        .collect();
-    
-    // Sort by score
-    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    
-    // Return best if score > 0
-    scored.into_iter().next().filter(|(score, _)| *score > 0.0).map(|(_, b)| b)
-}
-
-fn extract_template_hint(spec_md: &str) -> Option<String> {
-    // Look for "template: bundle-id" or "uses: bundle-id"
-    for line in spec_md.lines() {
-        let line_lower = line.to_lowercase();
-        if line_lower.contains("template:") || line_lower.contains("uses:") {
-            let parts: Vec<&str> = line.splitn(2, ':').collect();
-            if parts.len() >= 2 {
-                let value = parts[1].trim();
-                // Extract first "word" which may be quoted/backticked
-                // Split on whitespace and take first token
-                let first_token = value.split_whitespace().next().unwrap_or(value);
-                // Remove backticks and quotes from both sides
-                let cleaned = first_token
-                    .trim_start_matches('`')
-                    .trim_end_matches('`')
-                    .trim_start_matches('"')
-                    .trim_end_matches('"')
-                    .trim_start_matches('\'')
-                    .trim_end_matches('\'');
-                return Some(cleaned.to_string());
+    for bundle in bundles {
+        let mut score = 0;
+        
+        // Match keywords
+        for keyword in &bundle.metadata.keywords {
+            if spec_lower.contains(&keyword.to_lowercase()) {
+                score += 10;
             }
         }
+        
+        // Match framework name
+        if !bundle.metadata.framework.is_empty() {
+            if spec_lower.contains(&bundle.metadata.framework.to_lowercase()) {
+                score += 20;
+            }
+        }
+        
+        // Match language
+        if !bundle.metadata.language.is_empty() {
+            if spec_lower.contains(&bundle.metadata.language.to_lowercase()) {
+                score += 5;
+            }
+        }
+        
+        // Check for explicit template hint in spec
+        let hint = format!("Template: {}", bundle.id);
+        if spec_md.contains(&hint) || spec_md.contains(&format!("template: {}", bundle.id)) {
+            score += 100; // Strong signal
+        }
+        
+        if score > best_score {
+            best_score = score;
+            best_bundle = Some(bundle);
+        }
     }
-    None
+    
+    best_bundle.or_else(|| bundles.first())
 }
 
-/// Build LLM prompt from spec + template
-pub fn build_llm_prompt(spec_md: &str, bundle: &TemplateBundle) -> String {
-    bundle.prompt_template
+/// Full pipeline: spec.md → spec.ncl using contract-based generation
+/// 
+/// The LLM generates Nickel code that satisfies the contracts defined
+/// in template_contract.ncl. Contracts define what's required (| Type)
+/// vs what's fixed (= value).
+pub async fn spec_md_to_ncl(
+    spec_md: &str,
+    bundles_dir: impl AsRef<Path>,
+) -> Result<String> {
+    let bundles_dir = bundles_dir.as_ref();
+    
+    // 1. Discover templates
+    let bundles = discover_template_bundles(bundles_dir)?;
+    if bundles.is_empty() {
+        anyhow::bail!("No template bundles found in {:?}", bundles_dir);
+    }
+    
+    // 2. Select best template
+    let bundle = select_template_for_spec(spec_md, &bundles)
+        .context("No suitable template found for spec")?;
+    
+    tracing::info!("Selected template bundle: {}", bundle.id);
+    
+    // 3. Build the prompt with spec + contract
+    let prompt = bundle.prompt_template
         .replace("{{spec_content}}", spec_md)
-        .replace("{{template_content}}", &bundle.template_content)
+        .replace("{{contract_content}}", &bundle.contract_content);
+    
+    // 4. Call LLM
+    tracing::info!("Generating spec using contract-based approach...");
+    let config = crate::llm::LlmConfig::default();
+    let generated = call_llm_for_contract(&prompt, &config).await?;
+    
+    // 5. Validate the generated Nickel satisfies contracts
+    validate_nickel_contract(&generated, bundle)?;
+    
+    tracing::info!("Successfully generated spec.ncl from spec.md");
+    Ok(generated)
 }
 
-/// Validate that filled content is valid Nickel
-pub fn validate_filled_spec(content: &str) -> Result<()> {
-    // Basic validation: check for balanced braces, brackets, and parens
+/// Call LLM to generate Nickel satisfying contracts
+async fn call_llm_for_contract(prompt: &str, config: &crate::llm::LlmConfig) -> Result<String> {
+    use reqwest::Client;
+    use serde_json::json;
+    
+    let client = Client::new();
+    let response = client
+        .post(&format!("{}/chat/completions", config.api_base))
+        .header("Authorization", format!("Bearer {}", config.api_key.as_deref().unwrap_or("")))
+        .header("Content-Type", "application/json")
+        .json(&json!({
+            "model": config.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a specification generator. You read markdown specs and generate Nickel code that satisfies contracts. Output ONLY valid Nickel code. Never say you need files - the spec and contract are already provided in the user message."
+                },
+                {
+                    "role": "user", 
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.2,
+            "max_tokens": config.max_tokens,
+        }))
+        .send()
+        .await
+        .context("Failed to call LLM API")?;
+    
+    if !response.status().is_success() {
+        let error = response.text().await?;
+        anyhow::bail!("LLM API error: {}", error);
+    }
+    
+    let json: serde_json::Value = response.json().await?;
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .context("No content in LLM response")?;
+    
+    // Clean up: remove markdown fences if present
+    let cleaned = content
+        .trim_start_matches("```nickel")
+        .trim_start_matches("```ncl")
+        .trim_start_matches("```")
+        .trim_end_matches("```")
+        .trim();
+    
+    if cleaned.trim().is_empty() || cleaned.contains("awaiting input") || cleaned.contains("Missing input") {
+        anyhow::bail!("LLM returned empty or placeholder spec");
+    }
+    
+    Ok(cleaned.to_string())
+}
+
+/// Validate generated Nickel satisfies the contract requirements
+fn validate_nickel_contract(generated: &str, bundle: &TemplateBundle) -> Result<()> {
+    // Check for required top-level fields that must be present
+    let required_fields = ["name", "template", "ui_config"];
+    for field in &required_fields {
+        let has_field = generated.contains(&format!("{} =", field)) 
+            || generated.contains(&format!("{} |", field));
+        if !has_field {
+            anyhow::bail!(
+                "Generated spec missing required field: {}. Check that the LLM properly extracted values from the spec.",
+                field
+            );
+        }
+    }
+    
+    // Check template field has correct value from contract
+    let expected_template = &bundle.id;
+    let has_correct_template = generated.contains(&format!("template = \"{}\"", expected_template));
+    if !has_correct_template {
+        // Try to extract what template value was used
+        let template_line = generated.lines()
+            .find(|l| l.contains("template = "));
+        anyhow::bail!(
+            "Generated spec has wrong template value. Expected: \"{}\". Found: {:?}. The contract specifies template must be \"{}\".",
+            expected_template,
+            template_line,
+            expected_template
+        );
+    }
+    
+    // Check build_type is present
+    let has_build_type = generated.contains("build_type = \"python\"") 
+        || generated.contains("build_type = \"rust\"");
+    if !has_build_type {
+        anyhow::bail!(
+            "Generated spec missing build_type. The contract requires build_type = \"python\" or \"rust\"."
+        );
+    }
+    
+    // Validate Nickel syntax (balanced braces)
+    validate_nickel_syntax(generated)?;
+    
+    Ok(())
+}
+
+/// Validate basic Nickel syntax (balanced braces/brackets/parens)
+fn validate_nickel_syntax(content: &str) -> Result<()> {
     let mut brace_count = 0i32;
     let mut bracket_count = 0i32;
     let mut paren_count = 0i32;
@@ -417,294 +416,68 @@ pub fn validate_filled_spec(content: &str) -> Result<()> {
             }
             
             if brace_count < 0 {
-                anyhow::bail!("Unbalanced braces: too many closing braces");
+                anyhow::bail!("Invalid Nickel syntax: unbalanced braces (too many closing)");
             }
             if bracket_count < 0 {
-                anyhow::bail!("Unbalanced brackets: too many closing brackets");
+                anyhow::bail!("Invalid Nickel syntax: unbalanced brackets (too many closing)");
             }
             if paren_count < 0 {
-                anyhow::bail!("Unbalanced parentheses: too many closing parentheses");
+                anyhow::bail!("Invalid Nickel syntax: unbalanced parentheses (too many closing)");
             }
         }
     }
     
     if brace_count != 0 {
-        anyhow::bail!("Unbalanced braces: {} unclosed", brace_count);
+        anyhow::bail!("Invalid Nickel syntax: {} unclosed braces", brace_count.abs());
     }
     if bracket_count != 0 {
-        anyhow::bail!("Unbalanced brackets: {} unclosed", bracket_count);
+        anyhow::bail!("Invalid Nickel syntax: {} unclosed brackets", bracket_count.abs());
     }
     if paren_count != 0 {
-        anyhow::bail!("Unbalanced parentheses: {} unclosed", paren_count);
-    }
-    
-    // Check for remaining {{slots}} that weren't filled
-    if content.contains("{{") && content.contains("}}") {
-        anyhow::bail!("Template still contains unfilled slots: {{...}}");
+        anyhow::bail!("Invalid Nickel syntax: {} unclosed parentheses", paren_count.abs());
     }
     
     Ok(())
-}
-
-/// Full pipeline: spec.md → spec.ncl
-pub async fn spec_md_to_ncl(
-    spec_md: &str,
-    bundles_dir: impl AsRef<Path>,
-) -> Result<String> {
-    // 1. Discover templates
-    let bundles = discover_template_bundles(bundles_dir)?;
-    
-    if bundles.is_empty() {
-        anyhow::bail!("No template bundles found");
-    }
-    
-    // 2. Select best template
-    let bundle = select_template_for_spec(spec_md, &bundles)
-        .context("No suitable template found for spec")?;
-    
-    tracing::info!("Selected template bundle: {}", bundle.id);
-    
-    // 3. Build prompt
-    let prompt = build_llm_prompt(spec_md, bundle);
-    
-    // 4. Call LLM using existing infrastructure
-    tracing::info!("Calling LLM to fill template...");
-    let config = crate::llm::LlmConfig::default();
-    let filled = fill_template_with_llm(&prompt, &config).await?;
-    
-    // 5. Validate result
-    validate_filled_spec(&filled)?;
-    
-    tracing::info!("Successfully generated spec.ncl from spec.md");
-    
-    Ok(filled)
-}
-
-/// Fill template using existing LLM infrastructure  
-async fn fill_template_with_llm(prompt: &str, config: &crate::llm::LlmConfig) -> Result<String> {
-    // Build a direct API call instead of using generate_code_with_llm
-    // because we need more control over the prompt structure
-    use reqwest::Client;
-    use serde_json::json;
-    
-    let client = Client::new();
-    let response = client
-        .post(&format!("{}/chat/completions", config.api_base))
-        .header("Authorization", format!("Bearer {}", config.api_key.as_deref().unwrap_or("")))
-        .header("Content-Type", "application/json")
-        .json(&json!({
-            "model": config.model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a specification translator. You read markdown specs and fill Nickel templates. Output ONLY valid Nickel code. Never say you need files or input - the spec and template are already provided in the user message."
-                },
-                {
-                    "role": "user", 
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.2,
-            "max_tokens": config.max_tokens,
-        }))
-        .send()
-        .await
-        .context("Failed to call LLM API")?;
-    
-    if !response.status().is_success() {
-        let error = response.text().await?;
-        anyhow::bail!("LLM API error: {}", error);
-    }
-    
-    let json: serde_json::Value = response.json().await?;
-    let content = json["choices"][0]["message"]["content"]
-        .as_str()
-        .context("No content in LLM response")?;
-    
-    // Clean up: remove markdown fences if present
-    let cleaned = content
-        .trim_start_matches("```nickel")
-        .trim_start_matches("```")
-        .trim_end_matches("```")
-        .trim();
-    
-    // Validate it's not empty or placeholder
-    if cleaned.trim().is_empty() || cleaned.contains("awaiting input") || cleaned.contains("Missing input") {
-        anyhow::bail!("LLM returned empty or placeholder spec: {}", cleaned);
-    }
-    
-    Ok(cleaned.to_string())
-}
-
-/// Generate spec using contract-based approach
-/// 
-/// Instead of filling {{slots}}, the LLM generates Nickel that satisfies
-/// the contracts defined in the template_contract.ncl file.
-pub async fn spec_md_to_ncl_contract(
-    spec_md: &str,
-    bundles_dir: impl AsRef<Path>,
-) -> Result<String> {
-    let bundles_dir = bundles_dir.as_ref();
-    
-    // Discover templates
-    let bundles = discover_template_bundles(bundles_dir)?;
-    if bundles.is_empty() {
-        anyhow::bail!("No template bundles found in {:?}", bundles_dir);
-    }
-    
-    // Select best template
-    let bundle = select_template_for_spec(spec_md, &bundles)
-        .context("No suitable template found for spec")?;
-    
-    tracing::info!("Selected template bundle: {}", bundle.id);
-    
-    // Load contract template instead of slot template
-    let contract_path = bundle.path.join("template_contract.ncl");
-    let contract_content = if contract_path.exists() {
-        std::fs::read_to_string(&contract_path)
-            .context("Failed to read template_contract.ncl")?
-    } else {
-        // Fall back to slot-based if no contract template
-        tracing::warn!("No contract template found, using slot-based fallback");
-        return spec_md_to_ncl(spec_md, bundles_dir).await;
-    };
-    
-    // Load contract prompt
-    let prompt_path = bundle.path.join("prompt_contract.md");
-    let prompt_template = if prompt_path.exists() {
-        std::fs::read_to_string(&prompt_path)?
-    } else {
-        // Build a default contract prompt
-        build_default_contract_prompt()
-    };
-    
-    // Build the prompt
-    let prompt = prompt_template
-        .replace("{{spec_content}}", spec_md)
-        .replace("{{contract_content}}", &contract_content);
-    
-    // Call LLM
-    tracing::info!("Generating spec using contract-based approach...");
-    let config = crate::llm::LlmConfig::default();
-    let generated = fill_template_with_llm(&prompt, &config).await?;
-    
-    // Validate the generated Nickel
-    validate_nickel_contract(&generated, &contract_content)?;
-    
-    tracing::info!("Successfully generated spec.ncl from spec.md using contracts");
-    Ok(generated)
-}
-
-/// Validate generated Nickel satisfies the contract
-fn validate_nickel_contract(generated: &str, _contract: &str) -> Result<()> {
-    // Basic structural validation
-    // In the future, this could use nickel-lang-core to type-check
-    
-    // Check for required top-level fields
-    let required_fields = ["name", "template", "ui_config"];
-    for field in &required_fields {
-        if !generated.contains(&format!("{} =", field)) && !generated.contains(&format!("{} |", field)) {
-            anyhow::bail!("Generated spec missing required field: {}", field);
-        }
-    }
-    
-    // Check template field has correct value
-    if !generated.contains("template = \"python-textual\"") {
-        anyhow::bail!("Generated spec has wrong template value (must be 'python-textual')");
-    }
-    
-    // Check build_type is python
-    if !generated.contains("build_type = \"python\"") {
-        anyhow::bail!("Generated spec missing build_type = 'python'");
-    }
-    
-    Ok(())
-}
-
-fn build_default_contract_prompt() -> String {
-    r#"Generate a Nickel configuration that satisfies the given contract.
-
-Read the specification from the markdown and produce valid Nickel code.
-
-Rules:
-1. Every field marked with `| Type` in the contract MUST have a value
-2. Fields with `=` are FIXED - do not change them
-3. Use proper Nickel syntax: strings in quotes, numbers bare, arrays in [], records in {}
-4. Extract all values from the spec provided
-
-Output ONLY the Nickel record, no markdown, no explanation."#.to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
     
     #[test]
-    fn test_extract_slots() {
-        let template = r#"
-{
-  # SLOT: app_name - The application name
-  name = "{{app_name}}",
-  
-  # SLOT: theme - UI theme
-  theme = "{{theme}}",
-  
-  widgets = {{widgets}},
-}
-"#;
-        
-        let slots = extract_slots(template);
-        assert!(slots.iter().any(|s| s.name == "app_name"));
-        assert!(slots.iter().any(|s| s.name == "theme"));
-        assert!(slots.iter().any(|s| s.name == "widgets"));
-    }
-    
-    #[test]
-    fn test_validate_filled_spec() {
+    fn test_validate_nickel_syntax_valid() {
         let valid = r#"{ name = "App", widgets = [] }"#;
-        assert!(validate_filled_spec(valid).is_ok());
-        
-        let unbalanced = r#"{ name = "App", widgets = [ }"#;
-        assert!(validate_filled_spec(unbalanced).is_err());
-        
-        let unfilled = r#"{ name = "{{app_name}}" }"#;
-        assert!(validate_filled_spec(unfilled).is_err());
+        assert!(validate_nickel_syntax(valid).is_ok());
     }
     
     #[test]
-    fn test_select_template_explicit_hint() {
-        let bundles = vec![
-            TemplateBundle {
-                id: "python-textual".to_string(),
-                name: "Python Textual".to_string(),
-                path: PathBuf::from("/tmp/1"),
-                template_content: "{}".to_string(),
-                prompt_template: "prompt".to_string(),
-                metadata: BundleMetadata::default(),
+    fn test_validate_nickel_syntax_unbalanced() {
+        let unbalanced = r#"{ name = "App", widgets = [ }"#;
+        assert!(validate_nickel_syntax(unbalanced).is_err());
+    }
+    
+    #[test]
+    fn test_select_template_keyword_matching() {
+        let bundle = TemplateBundle {
+            id: "python-textual".to_string(),
+            name: "Python Textual".to_string(),
+            path: PathBuf::from("/fake"),
+            contract_content: String::new(),
+            prompt_template: String::new(),
+            metadata: BundleMetadata {
+                name: "python-textual".to_string(),
+                language: "python".to_string(),
+                framework: "textual".to_string(),
+                description: String::new(),
+                keywords: vec!["tui".to_string(), "terminal".to_string(), "cli".to_string()],
             },
-        ];
+        };
         
-        let spec = "# MyApp\n\nTemplate: python-textual\n\nA TUI app";
+        let bundles = vec![bundle];
+        let spec = "A terminal TUI app with text interface";
         let selected = select_template_for_spec(spec, &bundles);
         
         assert!(selected.is_some());
         assert_eq!(selected.unwrap().id, "python-textual");
-    }
-    
-    #[test]
-    fn test_extract_template_hint() {
-        assert_eq!(
-            extract_template_hint("Template: python-textual"),
-            Some("python-textual".to_string())
-        );
-        assert_eq!(
-            extract_template_hint("Uses: `rust-cli` for the app"),
-            Some("rust-cli".to_string())
-        );
-        assert_eq!(
-            extract_template_hint("Just a spec without hint"),
-            None
-        );
     }
 }
