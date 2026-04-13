@@ -396,6 +396,35 @@ fn extract_record_fields(node: Node, source: &str, result: &mut ParsedNcl) -> Re
                     result.compositions = extract_morphisms(node, source)?;
                 }
             }
+            "llm_prompt" => {
+                if std::env::var("DEBUG_NCL").is_ok() {
+                    eprintln!("DEBUG: Processing llm_prompt field");
+                    if let Some(node) = value_node {
+                        eprintln!("DEBUG: llm_prompt value_node kind: {}", node.kind());
+                        // Print full tree
+                        fn print_tree(node: Node, source: &str, depth: usize) {
+                            let indent = "  ".repeat(depth);
+                            let text = &source[node.start_byte()..node.end_byte().min(node.start_byte() + 50)];
+                            eprintln!("DEBUG: {}{}: {:?}", indent, node.kind(), text.replace('\n', "\\n"));
+                            let mut cursor = node.walk();
+                            for child in node.children(&mut cursor) {
+                                print_tree(child, source, depth + 1);
+                            }
+                        }
+                        print_tree(node, source, 1);
+                    } else {
+                        eprintln!("DEBUG: llm_prompt value_node is None");
+                    }
+                }
+                if let Some(s) = extract_string_from_node(value_node, source)? {
+                    if std::env::var("DEBUG_NCL").is_ok() {
+                        eprintln!("DEBUG: llm_prompt found, length: {}", s.len());
+                    }
+                    generic.insert(name, s);
+                } else if std::env::var("DEBUG_NCL").is_ok() {
+                    eprintln!("DEBUG: llm_prompt extract_string_from_node returned None");
+                }
+            }
             _ => {
                 // Store in generic fields
                 if let Some(s) = extract_string_from_node(value_node, source)? {
@@ -493,24 +522,52 @@ fn extract_string_from_node(node: Option<Node>, source: &str) -> Result<Option<S
     
     match current.kind() {
         "str_chunks" => {
-            // Navigate: str_chunks -> str_chunks_single -> chunk_literal_single -> str_literal
+            // Check for both single-line and multiline strings
             let mut cursor = current.walk();
             for child in current.children(&mut cursor) {
-                if child.kind() == "str_chunks_single" {
-                    let mut inner = child.walk();
-                    for chunk_lit in child.children(&mut inner) {
-                        if chunk_lit.kind() == "chunk_literal_single" {
-                            let mut inner2 = chunk_lit.walk();
-                            for str_lit in chunk_lit.children(&mut inner2) {
-                                if str_lit.kind() == "str_literal" {
-                                    let text = node_text(str_lit, source)?;
-                                    // str_literal content: remove surrounding quotes
-                                    let trimmed = text.trim_matches('"');
-                                    return Ok(Some(trimmed.to_string()));
+                match child.kind() {
+                    "str_chunks_single" => {
+                        // Single-line: str_chunks_single -> chunk_literal_single -> str_literal
+                        let mut inner = child.walk();
+                        for chunk_lit in child.children(&mut inner) {
+                            if chunk_lit.kind() == "chunk_literal_single" {
+                                let mut inner2 = chunk_lit.walk();
+                                for str_lit in chunk_lit.children(&mut inner2) {
+                                    if str_lit.kind() == "str_literal" {
+                                        let text = node_text(str_lit, source)?;
+                                        let trimmed = text.trim_matches('"');
+                                        return Ok(Some(trimmed.to_string()));
+                                    }
                                 }
                             }
                         }
                     }
+                    "str_chunks_multi" => {
+                        // Multiline: str_chunks_multi contains multiple chunk_literal_multi
+                        let mut result = String::new();
+                        let mut inner = child.walk();
+                        for chunk in child.children(&mut inner) {
+                            if chunk.kind() == "chunk_literal_multi" {
+                                let mut inner2 = chunk.walk();
+                                for literal in chunk.children(&mut inner2) {
+                                    match literal.kind() {
+                                        "mult_str_literal" => {
+                                            let text = node_text(literal, source)?;
+                                            result.push_str(&text);
+                                        }
+                                        "double_quote" => {
+                                            result.push('"');
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
+                        if !result.is_empty() {
+                            return Ok(Some(result));
+                        }
+                    }
+                    _ => {}
                 }
             }
             Ok(None)
@@ -921,6 +978,10 @@ fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
     
     let mut template = CodeTemplate::default();
     
+    if std::env::var("DEBUG_TEMPLATE").is_ok() {
+        eprintln!("DEBUG_TEMPLATE: Parsed generic fields: {:?}", parsed.generic.as_ref().map(|g| g.keys().collect::<Vec<_>>()));
+    }
+    
     if let Some(ref generic) = parsed.generic {
         template.language = generic.get("language").cloned().unwrap_or_default();
         template.framework = generic.get("framework").cloned();
@@ -932,6 +993,11 @@ fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
     if let Some(ref pyproject) = parsed.pyproject {
         template.dependencies = pyproject.dependencies.clone();
         template.entry_point = pyproject.entry_point.clone();
+    }
+    
+    if std::env::var("DEBUG_TEMPLATE").is_ok() {
+        eprintln!("DEBUG_TEMPLATE: llm_prompt length: {}", template.llm_prompt.len());
+        eprintln!("DEBUG_TEMPLATE: llm_prompt first 200 chars: {:?}", &template.llm_prompt[..template.llm_prompt.len().min(200)]);
     }
     
     Ok(template)
