@@ -7,12 +7,13 @@
 # {
 #   id = "...",
 #   description = "...",
-#   theory = {          # <-- TheorySpec record (not string!)
+#   theory = {          # <-- TheorySpec record
 #     theory = "...",   # Theory name inside the spec
+#     extends = [...],
 #     sorts = [...],
 #     ops = [...],
-#   },
-#   ui_config = {...},  # Instance data
+#     ui_config = {...},  # Instance data nested inside
+#   }
 # }
 
 # Forward declarations for recursive types
@@ -43,7 +44,7 @@ let rec
   # SortSpec for sort declarations
   SortSpec = {
     name | String,
-    kind | { type | String },  # { type = "structural" } or { type = "variable" }
+    kind | { type | String },
   },
   
   # OpSpec for operation declarations
@@ -53,47 +54,40 @@ let rec
     output | String,
   },
   
-  # TheorySpec - the theory definition record
-  TheorySpec = {
-    theory | String,           # Theory name (e.g., "SimpleTUI")
-    extends | Array String,    # Parent theories (optional)
-    sorts | Array SortSpec,    # Sort declarations
-    ops | Array OpSpec,        # Operation declarations
-  },
-  
-  # Layout configuration
-  LayoutConfig = {
-    type | String,
-    columns | Number,
-    rows | String,
-    gap | Number,
-    widgets | Array Widget,
-  },
-  
-  # UI configuration (instance of the theory)
+  # UI configuration nested inside theory
   UIConfig = {
     name | String,
     description | String,
-    layout | LayoutConfig,
+    layout | {
+      type | String,
+      columns | Number,
+      rows | String,
+      gap | Number,
+      widgets | Array Widget,
+    },
     key_bindings | Array KeyBinding,
     styles | { _ : String },
+    # Phoenix metadata
+    template | String,
+    build_type | String,
+    version | String,
+  },
+  
+  # TheorySpec - the theory definition record
+  TheorySpec = {
+    theory | String,           # Theory name
+    extends | Array String,    # Parent theories
+    sorts | Array SortSpec,    # Sort declarations
+    ops | Array OpSpec,        # Operation declarations
+    ui_config | UIConfig,      # Instance data (nested)
   }
 
 # The panproto TheoryDocument format
 in {
   # Required TheoryDocument fields
-  id | String,              # e.g., "dev.phoenix.simple-tui"
-  description | String,     # Human-readable description
+  id | String,
+  description | String,
   
-  # Theory definition - TheorySpec record containing sorts, ops, etc.
+  # Theory definition - TheorySpec record containing sorts, ops, ui_config
   theory | TheorySpec,
-  
-  # UI configuration (instance of the theory - the actual spec values)
-  ui_config | UIConfig,
-  
-  # Metadata (for compatibility)
-  template | String,        # FIXED: "python-textual"
-  build_type | String,      # FIXED: "python"
-  version | String,
-  spec_version | String,
 }

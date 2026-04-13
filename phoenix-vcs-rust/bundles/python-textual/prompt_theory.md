@@ -15,7 +15,7 @@ and generate a valid panproto TheoryDocument.
 
 ## CRITICAL: TheoryDocument Structure
 
-The output MUST follow this exact structure:
+The output MUST follow this exact structure - no extra top-level fields:
 
 ```nickel
 {
@@ -23,10 +23,11 @@ The output MUST follow this exact structure:
   id = "dev.phoenix.{project-name}",
   description = "Human-readable description from spec",
   
-  # Theory definition - this is a RECORD containing the spec
+  # Theory definition - this is a RECORD containing everything
   theory = {
-    theory = "{ProjectName}",    # Theory NAME inside the spec record
-    extends = [],                  # Parent theories (empty for now)
+    # Theory name inside the spec
+    theory = "{ProjectName}",
+    extends = [],
     
     # Sorts - sub-theories that generate artifacts + UI sorts
     sorts = [
@@ -35,12 +36,15 @@ The output MUST follow this exact structure:
       { name = "ThApp", kind = { type = "structural" } },
       { name = "ThCSS", kind = { type = "structural" } },
       { name = "ThREADME", kind = { type = "structural" } },
+      { name = "ThIntegratedApp", kind = { type = "structural" } },
       # UI widget sorts from the spec
       { name = "Header", kind = { type = "structural" } },
       { name = "Sidebar", kind = { type = "structural" } },
       { name = "Footer", kind = { type = "structural" } },
       { name = "ListView", kind = { type = "structural" } },
       { name = "LogView", kind = { type = "structural" } },
+      { name = "Static", kind = { type = "structural" } },
+      { name = "Container", kind = { type = "structural" } },
     ],
     
     # Operations - constructors for the theory
@@ -71,66 +75,64 @@ The output MUST follow this exact structure:
         inputs = [{ name = "theory", sort = "ThREADME" }, { name = "config", sort = "Config" }],
         output = "Markdown"
       },
-      # Widget constructors - extract from spec widgets
-      { 
-        name = "header",
-        inputs = [{ name = "title", sort = "String" }],
-        output = "Header"
-      },
-      { 
-        name = "compose",
+      # Composition operation
+      {
+        name = "compose_app",
         inputs = [
-          { name = "h", sort = "Header" },
-          { name = "s", sort = "Sidebar" },
-          { name = "m", sort = "MainContent" },
-          { name = "f", sort = "Footer" },
+          { name = "pyproject", sort = "TOML" },
+          { name = "app", sort = "Python" },
+          { name = "css", sort = "CSS" },
+          { name = "readme", sort = "Markdown" },
+          { name = "config", sort = "Config" }
         ],
-        output = "UIConfig"
+        output = "ThIntegratedApp"
       },
+      # Widget constructors - extract from spec
+      { name = "header", inputs = [{ name = "title", sort = "String" }], output = "Header" },
+      { name = "sidebar", inputs = [], output = "Sidebar" },
+      { name = "compose", inputs = [...], output = "UIConfig" },
     ],
-  },
-  
-  # UI configuration - instance data OUTSIDE the theory spec
-  ui_config = {
-    name = "Project Name",
-    description = "From spec overview",
-    layout = {
-      type = "grid",
-      columns = 2,
-      rows = "1fr 3fr auto",
-      gap = 1,
-      widgets = [
-        { type = "Header", id = "header", title = "...", show_clock = true },
-        # ... extract ALL widgets from spec
+    
+    # UI CONFIGURATION - NESTED INSIDE theory RECORD
+    ui_config = {
+      name = "Project Name",
+      description = "From spec overview",
+      layout = {
+        type = "grid",
+        columns = 2,
+        rows = "1fr 3fr auto",
+        gap = 1,
+        widgets = [
+          { type = "Header", id = "header", title = "...", show_clock = true },
+          # ... extract ALL widgets from spec
+        ],
+      },
+      key_bindings = [
+        { key = "q", action = "quit", context = "global" },
+        # ... extract from ## Key Bindings section
       ],
+      styles = {},
+      # Phoenix metadata (FIXED values)
+      template = "python-textual",
+      build_type = "python",
+      version = "0.1.0",
     },
-    key_bindings = [
-      { key = "q", action = "quit", context = "global" },
-      # ... extract from ## Key Bindings section
-    ],
-    styles = {},
   },
-  
-  # Metadata (FIXED values - do NOT change)
-  template = "python-textual",
-  build_type = "python",
-  version = "0.1.0",
-  spec_version = "1.0",
 }
 ```
 
 ## CRITICAL RULES
 
-1. **theory = { ... }** is a RECORD, not a string!
-2. **theory.theory = "..."** inside that record is the theory name
-3. Include ALL required fields: `id`, `description`, `theory`, `ui_config`
-4. `theory.sorts` must include: ThPyproject, ThNix, ThApp, ThCSS, ThREADME
-5. `theory.ops` must include: generate_* operations for each Th* sort
-6. `ui_config` contains the actual widget instances - extract from spec
+1. **ONLY three top-level fields**: `id`, `description`, `theory` (NO `ui_config` at top level!)
+2. **theory = { ... }** is a RECORD containing: `theory`, `extends`, `sorts`, `ops`, `ui_config`
+3. **ui_config is INSIDE theory record**, not at top level
+4. Include ALL required sorts: ThPyproject, ThNix, ThApp, ThCSS, ThREADME, ThIntegratedApp
+5. Include generate_* operations for each Th* sort
+6. Include compose_app operation for integration
 7. NEVER change `template = "python-textual"` or `build_type = "python"`
-8. Extract ALL values from the markdown spec provided
+8. Extract ALL widget values from the markdown spec
 
 ## OUTPUT
 
 Output ONLY the complete Nickel TheoryDocument. No markdown code fences, no explanations.
-The output must be a valid TheoryDocument that panproto_theory_dsl::load() can parse.
+The output must have exactly 3 top-level fields: id, description, theory.

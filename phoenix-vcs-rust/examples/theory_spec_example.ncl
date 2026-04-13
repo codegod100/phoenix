@@ -1,5 +1,10 @@
 # Theory Document Example for Simple TUI
 # This is a panproto TheoryDocument that defines ThPythonTextual
+# 
+# Structure:
+# - id: TheoryDocument identifier (required)
+# - description: Human-readable description (required)
+# - theory: TheorySpec record containing sorts, ops, and ui_config (instance)
 
 {
   # TheoryDocument metadata (REQUIRED by panproto)
@@ -7,6 +12,8 @@
   description = "A feature-rich terminal user interface built with Textual",
   
   # Theory definition - TheorySpec record (REQUIRED structure)
+  # The theory field contains: theory name, extends, sorts, ops
+  # AND the ui_config as nested data (panproto ignores unknown fields in TheorySpec)
   theory = {
     # Theory name inside the spec
     theory = "SimpleTUI",
@@ -31,7 +38,7 @@
       { name = "Static", kind = { type = "structural" } },
       { name = "Container", kind = { type = "structural" } },
       # Primitives
-      { name = "String", kind = { type = "variable" } },
+      { name = "String", kind = { type = "structural" } },
       { name = "Config", kind = { type = "structural" } },
     ],
     
@@ -131,45 +138,45 @@
         output = "KeyBinding"
       },
     ],
-  },
-  
-  # UI configuration (instance data)
-  ui_config = {
-    name = "Simple TUI",
-    description = "A simple terminal UI for task management",
-    layout = {
-      type = "grid",
-      columns = 2,
-      rows = "1fr 4fr 1fr",
-      gap = 1,
-      widgets = [
-        { type = "Header", id = "header", title = "Simple TUI", show_clock = true },
-        { type = "Sidebar", id = "sidebar", title = "Navigation", children = [
-          { type = "ListView", id = "nav_list", items = ["Home", "Tasks", "Settings"], focusable = true }
-        ]},
-        { type = "Container", id = "main", title = "Main Content", children = [
-          { type = "Static", id = "welcome", content = "Welcome to Simple TUI" },
-          { type = "LogView", id = "log", max_lines = 100, follow_tail = true }
-        ]},
-        { type = "Footer", id = "footer", text = "Press 'q' to quit, 'h' for help" }
+    
+    # UI CONFIGURATION (nested inside theory record)
+    # This is instance data, not part of the theory structure
+    # Phoenix extracts this after loading the theory
+    ui_config = {
+      name = "Simple TUI",
+      description = "A simple terminal UI for task management",
+      layout = {
+        type = "grid",
+        columns = 2,
+        rows = "1fr 4fr 1fr",
+        gap = 1,
+        widgets = [
+          { type = "Header", id = "header", title = "Simple TUI", show_clock = true },
+          { type = "Sidebar", id = "sidebar", title = "Navigation", children = [
+            { type = "ListView", id = "nav_list", items = ["Home", "Tasks", "Settings"], focusable = true }
+          ]},
+          { type = "Container", id = "main", title = "Main Content", children = [
+            { type = "Static", id = "welcome", content = "Welcome to Simple TUI" },
+            { type = "LogView", id = "log", max_lines = 100, follow_tail = true }
+          ]},
+          { type = "Footer", id = "footer", text = "Press 'q' to quit, 'h' for help" }
+        ],
+      },
+      key_bindings = [
+        { key = "q", action = "quit", context = "global" },
+        { key = "h", action = "help", context = "global" },
+        { key = "tab", action = "focus_next", context = "global" },
+        { key = "enter", action = "select", context = "list" },
       ],
-    },
-    key_bindings = [
-      { key = "q", action = "quit", context = "global" },
-      { key = "h", action = "help", context = "global" },
-      { key = "tab", action = "focus_next", context = "global" },
-      { key = "enter", action = "select", context = "list" },
-    ],
-    styles = {
-      primary = "#3B82F6",
-      secondary = "#64748B",
-      background = "#0F172A",
+      styles = {
+        primary = "#3B82F6",
+        secondary = "#64748B",
+        background = "#0F172A",
+      },
+      # Phoenix metadata (not part of theory)
+      template = "python-textual",
+      build_type = "python",
+      version = "0.1.0",
     },
   },
-  
-  # Metadata
-  template = "python-textual",
-  build_type = "python",
-  version = "0.1.0",
-  spec_version = "1.0",
 }

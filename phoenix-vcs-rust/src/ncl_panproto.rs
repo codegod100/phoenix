@@ -72,9 +72,11 @@ pub fn extract_ui_config_from_theory(content: &str) -> Result<serde_json::Value,
     let json_str = String::from_utf8(output.stdout)?;
     let doc: serde_json::Value = serde_json::from_str(&json_str)?;
     
-    doc.get("ui_config")
+    // ui_config is nested inside the theory record (panproto TheoryDocument format)
+    doc.get("theory")
+        .and_then(|t| t.get("ui_config"))
         .cloned()
-        .ok_or_else(|| "No ui_config found in spec".into())
+        .ok_or_else(|| "No ui_config found in theory (expected: theory.ui_config)".into())
 }
 
 /// Load spec as theory and extract UI config in one step
