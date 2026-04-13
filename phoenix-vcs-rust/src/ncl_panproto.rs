@@ -4,7 +4,7 @@
 //! Generalized Algebraic Theory (GAT) system.
 
 #[cfg(feature = "panproto")]
-use panproto_gat::{Theory, Sort, SortKind, Operation, SortParam};
+use panproto_gat::{Theory, Sort, SortKind, Operation};
 #[cfg(feature = "panproto")]
 use std::sync::Arc;
 use crate::ncl::ParsedNcl;

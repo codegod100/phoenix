@@ -1330,3 +1330,10 @@ pub struct PipelineResult {
     pub files_generated: usize,
     pub output_directory: String,
 }
+
+// Formal panproto morphisms module
+pub mod morphisms;
+
+// Re-export key morphism types when panproto is enabled
+#[cfg(feature = "panproto")]
+pub use morphisms::{CodeMorphism, create_ncl_to_code_morphism, generate_with_morphism};
