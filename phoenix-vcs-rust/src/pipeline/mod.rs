@@ -1426,6 +1426,9 @@ pub mod theory_codegen;
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 
+// Panproto architecture documentation (layers 1-4)
+pub mod panproto_layers;
+
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;
 
