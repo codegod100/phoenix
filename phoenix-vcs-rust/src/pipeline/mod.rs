@@ -1438,6 +1438,12 @@ pub mod why_skip_lens;
 // Lens layer: Bidirectional code ↔ config sync
 pub mod code_lens;
 
+// Route Schema layer (Layer 2): Graph structure for routes
+pub mod route_schema;
+
+// Route Lens layer (Layer 3): Bidirectional route transforms
+pub mod route_lens;
+
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 

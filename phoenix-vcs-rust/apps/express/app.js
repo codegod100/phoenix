@@ -11,7 +11,7 @@ app.get('/', (req, res) => {
 
 // API routes
 app.get('/api/status', (req, res) => {
-  res.json({ status: 'running', timestamp: new Date().toISOString() });
+  res.json({ status: 'not running', timestamp: new Date().toISOString() });
 });
 
 app.post('/api/users', (req, res) => {

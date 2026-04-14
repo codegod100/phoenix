@@ -1645,6 +1645,29 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
         }
     }
     
+    // ROUTE SCHEMA DIFF (Layer 2-3): For bundles with routes, do structural comparison
+    if bundle_name.contains("express") || bundle_name.contains("hono") || bundle_name.contains("flask") {
+        use crate::pipeline::route_lens::{RouteLens, RouteSyncEngine};
+        
+        println!("\n📊 Analyzing route structure (Schema + Lens layers)...");
+        
+        let engine = RouteSyncEngine::new();
+        let route_diff = engine.detect_changes(&current_code, &spec_content);
+        
+        if !route_diff.is_empty() {
+            println!("\n{}", RouteLens::format_diff(&route_diff));
+            
+            // Add route changes to the list
+            if !route_diff.modified.is_empty() {
+                for change in &route_diff.modified {
+                    // Format as: "route:/api/status response changed"
+                    let desc = format!("{} {} response", change.method.as_str(), change.path);
+                    changes.push(("routes", desc));
+                }
+            }
+        }
+    }
+    
     if changes.is_empty() {
         println!("\n✅ No changes detected. Code matches spec.ncl.");
         return Ok(());
