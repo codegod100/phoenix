@@ -51,14 +51,20 @@
 
   # Routes definition
   routes = [
-    { method = "GET", path = "/api/users", handler = "listUsers", description = "List all users" },
-    { method = "POST", path = "/api/users", handler = "createUsers", description = "Create a new user" },
-    { method = "PUT", path = "/api/users/:id", handler = "updateUsersByid", description = "Update a user" },
-    { method = "DELETE", path = "/api/users/:id", handler = "deleteUsersByid", description = "Delete a user" },
-    { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
-    { method = "POST", path = "/api/items", handler = "createItems", description = "Create a new item" },
-    { method = "GET", path = "/api/unicorns", handler = "listUnicorns", description = "🦄 List all magical unicorns with rainbow powers" },
-    { method = "GET", path = "/api/metrics", handler = "listMetrics", description = "📊 Get system metrics (uptime, requests)" },
+    { method = "GET", path = "/api/users", handler = "getApiUsers", description = "GET /api/users endpoint" },
+    { method = "POST", path = "/api/users", handler = "postApiUsers", description = "POST /api/users endpoint" },
+    { method = "PUT", path = "/api/users/:id", handler = "putApiUsersId", description = "PUT /api/users/:id endpoint" },
+    { method = "DELETE", path = "/api/users/:id", handler = "deleteApiUsersId", description = "DELETE /api/users/:id endpoint" },
+    { method = "GET", path = "/api/items", handler = "getApiItems", description = "GET /api/items endpoint" },
+    { method = "POST", path = "/api/items", handler = "postApiItems", description = "POST /api/items endpoint" },
+    { method = "GET", path = "/api/unicorns", handler = "getApiUnicorns", description = "GET /api/unicorns endpoint" },
+    { method = "GET", path = "/api/metrics", handler = "getApiMetrics", description = "GET /api/metrics endpoint" },
+    { method = "POST", path = "/api/orders", handler = "postApiOrders", description = "POST /api/orders endpoint" },
+  ],
+
+,
+
+},
   ],
 
   # Data models

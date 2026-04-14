@@ -16,6 +16,7 @@ This Express.js API provides endpoints for managing users and items with full CR
 - `POST /api/items` - Create a new item
 - `GET /api/unicorns` - 🦄 List all magical unicorns with rainbow powers
 - `GET /api/metrics` - 📊 Get system metrics (uptime, requests)
+- `POST /api/orders` - POST /api/orders
 
 ## Models
 

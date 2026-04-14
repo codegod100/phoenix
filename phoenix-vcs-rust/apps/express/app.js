@@ -34,6 +34,10 @@ app.get('/api/metrics', (req, res) => {
   res.json({ message: 'handler' });
 });
 
+app.post('/api/orders', (req, res) => {
+  res.json({ orderId: 'ORD-12345', status: 'pending' });
+});
+
 app.listen(3000, () => {
   console.log(`Server on port ${3000}`);
 });
