@@ -256,7 +256,7 @@ fn generate_hero_component(message: &str, subtitle: &str) -> String {
     format!(r#"// Hero Component
 @customElement('hero-image')
 export class HeroImage extends LitElement {{
-  static styles = css\`
+  static styles = css`
     :host {{
       display: block;
       width: 100%;
@@ -285,7 +285,7 @@ export class HeroImage extends LitElement {{
   \`;
 
   render() {{
-    return html\`
+    return html`
       <div class="hero">
         <h1>{}</h1>
         <p>{}</p>
@@ -301,7 +301,7 @@ fn generate_counter_component() -> String {
     r#"// Simple Counter Component
 @customElement('simple-counter')
 export class SimpleCounter extends LitElement {
-  static styles = css\`
+  static styles = css`
     :host {
       display: block;
       padding: 16px;
@@ -333,7 +333,7 @@ export class SimpleCounter extends LitElement {
   @property({ type: Number }) count = 0;
 
   render() {
-    return html\`
+    return html`
       <div class="counter">
         <button @click=\${() => this.count--}>-</button>
         <span>\${this.count}</span>
@@ -350,7 +350,7 @@ fn generate_todo_component() -> String {
     r#"// Todo List Component
 @customElement('todo-list')
 export class TodoList extends LitElement {
-  static styles = css\`
+  static styles = css`
     :host {
       display: block;
       padding: 16px;
@@ -418,7 +418,7 @@ export class TodoList extends LitElement {
   render() {
     const remaining = this.todos.filter(t => !t.completed).length;
     
-    return html\`
+    return html`
       <h2>Todo List</h2>
       <div class="input-row">
         <input
@@ -430,7 +430,7 @@ export class TodoList extends LitElement {
         <button @click=\${this._addTodo}>Add</button>
       </div>
       <ul>
-        \${this.todos.map(todo => html\`
+        \${this.todos.map(todo => html`
           <li>
             <input
               type="checkbox"
@@ -475,7 +475,7 @@ fn generate_app_component(tag: &str, class_name: &str, config: &ComponentConfig)
     
     component.push_str(&format!("// Main App Component\n@customElement('{}-app')\n", tag));
     component.push_str(&format!("export class {}App extends LitElement {{\n", class_name));
-    component.push_str(r#"  static styles = css\`
+    component.push_str(r#"  static styles = css`
     :host {
       display: block;
       max-width: 800px;
@@ -485,7 +485,7 @@ fn generate_app_component(tag: &str, class_name: &str, config: &ComponentConfig)
   \`;
 
   render() {
-    return html\`
+    return html`
 "#);
     
     if config.has_hero {

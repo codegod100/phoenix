@@ -7,7 +7,7 @@ import { customElement, property } from 'lit/decorators.js';
 // Hero Component
 @customElement('hero-image')
 export class HeroImage extends LitElement {
-  static styles = css\`
+  static styles = css`
     :host {
       display: block;
       width: 100%;
@@ -36,7 +36,7 @@ export class HeroImage extends LitElement {
   \`;
 
   render() {
-    return html\`
+    return html`
       <div class="hero">
         <h1>Large hero section with welcome message</h1>
         <p>Welcome</p>
@@ -48,7 +48,7 @@ export class HeroImage extends LitElement {
 // Simple Counter Component
 @customElement('simple-counter')
 export class SimpleCounter extends LitElement {
-  static styles = css\`
+  static styles = css`
     :host {
       display: block;
       padding: 16px;
@@ -80,7 +80,7 @@ export class SimpleCounter extends LitElement {
   @property({ type: Number }) count = 0;
 
   render() {
-    return html\`
+    return html`
       <div class="counter">
         <button @click=\${() => this.count--}>-</button>
         <span>\${this.count}</span>
@@ -93,7 +93,7 @@ export class SimpleCounter extends LitElement {
 // Todo List Component
 @customElement('todo-list')
 export class TodoList extends LitElement {
-  static styles = css\`
+  static styles = css`
     :host {
       display: block;
       padding: 16px;
@@ -161,7 +161,7 @@ export class TodoList extends LitElement {
   render() {
     const remaining = this.todos.filter(t => !t.completed).length;
     
-    return html\`
+    return html`
       <h2>Todo List</h2>
       <div class="input-row">
         <input
@@ -173,7 +173,7 @@ export class TodoList extends LitElement {
         <button @click=\${this._addTodo}>Add</button>
       </div>
       <ul>
-        \${this.todos.map(todo => html\`
+        \${this.todos.map(todo => html`
           <li>
             <input
               type="checkbox"
@@ -213,7 +213,7 @@ export class TodoList extends LitElement {
 // Main App Component
 @customElement('litty-app')
 export class LittyApp extends LitElement {
-  static styles = css\`
+  static styles = css`
     :host {
       display: block;
       max-width: 800px;
@@ -223,7 +223,7 @@ export class LittyApp extends LitElement {
   \`;
 
   render() {
-    return html\`
+    return html`
       <hero-image></hero-image>
       <simple-counter></simple-counter>
       <todo-list></todo-list>
