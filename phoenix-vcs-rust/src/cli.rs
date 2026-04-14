@@ -209,6 +209,23 @@ pub enum Commands {
         #[arg(long)]
         no_docs: bool,
     },
+    
+    /// Sync changes from generated code back to spec
+    /// 
+    /// Detects changes in generated files and suggests updates to spec.ncl
+    Sync {
+        /// Check for changes without modifying files (dry run)
+        #[arg(long)]
+        dry_run: bool,
+        
+        /// Automatically apply detected changes to spec.ncl
+        #[arg(long)]
+        apply: bool,
+        
+        /// Show detailed diff of detected changes
+        #[arg(long)]
+        diff: bool,
+    },
 }
 
 #[derive(Clone, Copy, Debug, clap::ValueEnum)]
@@ -288,6 +305,9 @@ pub async fn run() -> Result<()> {
         }
         Some(Commands::Reverse { lang, output, include_private, no_docs }) => {
             cmd_reverse(&cli.project_root, &lang, output, include_private, no_docs).await
+        }
+        Some(Commands::Sync { dry_run, apply, diff }) => {
+            cmd_sync(&cli.project_root, dry_run, apply, diff).await
         }
         // Default: run pipeline with auto-detection (zero-config mode)
         None => {
@@ -1551,6 +1571,115 @@ async fn cmd_reverse(
     println!("   2. Refine requirements to be more precise");
     println!("   3. Run: phoenix-vcs pipeline    # Generate code from specs");
     println!("   4. Compare: phoenix-vcs drift   # Check spec→code alignment");
+    
+    Ok(())
+}
+
+/// Sync command: Detect code changes and upstream to spec
+async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -> Result<()> {
+    use crate::pipeline::code_lens::{SyncEngine, lit_lens_bundle, ProjectNameLens, ThemeLens};
+    use std::collections::HashMap;
+    
+    println!("══════════════════════════════════════════════════════════════");
+    println!("🔄 Phoenix Sync — Code → Spec Upstreaming");
+    println!("══════════════════════════════════════════════════════════════\n");
+    
+    // Load current generated code
+    let mut current_code: HashMap<String, String> = HashMap::new();
+    
+    // Find generated files
+    let generated_files = vec![
+        "package.json",
+        "src/main.ts",
+        "src/hero.ts",
+    ];
+    
+    for file in &generated_files {
+        let path = project_root.join(file);
+        if let Ok(content) = tokio::fs::read_to_string(&path).await {
+            current_code.insert(file.to_string(), content);
+        }
+    }
+    
+    if current_code.is_empty() {
+        println!("⚠️  No generated code found. Run 'phoenix pipeline' first.");
+        return Ok(());
+    }
+    
+    println!("📁 Loaded {} generated files", current_code.len());
+    
+    // Use lenses to extract values
+    let project_name = ProjectNameLens::get(&current_code);
+    let theme = ThemeLens::get(&current_code);
+    
+    println!("\n🔍 Detected values from code:");
+    if let Some(name) = &project_name {
+        println!("   Project name: {}", name);
+    }
+    if let Some(t) = &theme {
+        println!("   Theme: {}", t);
+    }
+    
+    // Load spec.ncl to compare
+    let spec_path = project_root.join("spec.ncl");
+    let spec_content = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        content
+    } else {
+        println!("⚠️  No spec.ncl found at {:?}", spec_path);
+        String::new()
+    };
+    
+    // Check for differences
+    let mut changes = Vec::new();
+    
+    if let Some(name) = project_name {
+        if !spec_content.contains(&format!("project_name = \"{}\"", name)) {
+            changes.push(("project_name", name));
+        }
+    }
+    
+    if let Some(t) = theme {
+        if t != "unknown" && !spec_content.contains(&format!("theme = \"{}\"", t)) {
+            changes.push(("theme", t));
+        }
+    }
+    
+    if changes.is_empty() {
+        println!("\n✅ No changes detected. Code matches spec.ncl.");
+        return Ok(());
+    }
+    
+    println!("\n📊 Changes detected: {}", changes.len());
+    
+    if diff {
+        println!("\n📝 Detailed diff:");
+        for (field, value) in &changes {
+            println!("   {}: -> {}", field, value);
+        }
+    }
+    
+    // Generate upstream suggestions
+    println!("\n══════════════════════════════════════════════════════════════");
+    println!("📝 Suggested spec.ncl updates:");
+    println!("══════════════════════════════════════════════════════════════");
+    
+    for (field, value) in &changes {
+        println!("\n// Detected change in generated code");
+        println!("phoenix_config.{} = \"{}\"", field, value);
+    }
+    
+    if dry_run {
+        println!("\n🔍 Dry run mode - no changes applied.");
+        println!("   Run with --apply to update spec.ncl");
+    } else if apply {
+        // In real implementation, this would parse and modify spec.ncl
+        println!("\n⚠️  Auto-apply not yet implemented.");
+        println!("   Please manually apply the suggested changes above.");
+    } else {
+        println!("\n💡 To apply changes, run:");
+        println!("   phoenix sync --apply");
+        println!("\n   Or manually edit spec.ncl with the changes shown above.");
+    }
     
     Ok(())
 }
