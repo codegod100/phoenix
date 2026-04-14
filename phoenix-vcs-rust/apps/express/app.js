@@ -10,6 +10,10 @@ app.post('/api/users', (req, res) => {
   res.json({ message: 'handler' });
 });
 
+app.put('/api/users/:id', (req, res) => {
+  res.json({ message: 'handler' });
+});
+
 app.delete('/api/users/:id', (req, res) => {
   res.json({ message: 'handler' });
 });
