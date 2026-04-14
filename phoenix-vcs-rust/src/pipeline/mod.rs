@@ -1423,6 +1423,12 @@ pub mod spec_md;
 // Bundle-agnostic Theory-based code generation
 pub mod theory_codegen;
 
+// Theory → Schema compiler (Layer 1 → 2)
+pub mod theory_compiler;
+
+// Expr-based code generation (Layer 4)
+pub mod expr_codegen;
+
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 
