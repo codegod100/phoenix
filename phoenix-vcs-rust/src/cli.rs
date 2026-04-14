@@ -1934,7 +1934,31 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
         let mut updated_content = spec_content.clone();
         let mut applied_count = 0;
         
+        // First: Handle route changes using Lens put (bidirectional sync)
+        if bundle_name.contains("express") || bundle_name.contains("hono") || bundle_name.contains("flask") {
+            use crate::pipeline::route_lens::RouteLens;
+            use crate::pipeline::route_schema::parse_express_routes;
+            
+            println!("\n🔄 Syncing routes via Lens put (bidirectional)...");
+            
+            // Parse current code routes
+            let app_js = current_code.get("app.js").cloned().unwrap_or_default();
+            let code_schema = parse_express_routes(&app_js);
+            
+            // Create lens and perform put
+            updated_content = RouteLens::put(&code_schema, &updated_content);
+            
+            println!("   ✓ Updated routes array in spec.ncl");
+            applied_count += 1;
+        }
+        
+        // Then: Handle simple field changes
         for (field, value) in &changes {
+            if field == &"routes" {
+                // Already handled above
+                continue;
+            }
+            
             // Try to find and replace in phoenix_config section
             let search_pattern = format!("{} = \"", field);
             if let Some(pos) = updated_content.find(&search_pattern) {
