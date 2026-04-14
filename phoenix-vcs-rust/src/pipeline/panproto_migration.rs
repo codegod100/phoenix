@@ -95,6 +95,55 @@ pub trait Migrate<From, To>: DataLens<From, To> {
 impl<T, From, To> Migrate<From, To> for T where T: DataLens<From, To> {}
 
 // ============================================================================
+// DOMAIN VALIDATION (added layer for HTTP method/path validation)
+// ============================================================================
+
+/// Trait for domain-specific validation.
+/// 
+/// This is where HTTP method validation, path sanitization, etc. go.
+pub trait DomainValidate {
+    /// Validate domain-specific constraints.
+    /// 
+    /// For Express: validates HTTP methods, path format, etc.
+    fn domain_validate(&self) -> Result<(), String>;
+}
+
+/// Check if HTTP method is valid
+pub fn validate_http_method(method: &str) -> Result<(), String> {
+    const VALID_METHODS: &[&str] = &["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
+    let upper = method.to_uppercase();
+    if VALID_METHODS.contains(&upper.as_str()) {
+        Ok(())
+    } else {
+        Err(format!("Invalid HTTP method: '{}'. Valid methods: {:?}", method, VALID_METHODS))
+    }
+}
+
+/// Sanitize path to prevent XSS/injection
+pub fn sanitize_path(path: &str) -> Result<String, String> {
+    // Check for script tags
+    if path.to_lowercase().contains("<script") {
+        return Err(format!("Path contains forbidden content: {}", path));
+    }
+    
+    // Check for valid characters
+    let valid_chars = path.chars().all(|c| {
+        c.is_alphanumeric() || c == '/' || c == ':' || c == '-' || c == '_' || c == '.'
+    });
+    
+    if !valid_chars {
+        return Err(format!("Path contains invalid characters: {}", path));
+    }
+    
+    // Ensure path starts with /
+    if !path.starts_with('/') {
+        return Ok(format!("/{}", path));
+    }
+    
+    Ok(path.to_string())
+}
+
+// ============================================================================
 // LAYER 4: Expr - MUST use panproto_expr::eval
 // ============================================================================
 
@@ -150,28 +199,34 @@ fn literal_to_string(lit: &Literal) -> String {
 // COMPOSITE: Full Pipeline Trait
 // ============================================================================
 
-/// Complete 4-layer pipeline trait.
+/// Complete 4-layer pipeline trait (plus domain validation layer).
 /// 
 /// Implementations get the full panproto stack:
 /// 1. GatLift - Layer 1 (panproto_gat)
 /// 2. SchemaCompile - Layer 2 (panproto_schema + TheoryCompiler)
 /// 3. DataLens + Migrate - Layer 3 (panproto_lens concepts)
 /// 4. ExprGenerate - Layer 4 (panproto_expr::eval)
+/// 5. DomainValidate - Domain-specific validation (HTTP methods, paths, etc.)
 pub trait PanprotoPipeline<Domain, Intermediate, Output>:
     GatLift<Domain>
     + SchemaCompile
     + DataLens<Term, Intermediate>
     + DataLens<Intermediate, Expr>
     + ExprGenerate
+    + DomainValidate
 {
     /// Execute the full pipeline.
     /// 
     /// Returns generated String (code output)
     fn pipeline(&self, domain: Domain) -> Result<String, PipelineError> {
+        // Layer 0: Domain validation (HTTP methods, paths, etc.)
+        self.domain_validate()
+            .map_err(|e| PipelineError::Validation(e))?;
+        
         // Layer 1: Lift domain → Term
         let term = self.lift();
         
-        // Layer 2: Validate
+        // Layer 2: Structural validation
         self.validate(&term)
             .map_err(|e| PipelineError::Validation(e))?;
         
@@ -556,6 +611,20 @@ impl JsExpressPipeline {
             }
             _ => "// Unknown\n".into(),
         }
+    }
+}
+
+// Domain validation for JsExpressPipeline
+impl DomainValidate for JsExpressPipeline {
+    fn domain_validate(&self) -> Result<(), String> {
+        for route in &self.routes {
+            // Validate HTTP method
+            validate_http_method(&route.method)?;
+            
+            // Validate and sanitize path
+            sanitize_path(&route.path)?;
+        }
+        Ok(())
     }
 }
 

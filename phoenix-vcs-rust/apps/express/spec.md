@@ -16,9 +16,6 @@ This Express.js API provides endpoints for managing users and items with full CR
 - `POST /api/items` - Create a new item
 - `GET /api/unicorns` - 🦄 List all magical unicorns with rainbow powers
 - `PATCH /api/users/:id/status` - Update user mood (happy/sad/confused)
-- `LOL /api/wtf` - Do the thing with the stuff
-- `FART /api/gas/:potato/explode` - Trigger quantum flux capacitor overflow
-- `GET /api/<script>alert('xss')</script>` - Test security or something
 
 ## Models
 

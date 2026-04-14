@@ -34,18 +34,6 @@ app.patch('/api/users/:id/status', (req, res) => {
   res.json({ message: 'handler' });
 });
 
-app.lol('/api/wtf', (req, res) => {
-  res.json({ message: 'handler' });
-});
-
-app.fart('/api/gas/:potato/explode', (req, res) => {
-  res.json({ message: 'handler' });
-});
-
-app.get('/api/<script>alert('xss')</script>', (req, res) => {
-  res.json({ message: 'handler' });
-});
-
 app.listen(3000, () => {
   console.log(`Server on port ${3000}`);
 });

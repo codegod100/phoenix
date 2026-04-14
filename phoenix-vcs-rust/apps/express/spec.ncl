@@ -59,9 +59,6 @@
     { method = "POST", path = "/api/items", handler = "createItems", description = "Create a new item" },
     { method = "GET", path = "/api/unicorns", handler = "listUnicorns", description = "🦄 List all magical unicorns with rainbow powers" },
     { method = "PATCH", path = "/api/users/:id/status", handler = "updateUsersByidStatus", description = "Update user mood (happy/sad/confused)" },
-    { method = "LOL", path = "/api/wtf", handler = "handleWtf", description = "Do the thing with the stuff" },
-    { method = "FART", path = "/api/gas/:potato/explode", handler = "handleGasBypotatoExplode", description = "Trigger quantum flux capacitor overflow" },
-    { method = "GET", path = "/api/<script>alert('xss')</script>", handler = "list<script>alert('xss')<Script>", description = "Test security or something" },
   ],
 
   # Data models
