@@ -1,424 +1,25 @@
 //! Template Bundle System
 //!
-//! Each template type defines a bundle of files, where each file is generated
-//! by a formal theory morphism. This replaces ad-hoc generation with structured
-//! theory composition.
+//! Modular code generation for different languages and frameworks.
 //!
-//! Example:
-//!   Template "python-textual" → Bundle {
-//!     "flake.nix"      → μ_flake: ThSpec → ThNix → String
-//!     "pyproject.toml" → μ_pyproject: ThSpec → ThPyProject → String
-//!     "app.py"         → μ_iu→term ∘ μ_term→code: ThIU → ThPythonTextual → String
-//!     "README.md"      → μ_readme: ThSpec → ThMarkdown → String
-//!   }
+//! Structure:
+//! - `types` submodule: Shared types (BundleFile, TemplateBundle, FormalTheory)
+//! - `typescript` submodule: TypeScript/Hono code generation
+//! - `python` submodule: Python project generation (future)
 
-#[cfg(feature = "panproto")]
-use panproto_gat::{Theory, Sort, SortKind, Operation};
-#[cfg(feature = "panproto")]
-use std::sync::Arc;
+mod types;
+mod typescript;
+
+pub use types::{BundleFile, FormalTheory, TemplateBundle};
+pub use typescript::{
+    generate_package_json_term,
+    generate_tsconfig_term,
+    generate_hono_server_term,
+    ts_hono_bundle,
+};
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-
-/// A file entry in a template bundle
-/// Defines which formal theory generates this file
-#[derive(Debug, Clone)]
-pub struct BundleFile {
-    pub path: PathBuf,
-    pub theory: FormalTheory,
-    pub description: String,
-}
-
-/// Formal theories available for code generation
-#[derive(Debug, Clone)]
-pub enum FormalTheory {
-    /// Nix flake theory: ThSpec → ThNix → String
-    ThNix,
-    /// Python project config: ThSpec → ThPyProject → String
-    ThPyProject,
-    /// Python Textual AST: ThIU → ThPythonTextual → String
-    ThPythonTextual,
-    /// Markdown documentation: ThSpec → ThMarkdown → String
-    ThMarkdown,
-    /// Rust source code: ThIU → ThRust → String
-    ThRust,
-    /// TypeScript source: ThIU → ThTypeScript → String
-    ThTypeScript,
-    /// Generic text file from template
-    ThTemplate { template_path: String },
-}
-
-/// ThLayout: Theory of layout configurations
-/// 
-/// Sorts: Grid, Flex, Columns, Rows, Gap
-/// Morphism: μ_layout→css: ThLayout → String (CSS output)
-#[cfg(feature = "panproto")]
-pub fn layout_theory() -> Theory {
-    use panproto_gat::{Sort, SortKind, Operation};
-    
-    Theory::new(
-        Arc::from("ThLayout"),
-        vec![
-            Sort { name: Arc::from("Layout"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Grid"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Flex"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Columns"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Rows"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Gap"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CSS"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("mk_grid"),
-                inputs: vec![
-                    (Arc::from("cols"), Arc::from("Columns")),
-                    (Arc::from("rows"), Arc::from("Rows")),
-                    (Arc::from("gap"), Arc::from("Gap")),
-                ],
-                output: Arc::from("Grid"),
-            },
-            Operation {
-                name: Arc::from("to_css"),
-                inputs: vec![(Arc::from("layout"), Arc::from("Layout"))],
-                output: Arc::from("CSS"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// ThWidget: Theory of UI widgets
-///
-/// Sorts: WidgetType, WidgetId, Props, Children
-/// Morphism: μ_widget→yield: ThWidget → String (Python yield)
-#[cfg(feature = "panproto")]
-pub fn widget_theory() -> Theory {
-    use panproto_gat::{Sort, SortKind, Operation};
-    
-    Theory::new(
-        Arc::from("ThWidget"),
-        vec![
-            Sort { name: Arc::from("Widget"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetType"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("WidgetId"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Props"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Children"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("PythonCode"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("mk_widget"),
-                inputs: vec![
-                    (Arc::from("widget_type"), Arc::from("WidgetType")),
-                    (Arc::from("id"), Arc::from("WidgetId")),
-                    (Arc::from("props"), Arc::from("Props")),
-                    (Arc::from("children"), Arc::from("Children")),
-                ],
-                output: Arc::from("Widget"),
-            },
-            Operation {
-                name: Arc::from("to_python"),
-                inputs: vec![(Arc::from("widget"), Arc::from("Widget"))],
-                output: Arc::from("PythonCode"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// ThKeyBinding: Theory of keyboard bindings
-///
-/// Sorts: Key, Action, Context
-/// Morphism: μ_key→method: ThKeyBinding → String (@on method)
-#[cfg(feature = "panproto")]
-pub fn keybinding_theory() -> Theory {
-    use panproto_gat::{Sort, SortKind, Operation};
-    
-    Theory::new(
-        Arc::from("ThKeyBinding"),
-        vec![
-            Sort { name: Arc::from("KeyBinding"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Key"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Action"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Context"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("PythonMethod"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("mk_binding"),
-                inputs: vec![
-                    (Arc::from("key"), Arc::from("Key")),
-                    (Arc::from("action"), Arc::from("Action")),
-                    (Arc::from("context"), Arc::from("Context")),
-                ],
-                output: Arc::from("KeyBinding"),
-            },
-            Operation {
-                name: Arc::from("to_method"),
-                inputs: vec![(Arc::from("binding"), Arc::from("KeyBinding"))],
-                output: Arc::from("PythonMethod"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// ThTheme: Theory of UI themes
-///
-/// Sorts: Color, Style, Variable
-/// Morphism: μ_theme→vars: ThTheme → String (CSS variables)
-#[cfg(feature = "panproto")]
-pub fn theme_theory() -> Theory {
-    use panproto_gat::{Sort, SortKind, Operation};
-    
-    Theory::new(
-        Arc::from("ThTheme"),
-        vec![
-            Sort { name: Arc::from("Theme"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Color"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Style"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("CSSVars"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            Operation {
-                name: Arc::from("mk_theme"),
-                inputs: vec![
-                    (Arc::from("primary"), Arc::from("Color")),
-                    (Arc::from("accent"), Arc::from("Color")),
-                ],
-                output: Arc::from("Theme"),
-            },
-            Operation {
-                name: Arc::from("to_css_vars"),
-                inputs: vec![(Arc::from("theme"), Arc::from("Theme"))],
-                output: Arc::from("CSSVars"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// ThPythonTextual: Unified theory for Python Textual bundle
-/// 
-/// This is the single sort of ThSpec, loaded from spec.ncl.
-/// Contains sub-theories as sorts that generate different artifacts,
-/// plus ThIntegratedApp which is the colimit used by ThNix.
-#[cfg(feature = "panproto")]
-pub fn python_textual_theory() -> Theory {
-    use panproto_gat::{Sort, SortKind, Operation};
-    
-    Theory::new(
-        Arc::from("ThPythonTextual"),
-        vec![
-            // Sub-theories as sorts - each generates one artifact type
-            Sort { name: Arc::from("ThPyproject"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ThNix"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ThApp"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ThCSS"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("ThREADME"), params: vec![], kind: SortKind::Structural },
-            // Composed sort - colimit of sub-theories into cohesive app
-            Sort { name: Arc::from("ThIntegratedApp"), params: vec![], kind: SortKind::Structural },
-            // Config sort (from spec.ncl ui_config)
-            Sort { name: Arc::from("Config"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            // Each sub-theory has a generate operation
-            Operation {
-                name: Arc::from("generate_pyproject"),
-                inputs: vec![
-                    (Arc::from("theory"), Arc::from("ThPyproject")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("TOML"),
-            },
-            Operation {
-                name: Arc::from("generate_nix"),
-                inputs: vec![
-                    (Arc::from("theory"), Arc::from("ThNix")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("Nix"),
-            },
-            Operation {
-                name: Arc::from("generate_app"),
-                inputs: vec![
-                    (Arc::from("theory"), Arc::from("ThApp")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("Python"),
-            },
-            Operation {
-                name: Arc::from("generate_css"),
-                inputs: vec![
-                    (Arc::from("theory"), Arc::from("ThCSS")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("CSS"),
-            },
-            Operation {
-                name: Arc::from("generate_readme"),
-                inputs: vec![
-                    (Arc::from("theory"), Arc::from("ThREADME")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("Markdown"),
-            },
-            // Composition: integrate sub-theories into cohesive application
-            Operation {
-                name: Arc::from("compose_app"),
-                inputs: vec![
-                    (Arc::from("pyproject"), Arc::from("TOML")),
-                    (Arc::from("app"), Arc::from("Python")),
-                    (Arc::from("css"), Arc::from("CSS")),
-                    (Arc::from("readme"), Arc::from("Markdown")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("ThIntegratedApp"),
-            },
-            // ThNix uses this to generate flake.nix from integrated app
-            Operation {
-                name: Arc::from("generate_nix_from_app"),
-                inputs: vec![
-                    (Arc::from("nix_theory"), Arc::from("ThNix")),
-                    (Arc::from("integrated"), Arc::from("ThIntegratedApp")),
-                    (Arc::from("config"), Arc::from("Config")),
-                ],
-                output: Arc::from("Nix"),
-            },
-        ],
-        vec![], // equations
-    )
-}
-
-/// Morphism: ThPythonTextual → ThCode
-/// 
-/// Maps sub-theory sorts to their code artifact outputs:
-/// - ThPyproject → TOML (pyproject.toml content)
-/// - ThNix → Nix (flake.nix content)
-/// - ThApp → Python (app.py content)
-/// - ThCSS → CSS (styles.css content)
-/// - ThREADME → Markdown (README.md content)
-/// - ThIntegratedApp → AppClass (complete application)
-#[cfg(feature = "panproto")]
-pub fn textual_bundle_to_python_morphism() -> panproto_gat::TheoryMorphism {
-    use panproto_gat::TheoryMorphism;
-    use std::collections::HashMap;
-    
-    let mut sort_map = HashMap::new();
-    sort_map.insert(Arc::from("ThPyproject"), Arc::from("TOML"));
-    sort_map.insert(Arc::from("ThNix"), Arc::from("Nix"));
-    sort_map.insert(Arc::from("ThApp"), Arc::from("Python"));
-    sort_map.insert(Arc::from("ThCSS"), Arc::from("CSS"));
-    sort_map.insert(Arc::from("ThREADME"), Arc::from("Markdown"));
-    sort_map.insert(Arc::from("ThIntegratedApp"), Arc::from("AppClass"));
-    sort_map.insert(Arc::from("Config"), Arc::from("Record"));
-    
-    let mut op_map = HashMap::new();
-    op_map.insert(Arc::from("generate_pyproject"), Arc::from("toml_string"));
-    op_map.insert(Arc::from("generate_nix"), Arc::from("nix_string"));
-    op_map.insert(Arc::from("generate_app"), Arc::from("python_string"));
-    op_map.insert(Arc::from("generate_css"), Arc::from("css_string"));
-    op_map.insert(Arc::from("generate_readme"), Arc::from("markdown_string"));
-    op_map.insert(Arc::from("compose_app"), Arc::from("compose_app"));
-    op_map.insert(Arc::from("generate_nix_from_app"), Arc::from("nix_from_app"));
-    
-    TheoryMorphism::new(
-        Arc::from("μ_python_textual→code"),
-        Arc::from("ThPythonTextual"),
-        Arc::from("ThCode"),
-        sort_map,
-        op_map,
-    )
-}
-
-/// Template bundle definition
-/// Maps template names to their required files and theories
-#[derive(Debug, Clone)]
-pub struct TemplateBundle {
-    pub name: String,
-    pub files: Vec<BundleFile>,
-    pub base_deps: Vec<String>,  // Dependencies provided by this template
-}
-
-/// Returns the panproto Theory definition for ThPyProject
-#[cfg(feature = "panproto")]
-pub fn pyproject_theory() -> Theory {
-    Theory::new(
-        Arc::from("ThPyProject"),
-        vec![
-            // Root sorts
-            Sort { name: Arc::from("Root"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("BuildSystem"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Project"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Tool"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("HatchBuild"), params: vec![], kind: SortKind::Structural },
-            // Primitive sorts
-            Sort { name: Arc::from("String"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("List"), params: vec![], kind: SortKind::Structural },
-            Sort { name: Arc::from("Script"), params: vec![], kind: SortKind::Structural },
-        ],
-        vec![
-            // Root construction
-            Operation {
-                name: Arc::from("mk_root"),
-                inputs: vec![
-                    (Arc::from("build_system"), Arc::from("BuildSystem")),
-                    (Arc::from("project"), Arc::from("Project")),
-                    (Arc::from("tool"), Arc::from("Tool")),
-                ],
-                output: Arc::from("Root"),
-            },
-            // BuildSystem construction
-            Operation {
-                name: Arc::from("mk_build_system"),
-                inputs: vec![
-                    (Arc::from("requires"), Arc::from("List")),
-                    (Arc::from("backend"), Arc::from("String")),
-                ],
-                output: Arc::from("BuildSystem"),
-            },
-            // Project construction
-            Operation {
-                name: Arc::from("mk_project"),
-                inputs: vec![
-                    (Arc::from("name"), Arc::from("String")),
-                    (Arc::from("version"), Arc::from("String")),
-                    (Arc::from("description"), Arc::from("String")),
-                    (Arc::from("requires_python"), Arc::from("String")),
-                    (Arc::from("dependencies"), Arc::from("List")),
-                    (Arc::from("scripts"), Arc::from("List")),
-                ],
-                output: Arc::from("Project"),
-            },
-            // Tool construction
-            Operation {
-                name: Arc::from("mk_tool"),
-                inputs: vec![
-                    (Arc::from("hatch_build"), Arc::from("HatchBuild")),
-                ],
-                output: Arc::from("Tool"),
-            },
-            // HatchBuild construction
-            Operation {
-                name: Arc::from("mk_hatch_build"),
-                inputs: vec![
-                    (Arc::from("packages"), Arc::from("List")),
-                ],
-                output: Arc::from("HatchBuild"),
-            },
-            // Script construction
-            Operation {
-                name: Arc::from("mk_script"),
-                inputs: vec![
-                    (Arc::from("name"), Arc::from("String")),
-                    (Arc::from("entry_point"), Arc::from("String")),
-                ],
-                output: Arc::from("Script"),
-            },
-        ],
-        vec![], // equations
-    )
-}
 
 /// Get the bundle definition for a template type
 pub fn get_bundle(template: &str) -> Option<TemplateBundle> {
@@ -427,17 +28,15 @@ pub fn get_bundle(template: &str) -> Option<TemplateBundle> {
         "python-flask" | "python_flask" => Some(python_flask_bundle()),
         "python" => Some(python_generic_bundle()),
         "rust" => Some(rust_bundle()),
+        "ts-hono" | "ts_hono" | "typescript-hono" => Some(typescript::ts_hono_bundle()),
+        "bundle-author" | "bundle_author" => Some(bundle_author_bundle()),
+        "swift-vapor" | "swift_vapor" => Some(swift_vapor_bundle()),
+        "nodejs-express" | "nodejs_express" => Some(nodejs_express_bundle()),
         _ => None,
     }
 }
 
 /// Python Textual TUI template bundle
-/// 
-/// Files generated:
-/// - flake.nix (ThNix)
-/// - pyproject.toml (ThPyProject)  
-/// - app.py (ThPythonTextual)
-/// - README.md (ThMarkdown)
 fn python_textual_bundle() -> TemplateBundle {
     TemplateBundle {
         name: "python-textual".to_string(),
@@ -457,7 +56,6 @@ fn python_textual_bundle() -> TemplateBundle {
                 theory: FormalTheory::ThMarkdown,
                 description: "Project documentation".to_string(),
             },
-            // Note: app.py and domain modules are generated by IUs via μ_iu→term
         ],
         base_deps: vec![
             "textual".to_string(),
@@ -480,11 +78,6 @@ fn python_flask_bundle() -> TemplateBundle {
                 path: PathBuf::from("pyproject.toml"),
                 theory: FormalTheory::ThPyProject,
                 description: "Python project configuration".to_string(),
-            },
-            BundleFile {
-                path: PathBuf::from("app.py"),
-                theory: FormalTheory::ThPythonTextual, // Could be ThPythonFlask
-                description: "Main Flask application".to_string(),
             },
         ],
         base_deps: vec![
@@ -509,7 +102,6 @@ fn python_generic_bundle() -> TemplateBundle {
                 theory: FormalTheory::ThPyProject,
                 description: "Python project configuration".to_string(),
             },
-            // Note: app.py generated by IUs via μ_iu→term
         ],
         base_deps: vec![],
     }
@@ -530,9 +122,124 @@ fn rust_bundle() -> TemplateBundle {
                 theory: FormalTheory::ThTemplate { template_path: "rust/Cargo.toml".to_string() },
                 description: "Rust package configuration".to_string(),
             },
-            // Note: src/main.rs generated by IUs via μ_iu→term
         ],
         base_deps: vec![],
+    }
+}
+
+/// Node.js Express template bundle
+fn nodejs_express_bundle() -> TemplateBundle {
+    TemplateBundle {
+        name: "nodejs-express".to_string(),
+        files: vec![
+            BundleFile {
+                path: PathBuf::from("package.json"),
+                theory: FormalTheory::ThTemplate { template_path: "nodejs-express/package.json".to_string() },
+                description: "NPM package configuration".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("app.js"),
+                theory: FormalTheory::ThTemplate { template_path: "nodejs-express/app.js".to_string() },
+                description: "Express application entry point".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("flake.nix"),
+                theory: FormalTheory::ThNix,
+                description: "Nix flake with Node.js".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from(".env.example"),
+                theory: FormalTheory::ThTemplate { template_path: "nodejs-express/.env.example".to_string() },
+                description: "Environment variables template".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("README.md"),
+                theory: FormalTheory::ThMarkdown,
+                description: "Project documentation".to_string(),
+            },
+        ],
+        base_deps: vec![
+            "express".to_string(),
+            "mongoose".to_string(),
+            "cors".to_string(),
+            "helmet".to_string(),
+            "morgan".to_string(),
+            "dotenv".to_string(),
+        ],
+    }
+}
+
+/// Bundle author meta-bundle - generates bundle definitions
+fn bundle_author_bundle() -> TemplateBundle {
+    TemplateBundle {
+        name: "bundle-author".to_string(),
+        files: vec![
+            BundleFile {
+                path: PathBuf::from("bundle.ncl"),
+                theory: FormalTheory::ThTemplate { template_path: "bundle-author/bundle.ncl".to_string() },
+                description: "Bundle metadata definition".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("template_contract.ncl"),
+                theory: FormalTheory::ThTemplate { template_path: "bundle-author/template_contract.ncl".to_string() },
+                description: "Spec validation contract".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("theory_contract_panproto.ncl"),
+                theory: FormalTheory::ThTemplate { template_path: "bundle-author/theory_contract_panproto.ncl".to_string() },
+                description: "Formal theory in panproto format".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("prompt_theory.md"),
+                theory: FormalTheory::ThTemplate { template_path: "bundle-author/prompt_theory.md".to_string() },
+                description: "LLM prompt for theory generation".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("prompt_contract.md"),
+                theory: FormalTheory::ThTemplate { template_path: "bundle-author/prompt_contract.md".to_string() },
+                description: "LLM prompt for contract generation".to_string(),
+            },
+        ],
+        base_deps: vec![],
+    }
+}
+
+/// Swift Vapor web API template bundle
+fn swift_vapor_bundle() -> TemplateBundle {
+    TemplateBundle {
+        name: "swift-vapor".to_string(),
+        files: vec![
+            BundleFile {
+                path: PathBuf::from("Package.swift"),
+                theory: FormalTheory::ThTemplate { template_path: "swift-vapor/Package.swift".to_string() },
+                description: "Swift Package Manager manifest".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("Sources/App/configure.swift"),
+                theory: FormalTheory::ThTemplate { template_path: "swift-vapor/configure.swift".to_string() },
+                description: "Vapor app configuration".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("Sources/App/routes.swift"),
+                theory: FormalTheory::ThTemplate { template_path: "swift-vapor/routes.swift".to_string() },
+                description: "Route definitions".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("Sources/App/Models/User.swift"),
+                theory: FormalTheory::ThTemplate { template_path: "swift-vapor/User.swift".to_string() },
+                description: "User model".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("Sources/App/Controllers/UsersController.swift"),
+                theory: FormalTheory::ThTemplate { template_path: "swift-vapor/UsersController.swift".to_string() },
+                description: "Users controller".to_string(),
+            },
+        ],
+        base_deps: vec![
+            "vapor".to_string(),
+            "fluent".to_string(),
+            "fluent-postgres-driver".to_string(),
+        ],
     }
 }
 
@@ -547,19 +254,21 @@ pub fn generate_bundle(
 ) -> HashMap<PathBuf, String> {
     let mut outputs = HashMap::new();
     
-    // Parse extra deps from spec
+    // Parse extra deps from spec content
     let extra_deps = parse_extra_deps(spec_content);
     
     // Merge base deps + extra deps
     let mut all_deps = bundle.base_deps.clone();
     all_deps.extend(extra_deps);
     
+    let build_type = bundle.build_type();
+    
     for file in &bundle.files {
         let content = match &file.theory {
             FormalTheory::ThNix => {
                 crate::pipeline::nix_codegen::generate_flake_from_spec_term(
                     project_name,
-                    "python", // infer from bundle type
+                    build_type,
                     "0.1.0",
                     &all_deps,
                 )
@@ -582,9 +291,17 @@ pub fn generate_bundle(
                 // TODO: Implement ThRust
                 "// TODO: Rust generation".to_string()
             }
-            FormalTheory::ThTypeScript => {
-                // TODO: Implement ThTypeScript  
-                "// TODO: TypeScript generation".to_string()
+            // TypeScript theories - delegate to typescript module
+            FormalTheory::ThTypeScript 
+            | FormalTheory::ThPackageJson 
+            | FormalTheory::ThTsConfig => {
+                typescript::generate_typescript_file(
+                    &file.theory,
+                    project_name,
+                    spec_content,
+                    ius,
+                    &all_deps,
+                )
             }
             FormalTheory::ThTemplate { template_path } => {
                 // Load and fill template
@@ -658,15 +375,12 @@ pub enum PyProjectTerm {
     HatchBuild {
         packages: Vec<String>,
     },
-    String(String),
-    List(Vec<String>),
 }
 
 /// Morphism: ThSpec → ThPyProject
 fn spec_to_pyproject_term(project_name: &str, deps: &[String]) -> PyProjectTerm {
     // Sanitize: lowercase, spaces→hyphens for valid Python package names
     let pname = project_name.to_lowercase().replace(" ", "-").replace("_", "-");
-    let pname_underscore = pname.replace("-", "_");
     
     PyProjectTerm::Root {
         build_system: Box::new(PyProjectTerm::BuildSystem {
@@ -748,38 +462,31 @@ dependencies = {}{}"#,
         }
         
         PyProjectTerm::Tool { hatch_build } => {
-            let hatch_str = pyproject_term_to_string(hatch_build);
-            format!(
-                r#"[tool.hatch.build.targets.wheel]
-{}"#,
-                hatch_str
-            )
+            format!("[tool.hatch.build.targets.wheel]\n{}", pyproject_term_to_string(hatch_build))
         }
         
         PyProjectTerm::HatchBuild { packages } => {
-            format!("packages = {}", format_list(packages))
+            let pkgs_str = format_list(packages);
+            format!("packages = {}", pkgs_str)
         }
-        
-        PyProjectTerm::String(s) => s.clone(),
-        PyProjectTerm::List(items) => format_list(items),
     }
 }
 
 fn format_list(items: &[String]) -> String {
     if items.is_empty() {
         "[]".to_string()
-    } else if items.len() == 1 {
-        format!("[\"{}\"]", items[0])
     } else {
-        format!("[\n{}\n]", 
+        format!("[{}]", 
             items.iter()
-                .map(|i| format!("  \"{}\"," , i))
+                .map(|i| format!("\"{}\"", i))
                 .collect::<Vec<_>>()
-                .join("\n"))
+                .join(", "))
     }
 }
 
 /// Generate README.md using ThMarkdown formal theory
+/// 
+/// This implements μ_readme: ThSpec → ThMarkdown → String
 fn generate_readme_term(project_name: &str, spec_content: &str) -> String {
     let description = spec_content.lines()
         .find(|l| l.contains("description"))
@@ -798,10 +505,7 @@ fn generate_readme_term(project_name: &str, spec_content: &str) -> String {
 
 ## Generated by Phoenix VCS
 
-This project was generated using formal theory morphisms:
-- μ_flake: ThSpec → ThNix
-- μ_pyproject: ThSpec → ThPyProject  
-- μ_code: ThIU → ThPythonTextual
+This project was generated using formal theory morphisms.
 
 ## Running
 
@@ -827,7 +531,6 @@ mod tests {
         assert!(paths.contains(&PathBuf::from("flake.nix")));
         assert!(paths.contains(&PathBuf::from("pyproject.toml")));
         assert!(paths.contains(&PathBuf::from("README.md")));
-        // Note: app.py is generated by IUs, not part of the bundle
     }
     
     #[test]
@@ -839,5 +542,41 @@ mod tests {
         assert!(toml.contains("textual\""));
         assert!(toml.contains("rich\""));
         assert!(toml.contains("my-app = \"app:main\""));
+    }
+    
+    #[test]
+    fn test_ts_hono_bundle() {
+        let bundle = get_bundle("ts-hono").unwrap();
+        assert_eq!(bundle.name, "ts-hono");
+        assert!(bundle.base_deps.contains(&"hono".to_string()));
+        
+        // Check all expected files exist
+        let paths: Vec<_> = bundle.files.iter().map(|f| f.path.clone()).collect();
+        assert!(paths.contains(&PathBuf::from("flake.nix")));
+        assert!(paths.contains(&PathBuf::from("package.json")));
+        assert!(paths.contains(&PathBuf::from("tsconfig.json")));
+        assert!(paths.contains(&PathBuf::from("README.md")));
+        assert!(paths.contains(&PathBuf::from("index.ts")));
+    }
+    
+    #[test]
+    fn test_generate_package_json() {
+        let deps = vec!["hono".to_string()];
+        let json = generate_package_json_term("my-api", &deps);
+        
+        assert!(json.contains("\"name\": \"my-api\""));
+        assert!(json.contains("hono\""));
+        assert!(json.contains("bun run --hot"));
+        assert!(json.contains("typescript"));
+    }
+    
+    #[test]
+    fn test_generate_tsconfig() {
+        let json = generate_tsconfig_term();
+        
+        assert!(json.contains("\"target\": \"ES2022\""));
+        assert!(json.contains("\"module\": \"ESNext\""));
+        assert!(json.contains("\"strict\": true"));
+        assert!(json.contains("\"types\": [\"bun\"]"));
     }
 }
