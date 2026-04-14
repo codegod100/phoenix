@@ -82,9 +82,9 @@ export class SimpleCounter extends LitElement {
   render() {
     return html`
       <div class="counter">
-        <button @click=\${() => this.count--}>-</button>
-        <span>\${this.count}</span>
-        <button @click=\${() => this.count++}>+</button>
+        <button @click=${() => this.count--}>-</button>
+        <span>${this.count}</span>
+        <button @click=${() => this.count++}>+</button>
       </div>
     `;$
   }
@@ -165,27 +165,27 @@ export class TodoList extends LitElement {
       <h2>Todo List</h2>
       <div class="input-row">
         <input
-          .value=\${this.newTodoText}
-          @input=\${e => this.newTodoText = e.target.value}
-          @keydown=\${e => e.key === 'Enter' && this._addTodo()}
+          .value=${this.newTodoText}
+          @input=${e => this.newTodoText = e.target.value}
+          @keydown=${e => e.key === 'Enter' && this._addTodo()}
           placeholder="Add a new todo..."
         />
-        <button @click=\${this._addTodo}>Add</button>
+        <button @click=${this._addTodo}>Add</button>
       </div>
       <ul>
-        \${this.todos.map(todo => html`
+        ${this.todos.map(todo => html`
           <li>
             <input
               type="checkbox"
-              .checked=\${todo.completed}
-              @change=\${() => this._toggleTodo(todo.id)}
+              .checked=${todo.completed}
+              @change=${() => this._toggleTodo(todo.id)}
             />
-            <span class=\${todo.completed ? 'completed' : ''}>\${todo.text}</span>
-            <button class="delete-btn" @click=\${() => this._deleteTodo(todo.id)}>Delete</button>
+            <span class=${todo.completed ? 'completed' : ''}>${todo.text}</span>
+            <button class="delete-btn" @click=${() => this._deleteTodo(todo.id)}>Delete</button>
           </li>
         `)}
       </ul>
-      <div>\${remaining} of \${this.todos.length} remaining</div>
+      <div>${remaining} of ${this.todos.length} remaining</div>
     `;$
   }
 
