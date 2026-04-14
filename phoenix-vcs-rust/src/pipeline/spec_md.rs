@@ -281,7 +281,7 @@ async fn call_llm_for_mega_prompt(prompt: &str, config: &crate::llm::LlmConfig) 
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a Phoenix VCS specification generator. CRITICAL INSTRUCTIONS:\n1. If build_type is typescript/python/rust/nodejs: generate APP spec (template=framework, NO theory_id)\n2. If build_type is bundle: generate BUNDLE spec (template=bundle-author, CAN have theory_id)\n3. NEVER use theory_id for app specs - only for bundle specs!\n4. App specs MUST have: template, build_type, phoenix_config\n5. Bundle specs MUST have: theory_id, theory_name\nOutput ONLY valid Nickel code."
+                    "content": "You are a Phoenix VCS specification generator. CRITICAL INSTRUCTIONS:\n\nDETECT APP vs BUNDLE from spec.md:\n- build_type=typescript|python|rust|nodejs → APP spec\n- build_type=bundle → BUNDLE spec\n\nAPP SPEC FORMAT (NO theory_id!):\n{\n  id = \"<name>\",\n  template = \"<framework>\",  // e.g., \"lit\", \"ts-hono\", \"nodejs-express\"\n  build_type = \"<type>\",     // typescript, python, rust, nodejs\n  phoenix_config = { ... },\n  sorts = [...],\n  ops = [...],\n  // NO theory_id! NO theory_name!\n}\n\nBUNDLE SPEC FORMAT (has theory_id):\n{\n  theory_id = \"<name>\",\n  theory_name = \"Th<Name>\",\n  template = \"bundle-author\",\n  build_type = \"bundle\",\n  // ...\n}\n\nOUTPUT: Only valid Nickel code, no markdown, no explanations."
                 },
                 {
                     "role": "user",
