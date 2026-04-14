@@ -330,8 +330,10 @@ fn lit_bundle() -> TemplateBundle {
         files: vec![
             BundleFile {
                 path: PathBuf::from("flake.nix"),
-                theory: FormalTheory::ThNix,
-                description: "Nix flake with Node.js toolchain".to_string(),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: "lit/flake.nix".to_string() 
+                },
+                description: "Nix flake with Node.js toolchain (NCL-native)".to_string(),
             },
             // Use ThTemplate with NCL paths to trigger NCL-native generation
             BundleFile {
@@ -588,6 +590,7 @@ fn generate_lit_bundle_file(
     
     // Extract the requested file
     let path = match file_name {
+        "flake.nix" => std::path::PathBuf::from("flake.nix"),
         "package.json" => std::path::PathBuf::from("package.json"),
         "tsconfig.json" => std::path::PathBuf::from("tsconfig.json"),
         "vite.config.ts" => std::path::PathBuf::from("vite.config.ts"),
