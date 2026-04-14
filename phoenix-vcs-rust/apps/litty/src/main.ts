@@ -13,35 +13,56 @@ export class HeroImage extends LitElement {
       width: 100%;
     }
     .hero {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: linear-gradient(135deg, #FFB6C1 0%, #E6E6FA 50%, #FFDAB9 100%);
+      color: #4a4a4a;
       padding: 80px 20px;
       text-align: center;
-      border-radius: 12px;
+      border-radius: 20px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 32px rgba(255,182,193,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '🐾';
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 2rem;
+      opacity: 0.3;
+    }
+    .hero::after {
+      content: '🐾';
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 2rem;
+      opacity: 0.3;
+      transform: rotate(-20deg);
     }
     .hero h1 {
       font-size: 3.5rem;
       font-weight: bold;
       margin: 0;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
       letter-spacing: 2px;
+      color: #6b5b95;
     }
     .hero p {
       font-size: 1.5rem;
       margin: 16px 0 0 0;
-      opacity: 0.9;
+      opacity: 0.8;
+      color: #8b7bb5;
     }
-  `;$
+  `;
 
   render() {
     return html`
       <div class="hero">
-        <h1>Large hero section with welcome message</h1>
-        <p>Welcome</p>
+        <h1>🐱 Welcome to Litty! 🐱</h1>
+        <p>A purr-fect web components demo</p>
       </div>
-    `;$
+    `;
   }
 }
 

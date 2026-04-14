@@ -153,7 +153,7 @@ fn generate_main(project_name: &str, spec_content: &str) -> String {
     
     // Hero component (if enabled)
     if config.has_hero {
-        main_ts.push_str(&generate_hero_component(&config.hero_message, &config.hero_subtitle));
+        main_ts.push_str(&generate_hero_component(&config.hero_message, &config.hero_subtitle, config.is_kitty_theme));
         main_ts.push_str("\n");
     }
     
@@ -184,6 +184,7 @@ struct ComponentConfig {
     hero_subtitle: String,
     has_counter: bool,
     has_todo: bool,
+    is_kitty_theme: bool,
 }
 
 impl Default for ComponentConfig {
@@ -194,6 +195,7 @@ impl Default for ComponentConfig {
             hero_subtitle: "Welcome".to_string(),
             has_counter: true,
             has_todo: false,
+            is_kitty_theme: false,
         }
     }
 }
@@ -212,9 +214,21 @@ fn parse_spec_config(spec_content: &str) -> ComponentConfig {
     // Check for todo
     config.has_todo = content_lower.contains("todo");
     
+    // Check for kitty/neko/cat theme
+    config.is_kitty_theme = content_lower.contains("kitty") 
+        || content_lower.contains("neko")
+        || content_lower.contains("cat")
+        || content_lower.contains("kawaii");
+    
     // Try to extract hero message
     if let Some(msg) = extract_hero_message(spec_content) {
         config.hero_message = msg;
+    }
+    
+    // Apply kitty theme defaults if detected
+    if config.is_kitty_theme {
+        config.hero_message = "Welcome to Litty! 🐱".to_string();
+        config.hero_subtitle = "A purr-fect web components demo".to_string();
     }
     
     config
@@ -252,7 +266,19 @@ fn to_pascal_case(s: &str) -> String {
 }
 
 /// Generate hero component
-fn generate_hero_component(message: &str, subtitle: &str) -> String {
+fn generate_hero_component(message: &str, subtitle: &str, is_kitty: bool) -> String {
+    let (gradient, emoji) = if is_kitty {
+        ("linear-gradient(135deg, #FFB6C1 0%, #E6E6FA 50%, #FFDAB9 100%)", "🐱")
+    } else {
+        ("linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "")
+    };
+    
+    let title = if is_kitty {
+        format!("{} {}", emoji, message)
+    } else {
+        message.to_string()
+    };
+    
     format!(r#"// Hero Component
 @customElement('hero-image')
 export class HeroImage extends LitElement {{
@@ -262,27 +288,48 @@ export class HeroImage extends LitElement {{
       width: 100%;
     }}
     .hero {{
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: {};
+      color: #4a4a4a;
       padding: 80px 20px;
       text-align: center;
-      border-radius: 12px;
+      border-radius: 20px;
       margin-bottom: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 32px rgba(255,182,193,0.3);
+      position: relative;
+      overflow: hidden;
+    }}
+    .hero::before {{
+      content: '🐾';
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 2rem;
+      opacity: 0.3;
+    }}
+    .hero::after {{
+      content: '🐾';
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 2rem;
+      opacity: 0.3;
+      transform: rotate(-20deg);
     }}
     .hero h1 {{
       font-size: 3.5rem;
       font-weight: bold;
       margin: 0;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
       letter-spacing: 2px;
+      color: #6b5b95;
     }}
     .hero p {{
       font-size: 1.5rem;
       margin: 16px 0 0 0;
-      opacity: 0.9;
+      opacity: 0.8;
+      color: #8b7bb5;
     }}
-  `;$
+  `;
 
   render() {{
     return html`
@@ -290,12 +337,11 @@ export class HeroImage extends LitElement {{
         <h1>{}</h1>
         <p>{}</p>
       </div>
-    `;$
+    `;
   }}
 }}
-"#, message, subtitle)
+"#, gradient, title, subtitle)
 }
-
 /// Generate counter component
 fn generate_counter_component() -> String {
     r#"// Simple Counter Component
