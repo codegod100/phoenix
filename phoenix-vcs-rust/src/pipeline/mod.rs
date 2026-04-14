@@ -1444,6 +1444,12 @@ pub mod route_schema;
 // Route Lens layer (Layer 3): Bidirectional route transforms
 pub mod route_lens;
 
+// Generic 4-layer bundle stack
+pub mod bundle_stack;
+
+// Concrete bundle implementations
+pub mod bundle_impls;
+
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 

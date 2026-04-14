@@ -42,15 +42,8 @@ pub enum ArtifactGenerator {
     Template { template: String, bindings: Vec<String> },
 }
 
-/// Bundle configuration extracted from spec
-#[derive(Debug, Clone, Default)]
-pub struct BundleConfig {
-    pub project_name: String,
-    pub project_description: Option<String>,
-    pub version: String,
-    pub theme: Option<String>,
-    pub extra: HashMap<String, String>,
-}
+// Re-export BundleConfig from bundle_stack for consistency
+pub use crate::pipeline::bundle_stack::BundleConfig;
 
 impl ExprBundleGenerator {
     /// Create a new bundle generator
