@@ -15,7 +15,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             nodejs_20
-            corepack  # Provides npm, yarn, pnpm
+            corepack
           ];
 
           shellHook = ''
@@ -23,7 +23,17 @@
             echo "Node.js: $(node --version)"
             echo "npm: $(npm --version)"
             echo ""
-            echo "Run 'npm install' to install dependencies"
+            
+            # Auto-install dependencies if missing
+            if [ ! -d node_modules ]; then
+              echo "📦 Installing npm dependencies..."
+              npm install
+              echo "✓ Dependencies installed"
+            else
+              echo "✓ Dependencies already installed"
+            fi
+            
+            echo ""
             echo "Run 'npm run dev' to start the dev server"
           '';
         };
