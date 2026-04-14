@@ -313,6 +313,9 @@ impl SchemaCompile for JsExpressPipeline {
                 Sort { name: Arc::from("Program"), params: vec![], kind: SortKind::Structural },
                 Sort { name: Arc::from("Statement"), params: vec![], kind: SortKind::Structural },
                 Sort { name: Arc::from("Route"), params: vec![], kind: SortKind::Structural },
+                Sort { name: Arc::from("String"), params: vec![], kind: SortKind::Structural },
+                Sort { name: Arc::from("Number"), params: vec![], kind: SortKind::Structural },
+                Sort { name: Arc::from("Array"), params: vec![], kind: SortKind::Structural },
             ],
             vec![
                 Operation {
@@ -340,7 +343,7 @@ impl SchemaCompile for JsExpressPipeline {
                 let found = schema.edges.iter().any(|(edge, _)| {
                     edge.name.as_ref().map(|n| n.as_ref() == op_str).unwrap_or(false)
                 });
-                if !found && op_str != "routes" && op_str != "array" {
+                if !found && !is_js_meta_op(op_str) {
                     return Err(format!("Unknown operation: {}", op_str));
                 }
                 for arg in args {
@@ -351,6 +354,13 @@ impl SchemaCompile for JsExpressPipeline {
         }
         Ok(())
     }
+}
+
+/// Check if an operation is a valid JS meta-constructor (not in schema but valid)
+fn is_js_meta_op(op: &str) -> bool {
+    matches!(op, "routes" | "array" | "method" | "path" | "handler" | 
+             "program" | "statements" | "import" | "const" | "call" | 
+             "route_call" | "handler_fn" | "comment")
 }
 
 // Layer 3: DataLens - uses lens concepts
