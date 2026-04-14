@@ -1,22 +1,37 @@
 {
-  # ThThBundleDef: Theory definition
+  # ThLit: Theory for Lit Web Components Applications
   
-  theory_id = "bundle-author",
-  theory_name = "ThThBundleDef",
-  description = "Theory for creating new Phoenix VCS template bundles. A bundle definition specifies the 5 files that constitute a complete code generation bundle for a target language/framework.",
+  theory_name = "ThLit", 
+  description = "Theory for generating TypeScript web applications using Lit framework",
+  version = "0.1.0",
   
-  # Source theory
   source = {
     theory = "ThSpec",
     format = "spec_md",
   },
   
-  # Target theory
   target = {
-    theory = "ThThBundleDef",
-    format = "generated_code",
+    theory = "ThLit",
+    format = "js_code",
+    files = ["package.json", "tsconfig.json", "vite.config.ts", "index.html", "src/main.ts"],
   },
   
-  # Sorts and operations defined in spec.ncl
-  # (Populated by the LLM when generating this bundle)
+  sorts = {
+    Component = "Lit web component with @customElement decorator",
+    Property = "Reactive property with @property decorator", 
+    Event = "DOM event binding",
+    Template = "lit-html template",
+    Style = "CSS tagged template",
+  },
+  
+  operations = {
+    mk_component = { arity = ["String", "Array Property"], result = "Component" },
+    mk_property = { arity = ["String", "String"], result = "Property" },
+    mk_template = { arity = ["String"], result = "Template" },
+  },
+  
+  examples = [
+    { name = "counter", input = "Counter with +/- buttons", output = "Lit component code" },
+    { name = "todo-list", input = "Todo list app", output = "Lit components with state" },
+  ],
 }

@@ -1,15 +1,17 @@
-{{
-  # Contract for validating specs against this bundle
-  # Merged with LLM output to validate generated specs
+{
+  # Contract for Lit app specs
   
-  # Main spec contract
-  spec | {{
+  spec | {
     id | String,
     description | String,
-    build_type | String,
-  }},
+    template | String,       # = "lit"
+    build_type | String,     # = "typescript"
+    phoenix_config | {
+      project_name | String,
+      template | String,
+    },
+  },
   
-  # Validation predicates
-  _check_build_type | Bool =
-    spec.build_type == "python" || spec.build_type == "rust" || spec.build_type == "typescript" || spec.build_type == "bun",
-}}
+  _check_template = spec.template == "lit",
+  _check_build_type = spec.build_type == "typescript",
+}

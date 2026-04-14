@@ -182,17 +182,17 @@ fn lit_bundle() -> TemplateBundle {
             },
             BundleFile {
                 path: PathBuf::from("package.json"),
-                theory: FormalTheory::ThNix,
+                theory: FormalTheory::ThPackageJson,
                 description: "NPM package with Lit dependencies".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("tsconfig.json"),
-                theory: FormalTheory::ThNix,
-                description: "TypeScript configuration with decorators".to_string(),
+                theory: FormalTheory::ThTsConfig,
+                description: "TypeScript configuration".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("vite.config.ts"),
-                theory: FormalTheory::ThNix,
+                theory: FormalTheory::ThTypeScript,
                 description: "Vite build configuration".to_string(),
             },
             BundleFile {
@@ -202,8 +202,8 @@ fn lit_bundle() -> TemplateBundle {
             },
             BundleFile {
                 path: PathBuf::from("src/main.ts"),
-                theory: FormalTheory::ThTemplate { template_path: "lit/main.ts".to_string() },
-                description: "Application entry".to_string(),
+                theory: FormalTheory::ThTypeScript,
+                description: "Application entry with Lit components".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("README.md"),

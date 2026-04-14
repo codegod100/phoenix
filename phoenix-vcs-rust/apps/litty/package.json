@@ -1,0 +1,18 @@
+{
+  "name": "litty",
+  "version": "0.1.0",
+  "description": "Simple Lit Web Components todo app",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lit": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.0",
+    "vite": "^5.0.0"
+  }
+}

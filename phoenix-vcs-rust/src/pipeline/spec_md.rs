@@ -164,7 +164,34 @@ fn extract_string_value(line: &str) -> String {
 /// Build a mega-prompt with all bundle contracts for LLM to select and generate
 fn build_mega_prompt(spec_md: &str, bundles: &[TemplateBundle]) -> String {
     let mut prompt = String::from("# Bundle-Aware Spec Generation\n\n");
-    prompt.push_str("You are generating a spec.ncl file. You have access to multiple bundle contracts below.\n");
+    prompt.push_str("You are generating a spec.ncl file. You have access to multiple bundle contracts below.\n\n");
+    
+    // Detect if this is a bundle creation spec or app spec
+    let is_bundle_spec = spec_md.contains("build_type = \"bundle\"") || 
+                         spec_md.contains("build_type = \"template\"") ||
+                         (spec_md.contains("New Template Bundle") && spec_md.contains("Files to Generate"));
+    let is_app_spec = spec_md.contains("build_type = \"typescript\"") ||
+                      spec_md.contains("build_type = \"python\"") ||
+                      spec_md.contains("build_type = \"rust\"") ||
+                      spec_md.contains("build_type = \"swift\"") ||
+                      spec_md.contains("build_type = \"nodejs\"") ||
+                      spec_md.contains("template = \"lit\"") ||
+                      spec_md.contains("template = \"ts-hono\"") ||
+                      spec_md.contains("template = \"python-textual\"") ||
+                      spec_md.contains("## Build Type");
+    
+    prompt.push_str("DETECTION RESULT:\n");
+    if is_bundle_spec {
+        prompt.push_str("→ This is a BUNDLE CREATION spec (creating a new Phoenix VCS bundle)\n");
+        prompt.push_str("→ Use template = \"bundle-author\"\n\n");
+    } else if is_app_spec {
+        prompt.push_str("→ This is an APP CREATION spec (building an application)\n");
+        prompt.push_str("→ Use the template that matches the framework requested\n\n");
+    } else {
+        prompt.push_str("→ Detect based on content: if describing a new bundle format → bundle-author\n");
+        prompt.push_str("→ If describing an app to build → match the framework bundle\n\n");
+    }
+    
     prompt.push_str("Your job is to:\n");
     prompt.push_str("1. Pick the ONE bundle contract that best matches what the user wants to build\n");
     prompt.push_str("2. Use that contract's REQUIRED FIELDS as a template\n");
@@ -174,7 +201,8 @@ fn build_mega_prompt(spec_md: &str, bundles: &[TemplateBundle]) -> String {
     prompt.push_str("- The id field should describe WHAT IS BEING BUILT (from spec.md)\n");
     prompt.push_str("- The template field should be the CONTRACT USED (from bundle list below)\n");
     prompt.push_str("- For bundle creation specs: use template = \"bundle-author\", id = \"<new-bundle-name>\"\n");
-    prompt.push_str("- For app specs: use template = \"<framework-bundle>\", id = \"<app-name>\"\n\n");
+    prompt.push_str("- For app specs: use template = \"<framework-bundle>\" (e.g., \"lit\", \"ts-hono\"), id = \"<app-name>\"\n");
+    prompt.push_str("- If spec.md contains explicit 'template = \"...\"' → USE THAT TEMPLATE\n\n");
     
     prompt.push_str("## Available Bundle Contracts (choose ONE)\n\n");
     for (i, bundle) in bundles.iter().enumerate() {
@@ -253,14 +281,14 @@ async fn call_llm_for_mega_prompt(prompt: &str, config: &crate::llm::LlmConfig) 
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a Phoenix VCS specification generator. Analyze the spec, select the best matching bundle from the contracts provided, and generate valid Nickel code for spec.ncl. Output ONLY valid Nickel code, no markdown fences, no explanation."
+                    "content": "You are a Phoenix VCS specification generator. CRITICAL INSTRUCTIONS:\n1. If build_type is typescript/python/rust/nodejs: generate APP spec (template=framework, NO theory_id)\n2. If build_type is bundle: generate BUNDLE spec (template=bundle-author, CAN have theory_id)\n3. NEVER use theory_id for app specs - only for bundle specs!\n4. App specs MUST have: template, build_type, phoenix_config\n5. Bundle specs MUST have: theory_id, theory_name\nOutput ONLY valid Nickel code."
                 },
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            "temperature": 0.2,
+            "temperature": 0.1,
             "max_tokens": config.max_tokens,
         }))
         .send()
