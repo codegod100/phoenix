@@ -293,12 +293,80 @@ fn pascal_case(s: &str) -> String {
         .collect()
 }
 
-/// Full lifting pipeline: Config → Term → [apply ops] → String
+/// Full lifting pipeline WITH actual panproto morphism application
 /// 
-/// Demonstrates the complete workflow:
-/// 1. Lift config to algebraic term
-/// 2. Apply operations (generators)
-/// 3. Lower back to concrete code
+/// Demonstrates complete workflow:
+/// 1. Lift config → Term
+/// 2. Create TheoryMorphism (Config → Code)  
+/// 3. Apply morphism using `morphism.apply_to_term()`
+/// 4. Lower result → Code
+#[cfg(feature = "panproto")]
+pub fn generate_with_morphism(config: &LitConfig) -> HashMap<String, String> {
+    use panproto_gat::TheoryMorphism;
+    
+    let mut outputs = HashMap::new();
+    
+    // Step 1: Lift config into term
+    let cfg_term = lift_config(config);
+    
+    // Step 2: Create a morphism that maps Config theory → Code theory
+    let sort_map = [
+        (Arc::from("Config"), Arc::from("CodeFile")),
+        (Arc::from("ThPackageJson"), Arc::from("JsonCode")),
+        (Arc::from("ThMain"), Arc::from("TypeScriptCode")),
+    ].into_iter().collect();
+    
+    let op_map = [
+        (Arc::from("generate_package"), Arc::from("gen_package_json")),
+        (Arc::from("generate_main"), Arc::from("gen_main_ts")),
+        (Arc::from("generate_hero"), Arc::from("gen_hero_ts")),
+    ].into_iter().collect();
+    
+    let morphism = TheoryMorphism::new(
+        Arc::from("config_to_code"),
+        Arc::from("ThLitLifted"),
+        Arc::from("ThCode"),
+        sort_map,
+        op_map,
+    );
+    
+    // Step 3: Apply operations using morphism.apply_to_term()
+    let operations = vec![
+        ("generate_package", "package.json"),
+        ("generate_main", "src/main.ts"),
+        ("generate_hero", "src/hero.ts"),
+    ];
+    
+    for (op_name, filename) in operations {
+        // Create term: generate_package(config_term)
+        let app_term = Term::app(op_name, vec![cfg_term.clone()]);
+        
+        // Apply morphism: renames "generate_package" → "gen_package_json"
+        let transformed_term = morphism.apply_to_term(&app_term);
+        
+        // Lower to code
+        let code = lower_transformed_term(&transformed_term, config);
+        outputs.insert(filename.to_string(), code);
+    }
+    
+    outputs
+}
+
+/// Lower a term transformed by morphism.apply_to_term()
+#[cfg(feature = "panproto")]
+fn lower_transformed_term(term: &Term, config: &LitConfig) -> String {
+    match term {
+        Term::App { op, .. } => match op.as_ref() {
+            "gen_package_json" => generate_package_json(config),
+            "gen_main_ts" => generate_main_ts(config),
+            "gen_hero_ts" => generate_hero_component(config),
+            _ => format!("// Unknown: {}", op),
+        },
+        _ => "// Invalid".to_string(),
+    }
+}
+
+/// Simple lifting pipeline (without morphism)
 #[cfg(feature = "panproto")]
 pub fn generate_with_lifting(config: &LitConfig) -> HashMap<String, String> {
     let mut outputs = HashMap::new();
