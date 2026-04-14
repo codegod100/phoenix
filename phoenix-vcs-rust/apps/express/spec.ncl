@@ -58,7 +58,7 @@
     { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
     { method = "POST", path = "/api/items", handler = "createItems", description = "Create a new item" },
     { method = "GET", path = "/api/unicorns", handler = "listUnicorns", description = "🦄 List all magical unicorns with rainbow powers" },
-    { method = "PATCH", path = "/api/users/:id/status", handler = "updateUsersByidStatus", description = "Update user mood (happy/sad/confused)" },
+    { method = "GET", path = "/api/metrics", handler = "listMetrics", description = "📊 Get system metrics (uptime, requests)" },
   ],
 
   # Data models

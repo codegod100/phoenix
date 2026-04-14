@@ -30,7 +30,7 @@ app.get('/api/unicorns', (req, res) => {
   res.json({ message: 'handler' });
 });
 
-app.patch('/api/users/:id/status', (req, res) => {
+app.get('/api/metrics', (req, res) => {
   res.json({ message: 'handler' });
 });
 

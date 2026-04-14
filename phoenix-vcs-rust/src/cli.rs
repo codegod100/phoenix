@@ -251,6 +251,10 @@ pub enum Commands {
         /// Show detailed diff of detected changes
         #[arg(long)]
         diff: bool,
+        
+        /// Reverse direction: spec.ncl → spec.md (propagate spec changes to markdown)
+        #[arg(long)]
+        reverse: bool,
     },
     
     /// Sync README.md with spec.ncl (bidirectional)
@@ -353,8 +357,8 @@ pub async fn run() -> Result<()> {
         Some(Commands::Compare { detailed }) => {
             cmd_compare(&cli.project_root, detailed).await
         }
-        Some(Commands::Sync { dry_run, apply, diff }) => {
-            cmd_sync(&cli.project_root, dry_run, apply, diff).await
+        Some(Commands::Sync { dry_run, apply, diff, reverse }) => {
+            cmd_sync(&cli.project_root, dry_run, apply, diff, reverse).await
         }
         Some(Commands::Doc { to_readme, to_spec, diff }) => {
             cmd_doc(&cli.project_root, to_readme, to_spec, diff).await
@@ -1808,9 +1812,17 @@ fn extract_ncl_value(content: &str, prefix: &str) -> Option<String> {
 }
 
 /// Sync command: Detect code changes and upstream to spec
-async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -> Result<()> {
+/// 
+/// Normal: code → spec.ncl
+/// Reverse: spec.ncl → spec.md (with --reverse flag)
+async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool, reverse: bool) -> Result<()> {
     use crate::pipeline::code_lens::{BundleLenses, get_bundle_lenses, detect_bundle_from_spec};
     use std::collections::HashMap;
+    
+    // Handle reverse sync: spec.ncl → spec.md
+    if reverse {
+        return cmd_sync_reverse(project_root, dry_run, apply, diff).await;
+    }
     
     println!("══════════════════════════════════════════════════════════════");
     println!("🔄 Phoenix Sync — Code → Spec Upstreaming");
@@ -2001,6 +2013,99 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
     }
     
     Ok(())
+}
+
+/// Reverse sync: spec.ncl → spec.md (propagate spec changes to markdown)
+async fn cmd_sync_reverse(project_root: &Path, dry_run: bool, apply: bool, _diff: bool) -> Result<()> {
+    use crate::pipeline::route_lens::RouteLens;
+    
+    println!("══════════════════════════════════════════════════════════════");
+    println!("🔄 Phoenix Reverse Sync — Spec.ncl → Spec.md");
+    println!("══════════════════════════════════════════════════════════════\n");
+    
+    let spec_ncl_path = project_root.join("spec.ncl");
+    let spec_md_path = project_root.join("spec.md");
+    
+    // Load spec.ncl
+    let spec_ncl = tokio::fs::read_to_string(&spec_ncl_path).await?;
+    
+    // Load spec.md
+    let spec_md = tokio::fs::read_to_string(&spec_md_path).await?;
+    
+    // Extract routes from spec.ncl
+    let routes = RouteLens::get_from_spec(&spec_ncl);
+    
+    println!("📊 Detected {} routes in spec.ncl:", routes.endpoints.len());
+    for ep in &routes.endpoints {
+        println!("   {} {}", ep.method.as_str(), ep.path);
+    }
+    
+    // Generate new API section for spec.md
+    let new_api_section = format_api_section(&routes);
+    
+    // Replace API section in spec.md
+    let updated_md = replace_api_section(&spec_md, &new_api_section);
+    
+    if dry_run {
+        println!("\n🔍 Dry run mode. Would update spec.md with:");
+        println!("{}", new_api_section);
+    } else if apply {
+        tokio::fs::write(&spec_md_path, updated_md).await?;
+        println!("\n✅ Updated spec.md with routes from spec.ncl");
+        println!("   {} routes propagated", routes.endpoints.len());
+    } else {
+        println!("\n💡 To apply changes, run:");
+        println!("   phoenix sync --reverse --apply");
+    }
+    
+    Ok(())
+}
+
+/// Format routes as markdown API section
+fn format_api_section(routes: &super::pipeline::route_schema::RouteSchema) -> String {
+    let mut lines = vec!["## API".to_string(), "".to_string()];
+    
+    for ep in &routes.endpoints {
+        let desc = match ep.path.as_str() {
+            "/api/users" if ep.method.as_str() == "GET" => "List all users",
+            "/api/users" if ep.method.as_str() == "POST" => "Create a new user",
+            "/api/users/:id" if ep.method.as_str() == "PUT" => "Update a user",
+            "/api/users/:id" if ep.method.as_str() == "DELETE" => "Delete a user",
+            "/api/items" if ep.method.as_str() == "GET" => "List all items",
+            "/api/items" if ep.method.as_str() == "POST" => "Create a new item",
+            "/api/unicorns" => "🦄 List all magical unicorns with rainbow powers",
+            "/api/users/:id/status" => "Update user mood (happy/sad/confused)",
+            "/api/metrics" => "📊 Get system metrics (uptime, requests)",
+            _ => &format!("{} {}", ep.method.as_str(), ep.path),
+        };
+        
+        lines.push(format!("- `{} {}` - {}", ep.method.as_str(), ep.path, desc));
+    }
+    
+    lines.push("".to_string());
+    lines.join("\n")
+}
+
+/// Replace API section in markdown
+fn replace_api_section(md: &str, new_api: &str) -> String {
+    // Find ## API section and replace it
+    if let Some(start) = md.find("## API") {
+        // Find end of API section (next ## or end of file)
+        let rest = &md[start + 6..];
+        let end = rest.find("\n## ").map(|i| start + 6 + i).unwrap_or(md.len());
+        
+        let before = &md[..start];
+        let after = &md[end..];
+        
+        format!("{}{}{}", before, new_api, after)
+    } else {
+        // No API section found, append before ## Models or at end
+        if let Some(insert_pos) = md.find("## Models") {
+            format!("{}\n{}\n{}", &md[..insert_pos], new_api, &md[insert_pos..])
+        } else {
+            format!("{}\n{}", md, new_api)
+        }
+    }
 }
 
 /// Sync README.md with spec.ncl (bidirectional documentation sync)
