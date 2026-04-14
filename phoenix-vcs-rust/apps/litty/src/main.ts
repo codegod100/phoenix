@@ -27,6 +27,57 @@ export class HeroImage extends LitElement {
 }
 
 
+// Counter Component - A purr-fectly reactive counter
+@customElement('paw-counter')
+export class PawCounter extends LitElement {
+  @property({ type: Number }) count = 0;
+  
+  static styles = css`
+    :host { display: block; }
+    .counter-card {
+      background: linear-gradient(145deg, #98FB98 0%, #FFDAB9 100%);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(152,251,152,0.3);
+    }
+    .count-display {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #6b5b95;
+      margin: 16px 0;
+    }
+    .paw-button {
+      background: white;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      margin: 0 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .paw-button:hover {
+      transform: scale(1.1);
+    }
+    .paw-button:active {
+      transform: scale(0.95);
+    }
+  `;
+  
+  render() {
+    return html`
+      <div class="counter-card">
+        <div class="count-display">${this.count}</div>
+        <button class="paw-button" @click=${() => this.count--}>🐾</button>
+        <button class="paw-button" @click=${() => this.count++}>🐾</button>
+      </div>
+    `;
+  }
+}
+
 // Main App Component
 @customElement('litty-app')
 export class LittyApp extends LitElement {
@@ -34,8 +85,11 @@ export class LittyApp extends LitElement {
     :host { display: block; max-width: 800px; margin: 0 auto; padding: 20px; }
   `;
   render() {
-    return html`<hero-image></hero-image>`;
+    return html`
+      <hero-image></hero-image>
+      <paw-counter></paw-counter>
+    `;
   }
 }
 
-console.log('🔥 litty app loaded');
+console.log('🔥 litty app loaded with counter!');

@@ -84,7 +84,7 @@
     framework = "lit",
     language = "typescript",
     build_tool = "vite",
-    theme = "kawaii-neko",
+    theme = "kitty",
     color_palette = {
       primary = "#FFB6C1",
       secondary = "#E6E6FA",

@@ -47,3 +47,6 @@ phoenix_config: {
   project_name = "litty",
   project_description = "A cute kitty-themed Lit web components app with pastel colors and cat decorations"
 }
+
+## API
+
