@@ -237,12 +237,12 @@ pub fn ts_hono_bundle() -> TemplateBundle {
             },
             BundleFile {
                 path: std::path::PathBuf::from("package.json"),
-                theory: FormalTheory::ThPackageJson,
+                theory: FormalTheory::ThTemplate { template_path: "ts-hono/package.json".to_string() },
                 description: "Node.js package configuration".to_string(),
             },
             BundleFile {
                 path: std::path::PathBuf::from("tsconfig.json"),
-                theory: FormalTheory::ThTsConfig,
+                theory: FormalTheory::ThTemplate { template_path: "ts-hono/tsconfig.json".to_string() },
                 description: "TypeScript configuration".to_string(),
             },
             BundleFile {
@@ -251,8 +251,8 @@ pub fn ts_hono_bundle() -> TemplateBundle {
                 description: "Project documentation".to_string(),
             },
             BundleFile {
-                path: std::path::PathBuf::from("index.ts"),
-                theory: FormalTheory::ThTypeScript,
+                path: std::path::PathBuf::from("src/index.ts"),
+                theory: FormalTheory::ThTemplate { template_path: "ts-hono/src/index.ts".to_string() },
                 description: "Hono server entry point".to_string(),
             },
         ],

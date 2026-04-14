@@ -22,6 +22,14 @@ pub mod swift_vapor_generate;
 pub mod python_textual_generate;
 #[path = "../../bundles/bundle-author/generate.rs"]
 pub mod bundle_author_generate;
+#[path = "../../bundles/ts-hono/generate.rs"]
+pub mod ts_hono_generate;
+#[path = "../../bundles/python-flask/generate.rs"]
+pub mod python_flask_generate;
+#[path = "../../bundles/python-generic/generate.rs"]
+pub mod python_generic_generate;
+#[path = "../../bundles/rust/generate.rs"]
+pub mod rust_generate;
 
 pub use types::{BundleFile, FormalTheory, TemplateBundle};
 pub use typescript::{
@@ -208,6 +216,11 @@ fn python_flask_bundle() -> TemplateBundle {
                 theory: FormalTheory::ThPyProject,
                 description: "Python project configuration".to_string(),
             },
+            BundleFile {
+                path: PathBuf::from("src/app.py"),
+                theory: FormalTheory::ThTemplate { template_path: "python-flask/src/app.py".to_string() },
+                description: "Flask application entry point".to_string(),
+            },
         ],
         base_deps: vec![
             "flask".to_string(),
@@ -231,6 +244,11 @@ fn python_generic_bundle() -> TemplateBundle {
                 theory: FormalTheory::ThPyProject,
                 description: "Python project configuration".to_string(),
             },
+            BundleFile {
+                path: PathBuf::from("src/main.py"),
+                theory: FormalTheory::ThTemplate { template_path: "python-generic/src/main.py".to_string() },
+                description: "Python application entry point".to_string(),
+            },
         ],
         base_deps: vec![],
     }
@@ -250,6 +268,11 @@ fn rust_bundle() -> TemplateBundle {
                 path: PathBuf::from("Cargo.toml"),
                 theory: FormalTheory::ThTemplate { template_path: "rust/Cargo.toml".to_string() },
                 description: "Rust package configuration".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("src/main.rs"),
+                theory: FormalTheory::ThTemplate { template_path: "rust/src/main.rs".to_string() },
+                description: "Rust application entry point".to_string(),
             },
         ],
         base_deps: vec![],
@@ -511,6 +534,10 @@ pub fn generate_bundle(
                         "nodejs-express" => generate_nodejs_express_bundle_file(file_name, project_name, spec_content),
                         "swift-vapor" => generate_swift_vapor_bundle_file(file_name, project_name, spec_content),
                         "bundle-author" => generate_bundle_author_bundle_file(file_name, project_name, spec_content),
+                        "ts-hono" => generate_ts_hono_bundle_file(file_name, project_name, spec_content),
+                        "python-flask" => generate_python_flask_bundle_file(file_name, project_name, spec_content),
+                        "python-generic" => generate_python_generic_bundle_file(file_name, project_name, spec_content),
+                        "rust" => generate_rust_bundle_file(file_name, project_name, spec_content),
                         _ => format!("// Template from {}", template_path),
                     }
                 } else {
@@ -630,6 +657,81 @@ fn generate_bundle_author_bundle_file(
         "theory_contract_panproto.ncl" => std::path::PathBuf::from("theory_contract_panproto.ncl"),
         "prompt_theory.md" => std::path::PathBuf::from("prompt_theory.md"),
         "prompt_contract.md" => std::path::PathBuf::from("prompt_contract.md"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the TypeScript Hono bundle's isolated Rust code
+fn generate_ts_hono_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = ts_hono_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "package.json" => std::path::PathBuf::from("package.json"),
+        "tsconfig.json" => std::path::PathBuf::from("tsconfig.json"),
+        "index.ts" | "src/index.ts" => std::path::PathBuf::from("src/index.ts"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the Python Flask bundle's isolated Rust code
+fn generate_python_flask_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = python_flask_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "app.py" | "src/app.py" => std::path::PathBuf::from("src/app.py"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the Python Generic bundle's isolated Rust code
+fn generate_python_generic_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = python_generic_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "main.py" | "src/main.py" => std::path::PathBuf::from("src/main.py"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the Rust bundle's isolated Rust code
+fn generate_rust_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = rust_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "Cargo.toml" => std::path::PathBuf::from("Cargo.toml"),
+        "main.rs" | "src/main.rs" => std::path::PathBuf::from("src/main.rs"),
         _ => std::path::PathBuf::from(file_name),
     };
     
