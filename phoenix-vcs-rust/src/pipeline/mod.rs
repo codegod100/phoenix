@@ -1429,6 +1429,9 @@ pub mod theory_compiler;
 // Expr-based code generation (Layer 4)
 pub mod expr_codegen;
 
+// Expr-based bundle code generation
+pub mod expr_bundle;
+
 // Documentation: Why we skip Lens layer
 pub mod why_skip_lens;
 

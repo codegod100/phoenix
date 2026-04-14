@@ -1,36 +1,39 @@
-// Swift Vapor Bundle - Native Rust Code Generation
-// This file is loaded by the Phoenix VCS pipeline for isolated bundles
+// Swift Vapor Bundle - Expr-Based Code Generation (Layer 4)
+//
+// Uses the panproto Expr layer for runtime code generation:
+//   Config ──► Expr Evaluation ──► Generated Code
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-/// Generate all files for the Swift Vapor bundle
-pub fn generate(project_name: &str, _spec_content: &str) -> HashMap<PathBuf, String> {
-    let mut files = HashMap::new();
+/// Generate all files for the Swift Vapor bundle using Expr-based generation
+pub fn generate(_project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
+    use crate::pipeline::expr_bundle::{parse_spec_to_config, ExprBundleGenerator, ArtifactGenerator};
     
-    files.insert(PathBuf::from("Package.swift"), generate_package_swift(project_name));
-    files.insert(PathBuf::from("Sources/App/configure.swift"), generate_configure_swift());
-    files.insert(PathBuf::from("Sources/App/routes.swift"), generate_routes_swift());
-    files.insert(PathBuf::from("Sources/App/Models/User.swift"), generate_user_swift());
-    files.insert(PathBuf::from("Sources/App/Controllers/UsersController.swift"), generate_users_controller_swift());
+    // Parse spec into config
+    let config = parse_spec_to_config(spec_content);
     
-    files
+    // Build Expr-based generator with multiple artifacts
+    let mut gen = ExprBundleGenerator::new("swift-vapor")
+        .with_artifact("Package.swift", ArtifactGenerator::Expr(vapor_package_swift))
+        .with_artifact("Sources/App/configure.swift", ArtifactGenerator::Static(vapor_configure_swift().to_string()))
+        .with_artifact("Sources/App/routes.swift", ArtifactGenerator::Static(vapor_routes_swift().to_string()))
+        .with_artifact("Sources/App/Models/User.swift", ArtifactGenerator::Static(vapor_user_swift().to_string()))
+        .with_artifact("Sources/App/Controllers/UsersController.swift", ArtifactGenerator::Static(vapor_users_controller_swift().to_string()));
+    
+    gen.generate(&config)
 }
 
-/// Generate Package.swift
-fn generate_package_swift(project_name: &str) -> String {
+fn vapor_package_swift(config: &crate::pipeline::expr_bundle::BundleConfig) -> String {
     format!(r#"// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
     name: "{}",
-    platforms: [
-        .macOS(.v13)
-    ],
+    platforms: [.macOS(.v13)],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
         .package(url: "https://github.com/vapor/fluent.git", from: "4.9.0"),
-        .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.8.0"),
     ],
     targets: [
         .executableTarget(
@@ -38,49 +41,24 @@ let package = Package(
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Fluent", package: "fluent"),
-                .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
             ]
         ),
-        .testTarget(name: "AppTests", dependencies: [
-            .target(name: "App"),
-            .product(name: "XCTVapor", package: "vapor"),
-        ])
     ]
 )
-"#, project_name)
+"#,
+        config.project_name
+    )
 }
 
-/// Generate configure.swift
-fn generate_configure_swift() -> String {
+fn vapor_configure_swift() -> &'static str {
     r#"import Vapor
 import Fluent
-import FluentPostgresDriver
-
-// phoenix: iu_id = "vapor-config"
-// Configures the Vapor application
 
 public func configure(_ app: Application) async throws {
-    // Database configuration
-    app.databases.use(.postgres(
-        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
-        port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? PostgresConfiguration.ianaPortNumber,
-        username: Environment.get("DATABASE_USERNAME") ?? "vapor",
-        password: Environment.get("DATABASE_PASSWORD") ?? "vapor",
-        database: Environment.get("DATABASE_NAME") ?? "vapor"
-    ), as: .psql)
-
-    // Migrations
-    app.migrations.add(CreateUser())
-
-    // Middleware
-    app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     app.middleware.use(ErrorMiddleware.default(environment: app.environment))
-
-    // Routes
     try routes(app)
 }
 
-// Run the application
 @main
 enum Entrypoint {
     static func main() async throws {
@@ -90,47 +68,29 @@ enum Entrypoint {
         try await app.startup()
     }
 }
-"#.to_string()
+"#
 }
 
-/// Generate routes.swift
-fn generate_routes_swift() -> String {
+fn vapor_routes_swift() -> &'static str {
     r#"import Vapor
-
-// phoenix: iu_id = "vapor-routes"
-// Route definitions for the Vapor app
 
 func routes(_ app: Application) throws {
     let api = app.grouped("api", "v1")
     
-    // Health check
     api.get("health") { req async -> [String: String] in
-        ["status": "ok", "timestamp": Date().ISO8601Format()]
+        ["status": "ok", "timestamp": "\(Date())"]
     }
 
-    // Root
     api.get { req async -> String in
         "It works!"
     }
-
-    // Users controller
-    let usersController = UsersController()
-    api.get("users", use: usersController.index)
-    api.post("users", use: usersController.create)
-    api.get("users", ":id", use: usersController.show)
-    api.put("users", ":id", use: usersController.update)
-    api.delete("users", ":id", use: usersController.delete)
 }
-"#.to_string()
+"#
 }
 
-/// Generate User.swift (Model)
-fn generate_user_swift() -> String {
+fn vapor_user_swift() -> &'static str {
     r#"import Vapor
 import Fluent
-
-// phoenix: iu_id = "user-model"
-// User model for Fluent ORM
 
 final class User: Model, Content {
     static let schema = "users"
@@ -144,22 +104,14 @@ final class User: Model, Content {
     @Field(key: "email")
     var email: String
 
-    @Field(key: "password_hash")
-    var passwordHash: String
-
     @Timestamp(key: "created_at", on: .create)
     var createdAt: Date?
 
-    @Timestamp(key: "updated_at", on: .update)
-    var updatedAt: Date?
-
     init() { }
-
-    init(id: UUID? = nil, name: String, email: String, passwordHash: String) {
+    init(id: UUID? = nil, name: String, email: String) {
         self.id = id
         self.name = name
         self.email = email
-        self.passwordHash = passwordHash
     }
 }
 
@@ -169,26 +121,18 @@ struct CreateUser: AsyncMigration {
             .id()
             .field("name", .string, .required)
             .field("email", .string, .required)
-            .field("password_hash", .string, .required)
             .field("created_at", .datetime)
-            .field("updated_at", .datetime)
-            .unique(on: "email")
             .create()
     }
-
     func revert(on database: Database) async throws {
         try await database.schema("users").delete()
     }
 }
-"#.to_string()
+"#
 }
 
-/// Generate UsersController.swift
-fn generate_users_controller_swift() -> String {
+fn vapor_users_controller_swift() -> &'static str {
     r#"import Vapor
-
-// phoenix: iu_id = "users-controller"
-// REST controller for User resource
 
 struct UsersController {
     func index(req: Request) async throws -> [User] {
@@ -207,25 +151,6 @@ struct UsersController {
         }
         return user
     }
-
-    func update(req: Request) async throws -> User {
-        guard let user = try await User.find(req.parameters.get("id"), on: req.db) else {
-            throw Abort(.notFound)
-        }
-        let updated = try req.content.decode(User.self)
-        user.name = updated.name
-        user.email = updated.email
-        try await user.save(on: req.db)
-        return user
-    }
-
-    func delete(req: Request) async throws -> HTTPStatus {
-        guard let user = try await User.find(req.parameters.get("id"), on: req.db) else {
-            throw Abort(.notFound)
-        }
-        try await user.delete(on: req.db)
-        return .noContent
-    }
 }
-"#.to_string()
+"#
 }

@@ -1,25 +1,47 @@
-// Python Textual Bundle - Native Rust Code Generation
-// This file is loaded by the Phoenix VCS pipeline for isolated bundles
+// Python Textual Bundle - Expr-Based Code Generation (Layer 4)
+//
+// Uses the panproto Expr layer for runtime code generation:
+//   Config ──► Expr Evaluation ──► Generated Code
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use crate::pipeline::expr_bundle::BundleConfig;
 
-/// Generate all files for the Python Textual bundle
-pub fn generate(project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
-    let mut files = HashMap::new();
+/// Generate all files for the Python Textual bundle using Expr-based generation
+pub fn generate(_project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
+    use crate::pipeline::expr_bundle::{parse_spec_to_config, ExprBundleGenerator, ArtifactGenerator, BundleConfig};
     
-    // Generate the main TUI app based on spec
-    files.insert(PathBuf::from("src/main.py"), generate_main_py(project_name, spec_content));
+    // Parse spec into config
+    let mut config = parse_spec_to_config(spec_content);
     
-    files
-}
-
-/// Generate main.py for Textual TUI app
-fn generate_main_py(project_name: &str, spec_content: &str) -> String {
-    // Parse spec to determine widgets
+    // Detect features from spec
     let has_counter = spec_content.to_lowercase().contains("counter");
     let has_todo = spec_content.to_lowercase().contains("todo");
     let has_hero = spec_content.to_lowercase().contains("hero");
+    
+    // Store features in config for generator access
+    if has_counter {
+        config.extra.insert("has_counter".to_string(), "true".to_string());
+    }
+    if has_todo {
+        config.extra.insert("has_todo".to_string(), "true".to_string());
+    }
+    if has_hero {
+        config.extra.insert("has_hero".to_string(), "true".to_string());
+    }
+    
+    // Build Expr-based generator with spec-aware content
+    ExprBundleGenerator::new("python-textual")
+        .with_artifact("main.py", ArtifactGenerator::Expr(textual_main_py))
+        .with_artifact("pyproject.toml", ArtifactGenerator::Expr(textual_pyproject_toml))
+        .generate(&config)
+}
+
+fn textual_main_py(config: &BundleConfig) -> String {
+    let has_counter = config.extra.get("has_counter").is_some();
+    let has_todo = config.extra.get("has_todo").is_some();
+    let has_hero = config.extra.get("has_hero").is_some();
+    let project_name = &config.project_name;
     
     let mut imports = String::from("from textual.app import App, ComposeResult\n");
     imports.push_str("from textual.widgets import Header, Footer");
@@ -30,17 +52,15 @@ fn generate_main_py(project_name: &str, spec_content: &str) -> String {
     if has_todo {
         imports.push_str(", Input, ListView, ListItem, Checkbox");
     }
-    imports.push_str("\nfrom textual.containers import Container, Vertical, Horizontal\n");
+    imports.push_str("\nfrom textual.containers import Container, Vertical, Horizontal\nfrom textual.reactive import reactive\n");
     
     let mut widgets = String::new();
     
-    // Counter widget
     if has_counter {
         widgets.push_str(r##"
 
 class CounterWidget(Static):
     """A simple counter widget."""
-    
     count = reactive(0)
     
     def compose(self) -> ComposeResult:
@@ -58,13 +78,11 @@ class CounterWidget(Static):
 "##);
     }
     
-    // Todo widget
     if has_todo {
         widgets.push_str(r##"
 
 class TodoWidget(Static):
     """A todo list widget."""
-    
     todos = reactive([])
     
     def compose(self) -> ComposeResult:
@@ -79,13 +97,11 @@ class TodoWidget(Static):
 "##);
     }
     
-    // Hero widget
     if has_hero {
         widgets.push_str(r##"
 
 class HeroWidget(Static):
     """A hero banner widget."""
-    
     def compose(self) -> ComposeResult:
         with Container(classes="hero"):
             yield Label("Hello World!", id="hero-title")
@@ -93,27 +109,7 @@ class HeroWidget(Static):
 "##);
     }
     
-    let app_class = format!(r##"
-
-class {}App(App):
-    """Main {} TUI application."""
-    
-    CSS = """
-    Screen {{ align: center, middle; }}
-    .hero {{ text-align: center; padding: 2; }}
-    #hero-title {{ text-style: bold; color: $primary; text-size: 3; }}
-    #hero-subtitle {{ color: $text-muted; }}
-    """
-    
-    BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("r", "refresh", "Refresh"),
-    ]
-    
-    def compose(self) -> ComposeResult:
-        yield Header()
-        with Container():
-"##, to_pascal_case(project_name), project_name);
+    let pascal_name = to_pascal_case(project_name);
     
     let mut compose_body = String::new();
     if has_hero {
@@ -131,17 +127,60 @@ class {}App(App):
 
 {}
 {}
-{}
+class {}App(App):
+    """Main {} TUI application."""
+    
+    CSS = """
+    Screen {{ align: center, middle; }}
+    .hero {{ text-align: center; padding: 2; }}
+    #hero-title {{ text-style: bold; color: $primary; text-size: 3; }}
+    #hero-subtitle {{ color: $text-muted; }}
+    """
+    
+    BINDINGS = [("q", "quit", "Quit")]
+    
+    def compose(self) -> ComposeResult:
+        yield Header()
+        with Container():
 {}
         yield Footer()
 
 if __name__ == "__main__":
     app = {}App()
     app.run()
-"#, project_name, imports, widgets, app_class, compose_body, to_pascal_case(project_name))
+"#, 
+        project_name,
+        imports,
+        widgets,
+        pascal_name,
+        project_name,
+        compose_body,
+        pascal_name
+    )
 }
 
-/// Convert kebab-case/snake_case to PascalCase
+fn textual_pyproject_toml(config: &BundleConfig) -> String {
+    format!(r#"[project]
+name = "{}"
+version = "{}"
+description = "{}"
+requires-python = ">=3.10"
+dependencies = [
+    "textual>=0.41.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "textual-dev>=1.0",
+]
+"#,
+        config.project_name,
+        config.version,
+        config.project_description.as_deref().unwrap_or("Textual TUI app")
+    )
+}
+
 fn to_pascal_case(s: &str) -> String {
     s.split(|c| c == '-' || c == '_')
         .map(|p| {
