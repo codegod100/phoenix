@@ -1,0 +1,75 @@
+digraph SpecMdGrammar {
+    rankdir=TB;
+    node [shape=box, style=filled, fillcolor=lightblue, fontname="monospace"];
+    edge [fontname="monospace", fontsize=10];
+    
+    // Root
+    spec_md [label="spec.md", fillcolor=gold, shape=oval];
+    
+    // Level 1: Document Structure
+    header [label="# Header\n(project name)", fillcolor=lightgreen];
+    sections [label="Sections\n(## Section)", fillcolor=lightyellow];
+    
+    spec_md -> header;
+    spec_md -> sections;
+    
+    // Header extraction
+    project_name [label="project_name:\n'user-service'", fillcolor=pink];
+    description [label="description:\nfirst paragraph", fillcolor=pink];
+    
+    header -> project_name [label="normalize()"];
+    header -> description;
+    
+    // Section types
+    overview [label="## Overview\n\nparagraph", fillcolor=lightcyan];
+    api [label="## API\n\nroutes[]", fillcolor=lightcyan];
+    models [label="## Models\n\nmodels[]", fillcolor=lightcyan];
+    server [label="## Server\n\nconfig", fillcolor=lightcyan];
+    
+    sections -> overview [label="title ≈ 'overview'"];
+    sections -> api [label="title ≈ 'api|routes|endpoints'"];
+    sections -> models [label="title ≈ 'models|data|schema'"];
+    sections -> server [label="title ≈ 'server|config'"];
+    
+    // Route patterns
+    route1 [label="- `GET /api/users` - desc", fillcolor=lightgoldenrod1];
+    route2 [label="- GET /api/users: desc", fillcolor=lightgoldenrod1];
+    route_extracted [label="RouteSpec:\n{\n  method: GET\n  path: /api/users\n  handler: listUsers\n}", fillcolor=palegreen];
+    
+    api -> route1 [label="Pattern A"];
+    api -> route2 [label="Pattern B"];
+    route1 -> route_extracted [label="parse_route_line()"];
+    route2 -> route_extracted;
+    
+    // Model patterns
+    model1 [label="- **User**: name (String, req)", fillcolor=lightgoldenrod1];
+    model2 [label="- User: name (String, req)", fillcolor=lightgoldenrod1];
+    model_extracted [label="ModelSpec:\n{\n  name: User\n  fields: [...]\n}", fillcolor=palegreen];
+    
+    models -> model1 [label="Pattern A"];
+    models -> model2 [label="Pattern B"];
+    model1 -> model_extracted [label="parse_model_line()"];
+    model2 -> model_extracted;
+    
+    // Server config
+    config_line [label="- Port: 3000", fillcolor=lightgoldenrod1];
+    port_extracted [label="server_config.port: 3000", fillcolor=palegreen];
+    
+    server -> config_line;
+    config_line -> port_extracted [label="parse_config_line()"];
+    
+    // StructuredSpec
+    structured [label="StructuredSpec\n{ routes[], models[], config }", fillcolor=gold, shape=oval];
+    
+    route_extracted -> structured;
+    model_extracted -> structured;
+    port_extracted -> structured;
+    
+    // Output
+    spec_ncl [label="spec.ncl\n(Nickel)", fillcolor=gold, shape=oval];
+    
+    structured -> spec_ncl [label="NclSpecGenerator\n.generate()", style=bold, fontsize=12];
+    
+    // Legend
+    legend [label="Legend:\nGold = Document/File\nGreen = Extracted Data\nYellow = Grammar Pattern\nPink = Value\nBlue = Section", shape=note, fillcolor=lightgray, fontsize=9];
+}
