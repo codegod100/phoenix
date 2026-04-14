@@ -29,6 +29,16 @@ pub enum FormalTheory {
     ThPackageJson,
     /// TypeScript config: ThSpec → ThTsConfig → String
     ThTsConfig,
+    /// Lit package.json with Vite: ThSpec → ThLitPackageJson → String
+    ThLitPackageJson,
+    /// Lit TypeScript config: ThSpec → ThLitTsConfig → String
+    ThLitTsConfig,
+    /// Lit Vite config: ThSpec → ThLitViteConfig → String
+    ThLitViteConfig,
+    /// Lit HTML entry: ThSpec → ThLitHtml → String
+    ThLitHtml,
+    /// Lit main.ts: ThSpec → ThLitMain → String
+    ThLitMain,
     /// Generic text file from template
     ThTemplate { template_path: String },
 }

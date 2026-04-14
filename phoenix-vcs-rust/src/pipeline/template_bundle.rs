@@ -182,27 +182,27 @@ fn lit_bundle() -> TemplateBundle {
             },
             BundleFile {
                 path: PathBuf::from("package.json"),
-                theory: FormalTheory::ThPackageJson,
+                theory: FormalTheory::ThLitPackageJson,
                 description: "NPM package with Lit dependencies".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("tsconfig.json"),
-                theory: FormalTheory::ThTsConfig,
-                description: "TypeScript configuration".to_string(),
+                theory: FormalTheory::ThLitTsConfig,
+                description: "TypeScript configuration for Lit".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("vite.config.ts"),
-                theory: FormalTheory::ThTypeScript,
+                theory: FormalTheory::ThLitViteConfig,
                 description: "Vite build configuration".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("index.html"),
-                theory: FormalTheory::ThTemplate { template_path: "lit/index.html".to_string() },
+                theory: FormalTheory::ThLitHtml,
                 description: "HTML entry point".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("src/main.ts"),
-                theory: FormalTheory::ThTypeScript,
+                theory: FormalTheory::ThLitMain,
                 description: "Application entry with Lit components".to_string(),
             },
             BundleFile {
@@ -344,7 +344,12 @@ pub fn generate_bundle(
             // TypeScript theories - delegate to typescript module
             FormalTheory::ThTypeScript 
             | FormalTheory::ThPackageJson 
-            | FormalTheory::ThTsConfig => {
+            | FormalTheory::ThTsConfig
+            | FormalTheory::ThLitPackageJson
+            | FormalTheory::ThLitTsConfig
+            | FormalTheory::ThLitViteConfig
+            | FormalTheory::ThLitHtml
+            | FormalTheory::ThLitMain => {
                 typescript::generate_typescript_file(
                     &file.theory,
                     project_name,
