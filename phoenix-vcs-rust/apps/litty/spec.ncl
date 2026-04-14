@@ -3,10 +3,9 @@
   
   id = "litty",
   template = "lit",
-  
   theory_name = "ThLit",
-  description = "Theory for generating TypeScript web applications using Lit framework",
   version = "0.1.0",
+  description = "A simple web application using Lit framework for modern Web Components - todo list app demonstrating Lit reactive properties and event handling",
   
   source = {
     theory = "ThSpec",
@@ -15,64 +14,79 @@
   
   target = {
     theory = "ThLit",
-    format = "ts_code",
-    files = [
-      "package.json",
-      "tsconfig.json",
-      "vite.config.ts",
-      "index.html",
-      "src/main.ts",
-      "src/components/*.ts",
-    ],
+    format = "js_code",
+    files = ["package.json", "tsconfig.json", "vite.config.ts", "index.html", "src/main.ts"],
+  },
+  
+  phoenix_config = {
+    project_name = "litty",
+    project_description = "A simple Lit web components application with hero image, todo list, and counter components",
   },
   
   sorts = {
     Component = "Lit web component with @customElement decorator",
     Property = "Reactive property with @property decorator",
     Event = "DOM event binding",
-    Template = "lit-html template tagged with html``",
-    Style = "CSS tagged template with css``",
-    CSSProperties = "CSS custom properties for theming",
+    Template = "lit-html template",
+    Style = "CSS tagged template",
+    Hero = "Large hero section with welcome message",
+    TodoItem = "Individual todo item with checkbox and delete action",
+    Counter = "Reactive counter with increment/decrement buttons",
   },
   
   operations = {
     mk_component = {
-      arity = ["String", "Array Property", "Template", "Style"],
+      arity = ["String", "Array Property"],
       result = "Component",
-      description = "Create a Lit web component with properties, template, and styles",
+      description = "Create Lit component with name and properties",
     },
     mk_property = {
       arity = ["String", "String"],
       result = "Property",
-      description = "Create a reactive property with name and type",
+      description = "Create reactive property with name and type",
+    },
+    mk_hero = {
+      arity = ["String"],
+      result = "Hero",
+      description = "Create hero section with welcome message",
+    },
+    mk_todo_item = {
+      arity = ["String", "Bool"],
+      result = "TodoItem",
+      description = "Create todo item with text and completion state",
+    },
+    mk_counter = {
+      arity = ["Number"],
+      result = "Counter",
+      description = "Create counter with initial value",
     },
     mk_template = {
       arity = ["String"],
       result = "Template",
-      description = "Create a lit-html template from HTML string",
-    },
-    mk_event = {
-      arity = ["String", "String"],
-      result = "Event",
-      description = "Create an event handler binding with event name and handler",
+      description = "Create lit-html template string",
     },
     mk_style = {
       arity = ["String"],
       result = "Style",
-      description = "Create CSS styles from CSS string",
+      description = "Create CSS tagged template",
     },
   },
   
   examples = [
     {
+      name = "hero-section",
+      input = "Hello World welcome message",
+      output = "Lit component with large hero image displaying greeting",
+    },
+    {
       name = "todo-list",
       input = "Todo list with add, toggle, and delete functionality",
-      output = "TodoComponent with reactive array of todo items",
+      output = "Lit components with reactive state management",
     },
     {
       name = "counter",
-      input = "Counter with increment and decrement buttons",
-      output = "CounterComponent with numeric state and click handlers",
+      input = "Counter with +/- buttons showing reactive state",
+      output = "Lit component with reactive counter property",
     },
   ],
 }

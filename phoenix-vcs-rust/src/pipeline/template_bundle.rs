@@ -10,6 +10,11 @@
 mod types;
 mod typescript;
 
+// Include the Lit bundle's isolated Rust code
+// This makes bundles self-contained with their own generation logic
+#[path = "../../bundles/lit/generate.rs"]
+pub mod lit_generate;
+
 pub use types::{BundleFile, FormalTheory, TemplateBundle};
 pub use typescript::{
     generate_package_json_term,
@@ -35,6 +40,121 @@ pub fn get_bundle(template: &str) -> Option<TemplateBundle> {
         "lit" | "lit-web-components" => Some(lit_bundle()),
         _ => None,
     }
+}
+
+/// Load an NCL-native bundle from a directory
+/// 
+/// This loads bundles that use pure NCL for code generation.
+/// The bundle folder must contain:
+/// - bundle.ncl: Bundle configuration
+/// - generate.ncl: Generation logic
+/// - templates.ncl: Template definitions
+pub fn load_ncl_bundle(bundle_dir: impl AsRef<std::path::Path>) -> Option<TemplateBundle> {
+    use std::path::Path;
+    
+    let bundle_dir = bundle_dir.as_ref();
+    let bundle_ncl_path = bundle_dir.join("bundle.ncl");
+    
+    if !bundle_ncl_path.exists() {
+        return None;
+    }
+    
+    // Read and parse bundle.ncl
+    let bundle_content = std::fs::read_to_string(&bundle_ncl_path).ok()?;
+    
+    // Extract bundle metadata from NCL
+    let bundle_name = extract_ncl_string(&bundle_content, "id")?;
+    let _version = extract_ncl_string(&bundle_content, "version").unwrap_or_else(|| "1.0.0".to_string());
+    
+    // Check if this is an NCL-native bundle
+    let is_ncl_native = bundle_content.contains("type = \"ncl-native\"") 
+        || bundle_content.contains("type=\"ncl-native\"");
+    
+    if !is_ncl_native {
+        // Fall back to standard bundle loading
+        return None;
+    }
+    
+    // For NCL-native bundles, we use a special theory that delegates to NCL
+    let entry_point = extract_ncl_string(&bundle_content, "entry_point")
+        .unwrap_or_else(|| "generate.ncl".to_string());
+    
+    let templates_file = extract_ncl_string(&bundle_content, "templates")
+        .unwrap_or_else(|| "templates.ncl".to_string());
+    
+    // Build file list from bundle.ncl
+    let mut files = vec![];
+    if let Some(files_section) = extract_ncl_array(&bundle_content, "files") {
+        for path in files_section {
+            files.push(BundleFile {
+                path: PathBuf::from(path.trim_matches('"')),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: format!("{}/{}", bundle_name, path.trim_matches('"')) 
+                },
+                description: format!("Generated from {}", entry_point),
+            });
+        }
+    }
+    
+    // Default files if not specified
+    if files.is_empty() {
+        let default_files = [
+            "package.json",
+            "tsconfig.json", 
+            "vite.config.ts",
+            "index.html",
+            "src/main.ts",
+        ];
+        for file in &default_files {
+            files.push(BundleFile {
+                path: PathBuf::from(file),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: format!("{}/{}", bundle_name, file) 
+                },
+                description: "Generated from NCL template".to_string(),
+            });
+        }
+    }
+    
+    Some(TemplateBundle {
+        name: bundle_name.clone(),
+        files,
+        base_deps: vec![
+            "lit".to_string(),
+            "typescript".to_string(),
+            "vite".to_string(),
+        ],
+    })
+}
+
+/// Extract a string value from NCL content
+fn extract_ncl_string(content: &str, key: &str) -> Option<String> {
+    let pattern = format!("{} = \"", key);
+    if let Some(start) = content.find(&pattern) {
+        let rest = &content[start + pattern.len()..];
+        if let Some(end) = rest.find('"') {
+            return Some(rest[..end].to_string());
+        }
+    }
+    None
+}
+
+/// Extract an array of strings from NCL content
+fn extract_ncl_array(content: &str, key: &str) -> Option<Vec<String>> {
+    let pattern = format!("{} = [", key);
+    if let Some(start) = content.find(&pattern) {
+        let rest = &content[start + pattern.len()..];
+        if let Some(end) = rest.find(']') {
+            let items = &rest[..end];
+            return Some(
+                items.split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            );
+        }
+    }
+    None
 }
 
 /// Python Textual TUI template bundle
@@ -170,7 +290,9 @@ fn nodejs_express_bundle() -> TemplateBundle {
     }
 }
 
-/// Lit Web Components frontend template bundle
+/// Lit Web Components frontend template bundle - NCL Native
+/// 
+/// This bundle uses pure NCL for code generation via templates.ncl
 fn lit_bundle() -> TemplateBundle {
     TemplateBundle {
         name: "lit".to_string(),
@@ -180,30 +302,41 @@ fn lit_bundle() -> TemplateBundle {
                 theory: FormalTheory::ThNix,
                 description: "Nix flake with Node.js toolchain".to_string(),
             },
+            // Use ThTemplate with NCL paths to trigger NCL-native generation
             BundleFile {
                 path: PathBuf::from("package.json"),
-                theory: FormalTheory::ThLitPackageJson,
-                description: "NPM package with Lit dependencies".to_string(),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: "lit/package.json".to_string() 
+                },
+                description: "NPM package with Lit dependencies (NCL-native)".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("tsconfig.json"),
-                theory: FormalTheory::ThLitTsConfig,
-                description: "TypeScript configuration for Lit".to_string(),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: "lit/tsconfig.json".to_string() 
+                },
+                description: "TypeScript configuration (NCL-native)".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("vite.config.ts"),
-                theory: FormalTheory::ThLitViteConfig,
-                description: "Vite build configuration".to_string(),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: "lit/vite.config.ts".to_string() 
+                },
+                description: "Vite build configuration (NCL-native)".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("index.html"),
-                theory: FormalTheory::ThLitHtml,
-                description: "HTML entry point".to_string(),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: "lit/index.html".to_string() 
+                },
+                description: "HTML entry point (NCL-native)".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("src/main.ts"),
-                theory: FormalTheory::ThLitMain,
-                description: "Application entry with Lit components".to_string(),
+                theory: FormalTheory::ThTemplate { 
+                    template_path: "lit/src/main.ts".to_string() 
+                },
+                description: "Application entry with Lit components (NCL-native)".to_string(),
             },
             BundleFile {
                 path: PathBuf::from("README.md"),
@@ -359,8 +492,26 @@ pub fn generate_bundle(
                 )
             }
             FormalTheory::ThTemplate { template_path } => {
-                // Load and fill template
-                format!("# Template from {}", template_path)
+                // Check if this is an NCL-native bundle template (e.g., "lit/package.json")
+                let parts: Vec<_> = template_path.split('/').collect();
+                if parts.len() >= 2 {
+                    let bundle_name = parts[0];
+                    let file_name = parts.last().unwrap_or(&"main.ts");
+                    
+                    // Check for bundle-specific Rust generator
+                    match bundle_name {
+                        "lit" => {
+                            // Use the isolated Lit bundle generator
+                            generate_lit_bundle_file(file_name, project_name, spec_content)
+                        }
+                        _ => {
+                            // Fall back to generic template
+                            format!("# Template from {}", template_path)
+                        }
+                    }
+                } else {
+                    format!("# Template from {}", template_path)
+                }
             }
         };
         
@@ -393,7 +544,33 @@ fn parse_extra_deps(spec_content: &str) -> Vec<String> {
     }
 }
 
-/// Generate pyproject.toml using ThPyProject formal theory
+/// Generate a file using the Lit bundle's isolated Rust code
+/// 
+/// This calls into bundles/lit/generate.rs for all code generation.
+fn generate_lit_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    // Call the isolated Lit bundle generator
+    let files = lit_generate::generate(project_name, spec_content);
+    
+    // Extract the requested file
+    let path = match file_name {
+        "package.json" => std::path::PathBuf::from("package.json"),
+        "tsconfig.json" => std::path::PathBuf::from("tsconfig.json"),
+        "vite.config.ts" => std::path::PathBuf::from("vite.config.ts"),
+        "index.html" => std::path::PathBuf::from("index.html"),
+        "main.ts" | "src/main.ts" => std::path::PathBuf::from("src/main.ts"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate package.json for Lit app
 /// 
 /// This implements μ_pyproject: ThSpec → ThPyProject → String
 pub fn generate_pyproject_term(project_name: &str, deps: &[String]) -> String {
