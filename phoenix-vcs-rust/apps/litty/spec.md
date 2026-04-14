@@ -12,6 +12,7 @@ A simple web application using Lit framework for modern Web Components.
 ## Features
 
 1. **Todo List Component**: Add, toggle, and delete todo items
+   - Checkboxes must be vertically centered with text labels
 2. **Counter Component**: Demonstrates reactive state with buttons
 3. **Styled with CSS**: Uses Lit's CSS tagged templates
 
