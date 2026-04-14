@@ -17,7 +17,8 @@
   
   # Generation configuration
   generator = {
-    type = "bundle",
+    type = "rust-native",
+    rust_generator = "generate.rs",
     target_template = "bundle",
   },
 }

@@ -17,4 +17,10 @@
     "pyproject.toml" = "./pyproject.toml", 
     "README.md" = "./README.md",
   },
+  
+  # Generation configuration
+  generator = {
+    type = "rust-native",
+    rust_generator = "generate.rs",
+  },
 }

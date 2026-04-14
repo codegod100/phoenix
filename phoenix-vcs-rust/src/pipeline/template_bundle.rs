@@ -10,10 +10,18 @@
 mod types;
 mod typescript;
 
-// Include the Lit bundle's isolated Rust code
-// This makes bundles self-contained with their own generation logic
+// Include all bundle-specific Rust code
+// Each bundle is self-contained with its own generation logic
 #[path = "../../bundles/lit/generate.rs"]
 pub mod lit_generate;
+#[path = "../../bundles/nodejs-express/generate.rs"]
+pub mod nodejs_express_generate;
+#[path = "../../bundles/swift-vapor/generate.rs"]
+pub mod swift_vapor_generate;
+#[path = "../../bundles/python-textual/generate.rs"]
+pub mod python_textual_generate;
+#[path = "../../bundles/bundle-author/generate.rs"]
+pub mod bundle_author_generate;
 
 pub use types::{BundleFile, FormalTheory, TemplateBundle};
 pub use typescript::{
@@ -460,12 +468,11 @@ pub fn generate_bundle(
                 generate_pyproject_term(project_name, &all_deps)
             }
             FormalTheory::ThPythonTextual => {
-                // Generate from first IU (or create integrated app)
-                if let Some(iu) = ius.first() {
-                    crate::pipeline::term_codegen::generate_from_term(iu, Some(spec_content))
-                } else {
-                    "# No IUs to generate".to_string()
-                }
+                // Use isolated python-textual bundle generator
+                let files = python_textual_generate::generate(project_name, spec_content);
+                files.get(&std::path::PathBuf::from("src/main.py"))
+                    .cloned()
+                    .unwrap_or_else(|| "# No Python code generated".to_string())
             }
             FormalTheory::ThMarkdown => {
                 generate_readme_term(project_name, spec_content)
@@ -492,25 +499,22 @@ pub fn generate_bundle(
                 )
             }
             FormalTheory::ThTemplate { template_path } => {
-                // Check if this is an NCL-native bundle template (e.g., "lit/package.json")
+                // Check if this is a bundle template (e.g., "lit/package.json")
                 let parts: Vec<_> = template_path.split('/').collect();
                 if parts.len() >= 2 {
                     let bundle_name = parts[0];
                     let file_name = parts.last().unwrap_or(&"main.ts");
                     
-                    // Check for bundle-specific Rust generator
+                    // Route to bundle-specific Rust generator
                     match bundle_name {
-                        "lit" => {
-                            // Use the isolated Lit bundle generator
-                            generate_lit_bundle_file(file_name, project_name, spec_content)
-                        }
-                        _ => {
-                            // Fall back to generic template
-                            format!("# Template from {}", template_path)
-                        }
+                        "lit" => generate_lit_bundle_file(file_name, project_name, spec_content),
+                        "nodejs-express" => generate_nodejs_express_bundle_file(file_name, project_name, spec_content),
+                        "swift-vapor" => generate_swift_vapor_bundle_file(file_name, project_name, spec_content),
+                        "bundle-author" => generate_bundle_author_bundle_file(file_name, project_name, spec_content),
+                        _ => format!("// Template from {}", template_path),
                     }
                 } else {
-                    format!("# Template from {}", template_path)
+                    format!("// Template from {}", template_path)
                 }
             }
         };
@@ -562,6 +566,70 @@ fn generate_lit_bundle_file(
         "vite.config.ts" => std::path::PathBuf::from("vite.config.ts"),
         "index.html" => std::path::PathBuf::from("index.html"),
         "main.ts" | "src/main.ts" => std::path::PathBuf::from("src/main.ts"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the Node.js Express bundle's isolated Rust code
+fn generate_nodejs_express_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = nodejs_express_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "package.json" => std::path::PathBuf::from("package.json"),
+        "app.js" => std::path::PathBuf::from("app.js"),
+        ".env.example" => std::path::PathBuf::from(".env.example"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the Swift Vapor bundle's isolated Rust code
+fn generate_swift_vapor_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = swift_vapor_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "Package.swift" => std::path::PathBuf::from("Package.swift"),
+        "configure.swift" => std::path::PathBuf::from("Sources/App/configure.swift"),
+        "routes.swift" => std::path::PathBuf::from("Sources/App/routes.swift"),
+        "User.swift" => std::path::PathBuf::from("Sources/App/Models/User.swift"),
+        "UsersController.swift" => std::path::PathBuf::from("Sources/App/Controllers/UsersController.swift"),
+        _ => std::path::PathBuf::from(file_name),
+    };
+    
+    files.get(&path)
+        .cloned()
+        .unwrap_or_else(|| format!("// Error: could not generate {}", file_name))
+}
+
+/// Generate a file using the Bundle Author bundle's isolated Rust code
+fn generate_bundle_author_bundle_file(
+    file_name: &str,
+    project_name: &str,
+    spec_content: &str
+) -> String {
+    let files = bundle_author_generate::generate(project_name, spec_content);
+    
+    let path = match file_name {
+        "bundle.ncl" => std::path::PathBuf::from("bundle.ncl"),
+        "template_contract.ncl" => std::path::PathBuf::from("template_contract.ncl"),
+        "theory_contract_panproto.ncl" => std::path::PathBuf::from("theory_contract_panproto.ncl"),
+        "prompt_theory.md" => std::path::PathBuf::from("prompt_theory.md"),
+        "prompt_contract.md" => std::path::PathBuf::from("prompt_contract.md"),
         _ => std::path::PathBuf::from(file_name),
     };
     
