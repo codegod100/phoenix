@@ -395,6 +395,12 @@ impl DataLens<Term, Term> for JsExpressPipeline {
             }
         }
         
+        // app.listen(PORT, ...)
+        stmts.push(Term::app("listen_call", vec![
+            Term::var("3000"),
+            Term::app("callback", vec![]),
+        ]));
+        
         Term::app("program", vec![Term::app("statements", stmts)])
     }
     
@@ -497,13 +503,33 @@ impl JsExpressPipeline {
             Term::App { op, args } => {
                 let op_str = op.as_ref();
                 match op_str {
-                    "import" => "const express = require('express');\n".into(),
+                    "import" => "const express = require('express');\n\n".into(),
                     "const" if args.len() == 2 => {
                         let name = match &args[0] {
                             Term::Var(v) => v.as_ref(),
                             _ => "x",
                         };
-                        format!("const {} = app;\n", name)
+                        // Check if it's `const app = express()`
+                        let value_str = match &args[1] {
+                            Term::App { op: call_op, args: call_args } if call_op.as_ref() == "call" => {
+                                if call_args.len() == 2 {
+                                    if let Term::Var(v) = &call_args[0] {
+                                        if v.as_ref() == "express" {
+                                            "express()".to_string()
+                                        } else {
+                                            format!("{}", v.as_ref())
+                                        }
+                                    } else {
+                                        "express()".to_string()
+                                    }
+                                } else {
+                                    "express()".to_string()
+                                }
+                            }
+                            Term::Var(v) => v.as_ref().to_string(),
+                            _ => "express()".to_string(),
+                        };
+                        format!("const {} = {};\n\n", name, value_str)
                     }
                     "route_call" if args.len() == 3 => {
                         let method = match &args[0] {
@@ -511,10 +537,19 @@ impl JsExpressPipeline {
                             _ => "get",
                         };
                         let path = match &args[1] {
-                            Term::Var(v) => v.as_ref(),
-                            _ => "/",
+                            Term::Var(v) => v.as_ref().to_string(),
+                            _ => "/".to_string(),
                         };
-                        format!("app.{}('{}', handler);\n", method, path)
+                        // Clean up path quotes if present
+                        let path_clean = path.trim_matches('\'');
+                        format!("app.{}('{}', (req, res) => {{\n  res.json({{ message: 'handler' }});\n}});\n\n", method, path_clean)
+                    }
+                    "listen_call" if args.len() == 2 => {
+                        let port = match &args[0] {
+                            Term::Var(v) => v.as_ref(),
+                            _ => "3000",
+                        };
+                        format!("app.listen({}, () => {{\n  console.log(`Server on port ${{{}}}`);\n}});\n", port, port)
                     }
                     _ => format!("// {}\n", op_str),
                 }

@@ -65,21 +65,17 @@ pub fn generate(_project_name: &str, spec_content: &str) -> HashMap<PathBuf, Str
 fn parse_routes_from_spec(spec_content: &str) -> Vec<(String, String, String)> {
     let mut routes = vec![];
     
-    if let Ok(value) = serde_json::from_str::<serde_json::Value>(spec_content) {
-        if let Some(api) = value.get("api") {
-            if let Some(endpoints) = api.get("endpoints").and_then(|e| e.as_array()) {
-                for ep in endpoints {
-                    if let (Some(method), Some(path)) = (
-                        ep.get("method").and_then(|m| m.as_str()),
-                        ep.get("path").and_then(|p| p.as_str()),
-                    ) {
-                        let handler = ep.get("handler")
-                            .and_then(|h| h.as_str())
-                            .map(|s| s.to_string())
-                            .unwrap_or_else(|| format!("{}Handler", method));
-                        routes.push((method.to_uppercase(), path.to_string(), handler));
-                    }
-                }
+    // Parse Nickel format: routes = [ { method = "GET", path = "/api/users", ... }, ... ]
+    // Can be single-line or multi-line
+    for line in spec_content.lines() {
+        let trimmed = line.trim();
+        
+        // Single-line format: { method = "GET", path = "/api/users", handler = "listUsers" },
+        if trimmed.starts_with("{ method =") && trimmed.contains("path =") {
+            if let (Some(method), Some(path)) = (extract_quoted(trimmed, "method ="), extract_quoted(trimmed, "path =")) {
+                let handler = extract_quoted(trimmed, "handler =")
+                    .unwrap_or_else(|| generate_handler_name(&path, &method));
+                routes.push((method, path, handler));
             }
         }
     }
@@ -89,6 +85,36 @@ fn parse_routes_from_spec(spec_content: &str) -> Vec<(String, String, String)> {
     }
     
     routes
+}
+
+fn extract_quoted(line: &str, prefix: &str) -> Option<String> {
+    if let Some(pos) = line.find(prefix) {
+        let after = &line[pos + prefix.len()..];
+        // Find quoted string
+        if let Some(start) = after.find('"') {
+            let after_start = &after[start + 1..];
+            if let Some(end) = after_start.find('"') {
+                return Some(after_start[..end].to_string());
+            }
+        }
+    }
+    None
+}
+
+fn generate_handler_name(path: &str, method: &str) -> String {
+    // Convert path to camelCase handler name
+    // e.g., "/api/users" -> "apiUsers" -> "getApiUsers"
+    let clean = path.trim_start_matches('/').replace("/", "_").replace(":", "");
+    let camel = clean.split('_')
+        .map(|s| {
+            let mut c = s.chars();
+            match c.next() {
+                None => String::new(),
+                Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+            }
+        })
+        .collect::<String>();
+    format!("{}{}", method.to_lowercase(), camel)
 }
 
 fn express_fallback(config: &crate::pipeline::bundle_stack::BundleConfig) -> String {
