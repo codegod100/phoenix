@@ -8,7 +8,7 @@ This Express.js API provides endpoints for managing users and items with full CR
 
 ## API
 
-- `GET /health` - GET /health
+- `GET /health` - Health check endpoint
 - `GET /api/users` - List all users
 - `POST /api/users` - Create a new user
 - `PUT /api/users/:id` - Update a user
@@ -17,7 +17,7 @@ This Express.js API provides endpoints for managing users and items with full CR
 - `POST /api/items` - Create a new item
 - `GET /api/unicorns` - 🦄 List all magical unicorns with rainbow powers
 - `GET /api/metrics` - 📊 Get system metrics (uptime, requests)
-- `POST /api/orders` - POST /api/orders
+- `POST /api/orders` - Create a new order
 
 ## Models
 
