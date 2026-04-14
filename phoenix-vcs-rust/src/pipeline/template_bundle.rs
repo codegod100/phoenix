@@ -32,6 +32,7 @@ pub fn get_bundle(template: &str) -> Option<TemplateBundle> {
         "bundle-author" | "bundle_author" => Some(bundle_author_bundle()),
         "swift-vapor" | "swift_vapor" => Some(swift_vapor_bundle()),
         "nodejs-express" | "nodejs_express" => Some(nodejs_express_bundle()),
+        "lit" | "lit-web-components" => Some(lit_bundle()),
         _ => None,
     }
 }
@@ -165,6 +166,55 @@ fn nodejs_express_bundle() -> TemplateBundle {
             "helmet".to_string(),
             "morgan".to_string(),
             "dotenv".to_string(),
+        ],
+    }
+}
+
+/// Lit Web Components frontend template bundle
+fn lit_bundle() -> TemplateBundle {
+    TemplateBundle {
+        name: "lit".to_string(),
+        files: vec![
+            BundleFile {
+                path: PathBuf::from("flake.nix"),
+                theory: FormalTheory::ThNix,
+                description: "Nix flake with Node.js toolchain".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("package.json"),
+                theory: FormalTheory::ThNix,
+                description: "NPM package with Lit dependencies".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("tsconfig.json"),
+                theory: FormalTheory::ThNix,
+                description: "TypeScript configuration with decorators".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("vite.config.ts"),
+                theory: FormalTheory::ThNix,
+                description: "Vite build configuration".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("index.html"),
+                theory: FormalTheory::ThTemplate { template_path: "lit/index.html".to_string() },
+                description: "HTML entry point".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("src/main.ts"),
+                theory: FormalTheory::ThTemplate { template_path: "lit/main.ts".to_string() },
+                description: "Application entry".to_string(),
+            },
+            BundleFile {
+                path: PathBuf::from("README.md"),
+                theory: FormalTheory::ThMarkdown,
+                description: "Project documentation".to_string(),
+            },
+        ],
+        base_deps: vec![
+            "lit".to_string(),
+            "typescript".to_string(),
+            "vite".to_string(),
         ],
     }
 }
