@@ -1423,6 +1423,9 @@ pub mod spec_md;
 // Bundle-agnostic Theory-based code generation
 pub mod theory_codegen;
 
+// Lit bundle with proper algebraic lifting
+pub mod lit_theory_lifted;
+
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;
 
