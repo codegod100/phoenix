@@ -923,6 +923,124 @@ fn detect_all_languages(content: &str) -> Vec<String> {
     languages
 }
 
+/// Convert spec.md to spec.ncl using 4-layer algebraic transformation
+/// Falls back to LLM-based transformation if algebraic fails and API key is available
+async fn convert_spec_md_to_ncl(
+    spec_md_path: &Path,
+    spec_ncl_path: &Path,
+    project_root: &Path,
+) -> Result<()> {
+    println!("📄 Converting spec.md to spec.ncl...");
+    let spec_md_content = tokio::fs::read_to_string(spec_md_path).await?;
+    
+    // ============================================================================
+    // STEP 1: Try algebraic 4-layer transformation (no LLM, ~10ms)
+    // ============================================================================
+    println!("   🔢 Trying algebraic 4-layer transformation...");
+    match crate::pipeline::spec_md_to_ncl::transform_spec_md_to_ncl_4layer(&spec_md_content) {
+        Ok((spec_ncl, report)) => {
+            println!("   ✅ 4-layer transformation succeeded!");
+            println!("      Theory: {} | Schema: {}v/{}e | Output: {} bytes",
+                report.layer1_theory,
+                report.layer2_schema_vertices,
+                report.layer2_schema_edges,
+                report.layer4_output_bytes
+            );
+            
+            // Backup existing spec.ncl if present
+            if spec_ncl_path.exists() {
+                let backup = spec_ncl_path.with_extension("ncl.bak");
+                let _ = tokio::fs::copy(spec_ncl_path, &backup).await;
+            }
+            tokio::fs::write(spec_ncl_path, &spec_ncl).await?;
+            println!("   ✅ Wrote spec.ncl ({} bytes)", spec_ncl.len());
+            Ok(())
+        }
+        Err(e) => {
+            println!("   ⚠️  4-layer transformation failed: {}", e);
+            
+            // ============================================================================
+            // STEP 2: Fall back to LLM-based transformation (requires API key)
+            // ============================================================================
+            try_llm_spec_md_conversion(&spec_md_content, spec_ncl_path, project_root).await
+        }
+    }
+}
+
+/// LLM-based fallback for spec.md conversion
+async fn try_llm_spec_md_conversion(
+    spec_md_content: &str,
+    spec_ncl_path: &Path,
+    project_root: &Path,
+) -> Result<()> {
+    let api_key = std::env::var("FIREWORKS_API_KEY")
+        .or_else(|_| std::env::var("OPENAI_API_KEY"))
+        .unwrap_or_default();
+    
+    if api_key.is_empty() {
+        println!("   ❌ No API key for LLM fallback - cannot convert spec.md");
+        println!("      Set FIREWORKS_API_KEY or OPENAI_API_KEY for LLM mode");
+        return Ok(());
+    }
+    
+    println!("   🔄 Falling back to LLM-based transformation...");
+    
+    // Discover template bundles
+    let bundles_dir = discover_bundles_dir(project_root).await;
+    
+    if let Some(bundles_dir) = bundles_dir {
+        match crate::pipeline::spec_md::spec_md_to_ncl(spec_md_content, &bundles_dir).await {
+            Ok(spec_ncl) => {
+                if spec_ncl.trim().len() < 50 || spec_ncl.contains("awaiting input") {
+                    let debug_path = spec_ncl_path.with_extension("ncl.failed");
+                    tokio::fs::write(&debug_path, &spec_ncl).await.ok();
+                    anyhow::bail!("LLM generated empty/invalid spec.ncl");
+                }
+                
+                if spec_ncl_path.exists() {
+                    let backup = spec_ncl_path.with_extension("ncl.bak");
+                    let _ = tokio::fs::copy(spec_ncl_path, &backup).await;
+                }
+                tokio::fs::write(spec_ncl_path, &spec_ncl).await?;
+                println!("   ✅ Generated spec.ncl from spec.md (LLM)");
+                Ok(())
+            }
+            Err(e) => {
+                anyhow::bail!("LLM conversion failed: {}", e)
+            }
+        }
+    } else {
+        println!("   ⚠️  No template bundles found");
+        Ok(())
+    }
+}
+
+/// Discover bundles directory from multiple possible locations
+async fn discover_bundles_dir(project_root: &Path) -> Option<std::path::PathBuf> {
+    // Check multiple locations in order of preference
+    let candidates = [
+        std::env::var("PHOENIX_BUNDLES_DIR").ok().map(PathBuf::from),
+        std::env::current_exe().ok()
+            .and_then(|exe| exe.parent().map(|p| p.join("bundles"))),
+        std::env::current_exe().ok()
+            .and_then(|exe| exe.parent()
+                .and_then(|p| p.parent().map(|pp| pp.join("bundles")))),
+        project_root.parent()
+            .map(|p| p.join("phoenix-vcs-rust").join("bundles")),
+        std::env::var("CARGO_MANIFEST_DIR").ok()
+            .map(|d| PathBuf::from(d).join("bundles")),
+        Some(project_root.join("bundles")),
+    ];
+    
+    for candidate in candidates.iter().flatten() {
+        if candidate.exists() {
+            return Some(candidate.clone());
+        }
+    }
+    
+    None
+}
+
 /// Run pipeline for all detected languages
 async fn cmd_pipeline_multi(
     project_root: &Path,
@@ -940,159 +1058,13 @@ async fn cmd_pipeline_multi(
     let spec_md_path = project_root.join("spec.md");
     let spec_ncl_path = project_root.join("spec.ncl");
     
+    // Convert spec.md to spec.ncl using 4-layer algebraic transformation
     if spec_md_path.exists() {
-        println!("📄 Found spec.md - converting to spec.ncl...");
-        let spec_md_content = tokio::fs::read_to_string(&spec_md_path).await?;
-        
-        // Get API key from environment
-        let api_key = std::env::var("FIREWORKS_API_KEY")
-            .or_else(|_| std::env::var("OPENAI_API_KEY"))
-            .unwrap_or_default();
-        
-        if api_key.is_empty() {
-            println!("⚠️  No FIREWORKS_API_KEY or OPENAI_API_KEY found - skipping spec.md conversion");
-            println!("   Set FIREWORKS_API_KEY to enable spec.md → spec.ncl conversion");
-        } else {
-            // Discover template bundles - try multiple locations
-            let mut bundles_dir: Option<std::path::PathBuf> = None;
-            
-            // First: check PHOENIX_BUNDLES_DIR environment variable
-            if let Ok(env_dir) = std::env::var("PHOENIX_BUNDLES_DIR") {
-                let candidate = std::path::PathBuf::from(env_dir);
-                if candidate.exists() {
-                    bundles_dir = Some(candidate);
-                    println!("   Using bundles from PHOENIX_BUNDLES_DIR");
-                }
-            }
-            
-            // Try: exe_dir/bundles (for installed binary)
-            if bundles_dir.is_none() {
-                if let Ok(exe) = std::env::current_exe() {
-                    if let Some(exe_dir) = exe.parent() {
-                        let candidate = exe_dir.join("bundles");
-                        if candidate.exists() {
-                            bundles_dir = Some(candidate);
-                        }
-                    }
-                }
-            }
-            
-            // Try: exe_dir/../bundles (for cargo install layout)
-            if bundles_dir.is_none() {
-                if let Ok(exe) = std::env::current_exe() {
-                    if let Some(exe_dir) = exe.parent() {
-                        let candidate = exe_dir.parent()
-                            .map(|p| p.join("bundles"))
-                            .unwrap_or_else(|| exe_dir.join("bundles"));
-                        if candidate.exists() {
-                            bundles_dir = Some(candidate);
-                        }
-                    }
-                }
-            }
-            
-            // Try: project_root/../phoenix-vcs-rust/bundles (for dev from simple-tui)
-            if bundles_dir.is_none() {
-                if let Some(parent) = project_root.parent() {
-                    let candidate = parent.join("phoenix-vcs-rust").join("bundles");
-                    if candidate.exists() {
-                        bundles_dir = Some(candidate);
-                    }
-                }
-            }
-            
-            // Try: CARGO_MANIFEST_DIR/bundles (when running via cargo)
-            if bundles_dir.is_none() {
-                if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
-                    let candidate = std::path::PathBuf::from(manifest_dir).join("bundles");
-                    if candidate.exists() {
-                        bundles_dir = Some(candidate);
-                    }
-                }
-            }
-            
-            // Fallback: project_root/bundles
-            if bundles_dir.is_none() {
-                let candidate = project_root.join("bundles");
-                if candidate.exists() {
-                    bundles_dir = Some(candidate);
-                }
-            }
-            
-            if let Some(bundles_dir) = bundles_dir {
-                match crate::pipeline::spec_md::spec_md_to_ncl(
-                    &spec_md_content,
-                    &bundles_dir,
-                ).await {
-                    Ok(spec_ncl) => {
-                        // Validate generated spec has actual content
-                        if spec_ncl.trim().len() < 50 || spec_ncl.contains("awaiting input") {
-                            // Save failed output for debugging
-                            let debug_path = spec_ncl_path.with_extension("ncl.failed");
-                            tokio::fs::write(&debug_path, &spec_ncl).await.ok();
-                            anyhow::bail!(
-                                "LLM generated empty/invalid spec.ncl - template filling failed.\n\
-                                 Debug output saved to: {}\n\
-                                 Generated content (first 500 chars): {}\n\
-                                 Check: (1) spec.md has valid content, (2) FIREWORKS_API_KEY is valid, (3) template is correct.",
-                                debug_path.display(),
-                                &spec_ncl.chars().take(500).collect::<String>()
-                            );
-                        }
-                        // Backup existing spec.ncl if present
-                        if spec_ncl_path.exists() {
-                            let backup = spec_ncl_path.with_extension("ncl.bak");
-                            let _ = tokio::fs::copy(&spec_ncl_path, &backup).await;
-                        }
-                        tokio::fs::write(&spec_ncl_path, &spec_ncl).await?;
-                        println!("✅ Generated spec.ncl from spec.md");
-                        
-                        // Load spec.ncl as ThSpec (panproto theory)
-                        #[cfg(feature = "panproto")]
-                        {
-                            println!("   📐 Loading spec.ncl as ThSpec...");
-                            match crate::ncl_panproto::load_spec_as_theory(&spec_ncl_path) {
-                                Ok(theory) => {
-                                    println!("   ✓ Loaded theory: {} ({} sorts, {} operations)", 
-                                        theory.name,
-                                        theory.sorts.len(),
-                                        theory.ops.len()
-                                    );
-                                    // Extract ui_config for code generation
-                                    match crate::ncl_panproto::extract_ui_config_from_theory(&spec_ncl) {
-                                        Ok(ui_config) => {
-                                            println!("   ✓ Extracted ui_config: {} widgets", 
-                                                ui_config.get("layout")
-                                                    .and_then(|l| l.get("widgets"))
-                                                    .and_then(|w| w.as_array())
-                                                    .map(|a| a.len())
-                                                    .unwrap_or(0)
-                                            );
-                                        }
-                                        Err(e) => {
-                                            println!("   ⚠ Could not extract ui_config: {}", e);
-                                        }
-                                    }
-                                }
-                                Err(e) => {
-                                    println!("   ⚠ Could not load as theory (may need theory format): {}", e);
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        anyhow::bail!(
-                            "Failed to convert spec.md to spec.ncl: {}. Check: (1) FIREWORKS_API_KEY is set, (2) spec.md has valid content, (3) template bundle is correct.",
-                            e
-                        );
-                    }
-                }
-            } else {
-                println!("⚠️  No template bundles found - checked multiple locations");
-                println!("   Set PHOENIX_BUNDLES_DIR to specify bundle location");
-            }
-        }
+        convert_spec_md_to_ncl(&spec_md_path, &spec_ncl_path, project_root).await?;
     }
+    
+    // Continue with the rest of the pipeline...
+    info!("Loading project configuration...");
     
     // Clean generated directory before building to avoid cruft buildup
     clean_generated_dir(project_root).await?;
