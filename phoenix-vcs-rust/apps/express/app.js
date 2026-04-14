@@ -6,29 +6,29 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 // Health check
 app.get('/', (req, res) => {
-    res.json({ status: 'ok', service: 'user-service' });
-  });
+  res.json({ message: 'handler' });
+});
 
 app.get('/api/users', (req, res) => {
-    res.json({ message: 'listUsers' });
-  });
+  res.json({ message: 'handler' });
+});
 
 app.post('/api/users', (req, res) => {
-    res.json({ message: 'createUsers' });
-  });
+  res.json({ message: 'handler' });
+});
 
 app.delete('/api/users/:id', (req, res) => {
-    res.json({ message: 'deleteUsersByid', id: req.params.id });
-  });
+  res.json({ message: 'handler' });
+});
 
 app.get('/api/items', (req, res) => {
-    res.json({ message: 'listItems' });
-  });
+  res.json({ message: 'handler' });
+});
 
 app.post('/api/items', (req, res) => {
-    res.json({ message: 'createItems' });
-  });
+  res.json({ message: 'handler' });
+});
 
 app.listen(PORT, () => {
-  console.log(`user-service API server listening on port ${PORT}`);
+  console.log(`Server on port ${}`);
 });
