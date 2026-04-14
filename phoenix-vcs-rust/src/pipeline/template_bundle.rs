@@ -532,7 +532,29 @@ pub fn generate_bundle(
                     
                     // Route to bundle-specific Rust generator
                     match bundle_name {
-                        "lit" => generate_lit_bundle_file(file_name, project_name, spec_content),
+                        "lit" => {
+                            // Use new Theory-based generation
+                            #[cfg(feature = "panproto")]
+                            {
+                                let files = crate::pipeline::theory_codegen::generate_lit_bundle(
+                                    project_name, 
+                                    spec_content
+                                );
+                                // Try both the file_name and with src/ prefix
+                                let path = std::path::PathBuf::from(file_name);
+                                let src_path = std::path::PathBuf::from(format!("src/{}", file_name));
+                                files.get(&path)
+                                    .or_else(|| files.get(&src_path))
+                                    .cloned()
+                                    .unwrap_or_else(|| {
+                                        // Debug: list what files were generated
+                                        let available: Vec<_> = files.keys().map(|k| k.to_string_lossy().to_string()).collect();
+                                        format!("// Error: {} not generated. Available: {:?}", file_name, available)
+                                    })
+                            }
+                            #[cfg(not(feature = "panproto"))]
+                            generate_lit_bundle_file(file_name, project_name, spec_content)
+                        }
                         "nodejs-express" => generate_nodejs_express_bundle_file(file_name, project_name, spec_content),
                         "swift-vapor" => generate_swift_vapor_bundle_file(file_name, project_name, spec_content),
                         "bundle-author" => generate_bundle_author_bundle_file(file_name, project_name, spec_content),

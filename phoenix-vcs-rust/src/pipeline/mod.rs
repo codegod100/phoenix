@@ -1420,6 +1420,9 @@ pub mod template_bundle;
 // Spec.md parsing and template selection
 pub mod spec_md;
 
+// Bundle-agnostic Theory-based code generation
+pub mod theory_codegen;
+
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;
 

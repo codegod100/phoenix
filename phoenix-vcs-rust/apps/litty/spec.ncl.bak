@@ -1,0 +1,191 @@
+{
+  id = "litty",
+  template = "lit",
+  build_type = "typescript",
+
+  phoenix_config = {
+    project_name = "litty",
+    project_description = "A cute kitty-themed Lit web components app with pastel colors and cat decorations"
+  },
+
+  theory_name = "ThLit",
+  description = "A fun Lit web components application with a cute kitty/neko theme featuring kawaii aesthetic",
+  version = "0.1.0",
+
+  source = {
+    theory = "ThSpec",
+    format = "spec_md",
+    grammar = "markdown",
+  },
+
+  target = {
+    theory = "ThLit",
+    format = "js_code",
+    files = [
+      "package.json",
+      "tsconfig.json",
+      "vite.config.ts",
+      "index.html",
+      "src/main.ts",
+      "src/components/*.ts",
+      "src/styles/*.css"
+    ],
+  },
+
+  sorts = {
+    Component = "Lit web component with @customElement decorator, rendering reactive properties and templates",
+    Property = "Reactive property with @property decorator for component state",
+    Event = "Custom DOM event binding for component communication",
+    Template = "lit-html template with interpolated expressions",
+    Style = "CSS tagged template for component styling",
+    Theme = "Color palette and visual styling configuration",
+  },
+
+  operations = {
+    mk_component = {
+      arity = ["String", "Array Property", "Template", "Style"],
+      result = "Component",
+      description = "Create a Lit web component with name, properties, template, and styles"
+    },
+    mk_property = {
+      arity = ["String", "String"],
+      result = "Property",
+      description = "Create a reactive property with name and type"
+    },
+    mk_template = {
+      arity = ["String"],
+      result = "Template",
+      description = "Create a lit-html template from markup string"
+    },
+    mk_style = {
+      arity = ["String"],
+      result = "Style",
+      description = "Create a CSS template from styles string"
+    },
+    mk_theme = {
+      arity = ["String", "String", "String", "Array String"],
+      result = "Theme",
+      description = "Create theme with primary, secondary, accent colors and decorations"
+    },
+  },
+
+  components = [
+    {
+      name = "hero-section",
+      properties = [
+        { name = "title", type = "String" },
+        { name = "subtitle", type = "String" }
+      ],
+      template = "<div class=\"hero\"><h1>${this.title}</h1><p>${this.subtitle}</p></div>",
+      styles = """
+        .hero {
+          background: linear-gradient(135deg, #FFB6C1, #E6E6FA, #DDA0DD);
+          padding: 4rem 2rem;
+          border-radius: 20px;
+          text-align: center;
+          box-shadow: 0 8px 32px rgba(255, 182, 193, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        .hero h1 { color: #5D4E60; font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .hero p { color: #7D6E7D; font-size: 1.2rem; }
+      """
+    },
+    {
+      name = "paw-counter",
+      properties = [
+        { name = "count", type = "Number" }
+      ],
+      template = "<div class=\"counter-card\"><button @click=\"${this._decrement}\">🐾</button><span>${this.count}</span><button @click=\"${this._increment}\">🐾</button></div>",
+      styles = """
+        .counter-card {
+          background: #98FB98;
+          border-radius: 16px;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1.5rem;
+          box-shadow: 0 4px 16px rgba(152, 251, 152, 0.4);
+        }
+        .counter-card button {
+          background: white;
+          border: none;
+          border-radius: 50%;
+          width: 48px;
+          height: 48px;
+          font-size: 1.5rem;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          transition: transform 0.2s;
+        }
+        .counter-card button:hover { transform: scale(1.1); }
+        .counter-card span { font-size: 2rem; color: #5D4E60; font-weight: bold; }
+      """
+    },
+    {
+      name = "paw-todo",
+      properties = [
+        { name = "todos", type = "Array" },
+        { name = "newTodo", type = "String" }
+      ],
+      template = "<div class=\"todo-list\"><input placeholder=\"Add a todo...\" @input=\"${this._onInput}\" @keyup=\"${this._onKeyup}\"><ul>${this.todos.map(t => html`<li class=${t.done ? 'done' : ''}><button @click=\"${() => this._toggle(t.id)}\">${t.done ? '🐾' : '⬜'}</button>${t.text}<button @click=\"${() => this._delete(t.id)}\">✕</button></li>`)}</ul></div>",
+      styles = """
+        .todo-list {
+          background: #FFF8DC;
+          border-radius: 16px;
+          padding: 1.5rem;
+          box-shadow: 0 4px 16px rgba(255, 248, 220, 0.6);
+        }
+        .todo-list input {
+          width: 100%;
+          padding: 0.75rem;
+          border: 2px solid #FFDAB9;
+          border-radius: 10px;
+          font-size: 1rem;
+          margin-bottom: 1rem;
+        }
+        .todo-list ul { list-style: none; padding: 0; }
+        .todo-list li {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem;
+          margin-bottom: 0.5rem;
+          background: white;
+          border-radius: 10px;
+        }
+        .todo-list li.done { opacity: 0.6; }
+        .todo-list li button:first-child { font-size: 1.2rem; }
+        .todo-list li button:last-child { margin-left: auto; color: #FFB6C1; }
+      """
+    }
+  ],
+
+  theme = {
+    primary = "#FFB6C1",
+    secondary = "#98FB98",
+    accent = "#E6E6FA",
+    decorations = ["cat-paw", "hearts", "stars", "cat-ears"],
+    background = "#FFF5F8",
+    style = "kawaii"
+  },
+
+  examples = [
+    {
+      name = "hero-demo",
+      input = "Welcome to Litty! with subtitle A purr-fect demo",
+      output = "Hero component with pink/lavender gradient and cat decorations"
+    },
+    {
+      name = "counter-demo",
+      input = "Counter starting at 0 with paw button styling",
+      output = "Counter with mint background and paw print buttons"
+    },
+    {
+      name = "todo-demo",
+      input = "Empty todo list with paw checkbox styling",
+      output = "Todo component with cream background and paw checkboxes"
+    }
+  ],
+}
