@@ -120,7 +120,7 @@
   ],
 
   phoenix_config = {
-    project_name = "express-demo-api",
+    project_name = "super-api",
     project_description = "Express.js REST API with User and Item management",
     template = "nodejs-express",
     build_type = "nodejs",

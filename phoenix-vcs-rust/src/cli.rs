@@ -1673,9 +1673,48 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
         println!("\n🔍 Dry run mode - no changes applied.");
         println!("   Run with --apply to update spec.ncl");
     } else if apply {
-        // In real implementation, this would parse and modify spec.ncl
-        println!("\n⚠️  Auto-apply not yet implemented.");
-        println!("   Please manually edit spec.ncl with the changes shown above.");
+        // Apply changes to spec.ncl
+        println!("\n📝 Applying changes to spec.ncl...");
+        
+        let mut updated_content = spec_content.clone();
+        let mut applied_count = 0;
+        
+        for (field, value) in &changes {
+            // Try to find and replace in phoenix_config section
+            let search_pattern = format!("{} = \"", field);
+            if let Some(pos) = updated_content.find(&search_pattern) {
+                // Find the end quote after the value
+                let value_start = pos + search_pattern.len();
+                if let Some(end_pos) = updated_content[value_start..].find('"') {
+                    let old_value = updated_content[value_start..value_start + end_pos].to_string();
+                    if &old_value != value {
+                        // Use replace_range through a reassignable variable
+                        let before = updated_content[..value_start].to_string();
+                        let after = updated_content[value_start + end_pos..].to_string();
+                        updated_content = format!("{}{}{}", before, value, after);
+                        println!("   ✓ Updated {}: \"{}\" → \"{}\"", field, old_value, value);
+                        applied_count += 1;
+                    }
+                }
+            } else {
+                // Field doesn't exist, need to add it to phoenix_config
+                println!("   ⚠️  Field '{}' not found in phoenix_config, skipping", field);
+            }
+        }
+        
+        if applied_count > 0 {
+            // Write updated content back
+            if let Err(e) = tokio::fs::write(&spec_path, updated_content).await {
+                println!("   ❌ Failed to write spec.ncl: {}", e);
+            } else {
+                println!("\n✅ Applied {} change(s) to {:?}", applied_count, spec_path);
+                println!("\n💡 Next steps:");
+                println!("   1. Review changes in spec.ncl");
+                println!("   2. Run: phoenix pipeline  # Regenerate code from updated spec");
+            }
+        } else {
+            println!("\n⚠️  No changes applied (fields may not exist in phoenix_config)");
+        }
     } else {
         println!("\n💡 To apply changes, run:");
         println!("   phoenix sync --apply");
