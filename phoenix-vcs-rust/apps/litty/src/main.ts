@@ -33,7 +33,7 @@ export class HeroImage extends LitElement {
       margin: 16px 0 0 0;
       opacity: 0.9;
     }
-  \`;
+  `;$
 
   render() {
     return html`
@@ -41,7 +41,7 @@ export class HeroImage extends LitElement {
         <h1>Large hero section with welcome message</h1>
         <p>Welcome</p>
       </div>
-    \`;
+    `;$
   }
 }
 
@@ -75,7 +75,7 @@ export class SimpleCounter extends LitElement {
     button:hover {
       background: #0056b3;
     }
-  \`;
+  `;$
 
   @property({ type: Number }) count = 0;
 
@@ -86,7 +86,7 @@ export class SimpleCounter extends LitElement {
         <span>\${this.count}</span>
         <button @click=\${() => this.count++}>+</button>
       </div>
-    \`;
+    `;$
   }
 }
 
@@ -153,7 +153,7 @@ export class TodoList extends LitElement {
       padding: 4px 12px;
       font-size: 0.875rem;
     }
-  \`;
+  `;$
 
   @property({ type: Array }) todos = [];
   @property({ type: String }) newTodoText = '';
@@ -183,10 +183,10 @@ export class TodoList extends LitElement {
             <span class=\${todo.completed ? 'completed' : ''}>\${todo.text}</span>
             <button class="delete-btn" @click=\${() => this._deleteTodo(todo.id)}>Delete</button>
           </li>
-        \`)}
+        `)}
       </ul>
       <div>\${remaining} of \${this.todos.length} remaining</div>
-    \`;
+    `;$
   }
 
   _addTodo() {
@@ -220,14 +220,14 @@ export class LittyApp extends LitElement {
       margin: 0 auto;
       padding: 20px;
     }
-  \`;
+  `;$
 
   render() {
     return html`
       <hero-image></hero-image>
       <simple-counter></simple-counter>
       <todo-list></todo-list>
-    \`;
+    `;$
   }
 }
 console.log('🔥 litty app loaded');

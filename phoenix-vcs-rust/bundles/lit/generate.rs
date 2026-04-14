@@ -282,7 +282,7 @@ export class HeroImage extends LitElement {{
       margin: 16px 0 0 0;
       opacity: 0.9;
     }}
-  \`;
+  `;$
 
   render() {{
     return html`
@@ -290,7 +290,7 @@ export class HeroImage extends LitElement {{
         <h1>{}</h1>
         <p>{}</p>
       </div>
-    \`;
+    `;$
   }}
 }}
 "#, message, subtitle)
@@ -328,7 +328,7 @@ export class SimpleCounter extends LitElement {
     button:hover {
       background: #0056b3;
     }
-  \`;
+  `;$
 
   @property({ type: Number }) count = 0;
 
@@ -339,7 +339,7 @@ export class SimpleCounter extends LitElement {
         <span>\${this.count}</span>
         <button @click=\${() => this.count++}>+</button>
       </div>
-    \`;
+    `;$
   }
 }
 "#.to_string()
@@ -410,7 +410,7 @@ export class TodoList extends LitElement {
       padding: 4px 12px;
       font-size: 0.875rem;
     }
-  \`;
+  `;$
 
   @property({ type: Array }) todos = [];
   @property({ type: String }) newTodoText = '';
@@ -440,10 +440,10 @@ export class TodoList extends LitElement {
             <span class=\${todo.completed ? 'completed' : ''}>\${todo.text}</span>
             <button class="delete-btn" @click=\${() => this._deleteTodo(todo.id)}>Delete</button>
           </li>
-        \`)}
+        `)}
       </ul>
       <div>\${remaining} of \${this.todos.length} remaining</div>
-    \`;
+    `;$
   }
 
   _addTodo() {
@@ -482,7 +482,7 @@ fn generate_app_component(tag: &str, class_name: &str, config: &ComponentConfig)
       margin: 0 auto;
       padding: 20px;
     }
-  \`;
+  `;$
 
   render() {
     return html`
@@ -500,7 +500,7 @@ fn generate_app_component(tag: &str, class_name: &str, config: &ComponentConfig)
         component.push_str("      <todo-list></todo-list>\n");
     }
     
-    component.push_str(r#"    \`;
+    component.push_str(r#"    `;$
   }
 }"#);
     
