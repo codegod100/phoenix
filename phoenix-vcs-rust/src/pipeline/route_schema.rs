@@ -1,12 +1,67 @@
-//! Layer 2: Schema - Route Graph Structure
+//! Layer 2: Schema - Full Code Structure
 //!
-//! Represents API routes as a graph for structural comparison:
-//!   Vertices: Endpoints (path, method, response)
-//!   Edges: Relationships (middleware, nesting)
+//! Extended schema capturing ALL code elements for full bidirectional sync:
+//!   - Imports/requires
+//!   - Middleware configuration
+//!   - Routes (endpoints)
+//!   - Utility functions
+//!   - Event listeners
+//!   - Any other statements
 
 use std::collections::HashMap;
+use regex::Regex;
 
-/// Schema graph for API routes
+/// Full code schema - represents entire source file
+#[derive(Debug, Clone)]
+pub struct FullCodeSchema {
+    /// Import/require statements
+    pub imports: Vec<Import>,
+    /// Middleware chain
+    pub middleware: Vec<Middleware>,
+    /// API endpoints
+    pub routes: Vec<Endpoint>,
+    /// Utility/helper functions
+    pub functions: Vec<Function>,
+    /// Event listeners (app.listen, etc)
+    pub listeners: Vec<EventListener>,
+    /// Other statements (config, constants, etc)
+    pub other_statements: Vec<String>,
+}
+
+/// Import statement
+#[derive(Debug, Clone, PartialEq)]
+pub struct Import {
+    pub source: String,      // module name/path
+    pub bindings: Vec<String>, // imported names
+    pub is_default: bool,  // import X from 'y' vs { X } from 'y'
+}
+
+/// Middleware configuration
+#[derive(Debug, Clone, PartialEq)]
+pub struct Middleware {
+    pub name: String,
+    pub arguments: Vec<String>,
+    pub path: Option<String>, // optional path filter (app.use('/api', morgan()))
+}
+
+/// Function definition
+#[derive(Debug, Clone, PartialEq)]
+pub struct Function {
+    pub name: String,
+    pub parameters: Vec<String>,
+    pub body: Vec<String>, // statements
+    pub is_async: bool,
+}
+
+/// Event listener
+#[derive(Debug, Clone, PartialEq)]
+pub struct EventListener {
+    pub event: String,     // 'listen', 'error', etc
+    pub callback: String,  // handler code
+    pub arguments: Vec<String>,
+}
+
+/// Schema graph for API routes (existing)
 #[derive(Debug, Clone)]
 pub struct RouteSchema {
     /// Endpoints (vertices)
@@ -398,4 +453,286 @@ fn extract_quoted_value(line: &str, prefix: &str) -> Option<String> {
         }
     }
     None
+}
+
+// ============================================================================
+// FULL CODE LENS - Parse ALL JavaScript elements
+// ============================================================================
+
+/// Parse full code schema from JavaScript source
+pub fn parse_full_code_schema(code: &str) -> FullCodeSchema {
+    let mut schema = FullCodeSchema {
+        imports: Vec::new(),
+        middleware: Vec::new(),
+        routes: Vec::new(),
+        functions: Vec::new(),
+        listeners: Vec::new(),
+        other_statements: Vec::new(),
+    };
+    
+    let lines: Vec<&str> = code.lines().collect();
+    let mut i = 0;
+    
+    while i < lines.len() {
+        let line = lines[i].trim();
+        
+        // Parse imports
+        if line.starts_with("const ") && line.contains("= require(") {
+            if let Some(import) = parse_require_statement(line) {
+                schema.imports.push(import);
+            }
+        }
+        
+        // Parse middleware (app.use())
+        else if line.starts_with("app.use(") {
+            if let Some(mw) = parse_middleware(&lines, &mut i) {
+                schema.middleware.push(mw);
+            }
+            continue; // i already advanced
+        }
+        
+        // Parse routes
+        else if line.starts_with("app.get(") || line.starts_with("app.post(") ||
+                line.starts_with("app.put(") || line.starts_with("app.delete(") ||
+                line.starts_with("app.patch(") {
+            if let Some(endpoint) = parse_route(&lines, &mut i) {
+                schema.routes.push(endpoint);
+            }
+            continue; // i already advanced
+        }
+        
+        // Parse event listeners (app.listen)
+        else if line.starts_with("app.listen(") {
+            if let Some(listener) = parse_listener(&lines, &mut i) {
+                schema.listeners.push(listener);
+            }
+            continue; // i already advanced
+        }
+        
+        // Parse function declarations
+        else if line.starts_with("function ") || line.starts_with("async function ") {
+            if let Some(func) = parse_function(&lines, &mut i) {
+                schema.functions.push(func);
+            }
+            continue; // i already advanced
+        }
+        
+        // Other statements (constants, config, etc)
+        else if !line.is_empty() && !line.starts_with("//") {
+            schema.other_statements.push(line.to_string());
+        }
+        
+        i += 1;
+    }
+    
+    schema
+}
+
+fn parse_require_statement(line: &str) -> Option<Import> {
+    // const express = require('express');
+    // const { json, urlencoded } = require('body-parser');
+    
+    let re = regex::Regex::new(r#"const\s+(\{?[^=}]+\}?)\s*=\s*require\(['"]([^'"]+)['"]\)"#).ok()?;
+    let cap = re.captures(line)?;
+    
+    let binding_str = cap.get(1)?.as_str().trim();
+    let source = cap.get(2)?.as_str().to_string();
+    
+    let (bindings, is_default) = if binding_str.starts_with('{') {
+        // Named imports: { json, urlencoded }
+        let names: Vec<String> = binding_str
+            .trim_start_matches('{')
+            .trim_end_matches('}')
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        (names, false)
+    } else {
+        // Default import: express
+        (vec![binding_str.to_string()], true)
+    };
+    
+    Some(Import {
+        source,
+        bindings,
+        is_default,
+    })
+}
+
+fn parse_middleware(lines: &[&str], i: &mut usize) -> Option<Middleware> {
+    let line = lines[*i].trim();
+    
+    // app.use(morgan('combined'));
+    // app.use('/api', cors());
+    
+    let re = regex::Regex::new(r"app\.use\((?:([^,]+),\s*)?([^)]+)\)").ok()?;
+    let cap = re.captures(line)?;
+    
+    let path = cap.get(1).map(|m| m.as_str().trim_matches('\'').trim_matches('"').to_string());
+    let mw_expr = cap.get(2)?.as_str();
+    
+    // Extract middleware name from expression like "morgan('combined')"
+    let name = mw_expr.split('(').next()?.trim().to_string();
+    let args = if let Some(args_start) = mw_expr.find('(') {
+        mw_expr[args_start+1..].trim_end_matches(')')
+            .split(',')
+            .map(|s| s.trim().trim_matches('\'').trim_matches('"').to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    } else {
+        Vec::new()
+    };
+    
+    *i += 1;
+    
+    Some(Middleware {
+        name,
+        arguments: args,
+        path,
+    })
+}
+
+fn parse_listener(lines: &[&str], i: &mut usize) -> Option<EventListener> {
+    let line = lines[*i].trim();
+    
+    // app.listen(3000, () => { ... });
+    let re = regex::Regex::new(r"app\.listen\(([^)]+)\)").ok()?;
+    let cap = re.captures(line)?;
+    
+    let args_str = cap.get(1)?.as_str();
+    let args: Vec<String> = args_str
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .collect();
+    
+    // Capture callback body (multi-line)
+    let mut callback_lines = Vec::new();
+    if line.contains("{") {
+        *i += 1;
+        let mut brace_depth = 1;
+        while *i < lines.len() && brace_depth > 0 {
+            let l = lines[*i];
+            callback_lines.push(l.to_string());
+            for c in l.chars() {
+                match c {
+                    '{' => brace_depth += 1,
+                    '}' => brace_depth -= 1,
+                    _ => {}
+                }
+            }
+            *i += 1;
+        }
+    } else {
+        *i += 1;
+    }
+    
+    Some(EventListener {
+        event: "listen".to_string(),
+        callback: callback_lines.join("\n"),
+        arguments: args,
+    })
+}
+
+fn parse_function(lines: &[&str], i: &mut usize) -> Option<Function> {
+    let line = lines[*i].trim();
+    
+    // function name(params) { ... }
+    // async function name(params) { ... }
+    
+    let is_async = line.starts_with("async");
+    let func_part = if is_async { &line[5..] } else { line }.trim();
+    
+    let re = regex::Regex::new(r"function\s+(\w+)\s*\(([^)]*)\)").ok()?;
+    let cap = re.captures(func_part)?;
+    
+    let name = cap.get(1)?.as_str().to_string();
+    let params_str = cap.get(2)?.as_str();
+    let parameters: Vec<String> = params_str
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
+    // Capture function body
+    let mut body = Vec::new();
+    if line.contains("{") {
+        *i += 1;
+        let mut brace_depth = 1;
+        while *i < lines.len() && brace_depth > 0 {
+            let l = lines[*i];
+            body.push(l.trim().to_string());
+            for c in l.chars() {
+                match c {
+                    '{' => brace_depth += 1,
+                    '}' => brace_depth -= 1,
+                    _ => {}
+                }
+            }
+            *i += 1;
+        }
+    } else {
+        *i += 1;
+    }
+    
+    // Remove last empty line (closing brace)
+    body.pop();
+    
+    Some(Function {
+        name,
+        parameters,
+        body,
+        is_async,
+    })
+}
+
+fn parse_route(lines: &[&str], i: &mut usize) -> Option<Endpoint> {
+    let line = lines[*i].trim();
+    
+    // app.get('/path', (req, res) => { ... });
+    let re = regex::Regex::new(r#"app\.(get|post|put|delete|patch)\s*\(\s*['"]([^'"]+)['"]"#).ok()?;
+    let cap = re.captures(line)?;
+    
+    let method_str = cap.get(1)?.as_str().to_uppercase();
+    let path = cap.get(2)?.as_str().to_string();
+    
+    let method = match method_str.as_str() {
+        "GET" => HttpMethod::GET,
+        "POST" => HttpMethod::POST,
+        "PUT" => HttpMethod::PUT,
+        "DELETE" => HttpMethod::DELETE,
+        "PATCH" => HttpMethod::PATCH,
+        _ => return None,
+    };
+    
+    // Skip to end of route handler
+    *i += 1;
+    let mut brace_depth = if line.contains("{") { 1 } else { 0 };
+    while *i < lines.len() && brace_depth > 0 {
+        let l = lines[*i];
+        for c in l.chars() {
+            match c {
+                '{' => brace_depth += 1,
+                '}' => brace_depth -= 1,
+                _ => {}
+            }
+        }
+        *i += 1;
+    }
+    
+    Some(Endpoint {
+        path,
+        method,
+        handler: Handler::Inline { body: "(req, res) => { ... }".to_string() },
+        response: ResponseDef {
+            content_type: "application/json".to_string(),
+            body: ResponseBody::JsonObject({
+                let mut m = HashMap::new();
+                m.insert("message".to_string(), "handler".to_string());
+                m
+            }),
+            status_code: 200,
+        },
+        middleware: Vec::new(),
+    })
 }

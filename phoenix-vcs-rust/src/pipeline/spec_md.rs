@@ -505,10 +505,12 @@ mod tests {
         };
         
         let bundles = vec![bundle];
-        let spec = "A terminal TUI app with text interface";
-        let selected = select_template_for_spec(spec, &bundles);
+        let _spec = "A terminal TUI app with text interface";
         
-        assert!(selected.is_some());
-        assert_eq!(selected.unwrap().id, "python-textual");
+        // NOTE: select_template_for_spec was replaced with LLM-based selection
+        // This test now just verifies bundle structure
+        assert_eq!(bundles.len(), 1);
+        assert_eq!(bundles[0].id, "python-textual");
+        assert!(bundles[0].metadata.keywords.contains(&"tui".to_string()));
     }
 }
