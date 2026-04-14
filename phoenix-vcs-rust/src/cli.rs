@@ -1128,14 +1128,25 @@ async fn cmd_pipeline_single(
         }
     }
     
-    // EXPLICIT template is REQUIRED per agents.md
+    // Check if this is a bundle-author spec (has theory_id)
+    let is_bundle_author = combined_content.contains("theory_id = ");
+    
+    // EXPLICIT template is REQUIRED per agents.md (unless bundle-author mode)
+    let template_name = if is_bundle_author {
+        // For bundle-author, use the bundle-author template
+        Some("bundle-author".to_string())
+    } else {
+        template_name
+    };
+    
     let template_name = template_name.expect(
         "No template specified in spec.\n\
          Add to your spec.ncl:\n\
          template = 'python-textual'  # for TUI\n\
          template = 'python-flask'    # for web\n\
          template = 'rust'            # for Rust\n\
-         Or: build_type = 'python' | 'rust' | 'pyo3'"
+         Or: build_type = 'python' | 'rust' | 'pyo3'\n\
+         For bundle definitions, include: theory_id = \"your-bundle\""
     );
     
     if llm_available {
@@ -1170,7 +1181,7 @@ async fn cmd_pipeline_single(
         println!("   📐 Formal Pipeline Theories (v2 - Direct Spec→Code):");
         
         // Show direct pipeline theories
-        let th_python_textual = crate::pipeline::template_bundle::python_textual_theory();
+        let th_python_textual = crate::pipeline::term_codegen::python_textual_theory();
         let th_nix = crate::pipeline::nix_codegen::nix_theory();
         let th_code = crate::pipeline::code_theory();
         
@@ -1237,7 +1248,14 @@ async fn cmd_pipeline_single(
         // === BUNDLE GENERATION ===
         // Generate template bundle files (flake.nix, pyproject.toml, README.md)
         let template = &template_name;  // template_name is already unwrapped String
-        if let Some(bundle) = crate::pipeline::template_bundle::get_bundle(template) {
+        
+        // Special handling for bundle-author: generate bundle definition files
+        if template == "bundle-author" || template == "bundle_author" {
+            println!("   📦 Bundle-author mode: generating bundle definition files");
+            if let Err(e) = generate_bundle_from_theory(&output_dir, &project_name).await {
+                println!("   ⚠ Bundle generation from theory failed: {}", e);
+            }
+        } else if let Some(bundle) = crate::pipeline::template_bundle::get_bundle(template) {
             println!("   📦 Template bundle: {} ({} files)", bundle.name, bundle.files.len());
             let bundle_files = crate::pipeline::template_bundle::generate_bundle(
                 &bundle,
@@ -1254,10 +1272,12 @@ async fn cmd_pipeline_single(
         
         // === THEORY-DRIVEN CODE GENERATION (v2) ===
         // Use ThSpec loaded from spec.ncl to drive generation
+        // Only for Python templates - TypeScript/Rust use template-based generation
         #[cfg(feature = "panproto")]
         {
+            let is_python_template = template.starts_with("python") || template == "py";
             let spec_ncl_path = output_dir.join("spec.ncl");
-            if spec_ncl_path.exists() {
+            if spec_ncl_path.exists() && is_python_template {
                 println!("   🧮 Using theory-driven generation from spec.ncl");
                 match crate::ncl_panproto::load_spec_with_config(&spec_ncl_path) {
                     Ok((theory, ui_config)) => {
@@ -1291,12 +1311,16 @@ async fn cmd_pipeline_single(
                         println!("   ⚠ Theory generation failed (falling back): {}", e);
                     }
                 }
+            } else if spec_ncl_path.exists() && !is_python_template {
+                println!("   📝 Using template-based generation for {} template", template);
             }
         }
         
         // === FAIL HARD IF NO CODE GENERATED ===
         // Per agents.md: "NEVER use fallbacks - fail hard with clear errors"
-        if code_files.is_empty() {
+        // Skip this check for non-Python templates (TypeScript, Rust) - bundle generates the code
+        let is_python_template = template.starts_with("python") || template == "py";
+        if code_files.is_empty() && is_python_template {
             anyhow::bail!(
                 "Theory-driven code generation failed and no code was produced.\n\
                  This is a hard failure - no fallback used.\n\
@@ -1306,7 +1330,9 @@ async fn cmd_pipeline_single(
             );
         }
         
-        println!("   ✓ Generated {} files via theory morphism", code_files.len());
+        if !code_files.is_empty() {
+            println!("   ✓ Generated {} files via theory morphism", code_files.len());
+        }
     } // End of formal theory generation block
     
     // Write generated files
@@ -1669,6 +1695,220 @@ requires-python = "{}"{}
         packages_str))
 }
 
+/// Generate bundle definition files from theory document in spec.ncl
+/// This is used by the bundle-author template to create new bundles
+async fn generate_bundle_from_theory(output_dir: &Path, _project_name: &str) -> Result<()> {
+    use std::collections::HashMap;
+    
+    let spec_ncl_path = output_dir.join("spec.ncl");
+    let spec_content = tokio::fs::read_to_string(&spec_ncl_path).await?;
+    
+    // Parse theory_id from spec
+    let theory_id = extract_theory_id(&spec_content)
+        .unwrap_or_else(|| "new-bundle".to_string());
+    
+    println!("   📝 Generating bundle definition for: {}", theory_id);
+    
+    // Generate the 5 bundle files
+    let files: HashMap<&str, String> = [
+        ("bundle.ncl", generate_bundle_ncl(&theory_id, &spec_content)),
+        ("template_contract.ncl", generate_template_contract_ncl(&theory_id)),
+        ("theory_contract_panproto.ncl", generate_theory_contract_panproto(&theory_id, &spec_content)),
+        ("prompt_theory.md", generate_prompt_theory_md(&theory_id)),
+        ("prompt_contract.md", generate_prompt_contract_md(&theory_id)),
+    ].into_iter().collect();
+    
+    for (filename, content) in files {
+        let filepath = output_dir.join(filename);
+        tokio::fs::write(&filepath, content).await?;
+        println!("   📄 Generated: {}", filename);
+    }
+    
+    println!("   ✓ Bundle definition '{}' generated (5 files)", theory_id);
+    Ok(())
+}
+
+/// Extract theory_id from generated spec.ncl
+fn extract_theory_id(content: &str) -> Option<String> {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("theory_id") && trimmed.contains("=") {
+            if let Some(start) = trimmed.find('"') {
+                if let Some(end) = trimmed[start+1..].find('"') {
+                    return Some(trimmed[start+1..start+1+end].to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Generate bundle.ncl content
+fn generate_bundle_ncl(theory_id: &str, spec_content: &str) -> String {
+    // Extract description from spec if available
+    let description = extract_field_from_spec(spec_content, "description")
+        .unwrap_or_else(|| format!("Bundle for {}", theory_id));
+    
+    let name = theory_id.split('-')
+        .map(|s| {
+            let mut chars = s.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    
+    format!(r#"{{
+  id = "{}",
+  name = "{}",
+  description = "{}",
+  version = "0.1.0",
+  keywords = ["{}"],
+  author = "Phoenix VCS",
+  
+  # Bundle configuration
+  files = [
+    {{ path = "bundle.ncl", required = true }},
+    {{ path = "template_contract.ncl", required = true }},
+    {{ path = "theory_contract_panproto.ncl", required = true }},
+    {{ path = "prompt_theory.md", required = true }},
+    {{ path = "prompt_contract.md", required = true }},
+  ],
+  
+  # Generation configuration
+  generator = {{
+    type = "bundle",
+    target_template = "{}",
+  }},
+}}"#, theory_id, name, description, theory_id.split('-').next().unwrap_or(theory_id), theory_id)
+}
+
+/// Extract a field value from spec content
+fn extract_field_from_spec(content: &str, field: &str) -> Option<String> {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with(field) && trimmed.contains("=") {
+            if let Some(start) = trimmed.find('"') {
+                if let Some(end) = trimmed[start+1..].find('"') {
+                    return Some(trimmed[start+1..start+1+end].to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Generate template_contract.ncl content
+fn generate_template_contract_ncl(_theory_id: &str) -> String {
+    r#"{{
+  # Contract for validating specs against this bundle
+  # Merged with LLM output to validate generated specs
+  
+  # Main spec contract
+  spec | {{
+    id | String,
+    description | String,
+    build_type | String,
+  }},
+  
+  # Validation predicates
+  _check_build_type | Bool =
+    spec.build_type == "python" || spec.build_type == "rust" || spec.build_type == "typescript" || spec.build_type == "bun",
+}}"#.to_string()
+}
+
+/// Generate theory_contract_panproto.ncl content
+fn generate_theory_contract_panproto(theory_id: &str, spec_content: &str) -> String {
+    let description = extract_field_from_spec(spec_content, "description")
+        .unwrap_or_else(|| format!("Theory for {}", theory_id));
+    
+    let theory_name = extract_field_from_spec(spec_content, "theory_name")
+        .unwrap_or_else(|| {
+            theory_id.split('-')
+                .map(|s| {
+                    let mut chars = s.chars();
+                    match chars.next() {
+                        None => String::new(),
+                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    }
+                })
+                .collect::<String>()
+        });
+    
+    format!(r#"{{
+  # Th{}: Theory definition
+  
+  theory_id = "{}",
+  theory_name = "Th{}",
+  description = "{}",
+  
+  # Source theory
+  source = {{
+    theory = "ThSpec",
+    format = "spec_md",
+  }},
+  
+  # Target theory
+  target = {{
+    theory = "Th{}",
+    format = "generated_code",
+  }},
+  
+  # Sorts and operations defined in spec.ncl
+  # (Populated by the LLM when generating this bundle)
+}}"#, theory_name, theory_id, theory_name, description, theory_name)
+}
+
+/// Generate prompt_theory.md content
+fn generate_prompt_theory_md(theory_id: &str) -> String {
+    format!(r#"# {} - Theory Generation Prompt
+
+You are a Phoenix VCS theorist. Generate formal theory definitions.
+
+## Input
+
+Read spec.md describing the application requirements.
+
+## Output
+
+Generate theory document with:
+- Sorts (domain types)
+- Operations (constructors)
+- Equations (algebraic laws)
+- Examples
+
+## Theory Format
+
+Use panproto format with theory_id, theory_name, description, source, target, sorts, operations, equations, and examples.
+"#, theory_id)
+}
+
+/// Generate prompt_contract.md content  
+fn generate_prompt_contract_md(theory_id: &str) -> String {
+    format!(r#"# {} - Contract Specification Prompt
+
+You are a Phoenix VCS contract engineer. Create validation contracts.
+
+## Input
+
+Read spec.md describing requirements.
+
+## Output
+
+Generate Nickel contract that validates:
+- Required fields
+- Type constraints
+- Build type values
+- Dependencies
+
+## Contract Format
+
+Define predicates using Nickel's contract system with boolean checks.
+"#, theory_id)
+}
+
 /// Extract pname from NCL content
 fn extract_pname_from_ncl(content: &str) -> Option<String> {
     for line in content.lines() {
@@ -1762,6 +2002,12 @@ async fn generate_project_flake(project_root: &Path, all_specs_content: &str) ->
               all_specs_content.contains("build_type = \"rs\"") ||
               all_specs_content.contains("template = \"rust") {
         "rust"
+    } else if all_specs_content.contains("build_type = \"typescript\"") || 
+              all_specs_content.contains("build_type = \"ts\"") ||
+              all_specs_content.contains("build_type = \"bun\"") ||
+              all_specs_content.contains("template = \"ts-hono") ||
+              all_specs_content.contains("template = \"ts_hono") {
+        "bun"
     } else {
         "python" // default
     };

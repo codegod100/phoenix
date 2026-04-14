@@ -15,3 +15,12 @@ src/generated/
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated example files
+example_component_*.py
+example_component_*.ts
+example_component_*.rb
+counter_component_*.py
+task_component_*.py
+*_emitted.*
+*_generated.*

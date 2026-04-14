@@ -1339,7 +1339,7 @@ pub async fn run_pipeline(
     
     // Phase 2: Generate Code via Term Morphisms
     println!("\n▶ Phase: TERM MORPHISM");
-    let textual_theory = crate::pipeline::template_bundle::python_textual_theory();
+    let textual_theory = crate::pipeline::term_codegen::python_textual_theory();
     println!("   ✓ ThPythonTextual theory ({} sorts)", textual_theory.sorts.len());
     println!("   ├─ Layout → CSS (grid-template-*)");
     println!("   ├─ Widget → compose() yields");

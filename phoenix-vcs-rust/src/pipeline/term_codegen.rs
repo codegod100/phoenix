@@ -1196,11 +1196,12 @@ fn build_css_from_theory(_theory: &Theory, ui_config: &Value) -> PythonTerm {
     if let Some(styles) = ui_config.get("styles").and_then(|s| s.as_object()) {
         for (key, val) in styles {
             if let Some(val_str) = val.as_str() {
-                // Map style keys to CSS rules
+                // Map style keys and values to valid CSS
                 let (selector, prop) = map_style_to_css(key);
+                let mapped_val = map_style_value(key, val_str);
                 rules.push(CSSRule {
                     selector: selector.to_string(),
-                    properties: vec![(prop.to_string(), val_str.to_string())],
+                    properties: vec![(prop.to_string(), mapped_val)],
                 });
             }
         }
@@ -1212,10 +1213,50 @@ fn build_css_from_theory(_theory: &Theory, ui_config: &Value) -> PythonTerm {
 /// Map style key from ui_config to CSS selector/property
 fn map_style_to_css(key: &str) -> (&str, &str) {
     match key {
-        "primary_background" => ("Screen", "background"),
-        "accent_color" => ("#header", "tint"),
+        "theme" => ("Screen", "background"),  // dark theme -> dark background
+        "primary_bg" | "primary_background" => ("Screen", "background"),
+        "accent" | "accent_color" => ("#header", "tint"),
         "header_style" => ("#header", "text-style"),
+        "grid_gap" => ("Screen", "grid-gutter"),  // Don't use color for this
         _ => ("*", "color"),
+    }
+}
+
+/// Map semantic style value to valid CSS value
+fn map_style_value(key: &str, val: &str) -> String {
+    match (key, val) {
+        // Theme values
+        (_, "dark") => "$surface".to_string(),
+        (_, "light") => "white".to_string(),
+        
+        // Background values
+        (_, "dark_surface") => "$surface".to_string(),
+        (_, "surface") => "$surface".to_string(),
+        
+        // Accent colors (already valid)
+        ("accent" | "accent_color", "cyan") => "cyan".to_string(),
+        ("accent" | "accent_color", "red") => "red".to_string(),
+        ("accent" | "accent_color", "blue") => "blue".to_string(),
+        ("accent" | "accent_color", "green") => "green".to_string(),
+        
+        // Text styles - filter out invalid values like "centered"
+        ("header_style", val) => {
+            // Valid text-style flags: bold, italic, underline, blink, etc.
+            let valid_styles: Vec<&str> = val.split_whitespace()
+                .filter(|s| ["bold", "italic", "underline", "strike", "blink", "reverse", "dim"].contains(s))
+                .collect();
+            if valid_styles.is_empty() {
+                "bold".to_string()  // default
+            } else {
+                valid_styles.join(" ")
+            }
+        }
+        
+        // Grid gap - numeric values are valid
+        ("grid_gap", val) => val.to_string(),
+        
+        // Default: pass through if it looks like a valid CSS value
+        _ => val.to_string(),
     }
 }
 

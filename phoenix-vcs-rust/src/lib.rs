@@ -17,3 +17,10 @@ pub mod identity;
 pub mod lens;
 pub mod reverse;
 pub mod llm;
+
+/// Example modules demonstrating Phoenix VCS capabilities
+pub mod examples {
+    /// NCL to Go function converter
+    pub mod ncl_to_go;
+}
+

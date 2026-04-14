@@ -312,6 +312,50 @@ fn build_outputs_term(
             )
         }
         
+        "bun" | "typescript" | "ts" => {
+            // Bun/TypeScript project
+            let dev_shell = Box::new(NixTerm::DevShell {
+                build_inputs: vec!["bun".to_string(), "nodejs".to_string()],
+            });
+            
+            let app = Box::new(NixTerm::App {
+                program: "bun run index.ts".to_string(),
+            });
+            
+            (
+                vec![], // No package build for Bun projects
+                vec![("default".to_string(), dev_shell)],
+                vec![("default".to_string(), app)],
+            )
+        }
+        
+        "bundle" => {
+            // Bundle-author meta-bundle - no build needed, just file generation
+            // Return empty - bundle files are generated directly without Nix
+            (
+                vec![],
+                vec![],
+                vec![],
+            )
+        }
+        
+        "swift" => {
+            // Swift/Vapor project
+            let dev_shell = Box::new(NixTerm::DevShell {
+                build_inputs: vec!["swift".to_string(), "swiftPackages.swiftpm".to_string()],
+            });
+            
+            let app = Box::new(NixTerm::App {
+                program: "swift run".to_string(),
+            });
+            
+            (
+                vec![], // No package build - Swift Package Manager handles it
+                vec![("default".to_string(), dev_shell)],
+                vec![("default".to_string(), app)],
+            )
+        }
+        
         _ => {
             // Generic fallback
             let dev_shell = Box::new(NixTerm::DevShell {
