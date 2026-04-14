@@ -1432,6 +1432,9 @@ pub mod expr_codegen;
 // Documentation: Why we skip Lens layer
 pub mod why_skip_lens;
 
+// Lens layer: Bidirectional code ↔ config sync
+pub mod code_lens;
+
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 
