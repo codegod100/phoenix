@@ -1462,6 +1462,9 @@ pub mod lit_theory_lifted;
 // Panproto architecture documentation (layers 1-4)
 pub mod panproto_layers;
 
+// Algebraic JavaScript code generation (true 4-layer)
+pub mod js_algebraic;
+
 // Equations (algebraic laws) for pipeline theories
 pub mod equations;
 

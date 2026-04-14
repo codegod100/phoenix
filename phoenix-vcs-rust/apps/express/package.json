@@ -1,7 +1,7 @@
 {
-  "name": "super-api",
-  "version": "2.0.0",
-  "description": "Supercharged Express API",
+  "name": "user-service",
+  "version": "0.1.0",
+  "description": "This Express.js API provides endpoints for managing users and items with full CRUD operations.",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",

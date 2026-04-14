@@ -276,6 +276,30 @@ fn express_package_json(config: &BundleConfig) -> String {
 }
 
 fn express_app_js(config: &BundleConfig) -> String {
+    // Parse routes from raw spec content
+    let routes = parse_routes_from_spec(&config.raw_spec);
+    
+    // Use algebraic 4-layer generation (not string templates!)
+    use crate::pipeline::js_algebraic::{generate_express_app, RouteSpec};
+    
+    let route_specs: Vec<RouteSpec> = routes.into_iter()
+        .map(|(method, path, handler)| RouteSpec {
+            method,
+            path,
+            handler,
+            description: String::new(),
+        })
+        .collect();
+    
+    match generate_express_app(&route_specs, &config.project_name) {
+        Ok(code) => code,
+        Err(e) => format!("// Algebraic generation error: {}\n// Falling back to template\n{}", 
+            e, express_app_js_template(config))
+    }
+}
+
+fn express_app_js_template(config: &BundleConfig) -> String {
+    // Fallback template (original template-based version)
     format!(r#"const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -299,6 +323,72 @@ app.listen(PORT, () => {{
         config.project_name,
         config.project_name
     )
+}
+
+/// Parse routes from spec.ncl content
+fn parse_routes_from_spec(spec_content: &str) -> Vec<(String, String, String)> {
+    let mut routes = Vec::new();
+    
+    // Look for route definitions in the spec
+    // Pattern: { method = "GET", path = "/api/users", handler = "listUsers" }
+    for line in spec_content.lines() {
+        let trimmed = line.trim();
+        // Match lines that look like route definitions
+        if trimmed.contains("{") && trimmed.contains("method =") && trimmed.contains("path =") {
+            // Extract method
+            let method = extract_quoted_after(trimmed, "method =")
+                .unwrap_or_else(|| "GET".to_string());
+            
+            // Extract path  
+            let path = extract_quoted_after(trimmed, "path =")
+                .unwrap_or_else(|| "/".to_string());
+            
+            // Extract handler or generate from path
+            let handler = extract_quoted_after(trimmed, "handler =")
+                .unwrap_or_else(|| generate_handler_name(&path, &method));
+            
+            routes.push((method, path, handler));
+        }
+    }
+    
+    routes
+}
+
+fn extract_quoted_after(line: &str, prefix: &str) -> Option<String> {
+    line.find(prefix).and_then(|pos| {
+        let after_prefix = &line[pos + prefix.len()..];
+        // Find the next quoted string
+        after_prefix.find('"').map(|quote_pos| {
+            let after_first_quote = &after_prefix[quote_pos + 1..];
+            after_first_quote.split('"').next().map(|s| s.to_string())
+        })?
+    })
+}
+
+fn generate_handler_name(path: &str, method: &str) -> String {
+    // Generate handler name from path and method
+    // e.g., /api/users + GET -> getUsers
+    // e.g., /api/users/:id + GET -> getUserById
+    let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+    
+    let method_prefix = method.to_lowercase();
+    // e.g., /api/users + GET -> getUsers
+    // e.g., /api/users/:id + GET -> getUserById
+    let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+    
+    let method_prefix = method.to_lowercase();
+    let resource = parts.last()
+        .map(|p| p.replace(":", "By").replace("id", "Id"))
+        .unwrap_or_else(|| "root".to_string());
+    
+    // Capitalize first letter of resource
+    let mut chars = resource.chars();
+    let capitalized = match chars.next() {
+        None => String::new(),
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+    };
+    
+    format!("{}{}", method_prefix, capitalized)
 }
 
 /// Rust bundle generator
@@ -350,6 +440,7 @@ pub fn generate_with_expr_bundle(bundle_name: &str, config: &BundleConfig) -> Ha
 /// Parse spec content to extract BundleConfig
 pub fn parse_spec_to_config(spec_content: &str) -> BundleConfig {
     let mut config = BundleConfig::default();
+    config.raw_spec = spec_content.to_string();  // CRITICAL: Save raw spec for route parsing!
     
     // Extract project_name
     for line in spec_content.lines() {
