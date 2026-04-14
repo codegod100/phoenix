@@ -14,6 +14,341 @@ use panproto_lens::{get, put, Complement, Lens};
 #[cfg(feature = "panproto")]
 use panproto_schema::{Schema, Vertex, Edge};
 
+/// Trait for bundle-specific lens implementations
+/// 
+/// Each bundle defines its own lenses for extracting/updating values
+pub trait BundleLenses: Send + Sync {
+    /// Name of the bundle (e.g., "lit", "nodejs-express")
+    fn bundle_name(&self) -> &str;
+    
+    /// List of files to scan for changes (relative to project root)
+    fn tracked_files(&self) -> Vec<&str>;
+    
+    /// Extract all detectable values from the code
+    fn extract_values(&self, code: &HashMap<String, String>) -> Vec<(&str, String)>;
+    
+    /// Get a specific value by field name
+    fn get(&self, field: &str, code: &HashMap<String, String>) -> Option<String>;
+    
+    /// Check if a field is supported
+    fn supports_field(&self, field: &str) -> bool;
+}
+
+/// Lit bundle lenses
+pub struct LitBundleLenses;
+
+impl BundleLenses for LitBundleLenses {
+    fn bundle_name(&self) -> &str {
+        "lit"
+    }
+    
+    fn tracked_files(&self) -> Vec<&str> {
+        vec!["package.json", "src/main.ts"]
+    }
+    
+    fn extract_values(&self, code: &HashMap<String, String>) -> Vec<(&str, String)> {
+        let mut values = Vec::new();
+        
+        if let Some(name) = ProjectNameLens::get(code) {
+            values.push(("project_name", name));
+        }
+        if let Some(theme) = ThemeLens::get(code) {
+            values.push(("theme", theme));
+        }
+        
+        values
+    }
+    
+    fn get(&self, field: &str, code: &HashMap<String, String>) -> Option<String> {
+        match field {
+            "project_name" => ProjectNameLens::get(code),
+            "theme" => ThemeLens::get(code),
+            _ => None,
+        }
+    }
+    
+    fn supports_field(&self, field: &str) -> bool {
+        matches!(field, "project_name" | "theme")
+    }
+}
+
+/// Node.js/Express bundle lenses
+pub struct NodeJsExpressBundleLenses;
+
+impl BundleLenses for NodeJsExpressBundleLenses {
+    fn bundle_name(&self) -> &str {
+        "nodejs-express"
+    }
+    
+    fn tracked_files(&self) -> Vec<&str> {
+        vec!["package.json", "app.js"]
+    }
+    
+    fn extract_values(&self, code: &HashMap<String, String>) -> Vec<(&str, String)> {
+        let mut values = Vec::new();
+        
+        if let Some(name) = ProjectNameLens::get(code) {
+            values.push(("project_name", name));
+        }
+        if let Some(routes) = ExpressRoutesLens::get(code) {
+            values.push(("routes", routes));
+        }
+        
+        values
+    }
+    
+    fn get(&self, field: &str, code: &HashMap<String, String>) -> Option<String> {
+        match field {
+            "project_name" => ProjectNameLens::get(code),
+            "routes" => ExpressRoutesLens::get(code),
+            _ => None,
+        }
+    }
+    
+    fn supports_field(&self, field: &str) -> bool {
+        matches!(field, "project_name" | "routes")
+    }
+}
+
+/// Express routes lens - detects API routes from app.js
+pub struct ExpressRoutesLens;
+
+impl ExpressRoutesLens {
+    pub fn get(code: &HashMap<String, String>) -> Option<String> {
+        let app_js = code.get("app.js")?;
+        
+        // Count HTTP method calls
+        let mut routes = Vec::new();
+        
+        if app_js.contains("app.get(") {
+            routes.push("GET");
+        }
+        if app_js.contains("app.post(") {
+            routes.push("POST");
+        }
+        if app_js.contains("app.put(") {
+            routes.push("PUT");
+        }
+        if app_js.contains("app.delete(") {
+            routes.push("DELETE");
+        }
+        
+        if routes.is_empty() {
+            None
+        } else {
+            Some(routes.join(","))
+        }
+    }
+}
+
+/// Python/Flask bundle lenses
+pub struct PythonFlaskBundleLenses;
+
+impl BundleLenses for PythonFlaskBundleLenses {
+    fn bundle_name(&self) -> &str {
+        "python-flask"
+    }
+    
+    fn tracked_files(&self) -> Vec<&str> {
+        vec!["setup.py", "pyproject.toml", "app.py"]
+    }
+    
+    fn extract_values(&self, code: &HashMap<String, String>) -> Vec<(&str, String)> {
+        let mut values = Vec::new();
+        
+        if let Some(name) = PythonProjectNameLens::get(code) {
+            values.push(("project_name", name));
+        }
+        if let Some(routes) = FlaskRoutesLens::get(code) {
+            values.push(("routes", routes));
+        }
+        
+        values
+    }
+    
+    fn get(&self, field: &str, code: &HashMap<String, String>) -> Option<String> {
+        match field {
+            "project_name" => PythonProjectNameLens::get(code),
+            "routes" => FlaskRoutesLens::get(code),
+            _ => None,
+        }
+    }
+    
+    fn supports_field(&self, field: &str) -> bool {
+        matches!(field, "project_name" | "routes")
+    }
+}
+
+/// Python project name lens (reads setup.py or pyproject.toml)
+pub struct PythonProjectNameLens;
+
+impl PythonProjectNameLens {
+    pub fn get(code: &HashMap<String, String>) -> Option<String> {
+        // Try pyproject.toml first
+        if let Some(pyproject) = code.get("pyproject.toml") {
+            if let Ok(parsed) = pyproject.parse::<toml::Value>() {
+                if let Some(name) = parsed.get("project")
+                    .and_then(|p| p.get("name"))
+                    .and_then(|n| n.as_str()) {
+                    return Some(name.to_string());
+                }
+            }
+        }
+        
+        // Fall back to setup.py
+        if let Some(setup_py) = code.get("setup.py") {
+            // Simple regex-like extraction
+            for line in setup_py.lines() {
+                if line.contains("name=") || line.contains("name =") {
+                    let parts: Vec<&str> = line.split("'").collect();
+                    if parts.len() >= 2 {
+                        return Some(parts[1].to_string());
+                    }
+                    let parts: Vec<&str> = line.split('"').collect();
+                    if parts.len() >= 2 {
+                        return Some(parts[1].to_string());
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+}
+
+/// Flask routes lens
+pub struct FlaskRoutesLens;
+
+impl FlaskRoutesLens {
+    pub fn get(code: &HashMap<String, String>) -> Option<String> {
+        let app_py = code.get("app.py")?;
+        
+        let mut routes = Vec::new();
+        
+        if app_py.contains("@app.route") {
+            // Extract route patterns
+            for line in app_py.lines() {
+                if line.contains("@app.route") {
+                    if let Some(start) = line.find('"') {
+                        if let Some(end) = line[start+1..].find('"') {
+                            let route = &line[start+1..start+1+end];
+                            routes.push(route.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        
+        if routes.is_empty() {
+            None
+        } else {
+            Some(routes.join(","))
+        }
+    }
+}
+
+/// Rust bundle lenses
+pub struct RustBundleLenses;
+
+impl BundleLenses for RustBundleLenses {
+    fn bundle_name(&self) -> &str {
+        "rust"
+    }
+    
+    fn tracked_files(&self) -> Vec<&str> {
+        vec!["Cargo.toml", "src/main.rs"]
+    }
+    
+    fn extract_values(&self, code: &HashMap<String, String>) -> Vec<(&str, String)> {
+        let mut values = Vec::new();
+        
+        if let Some(name) = RustProjectNameLens::get(code) {
+            values.push(("project_name", name));
+        }
+        
+        values
+    }
+    
+    fn get(&self, field: &str, code: &HashMap<String, String>) -> Option<String> {
+        match field {
+            "project_name" => RustProjectNameLens::get(code),
+            _ => None,
+        }
+    }
+    
+    fn supports_field(&self, field: &str) -> bool {
+        matches!(field, "project_name")
+    }
+}
+
+/// Rust project name lens (reads Cargo.toml)
+pub struct RustProjectNameLens;
+
+impl RustProjectNameLens {
+    pub fn get(code: &HashMap<String, String>) -> Option<String> {
+        let cargo_toml = code.get("Cargo.toml")?;
+        
+        // Parse TOML
+        if let Ok(parsed) = cargo_toml.parse::<toml::Value>() {
+            if let Some(name) = parsed.get("package")
+                .and_then(|p| p.get("name"))
+                .and_then(|n| n.as_str()) {
+                return Some(name.to_string());
+            }
+        }
+        
+        None
+    }
+}
+
+/// Factory for getting bundle lenses
+pub fn get_bundle_lenses(bundle_name: &str) -> Option<Box<dyn BundleLenses>> {
+    match bundle_name {
+        "lit" => Some(Box::new(LitBundleLenses)),
+        "nodejs-express" | "node" | "nodejs" | "express" => Some(Box::new(NodeJsExpressBundleLenses)),
+        "python-flask" | "flask" => Some(Box::new(PythonFlaskBundleLenses)),
+        "rust" => Some(Box::new(RustBundleLenses)),
+        // Add more bundles here
+        _ => None,
+    }
+}
+
+/// Auto-detect bundle from spec.ncl content
+pub fn detect_bundle_from_spec(spec_content: &str) -> Option<String> {
+    fn extract_value(line: &str) -> Option<String> {
+        // Extract value after = sign
+        let after_eq = line.split('=').nth(1)?;
+        
+        // Extract quoted string
+        let start_quote = after_eq.find(['"', '\''].as_ref())?;
+        let after_start = &after_eq[start_quote + 1..];
+        let end_quote = after_start.find(['"', '\''].as_ref())?;
+        
+        let value = &after_start[..end_quote];
+        Some(value.trim().to_string())
+    }
+    
+    // Check for template field first (most reliable)
+    for line in spec_content.lines() {
+        if line.contains("template = ") && !line.trim().starts_with('#') {
+            if let Some(template) = extract_value(line) {
+                return Some(template);
+            }
+        }
+    }
+    
+    // Fall back to theory_name
+    for line in spec_content.lines() {
+        if line.contains("theory_name = ") && !line.trim().starts_with('#') {
+            if let Some(theory) = extract_value(line) {
+                return Some(theory.to_lowercase());
+            }
+        }
+    }
+    
+    None
+}
+
 /// Bidirectional lens for code generation
 ///
 /// Focuses on a specific aspect of the code that can be extracted (get)

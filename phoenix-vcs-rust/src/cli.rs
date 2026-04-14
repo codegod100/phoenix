@@ -1577,24 +1577,43 @@ async fn cmd_reverse(
 
 /// Sync command: Detect code changes and upstream to spec
 async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -> Result<()> {
-    use crate::pipeline::code_lens::{SyncEngine, lit_lens_bundle, ProjectNameLens, ThemeLens};
+    use crate::pipeline::code_lens::{BundleLenses, get_bundle_lenses, detect_bundle_from_spec};
     use std::collections::HashMap;
     
     println!("══════════════════════════════════════════════════════════════");
     println!("🔄 Phoenix Sync — Code → Spec Upstreaming");
     println!("══════════════════════════════════════════════════════════════\n");
     
-    // Load current generated code
+    // Load spec.ncl to detect bundle
+    let spec_path = project_root.join("spec.ncl");
+    let spec_content = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
+        content
+    } else {
+        println!("⚠️  No spec.ncl found at {:?}", spec_path);
+        return Ok(());
+    };
+    
+    // Detect bundle type
+    let bundle_name = detect_bundle_from_spec(&spec_content)
+        .unwrap_or_else(|| "unknown".to_string());
+    
+    println!("📦 Detected bundle: {}", bundle_name);
+    
+    // Get bundle-specific lenses
+    let lenses = match get_bundle_lenses(&bundle_name) {
+        Some(l) => l,
+        None => {
+            println!("⚠️  No sync lenses available for bundle '{}'", bundle_name);
+            println!("   Supported bundles: lit, nodejs-express, python-flask, rust");
+            return Ok(());
+        }
+    };
+    
+    // Load current generated code (using bundle-specific tracked files)
     let mut current_code: HashMap<String, String> = HashMap::new();
+    let tracked_files = lenses.tracked_files();
     
-    // Find generated files
-    let generated_files = vec![
-        "package.json",
-        "src/main.ts",
-        "src/hero.ts",
-    ];
-    
-    for file in &generated_files {
+    for file in tracked_files {
         let path = project_root.join(file);
         if let Ok(content) = tokio::fs::read_to_string(&path).await {
             current_code.insert(file.to_string(), content);
@@ -1608,39 +1627,21 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
     
     println!("📁 Loaded {} generated files", current_code.len());
     
-    // Use lenses to extract values
-    let project_name = ProjectNameLens::get(&current_code);
-    let theme = ThemeLens::get(&current_code);
+    // Use bundle lenses to extract all values
+    let extracted_values = lenses.extract_values(&current_code);
     
     println!("\n🔍 Detected values from code:");
-    if let Some(name) = &project_name {
-        println!("   Project name: {}", name);
-    }
-    if let Some(t) = &theme {
-        println!("   Theme: {}", t);
+    for (field, value) in &extracted_values {
+        println!("   {}: {}", field, value);
     }
     
-    // Load spec.ncl to compare
-    let spec_path = project_root.join("spec.ncl");
-    let spec_content = if let Ok(content) = tokio::fs::read_to_string(&spec_path).await {
-        content
-    } else {
-        println!("⚠️  No spec.ncl found at {:?}", spec_path);
-        String::new()
-    };
-    
-    // Check for differences
+    // Check for differences by comparing with spec
     let mut changes = Vec::new();
     
-    if let Some(name) = project_name {
-        if !spec_content.contains(&format!("project_name = \"{}\"", name)) {
-            changes.push(("project_name", name));
-        }
-    }
-    
-    if let Some(t) = theme {
-        if !spec_content.contains(&format!("theme = \"{}\"", t)) {
-            changes.push(("theme", t));
+    for (field, value) in extracted_values {
+        // Simple string contains check - in production this would parse the Nickel AST
+        if !spec_content.contains(&format!("{} = \"{}\"", field, value)) {
+            changes.push((field, value));
         }
     }
     
@@ -1674,7 +1675,7 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
     } else if apply {
         // In real implementation, this would parse and modify spec.ncl
         println!("\n⚠️  Auto-apply not yet implemented.");
-        println!("   Please manually apply the suggested changes above.");
+        println!("   Please manually edit spec.ncl with the changes shown above.");
     } else {
         println!("\n💡 To apply changes, run:");
         println!("   phoenix sync --apply");
