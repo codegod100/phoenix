@@ -11,10 +11,11 @@ A simple web application using Lit framework for modern Web Components.
 
 ## Features
 
-1. **Todo List Component**: Add, toggle, and delete todo items
+1. **Hero Image**: Large hero section displaying "Hello World" as the main welcome message
+2. **Todo List Component**: Add, toggle, and delete todo items
    - Checkboxes must be vertically centered with text labels
-2. **Counter Component**: Demonstrates reactive state with buttons
-3. **Styled with CSS**: Uses Lit's CSS tagged templates
+3. **Counter Component**: Demonstrates reactive state with buttons
+4. **Styled with CSS**: Uses Lit's CSS tagged templates
 
 ## Build Type
 
