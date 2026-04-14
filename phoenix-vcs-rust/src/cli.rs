@@ -229,6 +229,13 @@ pub enum Commands {
         debug: bool,
     },
     
+    /// Compare spec.md with spec.ncl using 4-Layer Lens
+    Compare {
+        /// Show detailed field-level comparison
+        #[arg(long)]
+        detailed: bool,
+    },
+    
     /// Sync changes from generated code back to spec
     /// 
     /// Detects changes in generated files and suggests updates to spec.ncl
@@ -342,6 +349,9 @@ pub async fn run() -> Result<()> {
         }
         Some(Commands::Parse { input, output, verify, debug }) => {
             cmd_parse(&cli.project_root, input, output, verify, debug).await
+        }
+        Some(Commands::Compare { detailed }) => {
+            cmd_compare(&cli.project_root, detailed).await
         }
         Some(Commands::Sync { dry_run, apply, diff }) => {
             cmd_sync(&cli.project_root, dry_run, apply, diff).await
@@ -1692,6 +1702,137 @@ async fn cmd_parse(project_root: &Path, input: PathBuf, output: PathBuf, verify:
     println!("═══════════════════════════════════════════════════════════════");
     
     Ok(())
+}
+
+/// Compare spec.md with spec.ncl using 4-Layer Lens
+async fn cmd_compare(project_root: &Path, detailed: bool) -> Result<()> {
+    use crate::pipeline::spec_md_to_ncl::{SpecMdLens, SpecMdSyncLens};
+    use crate::pipeline::bundle_stack::SyncLens;
+    use tokio::fs;
+    
+    println!("╔══════════════════════════════════════════════════════════════╗");
+    println!("║  🔍 4-Layer Lens: spec.md ↔ spec.ncl Comparison            ║");
+    println!("╠══════════════════════════════════════════════════════════════╣");
+    println!("║  Using Layer 3 (Lens) bidirectional transformation          ║");
+    println!("╚══════════════════════════════════════════════════════════════╝");
+    println!();
+    
+    let spec_md_path = project_root.join("spec.md");
+    let spec_ncl_path = project_root.join("spec.ncl");
+    
+    // Check if files exist
+    if !spec_md_path.exists() {
+        println!("❌ spec.md not found at {:?}", spec_md_path);
+        return Ok(());
+    }
+    if !spec_ncl_path.exists() {
+        println!("❌ spec.ncl not found at {:?}", spec_ncl_path);
+        return Ok(());
+    }
+    
+    // Read both files
+    let spec_md = fs::read_to_string(&spec_md_path).await?;
+    let spec_ncl = fs::read_to_string(&spec_ncl_path).await?;
+    
+    println!("📄 spec.md: {} characters", spec_md.len());
+    println!("📄 spec.ncl: {} characters", spec_ncl.len());
+    println!();
+    
+    // Layer 3: Use the Lens to extract from spec.md
+    let lens = SpecMdSyncLens;
+    let mut code = std::collections::HashMap::new();
+    code.insert("spec.md".to_string(), spec_md.clone());
+    
+    let extracted = lens.get(&code);
+    
+    println!("📊 [Layer 3] Lens extracted from spec.md:");
+    for (field, value) in &extracted {
+        println!("    {}: {}", field, 
+            if value.len() > 50 { format!("{}...", &value[..50]) } else { value.clone() });
+    }
+    println!();
+    
+    // Detect changes between spec.md and spec.ncl
+    let changes = lens.compare(&code, &spec_ncl);
+    
+    if changes.is_empty() {
+        println!("✅ spec.md and spec.ncl are in sync!");
+    } else {
+        println!("📊 Differences detected ({} changes):", changes.len());
+        println!();
+        
+        for change in &changes {
+            match change.change_type {
+                crate::pipeline::bundle_stack::ChangeType::ValueChanged => {
+                    println!("  🟡 {}:", change.field);
+                    println!("     spec.ncl: \"{}\"", change.old_value);
+                    println!("     spec.md:  \"{}\"", change.new_value);
+                }
+                crate::pipeline::bundle_stack::ChangeType::StructureChanged => {
+                    println!("  🔴 {}: {}", change.field, change.description);
+                }
+                _ => {
+                    println!("  ⚪ {}: {} → {}", change.field, change.old_value, change.new_value);
+                }
+            }
+            println!();
+        }
+    }
+    
+    // Show detailed comparison if requested
+    if detailed {
+        println!("═══════════════════════════════════════════════════════════════");
+        println!("📋 Detailed Comparison");
+        println!("═══════════════════════════════════════════════════════════════");
+        
+        // Parse full structured spec
+        let structured = SpecMdLens::parse(&spec_md);
+        
+        println!("\n📝 Project:");
+        println!("  spec.md:  project_name = \"{}\"", structured.project_name);
+        if let Some(ncl_name) = extract_ncl_value(&spec_ncl, "project_name = \"") {
+            println!("  spec.ncl: project_name = \"{}\"", ncl_name);
+            if ncl_name != structured.project_name {
+                println!("  🔴 MISMATCH!");
+            } else {
+                println!("  ✅ Match");
+            }
+        }
+        
+        println!("\n📝 Routes:");
+        println!("  spec.md:  {} routes defined", structured.routes.len());
+        let ncl_routes = spec_ncl.matches("method = \"").count();
+        println!("  spec.ncl: {} routes defined", ncl_routes);
+        if ncl_routes != structured.routes.len() {
+            println!("  🔴 COUNT MISMATCH!");
+        } else {
+            println!("  ✅ Count matches");
+        }
+        
+        if !structured.routes.is_empty() {
+            println!("\n  Routes in spec.md:");
+            for route in &structured.routes {
+                println!("    {} {} → {}", route.method, route.path, route.handler);
+            }
+        }
+    }
+    
+    println!();
+    println!("💡 To sync changes:");
+    println!("   phoenix parse --to-ncl    # spec.md → spec.ncl");
+    println!("   phoenix doc --to-spec     # README.md → spec.ncl");
+    
+    Ok(())
+}
+
+fn extract_ncl_value(content: &str, prefix: &str) -> Option<String> {
+    content.lines()
+        .find(|line| line.contains(prefix))
+        .and_then(|line| {
+            let start = line.find(prefix)? + prefix.len();
+            let end = line[start..].find('"')?;
+            Some(line[start..start+end].to_string())
+        })
 }
 
 /// Sync command: Detect code changes and upstream to spec
