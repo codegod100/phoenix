@@ -1615,14 +1615,17 @@ async fn cmd_reverse(
     Ok(())
 }
 
-/// Parse spec.md algebraically to spec.ncl (no LLM)
+/// Parse spec.md algebraically to spec.ncl (no LLM) - 4-Layer Stack
 async fn cmd_parse(project_root: &Path, input: PathBuf, output: PathBuf, verify: bool, debug: bool) -> Result<()> {
-    use crate::pipeline::spec_md_to_ncl::{transform_spec_md_to_ncl, verify_transformation, SpecMdLens};
+    use crate::pipeline::spec_md_to_ncl::{transform_spec_md_to_ncl_4layer, verify_transformation, SpecMdLens, TransformationReport};
     use tokio::fs;
     
-    println!("══════════════════════════════════════════════════════════════");
-    println!("🔢 Algebraic spec.md → spec.ncl (No LLM)");
-    println!("══════════════════════════════════════════════════════════════\n");
+    println!("╔══════════════════════════════════════════════════════════════╗");
+    println!("║  🔢 4-Layer Algebraic spec.md → spec.ncl (No LLM)          ║");
+    println!("╠══════════════════════════════════════════════════════════════╣");
+    println!("║  spec.md ──[L1:Theory]──[L2:Schema]──[L3:Lens]──[L4:Expr]──► spec.ncl ║");
+    println!("╚══════════════════════════════════════════════════════════════╝");
+    println!();
     
     let input_path = project_root.join(&input);
     let output_path = project_root.join(&output);
@@ -1634,67 +1637,59 @@ async fn cmd_parse(project_root: &Path, input: PathBuf, output: PathBuf, verify:
     println!("📄 Input: {:?}", input_path);
     println!("   Length: {} characters\n", spec_md.len());
     
-    // Layer 3: Parse natural language
-    println!("🔍 Layer 3: Parsing natural language...");
-    let structured = SpecMdLens::parse(&spec_md);
-    
-    if debug {
-        println!("\n📊 Extracted structure:");
-        println!("   Project: {}", structured.project_name);
-        println!("   Description: {}", structured.project_description);
-        println!("   Template: {}", structured.template);
-        println!("   Routes: {}", structured.routes.len());
-        for route in &structured.routes {
-            println!("      {} {} → {}", route.method, route.path, route.handler);
-        }
-        println!("   Models: {}", structured.models.len());
-        for model in &structured.models {
-            println!("      {} ({} fields)", model.name, model.fields.len());
-        }
-    }
-    
-    // Layer 2: Validate schema
-    println!("\n📐 Layer 2: Schema validation...");
-    if structured.project_name.is_empty() {
-        println!("   ⚠️  Warning: No project name detected");
-    }
-    if structured.routes.is_empty() {
-        println!("   ⚠️  Warning: No routes detected");
-    } else {
-        println!("   ✓ Routes: {} endpoints", structured.routes.len());
-    }
-    
-    // Layer 4: Generate NCL
-    println!("\n🔧 Layer 4: Generating Nickel/NCL...");
-    let ncl = match transform_spec_md_to_ncl(&spec_md) {
-        Ok(ncl) => ncl,
+    // Run 4-Layer transformation
+    let (ncl, report) = match transform_spec_md_to_ncl_4layer(&spec_md) {
+        Ok(result) => result,
         Err(e) => {
-            println!("   ❌ Error: {}", e);
+            println!("\n❌ Transformation failed: {}", e);
             return Err(anyhow::anyhow!(e));
         }
     };
     
-    println!("   ✓ Generated: {} lines", ncl.lines().count());
+    println!();
+    
+    // Debug output
+    if debug {
+        println!("═══════════════════════════════════════════════════════════════");
+        println!("📊 4-Layer Transformation Report");
+        println!("═══════════════════════════════════════════════════════════════");
+        println!("   Layer 1 (Theory):        {}", report.layer1_theory);
+        println!("   Layer 2 (Schema):        {} vertices, {} edges", 
+            report.layer2_schema_vertices, 
+            report.layer2_schema_edges
+        );
+        println!("   Layer 2 (Validation):    {}", 
+            if report.layer2_validation_passed { "✓ PASSED" } else { "✗ FAILED" }
+        );
+        println!("   Layer 3 (Lens):          {} fields extracted", report.layer3_extracted_fields);
+        println!("   Layer 4 (Generator):     {} lines, {} bytes", 
+            report.layer4_output_lines, 
+            report.layer4_output_bytes
+        );
+        println!();
+    }
     
     // Verification
     if verify {
-        println!("\n✓ Layer 5: Verification...");
+        println!("🔍 Verification...");
         match verify_transformation(&spec_md, &ncl) {
             Ok(_) => println!("   ✓ Round-trip verification passed"),
-            Err(e) => println!("   ⚠️  Verification warning: {}", e),
+            Err(e) => println!("   ⚠ Verification warning: {}", e),
         }
+        println!();
     }
     
     // Write output
     fs::write(&output_path, &ncl).await
         .map_err(|e| anyhow::anyhow!("Failed to write {:?}: {}", output_path, e))?;
     
-    println!("\n✅ Output: {:?}", output_path);
+    println!("✅ Output: {:?}", output_path);
     println!("   Written: {} bytes", ncl.len());
     
-    println!("\n══════════════════════════════════════════════════════════════");
-    println!("🎯 Algebraic transformation complete (no LLM used!)");
-    println!("══════════════════════════════════════════════════════════════");
+    println!();
+    println!("═══════════════════════════════════════════════════════════════");
+    println!("🎯 4-Layer algebraic transformation complete (no LLM used!)");
+    println!("═══════════════════════════════════════════════════════════════");
     
     Ok(())
 }
