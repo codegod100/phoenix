@@ -52,6 +52,9 @@ impl BundleLenses for LitBundleLenses {
         if let Some(name) = ProjectNameLens::get(code) {
             values.push(("project_name", name));
         }
+        if let Some(version) = VersionLens::get(code) {
+            values.push(("version", version));
+        }
         if let Some(theme) = ThemeLens::get(code) {
             values.push(("theme", theme));
         }
@@ -62,13 +65,14 @@ impl BundleLenses for LitBundleLenses {
     fn get(&self, field: &str, code: &HashMap<String, String>) -> Option<String> {
         match field {
             "project_name" => ProjectNameLens::get(code),
+            "version" => VersionLens::get(code),
             "theme" => ThemeLens::get(code),
             _ => None,
         }
     }
     
     fn supports_field(&self, field: &str) -> bool {
-        matches!(field, "project_name" | "theme")
+        matches!(field, "project_name" | "version" | "theme")
     }
 }
 
@@ -304,7 +308,7 @@ impl RustProjectNameLens {
 /// Factory for getting bundle lenses
 pub fn get_bundle_lenses(bundle_name: &str) -> Option<Box<dyn BundleLenses>> {
     match bundle_name {
-        "lit" => Some(Box::new(LitBundleLenses)),
+        "lit" | "thlit" => Some(Box::new(LitBundleLenses)),
         "nodejs-express" | "node" | "nodejs" | "express" => Some(Box::new(NodeJsExpressBundleLenses)),
         "python-flask" | "flask" => Some(Box::new(PythonFlaskBundleLenses)),
         "rust" => Some(Box::new(RustBundleLenses)),
@@ -427,6 +431,22 @@ impl ProjectNameLens {
             .map_err(|e| format!("Serialize error: {}", e))?;
         
         Ok(())
+    }
+}
+
+/// Version lens - extracts version from package.json
+#[cfg(feature = "panproto")]
+pub struct VersionLens;
+
+#[cfg(feature = "panproto")]
+impl VersionLens {
+    /// Extract version from package.json
+    pub fn get(code: &HashMap<String, String>) -> Option<String> {
+        let package_json = code.get("package.json")?;
+        
+        // Parse JSON and extract version field
+        let parsed: serde_json::Value = serde_json::from_str(package_json).ok()?;
+        parsed.get("version")?.as_str().map(|s| s.to_string())
     }
 }
 
