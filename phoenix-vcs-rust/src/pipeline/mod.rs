@@ -1453,6 +1453,9 @@ pub mod bundle_impls;
 // Markdown ↔ Spec lens
 pub mod markdown_lens;
 
+// Algebraic spec.md → spec.ncl bridge
+pub mod spec_md_to_ncl;
+
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 
