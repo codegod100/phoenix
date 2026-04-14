@@ -26,6 +26,14 @@ app.post('/api/items', (req, res) => {
   res.json({ message: 'handler' });
 });
 
+app.get('/api/unicorns', (req, res) => {
+  res.json({ message: 'handler' });
+});
+
+app.patch('/api/users/:id/status', (req, res) => {
+  res.json({ message: 'handler' });
+});
+
 app.listen(3000, () => {
   console.log(`Server on port ${3000}`);
 });

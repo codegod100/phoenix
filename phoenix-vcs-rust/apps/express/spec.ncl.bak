@@ -53,6 +53,7 @@
   routes = [
     { method = "GET", path = "/api/users", handler = "listUsers", description = "List all users" },
     { method = "POST", path = "/api/users", handler = "createUsers", description = "Create a new user" },
+    { method = "PUT", path = "/api/users/:id", handler = "updateUsersByid", description = "Update a user" },
     { method = "DELETE", path = "/api/users/:id", handler = "deleteUsersByid", description = "Delete a user" },
     { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
     { method = "POST", path = "/api/items", handler = "createItems", description = "Create a new item" },

@@ -14,6 +14,8 @@ This Express.js API provides endpoints for managing users and items with full CR
 - `DELETE /api/users/:id` - Delete a user
 - `GET /api/items` - List all items
 - `POST /api/items` - Create a new item
+- `GET /api/unicorns` - 🦄 List all magical unicorns with rainbow powers
+- `PATCH /api/users/:id/status` - Update user mood (happy/sad/confused)
 
 ## Models
 
