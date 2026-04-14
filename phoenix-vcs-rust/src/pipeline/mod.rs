@@ -1450,6 +1450,9 @@ pub mod bundle_stack;
 // Concrete bundle implementations
 pub mod bundle_impls;
 
+// Markdown ↔ Spec lens
+pub mod markdown_lens;
+
 // Lit bundle with proper algebraic lifting
 pub mod lit_theory_lifted;
 

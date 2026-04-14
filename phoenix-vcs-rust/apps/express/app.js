@@ -10,8 +10,8 @@ app.get('/', (req, res) => {
 });
 
 // API routes
-app.get('/api/status', (req, res) => {
-  res.json({ status: 'not running', timestamp: new Date().toISOString() });
+app.get('/health', (req, res) => {
+  res.json({ status: 'degraded', uptime: '5 days', timestamp: new Date().toISOString() });
 });
 
 app.post('/api/users', (req, res) => {

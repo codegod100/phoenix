@@ -226,6 +226,21 @@ pub enum Commands {
         #[arg(long)]
         diff: bool,
     },
+    
+    /// Sync README.md with spec.ncl (bidirectional)
+    Doc {
+        /// Update README.md from spec.ncl (spec → readme)
+        #[arg(long)]
+        to_readme: bool,
+        
+        /// Update spec.ncl from README.md (readme → spec)
+        #[arg(long)]
+        to_spec: bool,
+        
+        /// Show detailed diff
+        #[arg(long)]
+        diff: bool,
+    },
 }
 
 #[derive(Clone, Copy, Debug, clap::ValueEnum)]
@@ -308,6 +323,9 @@ pub async fn run() -> Result<()> {
         }
         Some(Commands::Sync { dry_run, apply, diff }) => {
             cmd_sync(&cli.project_root, dry_run, apply, diff).await
+        }
+        Some(Commands::Doc { to_readme, to_spec, diff }) => {
+            cmd_doc(&cli.project_root, to_readme, to_spec, diff).await
         }
         // Default: run pipeline with auto-detection (zero-config mode)
         None => {
@@ -1742,6 +1760,96 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
         println!("\n💡 To apply changes, run:");
         println!("   phoenix sync --apply");
         println!("\n   Or manually edit spec.ncl with the changes shown above.");
+    }
+    
+    Ok(())
+}
+
+/// Sync README.md with spec.ncl (bidirectional documentation sync)
+async fn cmd_doc(project_root: &Path, to_readme: bool, to_spec: bool, diff: bool) -> Result<()> {
+    use crate::pipeline::markdown_lens::{MarkdownLens, MarkdownGenerator, MarkdownData};
+    use crate::pipeline::bundle_stack::SyncLens;
+    use tokio::fs;
+    
+    println!("══════════════════════════════════════════════════════════════");
+    println!("📝 Phoenix Doc — README ↔ Spec Sync");
+    println!("══════════════════════════════════════════════════════════════\n");
+    
+    let readme_path = project_root.join("README.md");
+    let spec_path = project_root.join("spec.ncl");
+    
+    // Check if files exist
+    if !readme_path.exists() {
+        println!("⚠️  README.md not found at {:?}", readme_path);
+        return Ok(());
+    }
+    if !spec_path.exists() {
+        println!("⚠️  spec.ncl not found at {:?}", spec_path);
+        return Ok(());
+    }
+    
+    // Load both files
+    let readme_content = fs::read_to_string(&readme_path).await?;
+    let spec_content = fs::read_to_string(&spec_path).await?;
+    
+    // Parse markdown
+    let markdown_data = MarkdownLens::parse(&readme_content);
+    
+    println!("📄 README.md parsed:");
+    println!("   Title: {}", markdown_data.title.as_deref().unwrap_or("(none)"));
+    println!("   Description: {}", markdown_data.description.as_deref().unwrap_or("(none)"));
+    println!("   Sections: {}", markdown_data.sections.len());
+    println!("   Code blocks: {}", markdown_data.code_blocks.len());
+    
+    // Detect changes
+    let mut code = std::collections::HashMap::new();
+    code.insert("README.md".to_string(), readme_content.clone());
+    
+    let lens = MarkdownLens;
+    let changes = lens.compare(&code, &spec_content);
+    
+    if !changes.is_empty() {
+        println!("\n📊 Changes detected:");
+        for change in &changes {
+            println!("   {}: \"{}\" → \"{}\"", change.field, change.old_value, change.new_value);
+        }
+    } else {
+        println!("\n✅ README.md is in sync with spec.ncl");
+    }
+    
+    // Handle directions
+    if to_readme {
+        println!("\n📝 Generating README.md from spec.ncl...");
+        // Extract config from spec
+        let config = crate::pipeline::markdown_lens::parse_spec_to_config(&spec_content);
+        let new_readme = MarkdownGenerator::generate_readme(&spec_content, &config);
+        
+        if diff {
+            println!("\n📝 Diff:");
+            println!("   (README would be regenerated from spec)");
+        }
+        
+        fs::write(&readme_path, new_readme).await?;
+        println!("✅ Updated README.md from spec.ncl");
+        
+    } else if to_spec {
+        println!("\n📝 Applying README.md changes to spec.ncl...");
+        let updated_spec = MarkdownGenerator::apply_readme_to_spec(&spec_content, &readme_content);
+        
+        if diff {
+            println!("\n📝 Diff:");
+            for change in &changes {
+                println!("   {}: \"{}\" → \"{}\"", change.field, change.old_value, change.new_value);
+            }
+        }
+        
+        fs::write(&spec_path, updated_spec).await?;
+        println!("✅ Updated spec.ncl from README.md");
+        
+    } else if diff && !changes.is_empty() {
+        println!("\n💡 To sync changes:");
+        println!("   phoenix doc --to-spec    # Update spec from README");
+        println!("   phoenix doc --to-readme  # Update README from spec");
     }
     
     Ok(())
