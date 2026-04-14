@@ -1,6 +1,6 @@
 {
-  "name": "litty",
-  "version": "0.1.0",
+  "name": "purrfect-app",
+  "version": "0.2.0",
   "description": "Lit Web Components app",
   "type": "module",
   "scripts": {

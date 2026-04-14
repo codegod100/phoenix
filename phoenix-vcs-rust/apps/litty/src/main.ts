@@ -10,14 +10,15 @@ export class HeroImage extends LitElement {
   static styles = css`
     :host { display: block; width: 100%; }
     .hero {
-      background: linear-gradient(135deg, #FFB6C1 0%, #E6E6FA 50%, #FFDAB9 100%);
-      color: #4a4a4a; padding: 80px 20px; text-align: center;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #00ff41; padding: 80px 20px; text-align: center;
       border-radius: 20px; margin-bottom: 24px;
-      box-shadow: 0 8px 32px rgba(255,182,193,0.3);
+      box-shadow: 0 8px 32px rgba(0,255,65,0.3);
       position: relative; overflow: hidden;
+      border: 2px solid #00ff41;
     }
-    .hero::before { content: '🐾'; position: absolute; top: 20px; left: 20px; font-size: 2rem; opacity: 0.3; }
-    .hero::after { content: '🐾'; position: absolute; bottom: 20px; right: 20px; font-size: 2rem; opacity: 0.3; transform: rotate(-20deg); }
+    .hero::before { content: '⚡'; position: absolute; top: 20px; left: 20px; font-size: 2rem; opacity: 0.3; }
+    .hero::after { content: '⚡'; position: absolute; bottom: 20px; right: 20px; font-size: 2rem; opacity: 0.3; transform: rotate(-20deg); }
     .hero h1 { font-size: 3.5rem; font-weight: bold; margin: 0; color: #6b5b95; }
     .hero p { font-size: 1.5rem; margin: 16px 0 0 0; opacity: 0.8; color: #8b7bb5; }
   `;

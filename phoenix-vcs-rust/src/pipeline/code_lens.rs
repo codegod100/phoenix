@@ -103,15 +103,17 @@ pub struct ThemeLens;
 impl ThemeLens {
     /// Extract theme from generated hero component
     pub fn get(code: &HashMap<String, String>) -> Option<String> {
-        let hero_ts = code.get("src/hero.ts")?;
+        let main_ts = code.get("src/main.ts")?;
         
-        // Detect theme from background gradient
-        if hero_ts.contains("#FFB6C1") || hero_ts.contains("kitty") {
+        // Detect theme from visual indicators
+        if main_ts.contains("#FFB6C1") || main_ts.contains("🐾") {
             Some("kitty".into())
-        } else if hero_ts.contains("#667eea") {
+        } else if main_ts.contains("#00ff41") || main_ts.contains("⚡") || main_ts.contains("cyberpunk") {
+            Some("cyberpunk".into())
+        } else if main_ts.contains("#667eea") {
             Some("default".into())
         } else {
-            Some("unknown".into())
+            Some("custom".into())
         }
     }
     

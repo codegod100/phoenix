@@ -1639,7 +1639,7 @@ async fn cmd_sync(project_root: &Path, dry_run: bool, apply: bool, diff: bool) -
     }
     
     if let Some(t) = theme {
-        if t != "unknown" && !spec_content.contains(&format!("theme = \"{}\"", t)) {
+        if !spec_content.contains(&format!("theme = \"{}\"", t)) {
             changes.push(("theme", t));
         }
     }
