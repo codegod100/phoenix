@@ -8,6 +8,7 @@ This Express.js API provides endpoints for managing users and items with full CR
 
 ## API
 
+- `GET /health` - GET /health
 - `GET /api/users` - List all users
 - `POST /api/users` - Create a new user
 - `PUT /api/users/:id` - Update a user

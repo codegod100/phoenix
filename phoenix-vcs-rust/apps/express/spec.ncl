@@ -51,6 +51,7 @@
 
   # Routes definition
   routes = [
+    { method = "GET", path = "/health", handler = "getHealth", description = "GET /health endpoint" },
     { method = "GET", path = "/api/users", handler = "getApiUsers", description = "GET /api/users endpoint" },
     { method = "POST", path = "/api/users", handler = "postApiUsers", description = "POST /api/users endpoint" },
     { method = "PUT", path = "/api/users/:id", handler = "putApiUsersId", description = "PUT /api/users/:id endpoint" },
@@ -61,6 +62,10 @@
     { method = "GET", path = "/api/metrics", handler = "getApiMetrics", description = "GET /api/metrics endpoint" },
     { method = "POST", path = "/api/orders", handler = "postApiOrders", description = "POST /api/orders endpoint" },
   ],
+
+,
+
+,
 
 ,
 
