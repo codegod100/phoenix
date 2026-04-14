@@ -78,6 +78,128 @@ export class PawCounter extends LitElement {
   }
 }
 
+// Todo List Component - A meow-velous task manager
+@customElement('meow-todo')
+export class MeowTodo extends LitElement {
+  @property({ type: Array }) todos: { id: number; text: string; done: boolean }[] = [
+    { id: 1, text: 'Pet the cat', done: false },
+    { id: 2, text: 'Buy catnip', done: true },
+    { id: 3, text: 'Build web components', done: false }
+  ];
+  @property({ type: String }) newTodo = '';
+  
+  static styles = css`
+    :host { display: block; }
+    .todo-card {
+      background: linear-gradient(145deg, #E6E6FA 0%, #FFB6C1 100%);
+      border-radius: 20px;
+      padding: 24px;
+      margin-top: 24px;
+      box-shadow: 0 4px 16px rgba(230,230,250,0.4);
+    }
+    .todo-title {
+      font-size: 1.5rem;
+      color: #6b5b95;
+      margin: 0 0 16px 0;
+    }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      margin: 8px 0;
+      background: white;
+      border-radius: 12px;
+      transition: transform 0.2s;
+    }
+    .todo-item:hover {
+      transform: translateX(4px);
+    }
+    .todo-check {
+      width: 24px;
+      height: 24px;
+      margin-right: 12px;
+      cursor: pointer;
+    }
+    .todo-check:checked + span {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    .todo-text {
+      flex: 1;
+      color: #4a4a4a;
+    }
+    .add-todo {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .todo-input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+    }
+    .add-button {
+      background: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+  `;
+  
+  private addTodo() {
+    if (this.newTodo.trim()) {
+      this.todos = [...this.todos, {
+        id: Date.now(),
+        text: this.newTodo,
+        done: false
+      }];
+      this.newTodo = '';
+    }
+  }
+  
+  private toggleTodo(id: number) {
+    this.todos = this.todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+  }
+  
+  private deleteTodo(id: number) {
+    this.todos = this.todos.filter(t => t.id !== id);
+  }
+  
+  render() {
+    return html`
+      <div class="todo-card">
+        <h2 class="todo-title">📝 Meow-tasks</h2>
+        ${this.todos.map(todo => html`
+          <div class="todo-item">
+            <input 
+              class="todo-check" 
+              type="checkbox" 
+              .checked=${todo.done}
+              @change=${() => this.toggleTodo(todo.id)}
+            />
+            <span class="todo-text">${todo.text}</span>
+            <button @click=${() => this.deleteTodo(todo.id)}>🗑️</button>
+          </div>
+        `)}
+        <div class="add-todo">
+          <input 
+            class="todo-input" 
+            placeholder="Add a purr-fect task..."
+            .value=${this.newTodo}
+            @input=${(e: InputEvent) => this.newTodo = (e.target as HTMLInputElement).value}
+            @keydown=${(e: KeyboardEvent) => e.key === 'Enter' && this.addTodo()}
+          />
+          <button class="add-button" @click=${this.addTodo}>➕</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
 // Main App Component
 @customElement('litty-app')
 export class LittyApp extends LitElement {
@@ -88,8 +210,9 @@ export class LittyApp extends LitElement {
     return html`
       <hero-image></hero-image>
       <paw-counter></paw-counter>
+      <meow-todo></meow-todo>
     `;
   }
 }
 
-console.log('🔥 litty app loaded with counter!');
+console.log('🔥 litty app loaded with counter & todo list!');
