@@ -1,3 +1,7 @@
+# Elena App - Root component accepting props from spec.md
+# Called as: makeModule { userCardName = "John Doe", userCardEmail = "john@example.com" }
+
+fun params =>
 {
   id = "elena-app",
   name = "Elena App",
@@ -6,11 +10,16 @@
   language = "typescript",
   is_infrastructure = false,
 
+  # Config from spec.md via generator
+  config = {
+    userCardName = params.userCardName,
+    userCardEmail = params.userCardEmail
+  },
+
   generation = {
     protocol = "typescript",
     vertex_kinds = ["ClassDecl", "ExprStmt"],
-    resource_file = "elena-app.ts",
-    config_placeholders = {}
+    resource_file = "elena-app-template.ts",
   },
 
   provides = [

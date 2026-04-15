@@ -9,14 +9,26 @@ use crate::codegen::ncl_module::NclCodeModule;
 use crate::kitty::module_bridge::ParsedModuleSpec;
 
 /// Parse button colors from spec.md for TodoList
-fn parse_button_colors(spec_md: &str) -> HashMap<String, String> {
-    let mut config = HashMap::new();
+/// Also parses user-card props from ElenaApp children
+fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> {
+    let mut configs: HashMap<String, HashMap<String, String>> = HashMap::new();
+    
+    // Parse TodoList colors
+    let mut todo_config = HashMap::new();
     let mut in_todo_list = false;
     
+    // Parse ElenaApp children props
+    let mut in_elena_app = false;
+    let mut elena_app_children = Vec::new();
+    
     for line in spec_md.lines() {
+        // Track which component section we're in
         if line.starts_with("### ") {
             in_todo_list = line.contains("TodoList");
+            in_elena_app = line.contains("ElenaApp");
         }
+        
+        // Parse TodoList colors
         if in_todo_list && line.contains("Add button") && line.contains("color") {
             if let Some(start) = line.find('`') {
                 if let Some(end) = line[start+1..].find('`') {
@@ -26,7 +38,7 @@ fn parse_button_colors(spec_md: &str) -> HashMap<String, String> {
                         "red" => "danger",
                         _ => color,
                     };
-                    config.insert("buttonColor".to_string(), variant.to_string());
+                    todo_config.insert("buttonColor".to_string(), variant.to_string());
                 }
             }
         }
@@ -39,21 +51,51 @@ fn parse_button_colors(spec_md: &str) -> HashMap<String, String> {
                         "red" => "danger", 
                         _ => color,
                     };
-                    config.insert("checkboxColor".to_string(), variant.to_string());
+                    todo_config.insert("checkboxColor".to_string(), variant.to_string());
+                }
+            }
+        }
+        
+        // Parse ElenaApp children (user-card props)
+        if in_elena_app && line.contains("user-card") {
+            // Extract name="..." and email="..."
+            if let Some(name_start) = line.find("name=\"") {
+                let name_start = name_start + 6;
+                if let Some(name_end) = line[name_start..].find("\"") {
+                    let name = line[name_start..name_start+name_end].to_string();
+                    elena_app_children.push(("userCardName".to_string(), name));
+                }
+            }
+            if let Some(email_start) = line.find("email=\"") {
+                let email_start = email_start + 7;
+                if let Some(email_end) = line[email_start..].find("\"") {
+                    let email = line[email_start..email_start+email_end].to_string();
+                    elena_app_children.push(("userCardEmail".to_string(), email));
                 }
             }
         }
     }
     
-    // Defaults
-    if !config.contains_key("buttonColor") {
-        config.insert("buttonColor".to_string(), "success".to_string());
+    // Defaults for todo
+    if !todo_config.contains_key("buttonColor") {
+        todo_config.insert("buttonColor".to_string(), "success".to_string());
     }
-    if !config.contains_key("checkboxColor") {
-        config.insert("checkboxColor".to_string(), "success".to_string());
+    if !todo_config.contains_key("checkboxColor") {
+        todo_config.insert("checkboxColor".to_string(), "success".to_string());
     }
+    configs.insert("todo-list".to_string(), todo_config);
     
-    config
+    // Defaults for elena-app
+    let mut elena_config: HashMap<String, String> = elena_app_children.into_iter().collect();
+    if !elena_config.contains_key("userCardName") {
+        elena_config.insert("userCardName".to_string(), "Alice Smith".to_string());
+    }
+    if !elena_config.contains_key("userCardEmail") {
+        elena_config.insert("userCardEmail".to_string(), "alice@example.com".to_string());
+    }
+    configs.insert("elena-app".to_string(), elena_config);
+    
+    configs
 }
 
 /// Orchestrate generation from NCL modules
@@ -166,11 +208,14 @@ async fn load_component_module(
     
     // If params provided, wrap the NCL to call the function with those params
     let final_ncl = if let Some(p) = &params {
-        let button_color = p.get("buttonColor").cloned().unwrap_or_else(|| "success".to_string());
-        let checkbox_color = p.get("checkboxColor").cloned().unwrap_or_else(|| "success".to_string());
+        // Build param assignments dynamically from the config HashMap
+        let param_assignments: Vec<String> = p.iter()
+            .map(|(key, value)| format!("{} = \"{}\"", key, value))
+            .collect();
         format!(
-            "let makeModule = {} in makeModule {{ buttonColor = \"{}\", checkboxColor = \"{}\" }}",
-            ncl_content, button_color, checkbox_color
+            "let makeModule = {} in makeModule {{ {} }}",
+            ncl_content,
+            param_assignments.join(", ")
         )
     } else {
         ncl_content
@@ -228,17 +273,14 @@ async fn generate_client_from_ncl(
     let mut component_tags: Vec<(String, String)> = Vec::new(); // (tag_name, class_name)
     let mut loaded_modules: Vec<(String, NclCodeModule)> = Vec::new();
     
-    // Read spec.md for component styling
+    // Read spec.md for component config
     let spec_md = fs::read_to_string(output_dir.join("spec.md")).await.unwrap_or_default();
+    let all_configs = parse_spec_config(&spec_md);
     
     // Load all modules first
     for comp_name in component_names {
-        // Parse colors from spec.md for todo-list
-        let params = if comp_name == "todo-list" {
-            Some(parse_button_colors(&spec_md))
-        } else {
-            None
-        };
+        // Get config for this component from spec.md
+        let params = all_configs.get(comp_name).cloned();
         
         let module = load_component_module(project_root, comp_name, params)
             .await
