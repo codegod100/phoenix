@@ -15,7 +15,6 @@ pub async fn generate_app(
     _parsed: &ParsedModuleSpec,
     server_config: &ServerConfig,
     component_names: &[String],
-    mermaid: &str,
     ascii: &str,
 ) -> anyhow::Result<()> {
     use tokio::fs;
@@ -39,7 +38,7 @@ pub async fn generate_app(
     println!("✅ Generated: vite.config.ts");
 
     // Generate tensor.ncl output
-    let tensor_ncl = generate_tensor_ncl(output_dir, server_config, component_names, mermaid, ascii)?;
+    let tensor_ncl = generate_tensor_ncl(output_dir, server_config, component_names, ascii)?;
     fs::write(output_dir.join("tensor.ncl"), tensor_ncl).await?;
     println!("✅ Generated: tensor.ncl");
 
@@ -252,7 +251,6 @@ fn generate_tensor_ncl(
     output_dir: &Path,
     config: &ServerConfig,
     component_names: &[String],
-    mermaid: &str,
     ascii: &str,
 ) -> anyhow::Result<String> {
     let name = output_dir.file_name()
@@ -265,11 +263,10 @@ fn generate_tensor_ncl(
         .collect::<Vec<_>>()
         .join(", ");
 
-    // Generate valid Nickel syntax with multiline strings
+    // Generate valid Nickel syntax with ASCII art
     let spec = format!(
-        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # Mermaid Diagram (from tensor network)\n  mermaid = m%''{}'%\n\n  # ASCII Art Representation\n  ascii = m%''{}'%\n}}\n",
+        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # ASCII Tensor Diagram\n  ascii = m%''{}'%\n}}\n",
         id, name, config.host, config.api_port, config.vite_port, components_str,
-        mermaid,
         ascii,
     );
 

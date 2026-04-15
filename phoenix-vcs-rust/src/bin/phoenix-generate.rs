@@ -118,6 +118,7 @@ async fn main() -> anyhow::Result<()> {
     
     // Generate ASCII representation
     let ascii = phoenix_vcs::kitty::mermaid_ascii::mermaid_to_ascii(&mermaid, 60);
+    println!("📊 Tensor diagram:\n{}", ascii);
     
     if let Err(e) = phoenix_vcs::app_generator::generate_app(
         &project_root,
@@ -125,7 +126,6 @@ async fn main() -> anyhow::Result<()> {
         &parsed,
         &server_config,
         &component_names,
-        &mermaid,
         &ascii,
     ).await {
         eprintln!("\n❌ Generation failed: {}", e);
