@@ -8,57 +8,62 @@ export class TodoList extends Elena(HTMLElement) {
   
   async firstUpdated() {
     await this.loadTodos();
-    this._setupListeners();
   }
   
-  _setupListeners() {
-    const input = this.shadowRoot?.querySelector('#todo-input');
-    const addButton = this.shadowRoot?.querySelector('#add-btn');
+  connectedCallback() {
+    super.connectedCallback();
+    // Attach listeners after Elena sets up shadow DOM
+    this._attachListeners();
+  }
+  
+  _attachListeners() {
+    const root = this.shadowRoot || this;
     
-    const handleAdd = () => {
-      const val = input?.value?.trim();
-      if (val) {
-        this.newTodo = val;
-        this.addTodo({ preventDefault: () => {}, stopPropagation: () => {} });
-        if (input) input.value = '';
-      }
-    };
-    
-    // Bind Add button click
-    if (addButton) {
-      addButton.addEventListener('click', handleAdd);
+    // Form submit (Enter or Add button)
+    const form = root.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', this._onSubmit);
     }
     
-    // Handle Enter key in input
-    if (input) {
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleAdd();
-        }
-      });
-    }
-    
-    // Event delegation for checkboxes and delete buttons
-    const list = this.shadowRoot?.querySelector('ul');
+    // Delete buttons and checkboxes - delegation on the list
+    const list = root.querySelector('ul');
     if (list) {
-      list.addEventListener('click', (e) => {
-        const target = e.target;
-        
-        // Handle checkbox toggle
-        if (target.type === 'checkbox' && target.dataset.id) {
-          e.preventDefault();
-          this.toggleTodo(parseInt(target.dataset.id));
-        }
-        
-        // Handle delete button
-        if (target.dataset.action === 'delete' && target.dataset.id) {
-          e.preventDefault();
-          this.deleteTodo(parseInt(target.dataset.id));
-        }
-      });
+      list.addEventListener('click', this._onListClick);
     }
   }
+  
+  _onSubmit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const form = e.target;
+    const input = form.querySelector('input[type="text"]');
+    const val = input?.value?.trim();
+    
+    if (val) {
+      this.addTodo(val).then(success => {
+        if (success && input) input.value = '';
+      });
+    }
+  };
+  
+  _onListClick = (e) => {
+    const target = e.target;
+    
+    // Delete button
+    if (target.dataset?.action === 'delete' && target.dataset?.id) {
+      e.preventDefault();
+      this.deleteTodo(parseInt(target.dataset.id));
+      return;
+    }
+    
+    // Checkbox toggle
+    if (target.type === 'checkbox' && target.dataset?.id) {
+      e.preventDefault();
+      this.toggleTodo(parseInt(target.dataset.id));
+      return;
+    }
+  };
   
   async loadTodos() {
     try {
@@ -71,25 +76,22 @@ export class TodoList extends Elena(HTMLElement) {
     }
   }
   
-  async addTodo(e) {
-    e.preventDefault();
-    if (!this.newTodo.trim()) return;
+  async addTodo(text) {
+    if (!text.trim()) return false;
     try {
       const res = await fetch('/api/todos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: this.newTodo })
+        body: JSON.stringify({ text })
       });
       if (res.ok) {
-        this.newTodo = '';
-        // Clear input
-        const input = this.shadowRoot?.querySelector('input[type="text"]');
-        if (input) input.value = '';
         await this.loadTodos();
+        return true;
       }
     } catch (err) {
       console.error('Failed to add todo:', err);
     }
+    return false;
   }
   
   async toggleTodo(id) {
@@ -101,9 +103,7 @@ export class TodoList extends Elena(HTMLElement) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ completed: !todo.completed })
       });
-      if (res.ok) {
-        await this.loadTodos();
-      }
+      if (res.ok) await this.loadTodos();
     } catch (err) {
       console.error('Failed to toggle todo:', err);
     }
@@ -112,9 +112,7 @@ export class TodoList extends Elena(HTMLElement) {
   async deleteTodo(id) {
     try {
       const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await this.loadTodos();
-      }
+      if (res.ok) await this.loadTodos();
     } catch (err) {
       console.error('Failed to delete todo:', err);
     }
@@ -134,16 +132,14 @@ export class TodoList extends Elena(HTMLElement) {
           </span>
         </h2>
         
-        <form id="todo-form" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <form style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
           <input
-            id="todo-input"
             type="text"
             placeholder="What needs to be done?"
             style="flex: 1; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none;"
           />
           <button
-            type="button"
-            id="add-btn"
+            type="submit"
             style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
           >
             Add
@@ -165,6 +161,7 @@ export class TodoList extends Elena(HTMLElement) {
               <button
                 data-action="delete"
                 data-id="${todo.id}"
+                type="button"
                 style="padding: 0.4rem 0.8rem; background: #ff6b6b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;"
               >
                 🗑️
