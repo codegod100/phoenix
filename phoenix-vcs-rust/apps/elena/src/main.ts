@@ -103,7 +103,7 @@ export class TodoList extends Elena(HTMLElement) {
     const total = this.todos.length;
 
     // Use StyleUtils for consistent, reusable styling
-    // Config from NCL: buttonVariant = orange, checkboxAccent = success
+    // Config from NCL: buttonVariant = orange, checkboxAccent = green
     return html`
       <div style="${StyleUtils.card()}">
         <h2 style="${StyleUtils.flex({ gap: '0.5rem' })}; margin: 0 0 1rem 0; color: ${theme.colors.text};">
@@ -132,7 +132,7 @@ export class TodoList extends Elena(HTMLElement) {
                 type="checkbox"
                 data-id="${todo.id}"
                 ${todo.completed ? 'checked' : ''}
-                style="width: 20px; height: 20px; cursor: pointer; accent-color: ${theme.colors.success};"
+                style="width: 20px; height: 20px; cursor: pointer; accent-color: ${theme.colors.green};"
               />
               <span style="flex: 1; ${todo.completed ? 'text-decoration: line-through; color: #999;' : `color: ${theme.colors.text};`}">
                 ${todo.text}

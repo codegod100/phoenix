@@ -8,122 +8,115 @@ use std::path::{Path, PathBuf};
 use crate::codegen::ncl_module::NclCodeModule;
 use crate::kitty::module_bridge::ParsedModuleSpec;
 
-/// Parse button colors from spec.md for TodoList
-/// Also parses user-card props from ElenaApp children
+/// Convert PascalCase to kebab-case (TodoList -> todo-list)
+fn pascal_to_kebab(s: &str) -> String {
+    let mut result = String::new();
+    for (i, c) in s.chars().enumerate() {
+        if c.is_uppercase() && i > 0 {
+            result.push('-');
+        }
+        result.push(c.to_lowercase().next().unwrap_or(c));
+    }
+    result
+}
+
+/// Generic spec.md config parser - knows nothing about specific modules
+/// Parses format: ### ModuleName followed by - `key` = `value` lines
+/// Also extracts child component props from HTML-like tags: <tag-name prop="value">
 fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> {
     let mut configs: HashMap<String, HashMap<String, String>> = HashMap::new();
-    
-    // Parse TodoList colors
-    let mut todo_config = HashMap::new();
-    let mut in_todo_list = false;
-    
-    // Parse UserCard styling
-    let mut user_config = HashMap::new();
-    let mut in_user_card = false;
-    
-    // Parse ElenaApp children props
-    let mut in_elena_app = false;
-    let mut elena_app_children = Vec::new();
+    let mut current_module: Option<String> = None;
     
     for line in spec_md.lines() {
-        // Track which component section we're in
+        // Track current module: ### ModuleName
         if line.starts_with("### ") {
-            in_todo_list = line.contains("TodoList");
-            in_user_card = line.contains("UserCard");
-            in_elena_app = line.contains("ElenaApp");
+            let module_name = line[4..].trim().split_whitespace().next().unwrap_or("");
+            current_module = Some(pascal_to_kebab(module_name));
+            continue;
         }
         
-        // Parse TodoList colors
-        if in_todo_list && line.contains("Add button") && line.contains("color") {
-            if let Some(start) = line.find('`') {
-                if let Some(end) = line[start+1..].find('`') {
-                    let color = &line[start+1..start+1+end];
-                    let variant = match color {
-                        "green" => "success",
-                        "red" => "danger",
-                        _ => color,
-                    };
-                    todo_config.insert("buttonColor".to_string(), variant.to_string());
-                }
-            }
-        }
-        if in_todo_list && line.contains("checkbox") && line.contains("color") {
-            if let Some(start) = line.find('`') {
-                if let Some(end) = line[start+1..].find('`') {
-                    let color = &line[start+1..start+1+end];
-                    let variant = match color {
-                        "green" => "success",
-                        "red" => "danger", 
-                        _ => color,
-                    };
-                    todo_config.insert("checkboxColor".to_string(), variant.to_string());
-                }
+        let Some(ref module) = current_module else { continue };
+        let trimmed = line.trim();
+        
+        // Parse Config: `key` = `value` format
+        // Matches: - `buttonColor` = `orange` or - Config: `key` = `value`
+        if (trimmed.starts_with("- `") || trimmed.starts_with("- Config: `")) && trimmed.contains("` = `") {
+            // Extract key and value from backticks
+            let parts: Vec<&str> = trimmed.split('`').collect();
+            if parts.len() >= 5 {
+                let key = parts[1].trim();
+                let value = parts[3].trim();
+                
+                configs.entry(module.clone())
+                    .or_insert_with(HashMap::new)
+                    .insert(key.to_string(), value.to_string());
             }
         }
         
-        // Parse UserCard avatar color
-        if in_user_card && line.contains("Avatar") && line.contains("color") {
-            if let Some(start) = line.find('`') {
-                if let Some(end) = line[start+1..].find('`') {
-                    let color_name = &line[start+1..start+1+end];
-                    // Map color names to actual CSS values
-                    let color_value = match color_name {
-                        "blue" => "#4287f5",
-                        "green" => "#48bb78",
-                        "red" => "#ff6b6b",
-                        "purple" => "#667eea",
-                        "orange" => "#ff8c00",
-                        _ => "#4287f5", // default blue
+        // Parse child component props from HTML-like tags
+        // Matches: - `<tag-name prop="value" prop2="value2">`
+        if trimmed.starts_with("- `<") {
+            // Find tag content between < and >
+            if let Some(start) = trimmed.find("<") {
+                if let Some(end) = trimmed.find(">") {
+                    let tag_content = &trimmed[start+1..end];
+                    
+                    // Extract tag name (before first space, =, or ")
+                    let tag_name = tag_content.split(&[' ', '=', '"'][..]).next().unwrap_or("");
+                    
+                    // Convert kebab-case tag to camelCase prefix: user-card -> userCard
+                    let parts: Vec<&str> = tag_name.split('-').collect();
+                    let prefix = if parts.is_empty() {
+                        String::new()
+                    } else {
+                        parts[0].to_lowercase() + &parts[1..].iter().map(|s| {
+                            let mut c = s.chars();
+                            match c.next() {
+                                None => String::new(),
+                                Some(f) => f.to_uppercase().collect::<String>() + c.as_str()
+                            }
+                        }).collect::<String>()
                     };
-                    user_config.insert("avatarColor".to_string(), color_value.to_string());
+                    
+                    // Skip past the tag name to find attributes
+                    let after_tag = &tag_content[tag_name.len()..];
+                    
+                    // Extract prop="value" pairs manually
+                    let mut chars = after_tag.chars().peekable();
+                    while chars.peek().is_some() {
+                        // Skip to find prop name
+                        let mut prop_name = String::new();
+                        for c in &mut chars {
+                            if c == '=' { break; }
+                            if c.is_alphanumeric() || c == '-' { prop_name.push(c); }
+                        }
+                        
+                        // Check for opening quote
+                        if chars.peek() == Some(&'"') {
+                            chars.next(); // consume "
+                            
+                            // Collect value until closing quote
+                            let mut prop_value = String::new();
+                            for c in &mut chars {
+                                if c == '"' { break; }
+                                prop_value.push(c);
+                            }
+                            
+                            // Create key: prefix + Capitalized prop
+                            if !prop_name.is_empty() && !prop_value.is_empty() {
+                                let capitalized_prop = prop_name.chars().next().unwrap().to_uppercase().to_string() + &prop_name[1..];
+                                let config_key = format!("{}{}", prefix, capitalized_prop);
+                                
+                                configs.entry(module.clone())
+                                    .or_insert_with(HashMap::new)
+                                    .insert(config_key, prop_value);
+                            }
+                        }
+                    }
                 }
             }
         }
-        
-        // Parse ElenaApp children (user-card props)
-        if in_elena_app && line.contains("user-card") {
-            // Extract name="..." and email="..."
-            if let Some(name_start) = line.find("name=\"") {
-                let name_start = name_start + 6;
-                if let Some(name_end) = line[name_start..].find("\"") {
-                    let name = line[name_start..name_start+name_end].to_string();
-                    elena_app_children.push(("userCardName".to_string(), name));
-                }
-            }
-            if let Some(email_start) = line.find("email=\"") {
-                let email_start = email_start + 7;
-                if let Some(email_end) = line[email_start..].find("\"") {
-                    let email = line[email_start..email_start+email_end].to_string();
-                    elena_app_children.push(("userCardEmail".to_string(), email));
-                }
-            }
-        }
     }
-    
-    // Defaults for todo
-    if !todo_config.contains_key("buttonColor") {
-        todo_config.insert("buttonColor".to_string(), "success".to_string());
-    }
-    if !todo_config.contains_key("checkboxColor") {
-        todo_config.insert("checkboxColor".to_string(), "success".to_string());
-    }
-    configs.insert("todo-list".to_string(), todo_config);
-    
-    // Defaults for user-card
-    if !user_config.contains_key("avatarColor") {
-        user_config.insert("avatarColor".to_string(), "#667eea".to_string());
-    }
-    configs.insert("user-card".to_string(), user_config);
-    
-    // Defaults for elena-app
-    let mut elena_config: HashMap<String, String> = elena_app_children.into_iter().collect();
-    if !elena_config.contains_key("userCardName") {
-        elena_config.insert("userCardName".to_string(), "Alice Smith".to_string());
-    }
-    if !elena_config.contains_key("userCardEmail") {
-        elena_config.insert("userCardEmail".to_string(), "alice@example.com".to_string());
-    }
-    configs.insert("elena-app".to_string(), elena_config);
     
     configs
 }
