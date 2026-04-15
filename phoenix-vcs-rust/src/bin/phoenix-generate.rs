@@ -117,6 +117,7 @@ async fn main() -> anyhow::Result<()> {
         &project_root,
         &output_dir,
         &parsed,
+        &network,
         &server_config,
         &component_names,
     ).await {
