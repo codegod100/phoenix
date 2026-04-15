@@ -69,6 +69,10 @@ User profile display with avatar initials.
 Root application container.
 - Props: none
 - Features: Combines all sub-components, responsive layout
+- Children:
+  - `<todo-list></todo-list>` - Todo management
+  - `<user-card name="Alice Smith" email="alice@example.com"></user-card>` - User profile
+  - `<welcome-card title="Welcome" message="Elena Dashboard with SQLite persistence"></welcome-card>` - Hero section
 
 ## Development
 

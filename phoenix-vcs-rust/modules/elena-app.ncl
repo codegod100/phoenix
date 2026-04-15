@@ -13,7 +13,7 @@
       { 
         id = "app_class", 
         kind = "ClassDecl", 
-        text = "export class ElenaApp extends Elena(HTMLElement) {\n  static tagName = 'elena-app';\n\n  render() {\n    return html`\n      <div style=\"max-width: 1200px; margin: 0 auto; padding: 2rem;\">\n        <h1 style=\"color: #333; margin-bottom: 2rem;\">Elena Dashboard</h1>\n        <todo-list></todo-list>\n        <user-card></user-card>\n        <welcome-card></welcome-card>\n      </div>\n    `;\n  }\n}\n"
+        text = "export class ElenaApp extends Elena(HTMLElement) {\n  static tagName = 'elena-app';\n\n  render() {\n    return html`\n      <div style=\"max-width: 1200px; margin: 0 auto; padding: 2rem;\">\n        <h1 style=\"color: #333; margin-bottom: 2rem;\">Elena Dashboard</h1>\n        <welcome-card title=\"Welcome\" message=\"Elena Dashboard with SQLite persistence\"></welcome-card>\n        <user-card name=\"Alice Smith\" email=\"alice@example.com\"></user-card>\n        <todo-list></todo-list>\n      </div>\n    `;\n  }\n}\n"
       },
       { 
         id = "mount_app", 
