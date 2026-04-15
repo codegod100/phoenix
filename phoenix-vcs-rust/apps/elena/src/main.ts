@@ -1,4 +1,4 @@
-import { Elena, Component } from 'elenajs';
+import { Elena, Component } from '@elenajs/core';
 
 class WelcomeCard extends Component {
   render() {
