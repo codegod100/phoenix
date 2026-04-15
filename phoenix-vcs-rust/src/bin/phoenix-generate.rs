@@ -113,13 +113,8 @@ async fn main() -> anyhow::Result<()> {
     let output_dir = args.output.unwrap_or_else(|| args.path.clone());
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     
-    // Generate Mermaid diagram from tensor network
-    let mermaid = network.diagram.to_mermaid();
-    
-    // Generate ASCII representation with components
-    let ascii = phoenix_vcs::kitty::mermaid_ascii::mermaid_to_ascii_with_components(
-        &mermaid, 60, &component_names
-    );
+    // Generate tensor network ASCII diagram
+    let ascii = phoenix_vcs::kitty::tensor_ascii::tensor_network_to_ascii(&network);
     println!("📊 Tensor diagram:\n{}", ascii);
     
     if let Err(e) = phoenix_vcs::app_generator::generate_app(

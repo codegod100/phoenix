@@ -59,6 +59,7 @@ pub mod free_interface_demo;
 pub mod panproto_schema_bridge;
 pub mod integration;
 pub mod mermaid_ascii;
+pub mod tensor_ascii;
 
 // Capability-focused parsers (categorical/DisCoCat approach)
 pub mod capability_parser;
