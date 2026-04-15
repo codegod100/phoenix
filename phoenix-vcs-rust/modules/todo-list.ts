@@ -165,7 +165,7 @@ export class TodoList extends Elena(HTMLElement) {
                 🗑️
               </button>
             </li>
-          `).join('')}
+          `)}
         </ul>
         
         ${this.todos.length === 0 ? html`
