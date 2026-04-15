@@ -1,29 +1,25 @@
 {
   id = "todo-list",
-  name = "Todo List Component",
-  description = "Interactive todo management with API integration",
+  name = "Todo List",
+  description = "Generated todo-list module",
   version = "1.0.0",
   language = "typescript",
   is_infrastructure = false,
 
   generation = {
     protocol = "typescript",
-    vertex_kinds = ["ImportDecl", "ClassDecl"],
+    vertex_kinds = ["ClassDecl"],
     vertices = [
       { 
-        id = "todo_list_class", 
+        id = "todo-list_class", 
         kind = "ClassDecl", 
-        text = "export class TodoList extends Elena(HTMLElement) {\n  static tagName = 'todo-list';\n  static props = ['newTodo'];\n  \n  todos = [];\n  newTodo = '';\n  \n  async firstUpdated() {\n    await this.loadTodos();\n  }\n  \n  async loadTodos() {\n    const res = await fetch('/api/todos');\n    const data = await res.json();\n    this.todos = data.todos || [];\n    this.requestUpdate();\n  }\n  \n  async addTodo(e) {\n    e.preventDefault();\n    if (!this.newTodo.trim()) return;\n    const res = await fetch('/api/todos', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json' },\n      body: JSON.stringify({ text: this.newTodo })\n    });\n    if (res.ok) {\n      this.newTodo = '';\n      await this.loadTodos();\n    }\n  }\n  \n  render() {\n    return html`<div>todo list</div>`;\n  }\n}\n"
+        text = "export class TodoList extends Elena(HTMLElement) {\n  static tagName = 'todo-list';\n  static props = ['newTodo'];\n  \n  todos = [];\n  newTodo = '';\n  \n  async firstUpdated() {\n    await this.loadTodos();\n  }\n  \n  async loadTodos() {\n    try {\n      const res = await fetch('/api/todos');\n      const data = await res.json();\n      this.todos = data.todos || [];\n      this.requestUpdate();\n    } catch (err) {\n      console.error('Failed to load todos:', err);\n    }\n  }\n  \n  async addTodo(e) {\n    e.preventDefault();\n    if (!this.newTodo.trim()) return;\n    try {\n      const res = await fetch('/api/todos', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ text: this.newTodo })\n      });\n      if (res.ok) {\n        this.newTodo = '';\n        await this.loadTodos();\n      }\n    } catch (err) {\n      console.error('Failed to add todo:', err);\n    }\n  }\n  \n  async toggleTodo(id) {\n    const todo = this.todos.find(t => t.id === id);\n    if (!todo) return;\n    try {\n      const res = await fetch(`/api/todos/${id}`, {\n        method: 'PATCH',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ completed: !todo.completed })\n      });\n      if (res.ok) {\n        await this.loadTodos();\n      }\n    } catch (err) {\n      console.error('Failed to toggle todo:', err);\n    }\n  }\n  \n  async deleteTodo(id) {\n    try {\n      const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });\n      if (res.ok) {\n        await this.loadTodos();\n      }\n    } catch (err) {\n      console.error('Failed to delete todo:', err);\n    }\n  }\n  \n  updateNewTodo(e) {\n    this.newTodo = e.target.value;\n  }\n  \n  render() {\n    const completedCount = this.todos.filter(t => t.completed).length;\n    const total = this.todos.length;\n    \n    return html`\n      <div style=\"background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px;\">\n        <h2 style=\"margin: 0 0 1rem 0; color: #333; display: flex; align-items: center; gap: 0.5rem;\">\n          <span>✅</span>\n          <span>Todo List</span>\n          <span style=\"margin-left: auto; font-size: 0.85rem; color: #666; font-weight: normal;\">\n            ${completedCount}/${total}\n          </span>\n        </h2>\n        \n        <form @submit=\"${this.addTodo}\" style=\"display: flex; gap: 0.5rem; margin-bottom: 1rem;\">\n          <input\n            type=\"text\"\n            .value=\"${this.newTodo}\"\n            @input=\"${this.updateNewTodo}\"\n            placeholder=\"What needs to be done?\"\n            style=\"flex: 1; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none;\"\n          />\n          <button\n            type=\"submit\"\n            style=\"padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;\"\n          >\n            Add\n          </button>\n        </form>\n        \n        <ul style=\"list-style: none; padding: 0; margin: 0;\">\n          ${this.todos.map(todo => html`\n            <li style=\"display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #f0f0f0; transition: background 0.2s;\">\n              <input\n                type=\"checkbox\"\n                .checked=\"${todo.completed}\"\n                @change=\"${() => this.toggleTodo(todo.id)}\"\n                style=\"width: 20px; height: 20px; cursor: pointer; accent-color: #667eea;\"\n              />\n              <span style=\"flex: 1; ${todo.completed ? 'text-decoration: line-through; color: #999;' : 'color: #333;'}\">\n                ${todo.text}\n              </span>\n              <button\n                @click=\"${() => this.deleteTodo(todo.id)}\"\n                style=\"padding: 0.4rem 0.8rem; background: #ff6b6b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;\"\n              >\n                🗑️\n              </button>\n            </li>\n          `).join('')}\n        </ul>\n        \n        ${this.todos.length === 0 ? html`\n          <div style=\"text-align: center; padding: 2rem; color: #999;\">\n            <div style=\"font-size: 3rem; margin-bottom: 0.5rem;\">📝</div>\n            <div>No todos yet. Add one above!</div>\n          </div>\n        ` : ''}\n      </div>\n    `;\n  }\n}\n"
       }
     ],
     config_placeholders = {}
   },
 
-  provides = [
-    { interface = "WebComponent", properties = { tag = "todo-list", framework = "elenajs" } }
-  ],
+  provides = [{ interface = "WebComponent", properties = { tag = "todo-list" } }],
 
-  needs = [
-    { interface = "HttpServer", strategy = { type = "first_available" }, optional = false }
-  ]
+  needs = []
 }
