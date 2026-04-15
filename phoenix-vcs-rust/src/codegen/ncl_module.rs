@@ -34,12 +34,20 @@ pub struct ProvidedCapability {
     pub endpoint: Option<String>,
 }
 
-/// A needed capability
+/// A needed capability with strategy
 #[derive(Debug, Clone)]
 pub struct NeededCapability {
     pub interface: String,
-    pub strategy: String,
+    pub strategy: Strategy,
     pub optional: bool,
+}
+
+/// Strategy for fulfilling a need
+#[derive(Debug, Clone)]
+pub enum Strategy {
+    FirstAvailable,
+    Named { name: String },
+    ByInterface { interface: String },
 }
 
 /// A vertex definition
@@ -387,9 +395,48 @@ fn extract_needs_from_record(record: &NickelRecord) -> Vec<NeededCapability> {
                         if let Some(interface) = get_string_field(&need_record, "interface") {
                             let optional = get_bool_field(&need_record, "optional")
                                 .unwrap_or(false);
+                            
+                            // Parse strategy - can be a string or a record
+                            let strategy = if let Some(strategy_expr) = need_record.value_by_name("strategy") {
+                                if let Some(strategy_record) = strategy_expr.as_record() {
+                                    // Strategy is a record like { type = "named", name = "lit-core" }
+                                    if let Some(strategy_type) = get_string_field(&strategy_record, "type") {
+                                        match strategy_type.as_str() {
+                                            "named" => {
+                                                if let Some(name) = get_string_field(&strategy_record, "name") {
+                                                    Strategy::Named { name }
+                                                } else {
+                                                    Strategy::FirstAvailable
+                                                }
+                                            }
+                                            "by_interface" => {
+                                                if let Some(iface) = get_string_field(&strategy_record, "interface") {
+                                                    Strategy::ByInterface { interface: iface }
+                                                } else {
+                                                    Strategy::FirstAvailable
+                                                }
+                                            }
+                                            _ => Strategy::FirstAvailable,
+                                        }
+                                    } else {
+                                        Strategy::FirstAvailable
+                                    }
+                                } else if let Some(strategy_str) = strategy_expr.as_str() {
+                                    // Strategy is a plain string
+                                    match strategy_str {
+                                        "first_available" => Strategy::FirstAvailable,
+                                        _ => Strategy::FirstAvailable,
+                                    }
+                                } else {
+                                    Strategy::FirstAvailable
+                                }
+                            } else {
+                                Strategy::FirstAvailable
+                            };
+                            
                             needs.push(NeededCapability {
                                 interface,
-                                strategy: "first_available".to_string(),
+                                strategy,
                                 optional,
                             });
                         }

@@ -3,9 +3,9 @@
 //! Each module now self-describes its code generation in its .ncl file.
 //! Phoenix just orchestrates: reads NCL → builds schema → emits code.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use crate::codegen::ncl_module::NclCodeModule;
+use crate::codegen::ncl_module::{NclCodeModule, Strategy};
 use crate::kitty::module_bridge::ParsedModuleSpec;
 
 /// Convert PascalCase to kebab-case (TodoList -> todo-list)
@@ -431,9 +431,48 @@ async fn generate_client_from_ncl(
         println!("   ✅ Generated: src/{}.ts (utility module)", util_name);
     }
     
-    // Add import statement for Lit
-    output.push_str("import { LitElement, html, css } from 'lit';\n\n");
-    output.push_str("import { customElement, property, state } from 'lit/decorators.js';\n\n");
+    // Analyze what frameworks are needed by components
+    let mut required_frameworks: HashSet<String> = HashSet::new();
+    for (_, module) in &regular_components {
+        for need in &module.needs {
+            if need.interface == "WebFramework" {
+                if let Strategy::Named { name } = &need.strategy {
+                    required_frameworks.insert(name.clone());
+                }
+            }
+        }
+    }
+    
+    // Also check root module
+    for need in &root_module.1.needs {
+        if need.interface == "WebFramework" {
+            if let Strategy::Named { name } = &need.strategy {
+                required_frameworks.insert(name.clone());
+            }
+        }
+    }
+    
+    // Generate imports from framework modules
+    let mut framework_imports: Vec<String> = Vec::new();
+    for framework_name in &required_frameworks {
+        let framework_module = load_component_module(project_root, framework_name, None).await
+            .map_err(|e| anyhow::anyhow!("Framework module '{}': {}", framework_name, e))?;
+        
+        // Emit ImportDecl vertices from framework
+        for vertex in &framework_module.vertices {
+            if vertex.kind == "ImportDecl" {
+                framework_imports.push(vertex.text.clone());
+            }
+        }
+        println!("   📄 Loaded framework: {}", framework_module.name);
+    }
+    
+    // Add framework imports
+    for import_line in framework_imports {
+        output.push_str(&import_line);
+    }
+    
+    // Add utility imports
     output.push_str("import { StyleUtils, theme } from './style-utils';\n\n");
     
     // Generate regular components
