@@ -160,10 +160,10 @@ async fn generate_elena_app(_network: &phoenix_vcs::kitty::module_tensor_network
     tokio::fs::write(output_dir.join("vite.config.ts"), vite_code).await?;
     println!("✅ Generated: vite.config.ts (via emit_with_protocol)");
     
-    // Generate tsconfig.json
-    let tsconfig = generate_tsconfig_json();
+    // Generate tsconfig.json using emit_with_protocol
+    let tsconfig = generate_tsconfig_with_emit(&protocol)?;
     tokio::fs::write(output_dir.join("tsconfig.json"), tsconfig).await?;
-    println!("✅ Generated: tsconfig.json");
+    println!("✅ Generated: tsconfig.json (via emit_with_protocol)");
     
     // Generate index.html
     let index_html = generate_index_html(output_dir);
@@ -257,7 +257,7 @@ fn generate_package_json(output_dir: &std::path::Path) -> String {
     "preview": "vite preview"
   }},
   "dependencies": {{
-    "@elenajs/core": "^1.0.0",
+    "@elenajs/core": "latest",
     "hono": "^3.12.0",
     "@hono/node-server": "^1.8.0"
   }},
@@ -270,8 +270,28 @@ fn generate_package_json(output_dir: &std::path::Path) -> String {
 }}"#, name)
 }
 
-fn generate_tsconfig_json() -> String {
-    r#"{{
+fn generate_tsconfig_with_emit(_protocol: &panproto_schema::Protocol) -> anyhow::Result<String> {
+    use phoenix_vcs::codegen::emit_bundle::{EmitBuilder, create_protocol, emit_schema};
+    
+    // Create JSON protocol for tsconfig.json generation
+    let json_protocol = create_protocol(
+        "json",
+        vec![
+            "Object".to_string(),
+            "Pair".to_string(),
+            "String".to_string(),
+            "Array".to_string(),
+            "Number".to_string(),
+            "True".to_string(),
+            "False".to_string(),
+        ],
+        vec![],
+    );
+    
+    let mut b = EmitBuilder::new(&json_protocol, "tsconfig");
+    
+    // Build tsconfig.json as a JSON object using emit_with_protocol
+    let header = r#"{
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -285,7 +305,14 @@ fn generate_tsconfig_json() -> String {
     "rootDir": "./src"
   },
   "include": ["src/**/*"]
-}}"#.to_string()
+}"#;
+    
+    b = b.vertex("root", "Object", Some(header))
+        .map_err(|e| anyhow::anyhow!(e))?;
+    
+    let schema = b.build().map_err(|e| anyhow::anyhow!(e))?;
+    emit_schema(&schema, "json")
+        .map_err(|e| anyhow::anyhow!(e))
 }
 
 fn generate_index_html(output_dir: &std::path::Path) -> String {

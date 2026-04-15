@@ -48,7 +48,7 @@ indexmap = "2.2"
 panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
-panproto-grammars = { git = "https://github.com/panproto/panproto", optional = true, features = ["lang-nickel", "lang-nix", "lang-typescript", "lang-bash"] }
+panproto-grammars = { git = "https://github.com/panproto/panproto", optional = true, features = ["lang-nickel", "lang-nix", "lang-typescript", "lang-bash", "lang-json"] }
 panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-theory-dsl = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-mig = { git = "https://github.com/panproto/panproto", optional = true }
