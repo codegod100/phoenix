@@ -163,28 +163,12 @@ async fn generate_client_from_ncl(
 
 /// Generate vite.config.ts
 fn generate_vite_config(config: &ServerConfig) -> anyhow::Result<String> {
-    use crate::codegen::emit_bundle::{create_protocol, EmitBuilder, emit_schema};
-
-    let protocol = create_protocol(
-        "typescript",
-        vec!["ImportDecl".to_string(), "ExportDefault".to_string()],
-        vec![],
-    );
-
-    let mut b = EmitBuilder::new(&protocol, "vite");
-
+    // Direct string formatting - avoid emit_bundle which escapes braces
     let vite_code = format!(
-        "export default defineConfig({{\n  server: {{\n    host: '{}',\n    port: {},\n    proxy: {{\n      '/api': 'http://{}:{}'\n    }}\n  }},\n  build: {{\n    outDir: 'dist'\n  }}\n}});\n",
+        "import {{ defineConfig }} from 'vite';\n\nexport default defineConfig({{\n  server: {{\n    host: '{}',\n    port: {},\n    proxy: {{\n      '/api': 'http://{}:{}'\n    }}\n  }},\n  build: {{\n    outDir: 'dist'\n  }}\n}});\n",
         config.host, config.vite_port, config.host, config.api_port
     );
-
-    b = b.vertex("import", "ImportDecl", Some("import {{ defineConfig }} from 'vite';\n\n"))
-        .map_err(|e| anyhow::anyhow!(e))?;
-    b = b.vertex("config", "ExportDefault", Some(&vite_code))
-        .map_err(|e| anyhow::anyhow!(e))?;
-
-    let schema = b.build().map_err(|e| anyhow::anyhow!(e))?;
-    emit_schema(&schema, "typescript").map_err(|e| anyhow::anyhow!(e))
+    Ok(vite_code)
 }
 
 /// Generate spec.ncl output with tensor network
