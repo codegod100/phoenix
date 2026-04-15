@@ -1,7 +1,29 @@
-node_modules/
-dist/
-*.tsbuildinfo
+# Ignore generated app files - only keep spec.md
+apps/*/src/
+apps/*/dist/
+apps/*/node_modules/
+apps/*/*.db
+apps/*/package-lock.json
+apps/*/yarn.lock
+apps/*/bun.lockb
+apps/*/tsconfig.json
+apps/*/vite.config.ts
+apps/*/tensor.ncl
+!apps/*/spec.md
+
+# Ignore build artifacts
+target/
+*.rs.bk
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-examples/*/data/
-bun.lockb
-.direnv/
+Thumbs.db
+node_modules/
