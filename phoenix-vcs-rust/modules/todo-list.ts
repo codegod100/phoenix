@@ -10,39 +10,39 @@ export class TodoList extends Elena(HTMLElement) {
   }
   
   _setupListeners() {
-    // Event delegation on the container
-    this.shadowRoot?.addEventListener('click', (e) => {
-      const target = e.target;
-      
-      // Handle checkbox toggle
-      if (target.type === 'checkbox' && target.dataset.id) {
-        e.stopPropagation();
-        this.toggleTodo(parseInt(target.dataset.id));
-      }
-      
-      // Handle delete button
-      if (target.dataset.action === 'delete' && target.dataset.id) {
-        e.stopPropagation();
-        this.deleteTodo(parseInt(target.dataset.id));
-      }
-      
-      // Handle Add button (click or form submit)
-      if (target.type === 'submit' || target.closest('button[type="submit"]')) {
-        e.preventDefault();
-        e.stopPropagation();
-        const input = this.shadowRoot?.querySelector('input[type="text"]');
-        if (input) {
-          this.newTodo = input.value;
-          this.addTodo(e);
-        }
-      }
-    });
+    // Form submit handler using ID
+    const form = this.shadowRoot?.querySelector('#todo-form');
+    const input = this.shadowRoot?.querySelector('#todo-input');
     
-    // Input listener for new todo text
-    const input = this.shadowRoot?.querySelector('input[type="text"]');
-    if (input) {
-      input.addEventListener('input', (e) => {
-        this.newTodo = e.target.value;
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const val = input?.value?.trim();
+        if (val) {
+          this.newTodo = val;
+          this.addTodo(e);
+          if (input) input.value = '';
+        }
+      });
+    }
+    
+    // Event delegation for checkboxes and delete buttons
+    const list = this.shadowRoot?.querySelector('ul');
+    if (list) {
+      list.addEventListener('click', (e) => {
+        const target = e.target;
+        
+        // Handle checkbox toggle
+        if (target.type === 'checkbox' && target.dataset.id) {
+          e.preventDefault();
+          this.toggleTodo(parseInt(target.dataset.id));
+        }
+        
+        // Handle delete button
+        if (target.dataset.action === 'delete' && target.dataset.id) {
+          e.preventDefault();
+          this.deleteTodo(parseInt(target.dataset.id));
+        }
       });
     }
   }
@@ -121,10 +121,10 @@ export class TodoList extends Elena(HTMLElement) {
           </span>
         </h2>
         
-        <form style="display: flex; gap: 0.5rem; margin-bottom: 1rem;" onsubmit="return false;">
+        <form id="todo-form" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
           <input
+            id="todo-input"
             type="text"
-            value="${this.newTodo}"
             placeholder="What needs to be done?"
             style="flex: 1; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none;"
           />
