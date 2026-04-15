@@ -2,9 +2,9 @@
 
 {
   packages = [
-    pkgs.nix
     pkgs.bun
     pkgs.concurrently
+    pkgs.nix
   ];
 
   env = {

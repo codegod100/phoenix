@@ -12,9 +12,10 @@ Full-stack TypeScript application featuring:
 
 ## Server Configuration
 
+- Host: `100.115.154.32` (bind address for all servers)
 - Port: 3000 (API), 5173 (Vite dev server)
 - Runtime: Bun
-- Proxy: `/api` → `http://localhost:3000`
+- Proxy: `/api` → `http://100.115.154.32:3000`
 
 ## API Endpoints
 

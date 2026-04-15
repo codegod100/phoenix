@@ -264,7 +264,8 @@ impl DevenvGenerator {
         // Close brace
         builder = builder.vertex("footer", "Expr", Some("}"))?;
         
-        // Build schema
+        // Build schema (pos tracking for potential future use)
+        let _total_pos = pos;
         let schema = builder.build()?;
         
         // Emit Nix code

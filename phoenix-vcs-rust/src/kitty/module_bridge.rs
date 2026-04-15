@@ -90,14 +90,24 @@ impl KittyModuleParser {
         
         // Step 4: Extract component configs and attach to relevant connections
         let component_configs = Self::extract_component_configs(spec);
-        if !component_configs.is_empty() {
-            // Find the main app/dashboard connection and attach all component configs
+        let server_config = Self::extract_server_config(spec);
+        
+        if !component_configs.is_empty() || !server_config.as_object().map(|o| o.is_empty()).unwrap_or(true) {
+            // Find the main app/dashboard connection and attach all configs
             for conn in &mut connections {
                 // Attach configs to WebComponents connections (frontend-to-framework)
                 if conn.interface == CapabilityInterface::WebComponents 
                     || conn.interface == CapabilityInterface::Custom("DevServer".to_string()) {
                     conn.config = json!({
                         "components": component_configs,
+                        "server": server_config,
+                        "relation": format!("{:?}", conn.relation),
+                    });
+                }
+                // Attach server config to HTTP-related connections
+                if conn.interface == CapabilityInterface::HttpServer {
+                    conn.config = json!({
+                        "server": server_config,
                         "relation": format!("{:?}", conn.relation),
                     });
                 }
@@ -486,6 +496,89 @@ impl KittyModuleParser {
         }
         
         configs
+    }
+    
+    /// Extract server configuration from spec.md
+    /// 
+    /// Parses sections like:
+    /// ## Server Configuration
+    /// - Host: `100.115.154.32` (bind address for all servers)
+    /// - Port: 3000 (API), 5173 (Vite dev server)
+    fn extract_server_config(spec: &str) -> serde_json::Value {
+        let mut config = serde_json::Map::new();
+        let lines: Vec<&str> = spec.lines().collect();
+        
+        let mut in_server_section = false;
+        
+        for line in lines {
+            let trimmed = line.trim();
+            
+            // Detect Server Configuration section
+            if trimmed.to_lowercase().starts_with("## server") {
+                in_server_section = true;
+                continue;
+            }
+            
+            // Exit on next ## section
+            if in_server_section && trimmed.starts_with("## ") && !trimmed.to_lowercase().contains("server") {
+                break;
+            }
+            
+            if !in_server_section {
+                continue;
+            }
+            
+            // Parse Host line
+            if trimmed.to_lowercase().starts_with("- host:") {
+                // Extract value in backticks or plain text
+                if let Some(start) = trimmed.find('`') {
+                    if let Some(end) = trimmed[start+1..].find('`') {
+                        let host = trimmed[start+1..start+1+end].to_string();
+                        config.insert("host".to_string(), json!(host));
+                    }
+                }
+            }
+            
+            // Parse Port line
+            if trimmed.to_lowercase().starts_with("- port:") {
+                // Extract port numbers from format like "3000 (API), 5173 (Vite dev server)"
+                let port_str = trimmed[7..].trim();
+                let mut ports = serde_json::Map::new();
+                
+                // Split by comma and parse each part
+                for part in port_str.split(',') {
+                    let part = part.trim();
+                    // Extract all consecutive digits
+                    let digits: String = part.chars().take_while(|c| c.is_ascii_digit()).collect();
+                    
+                    if let Ok(num) = digits.parse::<u16>() {
+                        let part_lower = part.to_lowercase();
+                        if part_lower.contains("api") {
+                            ports.insert("api".to_string(), json!(num));
+                        } else if part_lower.contains("vite") || part_lower.contains("dev") {
+                            ports.insert("vite".to_string(), json!(num));
+                        }
+                    }
+                }
+                
+                if !ports.is_empty() {
+                    config.insert("ports".to_string(), serde_json::Value::Object(ports));
+                }
+            }
+        }
+        
+        // Set defaults if not found
+        if !config.contains_key("host") {
+            config.insert("host".to_string(), json!("127.0.0.1"));
+        }
+        if !config.contains_key("ports") {
+            let mut default_ports = serde_json::Map::new();
+            default_ports.insert("api".to_string(), json!(3000));
+            default_ports.insert("vite".to_string(), json!(5173));
+            config.insert("ports".to_string(), serde_json::Value::Object(default_ports));
+        }
+        
+        serde_json::Value::Object(config)
     }
     
     /// Extract connections from CCG tree
