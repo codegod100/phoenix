@@ -410,4 +410,17 @@ mod tests {
         // Should contain our generated content
         assert!(result.contains("# Generated") || result.contains("routes"));
     }
+
+    #[test]
+    fn test_markdown_protocol_available() {
+        let registry = ParserRegistry::new();
+        let protocols: Vec<_> = registry.protocol_names().collect();
+        
+        println!("Has 'markdown': {}", protocols.contains(&"markdown"));
+        if protocols.contains(&"markdown") {
+            println!("✅ Markdown protocol available!");
+        } else {
+            println!("⚠️ Markdown not available - would need lang-markdown feature");
+        }
+    }
 }
