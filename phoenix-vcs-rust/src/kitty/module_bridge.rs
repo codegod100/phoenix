@@ -88,17 +88,19 @@ impl KittyModuleParser {
         // Step 3: Extract connections from CCG tree
         let mut connections = Self::extract_connections(&ccg_tree, &modules, spec)?;
         
-        // Step 4: Extract component configs and add to connections
+        // Step 4: Extract component configs and attach to relevant connections
         let component_configs = Self::extract_component_configs(spec);
-        for conn in &mut connections {
-            // If this connection is for a component that has config, add it
-            if let Some(config) = component_configs.get(&conn.consumer) {
-                // Merge the component config into the connection config
-                let merged = json!({
-                    "component": config,
-                    "relation": format!("{:?}", conn.relation),
-                });
-                conn.config = merged;
+        if !component_configs.is_empty() {
+            // Find the main app/dashboard connection and attach all component configs
+            for conn in &mut connections {
+                // Attach configs to WebComponents connections (frontend-to-framework)
+                if conn.interface == CapabilityInterface::WebComponents 
+                    || conn.interface == CapabilityInterface::Custom("DevServer".to_string()) {
+                    conn.config = json!({
+                        "components": component_configs,
+                        "relation": format!("{:?}", conn.relation),
+                    });
+                }
             }
         }
         
