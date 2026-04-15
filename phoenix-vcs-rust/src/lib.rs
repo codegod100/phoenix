@@ -5,6 +5,7 @@ pub mod spec;
 pub mod ncl;
 pub mod ncl_parse;
 pub mod kitty;
+pub mod capability_fulfillment;
 #[cfg(feature = "panproto")]
 pub mod ncl_panproto;
 pub mod pipeline;
