@@ -285,6 +285,82 @@ impl KittyModuleParser {
                 config_schema: serde_json::json!({}),
                 is_infrastructure: true,
             })),
+            
+            // Frontend modules
+            ("vite", Box::new(|| Module {
+                id: "vite-dev-server".to_string(),
+                name: "Vite Dev Server".to_string(),
+                version: "5.0".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::Custom("DevServer".to_string()),
+                    properties: Default::default(),
+                    endpoint: Some("http://localhost:5173".to_string()),
+                    cost_per_hour: Some(0.0),
+                }],
+                needs: vec![
+                    NeededCapability {
+                        interface: CapabilityInterface::HttpServer,
+                        strategy: FulfillmentStrategy::FirstAvailable,
+                        optional: true,
+                        min_capacity: None,
+                    },
+                ],
+                language: "typescript".to_string(),
+                source: ModuleSource::Registry { 
+                    name: "npm/vite".to_string(), 
+                    version: "^5.0.0".to_string(),
+                },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: false,
+            })),
+            
+            ("elena", Box::new(|| Module {
+                id: "elenajs".to_string(),
+                name: "ElenaJS".to_string(),
+                version: "0.1.0".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::WebComponents,
+                    properties: Default::default(),
+                    endpoint: None,
+                    cost_per_hour: None,
+                }],
+                needs: vec![
+                    NeededCapability {
+                        interface: CapabilityInterface::Custom("DevServer".to_string()),
+                        strategy: FulfillmentStrategy::FirstAvailable,
+                        optional: true,
+                        min_capacity: None,
+                    },
+                ],
+                language: "typescript".to_string(),
+                source: ModuleSource::Registry { 
+                    name: "npm/elenajs".to_string(), 
+                    version: "^0.1.0".to_string(),
+                },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: false,
+            })),
+            
+            // Runtime
+            ("bun", Box::new(|| Module {
+                id: "bun-runtime".to_string(),
+                name: "Bun Runtime".to_string(),
+                version: "1.0".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::Custom("JavaScriptRuntime".to_string()),
+                    properties: Default::default(),
+                    endpoint: None,
+                    cost_per_hour: None,
+                }],
+                needs: vec![],
+                language: "nix".to_string(),
+                source: ModuleSource::Registry { 
+                    name: "nixpkgs/bun".to_string(), 
+                    version: "1.0".to_string(),
+                },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: true,
+            })),
         ];
         
         // Find all mentioned modules
@@ -571,5 +647,100 @@ Uses Hono server with Postgres database.
         
         assert!(desc.contains("Hono Server") || desc.contains("hono-server"), "Missing hono in description");
         assert!(desc.contains("PostgreSQL") || desc.contains("postgres"), "Missing postgres in description");
+    }
+    
+    /// Integration test: Elena Dashboard full composition
+    #[test]
+    fn test_elena_dashboard_composition() {
+        let spec = r#"
+# Elena Dashboard
+
+A modern dashboard application built with ElenaJS web components and Hono backend.
+
+## Overview
+
+Full-stack TypeScript application featuring:
+- **Frontend**: ElenaJS reactive web components
+- **Backend**: Hono HTTP server with Bun runtime
+- **API**: REST endpoints for data fetching
+- **Styling**: CSS-in-component with beautiful gradients
+
+## Server Configuration
+
+- Port: 3000 (API), 5173 (Vite dev server)
+- Runtime: Bun
+- Proxy: `/api` → `http://localhost:3000`
+
+## API Endpoints
+
+### Health Check
+- **GET** `/api/health` - Server status
+
+### Users API
+- **GET** `/api/users` - List all users
+
+### Todos API
+- **GET** `/api/todos` - List all todos
+- **POST** `/api/todos` - Create new todo
+
+## Components
+
+### WelcomeCard
+Hero section with gradient background.
+
+### TodoList
+Interactive todo management with API integration.
+
+### UserCard
+User profile display with avatar initials.
+
+## ElenaApp
+Main application container component.
+
+## Development
+
+```bash
+bun run dev
+```
+
+## Template
+template = "elena"
+"#;
+        
+        // Step 1: Parse the spec
+        let parsed = KittyModuleParser::parse(spec).expect("Failed to parse Elena spec");
+        
+        // Should detect multiple modules
+        let module_names: Vec<_> = parsed.modules.iter().map(|m| m.id.clone()).collect();
+        println!("Detected modules: {:?}", module_names);
+        
+        assert!(module_names.contains(&"hono-server".to_string()), "Missing hono-server");
+        assert!(module_names.contains(&"elenajs".to_string()), "Missing elenajs");
+        assert!(module_names.contains(&"bun-runtime".to_string()), "Missing bun-runtime");
+        assert!(module_names.contains(&"vite-dev-server".to_string()), "Missing vite-dev-server");
+        
+        // Step 2: Build tensor network
+        let network = KittyModuleParser::to_tensor_network(&parsed);
+        assert_eq!(network.module_boxes.len(), 4, "Expected 4 modules");
+        
+        // Step 3: Validate
+        assert!(network.is_valid(), "Network should be valid");
+        
+        // Step 4: Contract to find connected components
+        let contracted = network.contract().expect("Contraction failed");
+        
+        // Should have connected components
+        println!("Connected components: {:?}", contracted.components);
+        assert!(!contracted.components.is_empty(), "Should have at least one component");
+        
+        // Step 5: Generate deployment
+        let deployment = generate_from_spec(spec).expect("Deployment generation failed");
+        assert!(deployment.contains("hono-server"), "Deployment missing hono-server");
+        assert!(deployment.contains("elenajs"), "Deployment missing elenajs");
+        
+        println!("✅ Elena Dashboard tensor network test passed!");
+        println!("   Modules: {:?}", module_names);
+        println!("   Components: {} connected groups", contracted.components.len());
+        println!("   Free interfaces: {:?}", contracted.free_interfaces);
     }
 }
