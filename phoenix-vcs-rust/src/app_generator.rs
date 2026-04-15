@@ -36,10 +36,10 @@ pub async fn generate_app(
     fs::write(output_dir.join("vite.config.ts"), vite_code).await?;
     println!("✅ Generated: vite.config.ts");
 
-    // Generate spec.ncl output
-    let spec_ncl = generate_spec_ncl(output_dir, server_config, component_names)?;
-    fs::write(output_dir.join("spec.ncl"), spec_ncl).await?;
-    println!("✅ Generated: spec.ncl");
+    // Generate tensor.ncl output
+    let tensor_ncl = generate_tensor_ncl(output_dir, server_config, component_names)?;
+    fs::write(output_dir.join("tensor.ncl"), tensor_ncl).await?;
+    println!("✅ Generated: tensor.ncl");
 
     Ok(())
 }
@@ -245,8 +245,8 @@ fn generate_vite_config(config: &ServerConfig) -> anyhow::Result<String> {
     Ok(vite_code)
 }
 
-/// Generate spec.ncl output
-fn generate_spec_ncl(
+/// Generate tensor.ncl output
+fn generate_tensor_ncl(
     output_dir: &Path,
     config: &ServerConfig,
     component_names: &[String]
