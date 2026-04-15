@@ -129,11 +129,11 @@ async fn generate_elena_app(_network: &phoenix_vcs::kitty::module_tensor_network
         "typescript",
         vec![
             "ImportDecl".to_string(),
-            "FunctionDecl".to_string(),
+            "VarDecl".to_string(),
             "RouteHandler".to_string(),
-            "ObjectExpr".to_string(),
-            "StringLit".to_string(),
-            "NumberLit".to_string(),
+            "ExprStmt".to_string(),
+            "ClassDecl".to_string(),
+            "ExportDefault".to_string(),
         ],
         vec![], // edge rules
     );
