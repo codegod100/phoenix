@@ -62,6 +62,8 @@ pub mod integration;
 // Capability-focused parsers (categorical/DisCoCat approach)
 pub mod capability_parser;
 pub mod categorical_capability;
+pub mod module_tensor_network;
+pub mod module_bridge;
 
 // Re-exports for convenient access
 pub use types::PregroupType;

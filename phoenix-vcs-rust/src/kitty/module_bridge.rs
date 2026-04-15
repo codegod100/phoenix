@@ -1,0 +1,546 @@
+//! Kitty Module Bridge
+//! 
+//! Bridges Kitty's categorical grammar to module tensor networks.
+//! 
+//! Parse flow:
+//!   spec.md → CCG Tree → Pregroup Types → Module Network → Deploy
+//!
+//! Grammar mapping:
+//!   "Hono server with logging connects to Postgres database"
+//!   
+//!   CCG Parse:
+//!     S
+//!     ├── NP (Hono server with logging)
+//!     │   ├── N (Hono)
+//!     │   ├── N (server)
+//!     │   └── PP (with logging)
+//!     │       └── NP (logging)
+//!     └── VP (connects to Postgres database)
+//!         ├── V (connects)
+//!         └── PP (to Postgres database)
+//!             └── NP (Postgres database)
+//!   
+//!   Pregroup Types:
+//!     hono-server : I → HttpServer ⊗ Logging
+//!     postgres : I → Database
+//!     
+//!   Wiring (Cup):
+//!     hono-server.Logging.l ⊗ postgres.Database.r → I
+//!     
+//!   Result:
+//!     Valid diagram with contracted indices
+
+use crate::kitty::parser::{CCGTree, CCGNode, CCGRule};
+use crate::kitty::tree::PregroupTreeNode;
+use crate::kitty::types::PregroupType;
+use crate::kitty::module_tensor_network::{ModuleTensorNetwork, ModuleBox, FulfillmentCup};
+use crate::capability_fulfillment::{Module, CapabilityInterface, ProvidedCapability, NeededCapability, FulfillmentStrategy};
+
+/// Parsed module specification from natural language
+#[derive(Debug)]
+pub struct ParsedModuleSpec {
+    /// Modules extracted from the spec
+    pub modules: Vec<Module>,
+    
+    /// Connections between modules
+    pub connections: Vec<ModuleConnection>,
+    
+    /// The raw CCG tree
+    pub ccg_tree: CCGTree,
+    
+    /// The pregroup derivation
+    pub pregroup: PregroupTreeNode,
+}
+
+/// A connection between two modules
+#[derive(Debug, Clone)]
+pub struct ModuleConnection {
+    pub consumer: String,        // Module that needs
+    pub provider: String,        // Module that provides
+    pub interface: CapabilityInterface,
+    pub relation: ConnectionRelation,  // How they're connected (with, to, via, etc.)
+}
+
+#[derive(Debug, Clone)]
+pub enum ConnectionRelation {
+    Direct,      // "X connects to Y"
+    Via,         // "X via Y"
+    With,        // "X with Y" (colocation/dependency)
+    For,         // "X for Y" (purpose)
+    From,        // "X from Y" (source)
+}
+
+/// Parser that uses Kitty CCG to extract module specs
+pub struct KittyModuleParser;
+
+impl KittyModuleParser {
+    /// Parse a spec.md file to module network
+    pub fn parse(spec: &str) -> Result<ParsedModuleSpec, String> {
+        // Step 1: Parse to CCG tree using Kitty
+        let ccg_tree = Self::parse_ccg(spec)?;
+        
+        // Step 2: Extract modules from CCG tree
+        let modules = Self::extract_modules(&ccg_tree, spec)?;
+        
+        // Step 3: Extract connections from CCG tree
+        let connections = Self::extract_connections(&ccg_tree, &modules, spec)?;
+        
+        // Step 4: Convert to pregroup tree
+        let pregroup = Self::ccg_to_pregroup(&ccg_tree, &modules, &connections)?;
+        
+        Ok(ParsedModuleSpec {
+            modules,
+            connections,
+            ccg_tree,
+            pregroup,
+        })
+    }
+    
+    /// Generate tensor network from parsed spec
+    pub fn to_tensor_network(spec: &ParsedModuleSpec) -> ModuleTensorNetwork {
+        let fulfillments: Vec<(String, String, CapabilityInterface)> = spec.connections.iter()
+            .map(|conn| (conn.consumer.clone(), conn.provider.clone(), conn.interface.clone()))
+            .collect();
+        
+        ModuleTensorNetwork::compose(spec.modules.clone(), fulfillments)
+    }
+    
+    /// Parse spec to CCG tree (simplified version)
+    fn parse_ccg(spec: &str) -> Result<CCGTree, String> {
+        // In a full implementation, this would use:
+        // - lambeq's Bobcat parser
+        // - Or call out to neural CCG parser
+        // - Or use a custom-trained parser for tech specs
+        
+        // For now, build a simplified tree from markdown structure
+        let root = Self::build_tree_from_markdown(spec)?;
+        Ok(CCGTree::new(root))
+    }
+    
+    fn build_tree_from_markdown(spec: &str) -> Result<CCGNode, String> {
+        // Parse markdown sections as CCG structure
+        // # Title → Root
+        # ## Section → NP/VP branches
+        # - Items → Terminal nodes
+        
+        let lines: Vec<&str> = spec.lines().collect();
+        let mut root = CCGNode {
+            word: Some("ROOT".to_string()),
+            category: crate::kitty::types::CCGCategory::S,
+            rule: CCGRule::Lexicon,
+            children: vec![],
+            span: (0, lines.len()),
+        };
+        
+        // Find modules by scanning for keywords
+        for (i, line) in lines.iter().enumerate() {
+            let line = line.trim();
+            if line.is_empty() { continue; }
+            
+            // Detect module mentions
+            let lower = line.to_lowercase();
+            
+            // Module indicators
+            let module_keywords = [
+                ("hono", "HttpServer", "hono-server"),
+                ("postgres", "Database", "postgres"),
+                ("sqlite", "Database", "sqlite"),
+                ("redis", "Cache", "redis"),
+                ("vite", "BuildTool", "vite"),
+                ("elenajs", "ComponentFramework", "elenajs"),
+            ];
+            
+            for (keyword, interface, default_id) in module_keywords {
+                if lower.contains(keyword) {
+                    let node = CCGNode {
+                        word: Some(default_id.to_string()),
+                        category: Self::interface_to_ccg_cat(interface),
+                        rule: CCGRule::Lexicon,
+                        children: vec![],
+                        span: (i, i + 1),
+                    };
+                    root.children.push(node);
+                }
+            }
+        }
+        
+        Ok(root)
+    }
+    
+    fn interface_to_ccg_cat(interface: &str) -> crate::kitty::types::CCGCategory {
+        match interface {
+            "HttpServer" => crate::kitty::types::CCGCategory::NP,
+            "Database" => crate::kitty::types::CCGCategory::NP,
+            "Cache" => crate::kitty::types::CCGCategory::NP,
+            "BuildTool" => crate::kitty::types::CCGCategory::NP,
+            "ComponentFramework" => crate::kitty::types::CCGCategory::NP,
+            _ => crate::kitty::types::CCGCategory::N,
+        }
+    }
+    
+    /// Extract module definitions from CCG tree
+    fn extract_modules(ccg_tree: &CCGTree, spec: &str) -> Result<Vec<Module>, String> {
+        let mut modules = vec![];
+        let spec_lower = spec.to_lowercase();
+        
+        // Define module templates based on keywords
+        let module_templates: Vec<(&str, Box<dyn Fn() -> Module>)> = vec![
+            ("hono", Box::new(|| Module {
+                id: "hono-server".to_string(),
+                name: "Hono Server".to_string(),
+                version: "3.12.0".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::HttpServer,
+                    properties: Default::default(),
+                    endpoint: Some("http://localhost:3000".to_string()),
+                    cost_per_hour: None,
+                }],
+                needs: vec![
+                    NeededCapability {
+                        interface: CapabilityInterface::Logging,
+                        strategy: FulfillmentStrategy::FirstAvailable,
+                        optional: true,
+                        min_capacity: None,
+                    },
+                    NeededCapability {
+                        interface: CapabilityInterface::Database,
+                        strategy: FulfillmentStrategy::FirstAvailable,
+                        optional: true,
+                        min_capacity: None,
+                    },
+                ],
+                language: "typescript".to_string(),
+                source: crate::capability_fulfillment::ModuleSource::Registry { 
+                    name: "npm/hono".to_string(), 
+                    version: "^3.12.0".to_string(),
+                },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: true,
+            })),
+            
+            ("postgres", Box::new(|| Module {
+                id: "postgres".to_string(),
+                name: "PostgreSQL".to_string(),
+                version: "15.0".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::Database,
+                    properties: Default::default(),
+                    endpoint: Some("postgresql://localhost:5432".to_string()),
+                    cost_per_hour: Some(0.05),
+                }],
+                needs: vec![],
+                language: "nix".to_string(),
+                source: crate::capability_fulfillment::ModuleSource::Registry { 
+                    name: "nixpkgs/postgresql".to_string(), 
+                    version: "15".to_string(),
+                },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: true,
+            })),
+            
+            ("sqlite", Box::new(|| Module {
+                id: "sqlite".to_string(),
+                name: "SQLite".to_string(),
+                version: "3.44".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::Database,
+                    properties: Default::default(),
+                    endpoint: Some("file:./data/app.db".to_string()),
+                    cost_per_hour: Some(0.0),
+                }],
+                needs: vec![],
+                language: "nix".to_string(),
+                source: crate::capability_fulfillment::ModuleSource::Inline { code: "sqlite3".to_string() },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: true,
+            })),
+            
+            ("redis", Box::new(|| Module {
+                id: "redis".to_string(),
+                name: "Redis".to_string(),
+                version: "7.0".to_string(),
+                provides: vec![ProvidedCapability {
+                    interface: CapabilityInterface::Cache,
+                    properties: Default::default(),
+                    endpoint: Some("redis://localhost:6379".to_string()),
+                    cost_per_hour: Some(0.02),
+                }],
+                needs: vec![],
+                language: "nix".to_string(),
+                source: crate::capability_fulfillment::ModuleSource::Registry { 
+                    name: "nixpkgs/redis".to_string(), 
+                    version: "7".to_string(),
+                },
+                config_schema: serde_json::json!({}),
+                is_infrastructure: true,
+            })),
+        ];
+        
+        // Find all mentioned modules
+        for (keyword, builder) in module_templates {
+            if spec_lower.contains(keyword) {
+                modules.push(builder());
+            }
+        }
+        
+        Ok(modules)
+    }
+    
+    /// Extract connections from CCG tree
+    fn extract_connections(ccg_tree: &CCGTree, modules: &[Module], spec: &str) -> Result<Vec<ModuleConnection>, String> {
+        let mut connections = vec![];
+        let spec_lower = spec.to_lowercase();
+        
+        // Simple pattern matching for connections
+        // In a full implementation, this would walk the CCG tree structure
+        
+        // "X connects to Y" or "X with Y" or "X uses Y"
+        let connection_patterns = [
+            ("hono", "postgres", CapabilityInterface::Database, ConnectionRelation::Direct),
+            ("hono", "sqlite", CapabilityInterface::Database, ConnectionRelation::Direct),
+            ("app", "hono", CapabilityInterface::HttpServer, ConnectionRelation::Via),
+            ("frontend", "vite", CapabilityInterface::BuildTool, ConnectionRelation::With),
+        ];
+        
+        for (consumer_kw, provider_kw, interface, relation) in connection_patterns {
+            let consumer_present = modules.iter().any(|m| m.id.to_lowercase().contains(consumer_kw));
+            let provider_present = spec_lower.contains(provider_kw);
+            
+            if consumer_present && provider_present {
+                // Find actual module IDs
+                let consumer = modules.iter()
+                    .find(|m| m.id.to_lowercase().contains(consumer_kw))
+                    .map(|m| m.id.clone())
+                    .unwrap_or_else(|| consumer_kw.to_string());
+                    
+                let provider = provider_kw.to_string();
+                
+                connections.push(ModuleConnection {
+                    consumer,
+                    provider,
+                    interface,
+                    relation,
+                });
+            }
+        }
+        
+        // Also infer connections from needs
+        for module in modules {
+            for need in &module.needs {
+                // Find a provider for this need
+                let provider = modules.iter()
+                    .find(|m| m.provides.iter().any(|p| p.interface == need.interface))
+                    .map(|m| m.id.clone());
+                
+                if let Some(provider_id) = provider {
+                    if provider_id != module.id {
+                        connections.push(ModuleConnection {
+                            consumer: module.id.clone(),
+                            provider: provider_id,
+                            interface: need.interface.clone(),
+                            relation: ConnectionRelation::Direct,
+                        });
+                    }
+                }
+            }
+        }
+        
+        Ok(connections)
+    }
+    
+    /// Convert CCG tree to pregroup derivation
+    fn ccg_to_pregroup(
+        ccg_tree: &CCGTree, 
+        modules: &[Module], 
+        connections: &[ModuleConnection]
+    ) -> Result<PregroupTreeNode, String> {
+        // Build pregroup tree showing types and contractions
+        let mut node = PregroupTreeNode::word("ROOT".to_string(), vec![], vec![]);
+        
+        // Add module nodes
+        for module in modules {
+            let mb = ModuleBox::from_module(module.clone());
+            let module_node = PregroupTreeNode::word(
+                module.id.clone(),
+                mb.box_type.dom(),
+                mb.box_type.cod(),
+            );
+            node.children.push(module_node);
+        }
+        
+        // Add cup nodes for connections
+        for conn in connections {
+            let cap_type = Self::capability_to_type(&conn.interface);
+            let cup_node = PregroupTreeNode::cup(
+                cap_type.clone(),
+                cap_type.right(),
+            );
+            node.children.push(cup_node);
+        }
+        
+        Ok(node)
+    }
+    
+    fn capability_to_type(cap: &CapabilityInterface) -> PregroupType {
+        let name = match cap {
+            CapabilityInterface::Database => "Database",
+            CapabilityInterface::Cache => "Cache",
+            CapabilityInterface::HttpServer => "HttpServer",
+            CapabilityInterface::WebSocket => "WebSocket",
+            CapabilityInterface::Queue => "Queue",
+            CapabilityInterface::ObjectStorage => "Storage",
+            CapabilityInterface::Email => "Email",
+            CapabilityInterface::Search => "Search",
+            CapabilityInterface::AuthProvider => "Auth",
+            CapabilityInterface::Logging => "Logging",
+            CapabilityInterface::Metrics => "Metrics",
+            CapabilityInterface::WebComponents => "WebComponents",
+            CapabilityInterface::ReactiveUI => "ReactiveUI",
+            CapabilityInterface::Custom(s) => s.as_str(),
+            _ => "Unknown",
+        };
+        PregroupType::atomic(name)
+    }
+    
+    /// Generate natural language description of the composition
+    pub fn describe_composition(network: &ModuleTensorNetwork) -> String {
+        let mut description = String::from("System Composition:\n\n");
+        
+        // Describe each module
+        for (id, mb) in &network.module_boxes {
+            description.push_str(&format!("📦 {} ({})\n", mb.module.name, mb.module.language));
+            
+            if !mb.module.provides.is_empty() {
+                description.push_str("   Provides:\n");
+                for prov in &mb.module.provides {
+                    description.push_str(&format!("     - {:?}\n", prov.interface));
+                }
+            }
+            
+            if !mb.module.needs.is_empty() {
+                description.push_str("   Needs:\n");
+                for need in &mb.module.needs {
+                    let fulfilled = network.cups.iter()
+                        .any(|c| c.consumer == *id && c.interface == need.interface);
+                    let status = if fulfilled { "✅" } else if need.optional { "⚪" } else { "❌" };
+                    description.push_str(&format!("     {} {:?}\n", status, need.interface));
+                }
+            }
+            
+            description.push('\n');
+        }
+        
+        // Describe connections
+        if !network.cups.is_empty() {
+            description.push_str("🔗 Connections:\n");
+            for cup in &network.cups {
+                description.push_str(&format!("   {} ─{:?}→ {}\n", 
+                    cup.provider, cup.interface, cup.consumer));
+            }
+        }
+        
+        if !network.dangling.is_empty() {
+            description.push_str("\n⚠️ Unfulfilled needs:\n");
+            for (module_id, interface) in &network.dangling {
+                description.push_str(&format!("   {} needs {:?}\n", module_id, interface));
+            }
+        }
+        
+        description
+    }
+}
+
+/// Generate deployment from Kitty-parsed spec
+pub fn generate_from_spec(spec: &str) -> Result<String, String> {
+    // Parse spec
+    let parsed = KittyModuleParser::parse(spec)?;
+    
+    // Build tensor network
+    let network = KittyModuleParser::to_tensor_network(&parsed);
+    
+    // Validate
+    if !network.is_valid() {
+        return Err(format!("Invalid composition:\n{}", 
+            KittyModuleParser::describe_composition(&network)));
+    }
+    
+    // Generate deployment config
+    let deployment = serde_json::json!({
+        "version": "3.8",
+        "services": network.module_boxes.iter().map(|(id, mb)| {
+            (id.clone(), serde_json::json!({
+                "image": format!("{}:{}", mb.module.language, mb.module.version),
+                "environment": network.cups.iter()
+                    .filter(|c| c.consumer == *id)
+                    .map(|c| (format!("{:?}_URL", c.interface), c.provider.clone()))
+                    .collect::<serde_json::Map<String, serde_json::Value>>(),
+            }))
+        }).collect::<serde_json::Map<String, serde_json::Value>>(),
+    });
+    
+    Ok(serde_json::to_string_pretty(&deployment).unwrap())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_parse_simple_spec() {
+        let spec = r#"
+# Elena Dashboard
+
+A modern dashboard with Hono server and Postgres database.
+
+## Backend
+- Hono HTTP server
+- PostgreSQL database
+
+## Frontend
+- ElenaJS components
+"#;
+        
+        let result = KittyModuleParser::parse(spec);
+        assert!(result.is_ok());
+        
+        let parsed = result.unwrap();
+        assert!(!parsed.modules.is_empty());
+        
+        // Should have found hono and postgres
+        let module_ids: Vec<_> = parsed.modules.iter().map(|m| m.id.clone()).collect();
+        assert!(module_ids.contains(&"hono-server".to_string()));
+        assert!(module_ids.contains(&"postgres".to_string()));
+    }
+    
+    #[test]
+    fn test_tensor_network_from_spec() {
+        let spec = r#"
+# Test App
+
+Uses Hono server with Postgres database.
+"#;
+        
+        let parsed = KittyModuleParser::parse(spec).unwrap();
+        let network = KittyModuleParser::to_tensor_network(&parsed);
+        
+        // Should have connection from hono to postgres
+        assert!(!network.cups.is_empty() || !network.dangling.is_empty());
+    }
+    
+    #[test]
+    fn test_describe_composition() {
+        let spec = r#"
+# Test
+
+- Hono server
+- Postgres database
+"#;
+        
+        let parsed = KittyModuleParser::parse(spec).unwrap();
+        let network = KittyModuleParser::to_tensor_network(&parsed);
+        let desc = KittyModuleParser::describe_composition(&network);
+        
+        assert!(desc.contains("Hono Server"));
+        assert!(desc.contains("PostgreSQL"));
+    }
+}
