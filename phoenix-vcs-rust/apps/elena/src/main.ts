@@ -213,7 +213,7 @@ export class ElenaApp extends Elena(HTMLElement) {
       <div style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
         <h1 style="color: #333; margin-bottom: 2rem;">Elena Dashboard</h1>
         <welcome-card title="Welcome" message="Elena Dashboard with SQLite persistence"></welcome-card>
-        <user-card name="John Doe" email="john@example.com"></user-card>
+        <user-card name="Elsa Snow" email="elsa@example.com"></user-card>
         <todo-list></todo-list>
       </div>
     `;
