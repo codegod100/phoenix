@@ -113,12 +113,16 @@ async fn main() -> anyhow::Result<()> {
     let output_dir = args.output.unwrap_or_else(|| args.path.clone());
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     
+    // Generate Mermaid diagram from tensor network
+    let mermaid = network.diagram.to_mermaid();
+    
     if let Err(e) = phoenix_vcs::app_generator::generate_app(
         &project_root,
         &output_dir,
         &parsed,
         &server_config,
         &component_names,
+        &mermaid,
     ).await {
         eprintln!("\n❌ Generation failed: {}", e);
         std::process::exit(1);

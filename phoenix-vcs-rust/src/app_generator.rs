@@ -15,6 +15,7 @@ pub async fn generate_app(
     _parsed: &ParsedModuleSpec,
     server_config: &ServerConfig,
     component_names: &[String],
+    mermaid: &str,
 ) -> anyhow::Result<()> {
     use tokio::fs;
 
@@ -37,7 +38,7 @@ pub async fn generate_app(
     println!("✅ Generated: vite.config.ts");
 
     // Generate tensor.ncl output
-    let tensor_ncl = generate_tensor_ncl(output_dir, server_config, component_names)?;
+    let tensor_ncl = generate_tensor_ncl(output_dir, server_config, component_names, mermaid)?;
     fs::write(output_dir.join("tensor.ncl"), tensor_ncl).await?;
     println!("✅ Generated: tensor.ncl");
 
@@ -249,7 +250,8 @@ fn generate_vite_config(config: &ServerConfig) -> anyhow::Result<String> {
 fn generate_tensor_ncl(
     output_dir: &Path,
     config: &ServerConfig,
-    component_names: &[String]
+    component_names: &[String],
+    mermaid: &str,
 ) -> anyhow::Result<String> {
     let name = output_dir.file_name()
         .and_then(|n| n.to_str())
@@ -261,10 +263,11 @@ fn generate_tensor_ncl(
         .collect::<Vec<_>>()
         .join(", ");
 
-    // Generate valid Nickel syntax
+    // Generate valid Nickel syntax with multiline mermaid string
     let spec = format!(
-        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}]\n}}\n",
-        id, name, config.host, config.api_port, config.vite_port, components_str
+        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # Mermaid Diagram (from tensor network)\n  mermaid = m%''{}'%\n}}\n",
+        id, name, config.host, config.api_port, config.vite_port, components_str,
+        mermaid,
     );
 
     Ok(spec)
