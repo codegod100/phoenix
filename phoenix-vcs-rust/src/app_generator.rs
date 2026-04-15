@@ -67,7 +67,7 @@ fn generate_server_from_ncl(
     project_root: &Path,
     config: &ServerConfig
 ) -> anyhow::Result<String> {
-    let ncl_path = project_root.join("modules/hono-server/module.ncl");
+    let ncl_path = project_root.join("modules/hono-server.ncl");
     let module = NclCodeModule::from_ncl_file(&ncl_path)
         .map_err(|e| anyhow::anyhow!("Failed to load {}: {}", ncl_path.display(), e))?;
     
@@ -89,25 +89,15 @@ fn generate_server_from_ncl(
 
 /// Load component module from NCL or return error
 async fn load_component_module(project_root: &Path, name: &str) -> anyhow::Result<NclCodeModule> {
-    // Try kebab-case path first: modules/todo-list/module.ncl
-    let kebab_path = project_root.join("modules").join(name).join("module.ncl");
-    if kebab_path.exists() {
-        return NclCodeModule::from_ncl_file(&kebab_path)
-            .map_err(|e| anyhow::anyhow!("Failed to load {}: {}", kebab_path.display(), e));
+    // Flat structure: modules/{name}.ncl
+    let ncl_path = project_root.join("modules").join(format!("{}.ncl", name));
+    if ncl_path.exists() {
+        return NclCodeModule::from_ncl_file(&ncl_path)
+            .map_err(|e| anyhow::anyhow!("Failed to load {}: {}", ncl_path.display(), e));
     }
     
-    // Try camelCase: modules/todoList/module.ncl
-    let camel = name.split('-').enumerate().map(|(i, part)| {
-        if i == 0 { part.to_string() } else { capitalize(part) }
-    }).collect::<String>();
-    let camel_path = project_root.join("modules").join(&camel).join("module.ncl");
-    if camel_path.exists() {
-        return NclCodeModule::from_ncl_file(&camel_path)
-            .map_err(|e| anyhow::anyhow!("Failed to load {}: {}", camel_path.display(), e));
-    }
-    
-    anyhow::bail!("No NCL module found for component '{}' (tried: {}, {})", 
-        name, kebab_path.display(), camel_path.display())
+    anyhow::bail!("No NCL module found for component '{}' (tried: {})", 
+        name, ncl_path.display())
 }
 
 fn capitalize(s: &str) -> String {
