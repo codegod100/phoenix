@@ -257,6 +257,11 @@ impl Diagram {
         Self { layers: vec![] }
     }
 
+    /// Create diagram from layers (for advanced composition)
+    pub fn from_layers(layers: Vec<Layer>) -> Self {
+        Self { layers }
+    }
+
     /// Create diagram from a single box
     pub fn from_box(box_: Box) -> Self {
         let dom = box_.dom();

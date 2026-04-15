@@ -54,6 +54,7 @@ pub mod diagram;
 pub mod tree;
 pub mod parser;
 pub mod schema;
+pub mod tensor_contract;
 pub mod integration;
 
 // Re-exports for convenient access
@@ -62,6 +63,7 @@ pub use diagram::{Diagram, Layer, Box};
 pub use tree::PregroupTreeNode;
 pub use parser::{CCGType, CCGTree, SimpleCCGParser, NLAPIParser};
 pub use schema::{DiagramSchema, DiagramValidator, ValidationResult, DiagramSchemaExt};
+pub use tensor_contract::{TensorContractor, SolvedSpec, TensorContractExt, TensorView};
 pub use integration::{KittyBridge, APISpecBuilder};
 
 /// Version information
@@ -79,6 +81,8 @@ pub mod prelude {
         APISpecBuilder,
         DiagramSchema,
         DiagramSchemaExt,
+        TensorContractExt,
+        TensorContractor,
     };
     pub use super::types::api_types;
     pub use super::integration::utils;
