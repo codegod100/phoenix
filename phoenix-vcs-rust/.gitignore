@@ -24,3 +24,17 @@ counter_component_*.py
 task_component_*.py
 *_emitted.*
 *_generated.*
+
+# Devenv
+devenv.lock
+.devenv*
+*.devenv*
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml

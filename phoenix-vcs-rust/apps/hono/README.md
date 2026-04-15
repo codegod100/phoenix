@@ -1,4 +1,4 @@
-# Hono API Server
+# hono-api-server
 
 A fast, lightweight REST API server built with Hono and TypeScript. Designed for edge deployment with Bun runtime.",
 

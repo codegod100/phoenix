@@ -1,147 +1,65 @@
 {
   id = "dev.phoenix.hono-api-server",
   description = "A fast, lightweight REST API server built with Hono and TypeScript. Designed for edge deployment with Bun runtime.",
-  theory = "HonoAPI",
-  
+  theory = "TypescriptHonoServer",
+
+  # Template selection
+  template = "ts-hono",
+  build_type = "typescript",
+
+  # Sorts - domain types
   sorts = [
-    { name = "ThPackageJson", kind = { type = "structural" } },
-    { name = "ThTsConfig", kind = { type = "structural" } },
-    { name = "ThNix", kind = { type = "structural" } },
-    { name = "ThDockerfile", kind = { type = "structural" } },
-    { name = "ThServer", kind = { type = "structural" } },
-    { name = "ThRoutes", kind = { type = "structural" } },
-    { name = "ThMiddleware", kind = { type = "structural" } },
-    { name = "ThMiddlewareStack", kind = { type = "structural" } },
-    { name = "ThCORSConfig", kind = { type = "structural" } },
-    { name = "ThREADME", kind = { type = "structural" } },
-    { name = "ThEnvVars", kind = { type = "structural" } },
-    { name = "ThIntegratedApp", kind = { type = "structural" } },
-    { name = "ThUserModel", kind = { type = "structural" } },
-    { name = "ThItemModel", kind = { type = "structural" } },
-    
-    { name = "ProjectName", kind = { type = "val", value_kind = "string" } },
-    { name = "ProjectDescription", kind = { type = "val", value_kind = "string" } },
-    { name = "Port", kind = { type = "val", value_kind = "integer" } },
-    { name = "Host", kind = { type = "val", value_kind = "string" } },
-    { name = "Runtime", kind = { type = "val", value_kind = "string" } },
-    
-    { name = "Route", kind = { type = "structural" } },
-    { name = "RouteTable", kind = { type = "structural" } },
-    
-    { name = "GET", kind = { type = "structural" } },
-    { name = "POST", kind = { type = "structural" } },
-    { name = "PUT", kind = { type = "structural" } },
-    { name = "DELETE", kind = { type = "structural" } },
-    
-    { name = "HealthRoute", kind = { type = "structural" } },
-    { name = "ListRoute", kind = { type = "structural" } },
-    { name = "GetRoute", kind = { type = "structural" } },
-    { name = "CreateRoute", kind = { type = "structural" } },
-    { name = "UpdateRoute", kind = { type = "structural" } },
-    { name = "DeleteRoute", kind = { type = "structural" } },
-    
-    { name = "Logger", kind = { type = "structural" } },
-    { name = "CORS", kind = { type = "structural" } },
-    { name = "RateLimit", kind = { type = "structural" } },
-    
-    { name = "String", kind = { type = "structural" } },
-    { name = "Number", kind = { type = "structural" } },
-    { name = "Bool", kind = { type = "structural" } },
-    { name = "Array", kind = { type = "structural" } },
-    
-    { name = "User", kind = { type = "structural" } },
-    { name = "Item", kind = { type = "structural" } },
-    
-    { name = "JSON", kind = { type = "structural" } },
-    { name = "Nix", kind = { type = "structural" } },
-    { name = "TypeScript", kind = { type = "structural" } },
-    { name = "Markdown", kind = { type = "structural" } },
+    { name = "ThPackageJson", kind = {{ type = "structural" }} },
+    { name = "ThApp", kind = {{ type = "structural" }} },
+    { name = "ThNix", kind = {{ type = "structural" }} },
+    { name = "ThREADME", kind = {{ type = "structural" }} },
+    { name = "ThIntegratedApp", kind = {{ type = "structural" }} },
+
+    { name = "ProjectName", kind = {{ type = "val", value_kind = "string" }} },
+    { name = "ProjectDescription", kind = {{ type = "val", value_kind = "string" }} },
+    { name = "Port", kind = {{ type = "val", value_kind = "integer" }} },
+    { name = "Host", kind = {{ type = "val", value_kind = "string" }} },
+
+    { name = "RouteTable", kind = {{ type = "structural" }} },
+    { name = "ModelDef", kind = {{ type = "structural" }} },
+
+    # HTTP Methods
+    { name = "GET", kind = {{ type = "structural" }} },
+    { name = "POST", kind = {{ type = "structural" }} },
+    { name = "PUT", kind = {{ type = "structural" }} },
+    { name = "DELETE", kind = {{ type = "structural" }} },
   ],
-  
+
+  # Operations - constructors
   ops = [
-    { name = "generate_package_json", inputs = [{ name = "name", sort = "ProjectName" }, { name = "description", sort = "ProjectDescription" }], output = "JSON" },
-    { name = "generate_tsconfig", inputs = [], output = "JSON" },
-    { name = "generate_nix", inputs = [{ name = "name", sort = "ProjectName" }], output = "Nix" },
-    { name = "generate_dockerfile", inputs = [{ name = "port", sort = "Port" }], output = "TypeScript" },
-    { name = "generate_server", inputs = [{ name = "name", sort = "ProjectName" }, { name = "port", sort = "Port" }, { name = "host", sort = "Host" }, { name = "routes", sort = "RouteTable" }, { name = "middleware", sort = "MiddlewareStack" }], output = "TypeScript" },
-    { name = "generate_readme", inputs = [{ name = "name", sort = "ProjectName" }, { name = "description", sort = "ProjectDescription" }], output = "Markdown" },
-    
+    { name = "generate_package_json", inputs = [{ name = "name", sort = "ProjectName" }], output = "ThPackageJson" },
+    { name = "generate_app", inputs = [{ name = "routes", sort = "RouteTable" }], output = "ThApp" },
     { name = "mk_project_name", inputs = [{ name = "name", sort = "String" }], output = "ProjectName" },
-    { name = "mk_project_description", inputs = [{ name = "description", sort = "String" }], output = "ProjectDescription" },
-    { name = "mk_port", inputs = [{ name = "port", sort = "Number" }], output = "Port" },
-    { name = "mk_host", inputs = [{ name = "host", sort = "String" }], output = "Host" },
-    { name = "mk_runtime", inputs = [{ name = "runtime", sort = "String" }], output = "Runtime" },
-    
-    { name = "mk_route", inputs = [{ name = "method", sort = "String" }, { name = "path", sort = "String" }, { name = "handler", sort = "String" }], output = "Route" },
-    { name = "mk_route_table", inputs = [{ name = "routes", sort = "Array Route" }], output = "RouteTable" },
-    
-    { name = "mk_health_route", inputs = [{ name = "path", sort = "String" }], output = "HealthRoute" },
-    { name = "mk_list_route", inputs = [{ name = "path", sort = "String" }, { name = "resource", sort = "String" }], output = "ListRoute" },
-    { name = "mk_get_route", inputs = [{ name = "path", sort = "String" }, { name = "param", sort = "String" }], output = "GetRoute" },
-    { name = "mk_create_route", inputs = [{ name = "path", sort = "String" }, { name = "resource", sort = "String" }], output = "CreateRoute" },
-    { name = "mk_update_route", inputs = [{ name = "path", sort = "String" }, { name = "param", sort = "String" }], output = "UpdateRoute" },
-    { name = "mk_delete_route", inputs = [{ name = "path", sort = "String" }, { name = "param", sort = "String" }], output = "DeleteRoute" },
-    
-    { name = "mk_logger", inputs = [{ name = "enabled", sort = "Bool" }], output = "Logger" },
-    { name = "mk_cors", inputs = [{ name = "origins", sort = "Array String" }], output = "CORS" },
-    { name = "mk_rate_limit", inputs = [{ name = "max_requests", sort = "Number" }, { name = "window", sort = "Number" }], output = "RateLimit" },
-    { name = "mk_middleware_stack", inputs = [{ name = "middleware", sort = "Array Middleware" }], output = "MiddlewareStack" },
-    
-    { name = "mk_cors_config", inputs = [{ name = "enabled", sort = "Bool" }, { name = "origins", sort = "Array String" }, { name = "methods", sort = "Array String" }], output = "ThCORSConfig" },
-    { name = "mk_env_vars", inputs = [{ name = "vars", sort = "Array String" }], output = "ThEnvVars" },
-    
-    { name = "mk_user_model", inputs = [], output = "ThUserModel" },
-    { name = "mk_item_model", inputs = [], output = "ThItemModel" },
-    
-    { name = "compose_app", inputs = [{ name = "name", sort = "ProjectName" }, { name = "description", sort = "ProjectDescription" }, { name = "port", sort = "Port" }, { name = "host", sort = "Host" }, { name = "routes", sort = "RouteTable" }, { name = "middleware", sort = "MiddlewareStack" }, { name = "env_vars", sort = "ThEnvVars" }], output = "ThIntegratedApp" },
+    { name = "mk_route_table", inputs = [{ name = "routes", sort = "String" }], output = "RouteTable" },
   ],
-  
+
   phoenix_config = {
     project_name = "hono-api-server",
     project_description = "A fast, lightweight REST API server built with Hono and TypeScript. Designed for edge deployment with Bun runtime.",
+    template = "ts-hono",
+    build_type = "typescript",
     server_config = {
       port = 3000,
       host = "0.0.0.0",
-      runtime = "bun",
-      cors = {
-        enabled = true,
-        origins = ["*"],
-        methods = ["GET", "POST", "PUT", "DELETE"],
-        headers = ["Content-Type", "Authorization"],
-      },
-      middleware = [
-        { name = "logger", enabled = true, config = { description = "Request/response logging enabled" } },
-        { name = "cors", enabled = true, config = { description = "Cross-origin requests allowed from any origin" } },
-        { name = "rate-limit", enabled = true, config = { max_requests = 100, window = 60, description = "100 requests per 60 seconds per IP" } },
-      ],
     },
-    routes = [
-      { method = "GET", path = "/health", handler = "Server health status", request = {}, response = { status = 200, body = { status = "ok", timestamp = "string" } }, middleware = [] },
-      { method = "GET", path = "/api/users", handler = "List all users", request = { query = { limit = "number", offset = "number" } }, response = { status = 200, body = { users = "array", total = "number" } }, middleware = [] },
-      { method = "GET", path = "/api/users/:id", handler = "Get user by ID", request = { params = { id = "string" } }, response = { status = 200, body = { id = "string", name = "string", email = "string" } }, middleware = [] },
-      { method = "POST", path = "/api/users", handler = "Create new user", request = { body = { name = "string", email = "string" } }, response = { status = 201, body = { id = "string", created = true } }, middleware = [] },
-      { method = "PUT", path = "/api/users/:id", handler = "Full update user", request = { params = { id = "string" }, body = { name = "string", email = "string" } }, response = { status = 200, body = { id = "string", updated = true } }, middleware = [] },
-      { method = "DELETE", path = "/api/users/:id", handler = "Delete user", request = { params = { id = "string" } }, response = { status = 204, body = {} }, middleware = [] },
-      { method = "GET", path = "/api/items", handler = "List all items", request = { query = { category = "string", sort = "string", limit = "number" } }, response = { status = 200, body = { items = "array", meta = { total = "number" } } }, middleware = [] },
-      { method = "GET", path = "/api/items/:id", handler = "Get item by ID", request = { params = { id = "string" } }, response = { status = 200, body = { id = "string", name = "string", price = "number" } }, middleware = [] },
-      { method = "POST", path = "/api/items", handler = "Create new item", request = { body = { name = "string", price = "number", category = "string" } }, response = { status = 201, body = { id = "string", created = true } }, middleware = [] },
-    ],
-    data_models = {
-      User = { id = "string", name = "string", email = "string", createdAt = "string", updatedAt = "string" },
-      Item = { id = "string", name = "string", price = "number", category = "string", inStock = "boolean" },
-    },
-    env_vars = [
-      "PORT",
-      "HOST",
-      "LOG_LEVEL",
-      "CORS_ORIGINS",
-      "RATE_LIMIT_WINDOW",
-      "RATE_LIMIT_MAX",
-    ],
   },
-  
-  template = "ts-hono",
-  build_type = "typescript",
-  version = "0.1.0",
-  spec_version = "1.0",
+
+  # Routes definition
+  routes = [
+    { method = "GET", path = "/health", handler = "listHealth", description = "Server health status" },
+    { method = "GET", path = "/api/users", handler = "listUsers", description = "List all users" },
+    { method = "GET", path = "/api/users/:id", handler = "getUsersByid", description = "Get user by ID" },
+    { method = "POST", path = "/api/users", handler = "createUsers", description = "Create new user" },
+    { method = "PUT", path = "/api/users/:id", handler = "updateUsersByid", description = "Full update" },
+    { method = "DELETE", path = "/api/users/:id", handler = "deleteUsersByid", description = "Delete user" },
+    { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
+    { method = "GET", path = "/api/items/:id", handler = "getItemsByid", description = "Get item by ID" },
+    { method = "POST", path = "/api/items", handler = "createItems", description = "Create new item" },
+  ],
+
 }

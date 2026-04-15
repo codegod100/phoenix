@@ -241,6 +241,17 @@ impl SchemaCompiler for NLSchemaCompiler {
 // Layer 3: Lens (Natural Language → Structured Data)
 // ============================================================================
 
+/// Helper function to determine build type from template
+fn build_type_for_template(template: &str) -> String {
+    match template {
+        "nodejs-express" => "nodejs".to_string(),
+        "ts-hono" => "typescript".to_string(),
+        "python-flask" => "python".to_string(),
+        "lit" => "typescript".to_string(),
+        _ => "nodejs".to_string(),
+    }
+}
+
 /// Parser for natural language spec.md files
 pub struct SpecMdLens;
 
@@ -260,12 +271,27 @@ impl SpecMdLens {
         let lines: Vec<&str> = spec_md.lines().collect();
         let mut i = 0;
         let mut current_section: Option<&str> = None;
+        let mut in_api_section = false;  // Track if we're inside API Endpoints hierarchy
         
         while i < lines.len() {
             let line = lines[i].trim();
             
-            // Parse H1 as project name
-            if line.starts_with("# ") && !line.starts_with("## ") {
+            // Parse template directive: template = "..."
+            if line.starts_with("template = \"") || line.starts_with("template=\"") {
+                let template_line = line.trim_start_matches("template = ").trim_start_matches("template=");
+                if let Some(start) = template_line.find('"') {
+                    if let Some(end) = template_line[start+1..].find('"') {
+                        spec.template = template_line[start+1..start+1+end].to_string();
+                        // Update build_type based on template
+                        spec.build_type = build_type_for_template(&spec.template);
+                    }
+                }
+                i += 1;
+                continue;
+            }
+            
+            // Parse H1 as project name (only first H1 wins)
+            if line.starts_with("# ") && !line.starts_with("## ") && spec.project_name.is_empty() {
                 let title = line.trim_start_matches("# ").trim();
                 // Extract project name (remove common suffixes)
                 spec.project_name = Self::normalize_project_name(title);
@@ -277,7 +303,22 @@ impl SpecMdLens {
             // Parse H2 as section headers
             if line.starts_with("## ") {
                 let section = line.trim_start_matches("## ").trim().to_lowercase();
+                // Track if we're in API section for route parsing in subsections
+                in_api_section = section.contains("api") && section.contains("endpoints");
                 current_section = Some(Box::leak(section.into_boxed_str()));
+                i += 1;
+                continue;
+            }
+            
+            // Parse H3/H4 as subsection headers (keep in_api_section flag)
+            if line.starts_with("### ") || line.starts_with("#### ") {
+                let subsection = if line.starts_with("### ") {
+                    line.trim_start_matches("### ").trim().to_lowercase()
+                } else {
+                    line.trim_start_matches("#### ").trim().to_lowercase()
+                };
+                // Store subsection name but keep in_api_section flag
+                current_section = Some(Box::leak(subsection.into_boxed_str()));
                 i += 1;
                 continue;
             }
@@ -289,10 +330,19 @@ impl SpecMdLens {
                         spec.project_description = line.to_string();
                     }
                 }
+                // Parse routes from API sections and subsections
                 Some("api") | Some("routes") | Some("endpoints") => {
                     // Parse route definitions from bullet points
                     // Format: - `METHOD /path` - description
                     // Or: - METHOD /path: description
+                    if line.starts_with("- ") || line.starts_with("* ") {
+                        if let Some(route) = Self::parse_route_line(line) {
+                            spec.routes.push(route);
+                        }
+                    }
+                }
+                _ if in_api_section => {
+                    // In API section hierarchy - check for route patterns
                     if line.starts_with("- ") || line.starts_with("* ") {
                         if let Some(route) = Self::parse_route_line(line) {
                             spec.routes.push(route);
@@ -337,11 +387,49 @@ impl SpecMdLens {
     /// Parse a route line into RouteSpec
     fn parse_route_line(line: &str) -> Option<RouteSpec> {
         // Patterns:
+        // - **GET** `/api/users` - List all users
         // - `GET /api/users` - List all users
         // - GET /api/users: List all users
-        // - `GET /api/users` - description
         
         let content = line.trim_start_matches("- ").trim_start_matches("* ").trim();
+        
+        // Try format: **METHOD** `/path` - description
+        // First look for bold method: **METHOD**
+        if let Some(method_start) = content.find("**") {
+            if let Some(method_end) = content[method_start+2..].find("**") {
+                let method = content[method_start+2..method_start+2+method_end].to_uppercase();
+                // Only parse if method is a valid HTTP method
+                if !["GET", "POST", "PUT", "DELETE", "PATCH"].contains(&method.as_str()) {
+                    return None;
+                }
+                
+                // Look for path in backticks after the method
+                let after_method = &content[method_start+2+method_end+2..];
+                if let Some(path_start) = after_method.find('`') {
+                    if let Some(path_end) = after_method[path_start+1..].find('`') {
+                        let path = &after_method[path_start+1..path_start+1+path_end];
+                        
+                        // Extract description after path backticks
+                        let desc = after_method[path_start+1+path_end..]
+                            .trim_start_matches("`")
+                            .trim_start_matches(" - ")
+                            .trim_start_matches(": ")
+                            .trim();
+                        
+                        return Some(RouteSpec {
+                            method: method.clone(),
+                            path: path.to_string(),
+                            handler: Self::handler_name_from_path(path, &method),
+                            description: if desc.is_empty() { 
+                                format!("{} endpoint", method) 
+                            } else { 
+                                desc.to_string() 
+                            },
+                        });
+                    }
+                }
+            }
+        }
         
         // Try backtick format: `METHOD /path`
         if let Some(start) = content.find('`') {
@@ -350,6 +438,10 @@ impl SpecMdLens {
                 let parts: Vec<&str> = method_path.split_whitespace().collect();
                 if parts.len() >= 2 {
                     let method = parts[0].to_uppercase();
+                    // Only parse if method is a valid HTTP method
+                    if !["GET", "POST", "PUT", "DELETE", "PATCH"].contains(&method.as_str()) {
+                        return None;
+                    }
                     let path = parts[1..].join(" ");
                     
                     // Extract description after backticks
@@ -731,6 +823,7 @@ impl NclSpecGenerator {
             _ => "GenericServer".to_string(),
         }
     }
+    
 }
 
 // ============================================================================

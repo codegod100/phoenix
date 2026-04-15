@@ -1,6 +1,6 @@
 {
-  id = "dev.phoenix.hono-api-server",
-  description = "A fast, lightweight REST API server built with Hono and TypeScript. Designed for edge deployment with Bun runtime.",
+  id = "dev.phoenix.start-production-server",
+  description = "Start production server",
   theory = "TypescriptHonoServer",
 
   # Template selection
@@ -39,8 +39,8 @@
   ],
 
   phoenix_config = {
-    project_name = "hono-api-server",
-    project_description = "A fast, lightweight REST API server built with Hono and TypeScript. Designed for edge deployment with Bun runtime.",
+    project_name = "start-production-server",
+    project_description = "Start production server",
     template = "ts-hono",
     build_type = "typescript",
     server_config = {
@@ -51,15 +51,9 @@
 
   # Routes definition
   routes = [
-    { method = "GET", path = "/health", handler = "listHealth", description = "Server health status" },
-    { method = "GET", path = "/api/users", handler = "listUsers", description = "List all users" },
-    { method = "GET", path = "/api/users/:id", handler = "getUsersByid", description = "Get user by ID" },
-    { method = "POST", path = "/api/users", handler = "createUsers", description = "Create new user" },
-    { method = "PUT", path = "/api/users/:id", handler = "updateUsersByid", description = "Full update" },
-    { method = "DELETE", path = "/api/users/:id", handler = "deleteUsersByid", description = "Delete user" },
     { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
-    { method = "GET", path = "/api/items/:id", handler = "getItemsByid", description = "Get item by ID" },
-    { method = "POST", path = "/api/items", handler = "createItems", description = "Create new item" },
+    { method = "POST", path = "/api/items", handler = "createItem", description = "Create new item" },
+    { method = "GET", path = "/health", handler = "healthCheck", description = "Health check endpoint" },
   ],
 
 }

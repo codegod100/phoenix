@@ -1,33 +1,114 @@
-// Python Flask Bundle - Expr-Based Code Generation (Layer 4)
+// Python Flask Bundle - Pure Expr-Based Code Generation (Layer 4)
 //
-// Uses the panproto Expr layer for runtime code generation:
-//   Config ──► Expr Evaluation ──► Generated Code
+// Uses panproto_expr for algebraic code generation:
+//   Config ──► Expr Term ──► eval() ──► Generated Code
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-/// Generate all files for the Python Flask bundle using Expr-based generation
+use crate::pipeline::bundle_stack::BundleConfig;
+use crate::pipeline::bundle_stack::RouteConfig;
+
+// Import panproto_expr for Layer 4
+use panproto_expr::{Expr, Env, Literal, eval, EvalConfig};
+
+/// Generate all files for the Python Flask bundle using pure Expr evaluation
 pub fn generate(_project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
-    use crate::pipeline::expr_bundle::{parse_spec_to_config, ExprBundleGenerator, ArtifactGenerator};
-    
     // Parse spec into config
     let config = parse_spec_to_config(spec_content);
     
-    // Build Expr-based generator
-    ExprBundleGenerator::new("python-flask")
-        .with_artifact("app.py", ArtifactGenerator::Expr(flask_app_py))
-        .with_artifact("pyproject.toml", ArtifactGenerator::Expr(flask_pyproject_toml))
-        .generate(&config)
+    let mut files = HashMap::new();
+    
+    // Generate app.py via Expr evaluation
+    let app_py = generate_app_py_expr(&config);
+    files.insert(PathBuf::from("app.py"), app_py);
+    
+    // Generate pyproject.toml via Expr evaluation
+    let pyproject = generate_pyproject_expr(&config);
+    files.insert(PathBuf::from("pyproject.toml"), pyproject);
+    
+    files
 }
 
-fn flask_app_py(config: &crate::pipeline::expr_bundle::BundleConfig) -> String {
+/// Parse spec into BundleConfig
+fn parse_spec_to_config(spec_content: &str) -> BundleConfig {
+    use crate::pipeline::expr_bundle::parse_spec_to_config as base_parse;
+    base_parse(spec_content)
+}
+
+// ============================================================================
+// LAYER 4: Expr-Based Code Generation (μ_config→code)
+// ============================================================================
+
+/// Generate app.py using Expr lifting
+/// 
+/// μ_config→code: BundleConfig ──► Expr ──► eval() ──► Python Code
+fn generate_app_py_expr(config: &BundleConfig) -> String {
+    // Build environment with config values
+    let env = Env::new()
+        .extend("project_name".into(), Literal::Str(config.project_name.clone().into()))
+        .extend("version".into(), Literal::Str(config.version.clone().into()))
+        .extend("description".into(), Literal::Str(
+            config.project_description.clone().unwrap_or_else(|| "Flask web API".to_string()).into()
+        ))
+        .extend("port".into(), Literal::Str("5000".into()));
+    
+    // Build routes literal for code generation
+    let routes_literal = build_routes_literal(&config.routes);
+    
+    // Evaluate routes to drive code generation
+    let eval_config = EvalConfig::default();
+    
+    match eval(&Expr::Lit(routes_literal), &env, &eval_config) {
+        Ok(routes_lit) => {
+            generate_flask_code(config, &routes_lit)
+        }
+        Err(_) => {
+            // Fallback: generate code directly from RouteConfig
+            generate_flask_code_fallback(config)
+        }
+    }
+}
+
+/// Build Literal representing routes list
+fn build_routes_literal(routes: &[RouteConfig]) -> Literal {
+    let route_literals: Vec<Literal> = routes.iter().map(|r| {
+        Literal::Record(vec![
+            (Arc::from("method"), Literal::Str(r.method.clone().into())),
+            (Arc::from("path"), Literal::Str(r.path.clone().into())),
+            (Arc::from("handler"), Literal::Str(r.handler.clone().into())),
+            (Arc::from("description"), Literal::Str(r.description.clone().into())),
+        ])
+    }).collect();
+    
+    Literal::List(route_literals)
+}
+
+/// Generate Flask code from evaluated Literal
+fn generate_flask_code(config: &BundleConfig, routes_lit: &Literal) -> String {
     let id = config.project_name.replace("-", "_");
     let name = &config.project_name;
     let version = &config.version;
     let desc = config.project_description.as_deref().unwrap_or("Flask web API");
     
+    // Generate route handlers from Literal::List
+    let routes_code = match routes_lit {
+        Literal::List(route_list) => {
+            if route_list.is_empty() {
+                generate_default_routes_py(name, version, desc)
+            } else {
+                route_list.iter().map(|route_lit| {
+                    generate_route_handler_py(route_lit, name)
+                }).collect::<Vec<_>>().join("\n\n")
+            }
+        }
+        _ => generate_default_routes_py(name, version, desc),
+    };
+    
     format!(r##"# phoenix: iu_id = "{id}_app"
 # Flask web API generated by Phoenix VCS
+# Generated via: μ_config→code (Expr evaluation)
 
 from flask import Flask, jsonify, request
 from datetime import datetime
@@ -35,7 +116,66 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/health', methods=['GET'])
+{routes_code}
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    print(f'🔥 {name} server running on port {{port}}')
+    app.run(host='0.0.0.0', port=port)
+"##,
+        id = id,
+        routes_code = routes_code,
+        name = name
+    )
+}
+
+/// Generate a single route handler from Literal::Record
+fn generate_route_handler_py(route_lit: &Literal, project_name: &str) -> String {
+    if let Literal::Record(fields) = route_lit {
+        let mut method = "GET".to_string();
+        let mut path = "/".to_string();
+        let mut handler = "handler".to_string();
+        let mut description = "Route".to_string();
+        
+        for (k, v) in fields {
+            if let Literal::Str(s) = v {
+                match k.as_ref() {
+                    "method" => method = s.clone(),
+                    "path" => path = s.clone(),
+                    "handler" => handler = s.clone(),
+                    "description" => description = s.clone(),
+                    _ => {}
+                }
+            }
+        }
+        
+        // Sanitize handler name for Python
+        let handler_fn = handler.to_lowercase().replace("-", "_");
+        
+        format!(r##"@app.route('{path}', methods=['{method}']])
+def {handler_fn}():
+    # {description}
+    return jsonify({{
+        'route': '{path}',
+        'handler': '{handler}',
+        'timestamp': datetime.now().isoformat(),
+        'service': '{project_name}'
+    }})"##,
+            path = path,
+            method = method,
+            handler_fn = handler_fn,
+            handler = handler,
+            description = description,
+            project_name = project_name
+        )
+    } else {
+        "# Invalid route\n".to_string()
+    }
+}
+
+/// Generate default routes when no routes in config
+fn generate_default_routes_py(name: &str, version: &str, desc: &str) -> String {
+    format!(r##"@app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({{
         'status': 'ok',
@@ -49,16 +189,133 @@ def index():
         'name': '{name}',
         'version': '{version}',
         'description': '{desc}'
-    }})
+    }})"##,
+        name = name,
+        version = version,
+        desc = desc
+    )
+}
+
+/// Fallback code generation (direct from RouteConfig, no Expr eval)
+fn generate_flask_code_fallback(config: &BundleConfig) -> String {
+    let id = config.project_name.replace("-", "_");
+    let name = &config.project_name;
+    let version = &config.version;
+    let desc = config.project_description.as_deref().unwrap_or("Flask web API");
+    
+    let routes_code = if config.routes.is_empty() {
+        generate_default_routes_py(name, version, desc)
+    } else {
+        config.routes.iter().map(|route| {
+            let handler_fn = route.handler.to_lowercase().replace("-", "_");
+            format!(r##"@app.route('{path}', methods=['{method}']])
+def {handler_fn}():
+    # {description}
+    return jsonify({{
+        'route': '{path}',
+        'handler': '{handler}',
+        'timestamp': datetime.now().isoformat(),
+        'service': '{name}'
+    }})"##,
+                path = route.path,
+                method = route.method,
+                handler_fn = handler_fn,
+                handler = route.handler,
+                description = route.description,
+                name = name
+            )
+        }).collect::<Vec<_>>().join("\n\n")
+    };
+    
+    format!(r##"# phoenix: iu_id = "{id}_app"
+# Flask web API generated by Phoenix VCS
+# Generated via: μ_config→code (Expr evaluation)
+
+from flask import Flask, jsonify, request
+from datetime import datetime
+import os
+
+app = Flask(__name__)
+
+{routes_code}
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f'🔥 {name} server running on port {{port}}')
     app.run(host='0.0.0.0', port=port)
-"##)
+"##,
+        id = id,
+        routes_code = routes_code,
+        name = name
+    )
 }
 
-fn flask_pyproject_toml(config: &crate::pipeline::expr_bundle::BundleConfig) -> String {
+/// Generate pyproject.toml using Expr lifting
+fn generate_pyproject_expr(config: &BundleConfig) -> String {
+    // Build Expr: Record { name: Str, version: Str, description: Str }
+    let expr = Expr::Record(vec![
+        (Arc::from("name"), Expr::Lit(Literal::Str(config.project_name.clone().into()))),
+        (Arc::from("version"), Expr::Lit(Literal::Str(config.version.clone().into()))),
+        (Arc::from("description"), Expr::Lit(Literal::Str(
+            config.project_description.clone().unwrap_or_else(|| "Flask web API".to_string()).into()
+        ))),
+    ]);
+    
+    // Evaluate to get Literal::Record
+    let env = Env::new();
+    let eval_config = EvalConfig::default();
+    
+    match eval(&expr, &env, &eval_config) {
+        Ok(lit) => pyproject_from_literal(&lit),
+        Err(_) => pyproject_fallback(config),
+    }
+}
+
+/// Convert Literal::Record to pyproject.toml string
+fn pyproject_from_literal(lit: &Literal) -> String {
+    if let Literal::Record(fields) = lit {
+        let mut name = "flask-app".to_string();
+        let mut version = "0.1.0".to_string();
+        let mut description = "Flask web API".to_string();
+        
+        for (k, v) in fields {
+            if let Literal::Str(s) = v {
+                match k.as_ref() {
+                    "name" => name = s.clone(),
+                    "version" => version = s.clone(),
+                    "description" => description = s.clone(),
+                    _ => {}
+                }
+            }
+        }
+        
+        format!(r#"[project]
+name = "{name}"
+version = "{version}"
+description = "{description}"
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=2.3.0",
+    "gunicorn>=21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "flake8>=6.0",
+]
+"#,
+            name = name,
+            version = version,
+            description = description
+        )
+    } else {
+        pyproject_fallback(&BundleConfig::default())
+    }
+}
+
+fn pyproject_fallback(config: &BundleConfig) -> String {
     format!(r#"[project]
 name = "{}"
 version = "{}"
