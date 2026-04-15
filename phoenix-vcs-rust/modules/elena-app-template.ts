@@ -4,8 +4,8 @@ export class ElenaApp extends Elena(HTMLElement) {
   render() {
     return html`
       <div style="max-width: 1200px; margin: 0 auto; padding: 2rem; background: %{base}%; min-height: 100vh;">
-        <h1 style="color: %{text}%; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard 🧋</h1>
-        <welcome-card title="Welcome" message="Elena Dashboard with Catppuccin Theme"></welcome-card>
+        <h1 style="color: %{text}%; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard</h1>
+        <welcome-card title="Welcome" message="Elena Dashboard - Styled"></welcome-card>
         <user-card name="%{userCardName}%" email="%{userCardEmail}%"></user-card>
         <todo-list></todo-list>
       </div>
@@ -19,5 +19,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.style.background = '%{base}%';
   document.body.style.margin = '0';
   document.body.appendChild(app);
-  console.log('Elena Dashboard mounted with Catppuccin theme');
+  console.log('Elena Dashboard mounted');
 });

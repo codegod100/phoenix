@@ -1,4 +1,4 @@
-// Catppuccin Mocha Theme - injected from theme.ncl via NCL import
+// Theme colors - injected from theme.ncl via NCL import
 
 export const catppuccin = {
   rosewater: '#ffd6d6',

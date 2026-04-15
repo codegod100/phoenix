@@ -202,7 +202,7 @@ export class WelcomeCard extends Elena(HTMLElement) {
         <p style="margin: 0; opacity: 0.9;">${this.message}</p>
         <div style="margin-top: 1rem;">
           <span style="display: inline-block; background: #2f343f30; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;">
-            🧋 ElenaJS + Hono
+            🎨 ElenaJS + Hono
           </span>
         </div>
       </div>
@@ -216,8 +216,8 @@ export class ElenaApp extends Elena(HTMLElement) {
   render() {
     return html`
       <div style="max-width: 1200px; margin: 0 auto; padding: 2rem; background: #2f343f; min-height: 100vh;">
-        <h1 style="color: #d3dae3; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard 🧋</h1>
-        <welcome-card title="Welcome" message="Elena Dashboard with Catppuccin Theme"></welcome-card>
+        <h1 style="color: #d3dae3; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard</h1>
+        <welcome-card title="Welcome" message="Elena Dashboard - Styled"></welcome-card>
         <user-card name="Elsa Snow" email="elsa@example.com"></user-card>
         <todo-list></todo-list>
       </div>
@@ -237,6 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.style.background = '#2f343f';
   document.body.style.margin = '0';
   document.body.appendChild(app);
-  console.log('Elena Dashboard mounted with Catppuccin theme');
+  console.log('Elena Dashboard mounted');
 });
 

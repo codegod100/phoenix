@@ -1,7 +1,7 @@
-// Catppuccin Mocha Theme
-// https://github.com/catppuccin/catppuccin
+// Theme colors
+// Dynamically configured via NCL theme module
 
-export const catppuccin = {
+export const themeColors = {
   rosewater: '#f5e0dc',
   flamingo: '#f2cdcd',
   pink: '#f5c2e7',

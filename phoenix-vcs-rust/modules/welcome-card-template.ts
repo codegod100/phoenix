@@ -12,7 +12,7 @@ export class WelcomeCard extends Elena(HTMLElement) {
         <p style="margin: 0; opacity: 0.9;">${this.message}</p>
         <div style="margin-top: 1rem;">
           <span style="display: inline-block; background: %{base}%30; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;">
-            🧋 ElenaJS + Hono
+            🎨 ElenaJS + Hono
           </span>
         </div>
       </div>
