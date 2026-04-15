@@ -202,13 +202,11 @@ async fn generate_client_from_ncl(
             );
         }
         
-        // Add component class from vertices
-        for vertex in &module.vertices {
-            if vertex.kind == "ClassDecl" {
-                output.push_str(&vertex.text);
-                output.push_str("\n\n");
-            }
-        }
+        // Generate component code with placeholder replacement
+        let component_code = module.generate(&module.config_placeholders)
+            .map_err(|e| anyhow::anyhow!("Failed to generate code for '{}': {}", comp_name, e))?;
+        output.push_str(&component_code);
+        output.push('\n');
         
         component_tags.push((tag_name, class_name));
     }

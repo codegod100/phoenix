@@ -117,7 +117,7 @@ export class TodoList extends Elena(HTMLElement) {
             placeholder="What needs to be done?"
             style="${StyleUtils.input()}"
           />
-          <button type="submit" style="${StyleUtils.button({ variant: 'success' })}">
+          <button type="submit" style="${StyleUtils.button({ variant: '{{BUTTON_VARIANT}}' })}">
             Add
           </button>
         </form>
@@ -129,7 +129,7 @@ export class TodoList extends Elena(HTMLElement) {
                 type="checkbox"
                 data-id="${todo.id}"
                 ${todo.completed ? 'checked' : ''}
-                style="width: 20px; height: 20px; cursor: pointer; accent-color: ${theme.colors.primary};"
+                style="width: 20px; height: 20px; cursor: pointer; accent-color: ${theme.colors.{{CHECKBOX_ACCENT}}};"
               />
               <span style="flex: 1; ${todo.completed ? 'text-decoration: line-through; color: #999;' : `color: ${theme.colors.text};`}">
                 ${todo.text}
