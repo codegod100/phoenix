@@ -117,7 +117,7 @@ export class TodoList extends Elena(HTMLElement) {
             placeholder="What needs to be done?"
             style="${StyleUtils.input()}"
           />
-          <button type="submit" style="${StyleUtils.button({ variant: 'primary' })}">
+          <button type="submit" style="${StyleUtils.button({ variant: 'success' })}">
             Add
           </button>
         </form>
