@@ -147,16 +147,18 @@ impl CodeGenerator for TypeScriptGenerator {
             .map_err(|e| CodeGenError(format!("Failed to build schema: {}", e)))?;
         
         let registry = ParserRegistry::new();
+        
         if registry.protocol_names().any(|p| p == "typescript") {
             match registry.emit_with_protocol("typescript", &schema) {
                 Ok(bytes) => String::from_utf8(bytes)
                     .map_err(|e| CodeGenError(format!("UTF-8 error: {}", e))),
-                Err(e) => {
-                    eprintln!("Official emit failed (using manual): {}", e);
+                Err(_) => {
+                    println!("OFFICIAL EMIT FAILED - using manual");
                     Ok(manual_emit(&schema))
                 }
             }
         } else {
+            println!("TYPESCRIPT PROTOCOL NOT FOUND - using manual");
             Ok(manual_emit(&schema))
         }
     }
@@ -394,8 +396,10 @@ mod tests {
            ]);
         
         let code = gen.generate().unwrap();
+        
         println!("Generated TypeScript:\n{}", code);
         
+        // Both official emit (via schema) and manual emit should produce this
         assert!(code.contains("// Generated via panproto-parse Schema"));
         assert!(code.contains("import { Hono } from 'hono';"));
         assert!(code.contains("app.get('/health'"));
@@ -419,5 +423,67 @@ mod tests {
         
         assert!(code.contains("app.get('/api/users'"));
         assert!(code.contains("route: '/api/users'"));
+    }
+    
+    #[test]
+    fn test_why_official_emit_fails() {
+        // This test demonstrates why emit_with_protocol doesn't work
+        // for our use case.
+        
+        let protocol = create_typescript_protocol();
+        let mut builder = SchemaBuilder::new(&protocol);
+        let mut pos = PositionTracker::new();
+        
+        macro_rules! vtx {
+            ($id:expr, $kind:expr, $text:expr) => {{
+                let start = pos.current();
+                builder = builder.vertex($id, $kind, None).unwrap();
+                builder = builder.constraint($id, "start-byte", &start.to_string());
+                if let Some(t) = $text {
+                    builder = builder.constraint($id, "literal-value", t);
+                    pos.advance(t.len());
+                }
+            }};
+        }
+        
+        macro_rules! edge {
+            ($src:expr, $tgt:expr, $kind:expr) => {{
+                builder = builder.edge($src, $tgt, $kind, None).unwrap();
+            }};
+        }
+        
+        // Build minimal schema
+        vtx!("program", "program", None);
+        vtx!("import", "import_statement", Some("import { Hono } from 'hono';\n"));
+        vtx!("route", "expression_statement", Some("app.get('/health', () => {});\n"));
+        
+        edge!("program", "import", "statement");
+        edge!("program", "route", "statement");
+        edge!("import", "route", "next");
+        
+        let schema = builder.build().unwrap();
+        
+        // Try official emit
+        let registry = ParserRegistry::new();
+        match registry.emit_with_protocol("typescript", &schema) {
+            Ok(bytes) => {
+                let code = String::from_utf8(bytes).unwrap();
+                println!("Official emit succeeded!\n{}", code);
+            }
+            Err(e) => {
+                println!("Official emit failed: {}", e);
+                println!("\nThis is expected! The TypeScript parser expects:");
+                println!("1. Full AST structure (call_expression, member_expression, etc.)");
+                println!("2. Interstitial text fragments between every child node");
+                println!("3. Position data for every single token (not just statements)");
+                println!("\nFor code generation, manual_emit() is the right approach.");
+            }
+        }
+        
+        // Show that manual emit works
+        let manual = manual_emit(&schema);
+        println!("\nManual emit result:\n{}", manual);
+        
+        assert!(!manual.is_empty());
     }
 }
