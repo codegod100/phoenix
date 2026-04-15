@@ -11,6 +11,6 @@ build.runtime = 'bun'
 build.bundler = 'vite'
 components = [
   { name = 'UserCard', props = ['name', 'email'], features = ['Gradient avatar', 'hover effects'] },
-  { name = 'WelcomeCard', props = ['title', 'message'], features = ['Gradient styling', 'centered layout'] },
-  { name = 'TodoList', props = ['todos', 'newTodo'], features = ['Add', 'toggle', 'delete todos', 'API persistence'] }
+  { name = 'TodoList', props = ['todos', 'newTodo'], features = ['Add', 'toggle', 'delete todos', 'API persistence'] },
+  { name = 'WelcomeCard', props = ['title', 'message'], features = ['Gradient styling', 'centered layout'] }
 ]
