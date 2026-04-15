@@ -102,11 +102,10 @@ async fn main() -> anyhow::Result<()> {
     // Generate devenv files
     let devenv = phoenix_vcs::codegen::devenv::generate_devenv_output(&network)
         .map_err(|e| anyhow::anyhow!(e))?;
-    tokio::fs::write(output_dir.join("flake.nix"), devenv.flake_nix).await?;
     tokio::fs::write(output_dir.join("devenv.nix"), devenv.devenv_nix).await?;
     tokio::fs::write(output_dir.join("devenv.yaml"), devenv.devenv_yaml).await?;
     tokio::fs::write(output_dir.join(".envrc"), devenv.envrc).await?;
-    println!("✅ Generated: flake.nix, devenv.nix, devenv.yaml, .envrc");
+    println!("✅ Generated: devenv.nix, devenv.yaml, .envrc");
     
     // Generate app code based on detected template
     let template = detect_template(&parsed);

@@ -72,7 +72,9 @@ impl DevenvConfig {
                             version: "5.3".to_string(),
                         });
                     }
-                    packages.push("bun".to_string());
+                    if !packages.contains(&"bun".to_string()) {
+                        packages.push("bun".to_string());
+                    }
                 }
                 "nix" => {
                     packages.push("nix".to_string());
@@ -97,18 +99,19 @@ impl DevenvConfig {
             }
             
             // Create service for infrastructure modules
-            if module.is_infrastructure {
-                if let Some(endpoint) = module.provides.first().and_then(|p| p.endpoint.clone()) {
-                    let port = Self::extract_port(&endpoint);
-                    
-                    services.push(Service {
-                        name: module_id.clone(),
-                        command: format!("{}", module_id.replace("-", "_")),
-                        port,
-                        depends_on: Self::find_dependencies(network, module_id),
-                    });
-                }
-            }
+            // NOTE: Disabled for now - devenv only supports predefined services
+            // if module.is_infrastructure {
+            //     if let Some(endpoint) = module.provides.first().and_then(|p| p.endpoint.clone()) {
+            //         let port = Self::extract_port(&endpoint);
+            //         
+            //         services.push(Service {
+            //             name: module_id.clone(),
+            //             command: format!("{}", module_id.replace("-", "_")),
+            //             port,
+            //             depends_on: Self::find_dependencies(network, module_id),
+            //         });
+            //     }
+            // }
             
             // Generate scripts from module capabilities
             for prov in &module.provides {
@@ -216,13 +219,13 @@ impl DevenvGenerator {
             pos += lang_nix.len();
         }
         
-        // services
-        for service in &config.services {
-            let service_nix = Self::generate_service(service);
-            let service_id = format!("service_{}", service.name.replace("-", "_"));
-            builder = builder.vertex(&service_id, "Binding", Some(&service_nix))?;
-            pos += service_nix.len();
-        }
+        // services - disabled for now as devenv only supports predefined services
+        // for service in &config.services {
+        //     let service_nix = Self::generate_service(service);
+        //     let service_id = format!("service_{}", service.name.replace("-", "_"));
+        //     builder = builder.vertex(&service_id, "Binding", Some(&service_nix))?;
+        //     pos += service_nix.len();
+        // }
         
         // scripts
         if !config.scripts.is_empty() {
@@ -231,12 +234,12 @@ impl DevenvGenerator {
             pos += scripts_nix.len();
         }
         
-        // pre-commit
-        if !config.pre_commit_hooks.is_empty() {
-            let precommit_nix = Self::generate_precommit(&config.pre_commit_hooks);
-            builder = builder.vertex("pre-commit", "Binding", Some(&precommit_nix))?;
-            pos += precommit_nix.len();
-        }
+        // pre-commit - disabled for now as it requires git-hooks input
+        // if !config.pre_commit_hooks.is_empty() {
+        //     let precommit_nix = Self::generate_precommit(&config.pre_commit_hooks);
+        //     builder = builder.vertex("pre-commit", "Binding", Some(&precommit_nix))?;
+        //     pos += precommit_nix.len();
+        // }
         
         // Close brace
         builder = builder.vertex("footer", "Expr", Some("}"))?;
@@ -248,40 +251,8 @@ impl DevenvGenerator {
         emit_schema(&schema, "nix")
     }
     
-    /// Generate flake.nix for devenv
-    pub fn generate_flake_nix(_config: &DevenvConfig) -> Result<String, String> {
-        let protocol = create_nix_protocol();
-        let mut builder = EmitBuilder::new(&protocol, "flake");
-        
-        let flake_content = r#"{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    devenv.url = "github:cachix/devenv";
-  };
-
-  outputs = { self, nixpkgs, devenv, ... }@inputs:
-    let
-      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
-      forEachSystem = nixpkgs.lib.genAttrs systems;
-    in
-    {
-      devShells = forEachSystem (system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-        in
-        {
-          default = devenv.lib.mkShell {
-            inherit inputs pkgs;
-            modules = [ ./devenv.nix ];
-          };
-        });
-    };
-}"#;
-        
-        builder = builder.vertex("flake", "Expr", Some(flake_content))?;
-        let schema = builder.build()?;
-        emit_schema(&schema, "nix")
-    }
+    // NOTE: generate_flake_nix removed - we use devenv directly without flakes
+    // This simplifies the setup and avoids issues with devenv root detection
     
     /// Generate .envrc for direnv
     pub fn generate_envrc() -> String {
@@ -291,8 +262,7 @@ fi
 
 watch_file devenv.nix
 watch_file devenv.yaml
-watch_file flake.nix
-use flake . --impure
+eval "$(devenv print-dev-env)"
 "#.to_string()
     }
     
@@ -301,10 +271,9 @@ use flake . --impure
         r#"# devenv configuration
 # Generated by Phoenix VCS
 
-inputs:
-  nixpkgs:
-    url: github:NixOS/nixpkgs/nixos-unstable
-  
+# Inputs are defined in flake.nix, not here
+# This file is primarily for devenv configuration
+
 # Allow unfree packages (needed for some tools)
 allowUnfree: true
 
@@ -339,7 +308,6 @@ impure: true
         match name {
             "typescript" => format!(r#"  languages.typescript = {{
     enable = true;
-    package = pkgs.nodejs_20;
   }};
 
 "#),
@@ -419,7 +387,6 @@ pub fn generate_devenv_output(network: &ModuleTensorNetwork) -> Result<DevenvOut
     Ok(DevenvOutput {
         devenv_nix: DevenvGenerator::generate_devenv_nix(&config)?,
         devenv_yaml: DevenvGenerator::generate_devenv_yaml(),
-        flake_nix: DevenvGenerator::generate_flake_nix(&config)?,
         envrc: DevenvGenerator::generate_envrc(),
     })
 }
@@ -429,7 +396,6 @@ pub fn generate_devenv_output(network: &ModuleTensorNetwork) -> Result<DevenvOut
 pub struct DevenvOutput {
     pub devenv_nix: String,
     pub devenv_yaml: String,
-    pub flake_nix: String,
     pub envrc: String,
 }
 
@@ -438,7 +404,6 @@ impl DevenvOutput {
     pub fn write_to_dir(&self, dir: &std::path::Path) -> Result<(), std::io::Error> {
         std::fs::write(dir.join("devenv.nix"), &self.devenv_nix)?;
         std::fs::write(dir.join("devenv.yaml"), &self.devenv_yaml)?;
-        std::fs::write(dir.join("flake.nix"), &self.flake_nix)?;
         std::fs::write(dir.join(".envrc"), &self.envrc)?;
         Ok(())
     }
@@ -526,6 +491,9 @@ mod tests {
         println!("Generated devenv.nix:\n{}", devenv_nix);
     }
     
+    // NOTE: Test removed - we no longer generate flake.nix
+    // Using devenv directly without flakes
+    /*
     #[test]
     fn test_generate_flake_nix() {
         let network = create_test_network();
@@ -540,6 +508,7 @@ mod tests {
         
         println!("Generated flake.nix:\n{}", flake_nix);
     }
+    */
     
     #[test]
     fn test_full_devenv_output() {
@@ -548,13 +517,13 @@ mod tests {
             .expect("Failed to generate devenv output");
         
         assert!(!output.devenv_nix.is_empty());
-        assert!(!output.flake_nix.is_empty());
+        assert!(!output.devenv_yaml.is_empty());
         assert!(!output.envrc.is_empty());
         
         println!("=== devenv.nix ===");
         println!("{}", output.devenv_nix);
-        println!("\n=== flake.nix ===");
-        println!("{}", output.flake_nix);
+        println!("\n=== devenv.yaml ===");
+        println!("{}", output.devenv_yaml);
         println!("\n=== .envrc ===");
         println!("{}", output.envrc);
     }
