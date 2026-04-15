@@ -198,7 +198,6 @@ export class ElenaApp extends Elena(HTMLElement) {
   }
 }
 
-
 // Register all web components
 customElements.define('todo-list', TodoList);
 customElements.define('user-card', UserCard);

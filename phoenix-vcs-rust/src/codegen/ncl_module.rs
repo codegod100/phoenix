@@ -87,14 +87,57 @@ impl NclCodeModule {
     
     /// Create a new module with code loaded from external resource
     fn with_code_resource(mut self, code: String) -> Self {
-        // Create a ClassDecl vertex from the code
-        let vertex = VertexDef {
-            id: format!("{}_class", self.id),
-            kind: "ClassDecl".to_string(),
-            text: code,
-        };
-        self.vertices = vec![vertex];
-        self.vertex_kinds = vec!["ClassDecl".to_string()];
+        let mut vertices = vec![];
+        let mut vertex_kinds = vec![];
+        
+        // Check if code contains mounting logic (ExprStmt pattern)
+        let has_mounting = code.contains("DOMContentLoaded") || 
+                           code.contains("document.createElement") ||
+                           code.contains("document.body.appendChild");
+        
+        if has_mounting {
+            // Split the code - everything before the mounting comment is ClassDecl
+            // The mounting code is ExprStmt
+            if let Some(mount_pos) = code.find("// Mount the application") {
+                let class_code = code[..mount_pos].trim().to_string();
+                let mount_code = code[mount_pos..].to_string();
+                
+                if !class_code.is_empty() {
+                    vertices.push(VertexDef {
+                        id: format!("{}_class", self.id),
+                        kind: "ClassDecl".to_string(),
+                        text: class_code,
+                    });
+                    vertex_kinds.push("ClassDecl".to_string());
+                }
+                
+                vertices.push(VertexDef {
+                    id: format!("{}_mount", self.id),
+                    kind: "ExprStmt".to_string(),
+                    text: mount_code,
+                });
+                vertex_kinds.push("ExprStmt".to_string());
+            } else {
+                // No clear split, treat all as ClassDecl
+                vertices.push(VertexDef {
+                    id: format!("{}_class", self.id),
+                    kind: "ClassDecl".to_string(),
+                    text: code,
+                });
+                vertex_kinds.push("ClassDecl".to_string());
+            }
+        } else {
+            // Regular component - just ClassDecl
+            vertices.push(VertexDef {
+                id: format!("{}_class", self.id),
+                kind: "ClassDecl".to_string(),
+                text: code,
+            });
+            vertex_kinds.push("ClassDecl".to_string());
+        }
+        
+        self.vertices = vertices;
+        self.vertex_kinds = vertex_kinds;
         self
     }
     
