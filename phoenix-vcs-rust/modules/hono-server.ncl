@@ -3,11 +3,12 @@
   name = "Hono HTTP Server",
   description = "Production Hono server with middleware stack and code generation",
   version = "1.0.0",
-  
+  language = "typescript",
+  is_infrastructure = true,
+
   generation = {
     protocol = "typescript",
     vertex_kinds = ["ImportDecl", "VarDecl", "RouteHandler", "ExprStmt"],
-    
     vertices = [
       { id = "import_hono", kind = "ImportDecl", text = "import { Hono } from 'hono';\n" },
       { id = "import_serve", kind = "ImportDecl", text = "import { serve } from '@hono/node-server';\n\n" },
@@ -22,33 +23,22 @@
       { id = "hostname_const", kind = "VarDecl", text = "const hostname = '{{HOST}}';\n" },
       { id = "port_const", kind = "VarDecl", text = "const port = {{API_PORT}};\n" },
       { id = "log_stmt", kind = "ExprStmt", text = "console.log(`Server running at http://${hostname}:${port}`);\n\n" },
-      { id = "serve_call", kind = "ExprStmt", text = "serve({ fetch: app.fetch, port, hostname });\n" },
+      { id = "serve_call", kind = "ExprStmt", text = "serve({ fetch: app.fetch, port, hostname });\n" }
     ],
-    
     config_placeholders = {
       "{{HOST}}" = "server.host",
       "{{API_PORT}}" = "server.api_port"
     }
   },
-  
+
   provides = [
     { interface = "HttpServer", properties = { framework = "hono", runtime = "bun", protocol = "http", features = ["routing", "logging", "cors"] }, endpoint = "http://localhost:3000" }
   ],
-  
+
   needs = [
     { interface = "HttpFramework", strategy = { type = "named", name = "hono-core" }, optional = false },
     { interface = "HttpMiddleware", strategy = { type = "named", name = "hono-logger" }, optional = true },
     { interface = "HttpMiddleware", strategy = { type = "named", name = "hono-cors" }, optional = true },
     { interface = "Logging", strategy = { type = "first_available" }, optional = true }
-  ],
-  
-  language = "typescript",
-  source = { type = "local", path = "./modules/hono-server/runtime.ts" },
-  
-  config_schema = {
-    port = { type = "number", default = 3000 },
-    middleware = { type = "array", items = { type = "string" }, default = ["logger", "cors"] }
-  },
-  
-  is_infrastructure = true
+  ]
 }

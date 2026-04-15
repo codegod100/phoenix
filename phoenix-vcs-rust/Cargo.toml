@@ -11,6 +11,10 @@ repository = "https://github.com/example/phoenix-vcs-rust"
 name = "phoenix-generate"
 path = "src/bin/phoenix-generate.rs"
 
+[[bin]]
+name = "generate-module"
+path = "src/bin/generate-module.rs"
+
 [lib]
 name = "phoenix_vcs"
 path = "src/lib.rs"
