@@ -59,6 +59,10 @@ Hero section with gradient background and badge.
 Interactive todo management with API integration.
 - Props: `todos`, `newTodo`
 - Features: Add, toggle, delete todos; API persistence
+- Styling:
+  - Add button color: `green` (#48bb78)
+  - Delete button color: `red` (#ff6b6b)
+  - Checkbox accent color: `green` (#48bb78)
 
 ### UserCard
 User profile display with avatar initials.

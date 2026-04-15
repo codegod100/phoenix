@@ -7,6 +7,16 @@
     api_port = 3000,
     vite_port = 5173
   },
+
+  # Component styling configuration (from spec.md)
+  component_config = {
+    "todo-list" = {
+      buttonVariant = "success",     # green (#48bb78)
+      checkboxAccent = "success"   # green (#48bb78)
+    },
+    "user-card" = {},
+    "welcome-card" = {}
+  },
   components = ["elena-app", "todo-list", "user-card", "welcome-card", "style-utils"],
   
   # ASCII Tensor Diagram
@@ -14,14 +24,6 @@
 ╔═══════════════════════════════════════════════════════════╗
 ║            TENSOR NETWORK STRING DIAGRAM                    ║
 ╚═══════════════════════════════════════════════════════════╝
-
-     🌐ᵢ
-      │  
-┌────────────────────────────────┐
-│        vite-dev-server         │
-└────────────────────────────────┘
-      │  
-     📦ₒ
 
        ∅  
       │  
@@ -31,13 +33,13 @@
       │  
      🗄️ₒ
 
-     📦ᵢ
+     🌐ᵢ
       │  
 ┌────────────────────────────────┐
-│            elenajs             │
+│        vite-dev-server         │
 └────────────────────────────────┘
       │  
-     🎨ₒ
+     📦ₒ
 
      📝ᵢ 🗄️ᵢ
       │   │  
@@ -46,6 +48,14 @@
 └────────────────────────────────┘
       │  
      🌐ₒ
+
+     📦ᵢ
+      │  
+┌────────────────────────────────┐
+│            elenajs             │
+└────────────────────────────────┘
+      │  
+     🎨ₒ
 
        ∅  
       │  

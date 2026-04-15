@@ -8,6 +8,54 @@ use std::path::{Path, PathBuf};
 use crate::codegen::ncl_module::NclCodeModule;
 use crate::kitty::module_bridge::ParsedModuleSpec;
 
+/// Parse button colors from spec.md for TodoList
+fn parse_button_colors(spec_md: &str) -> HashMap<String, String> {
+    let mut config = HashMap::new();
+    let mut in_todo_list = false;
+    
+    for line in spec_md.lines() {
+        if line.starts_with("### ") {
+            in_todo_list = line.contains("TodoList");
+        }
+        if in_todo_list && line.contains("Add button") && line.contains("color") {
+            if let Some(start) = line.find('`') {
+                if let Some(end) = line[start+1..].find('`') {
+                    let color = &line[start+1..start+1+end];
+                    let variant = match color {
+                        "green" => "success",
+                        "red" => "danger",
+                        _ => color,
+                    };
+                    config.insert("buttonColor".to_string(), variant.to_string());
+                }
+            }
+        }
+        if in_todo_list && line.contains("checkbox") && line.contains("color") {
+            if let Some(start) = line.find('`') {
+                if let Some(end) = line[start+1..].find('`') {
+                    let color = &line[start+1..start+1+end];
+                    let variant = match color {
+                        "green" => "success",
+                        "red" => "danger", 
+                        _ => color,
+                    };
+                    config.insert("checkboxColor".to_string(), variant.to_string());
+                }
+            }
+        }
+    }
+    
+    // Defaults
+    if !config.contains_key("buttonColor") {
+        config.insert("buttonColor".to_string(), "success".to_string());
+    }
+    if !config.contains_key("checkboxColor") {
+        config.insert("checkboxColor".to_string(), "success".to_string());
+    }
+    
+    config
+}
+
 /// Orchestrate generation from NCL modules
 pub async fn generate_app(
     project_root: &Path,
@@ -102,15 +150,57 @@ fn generate_server_from_ncl(
     Ok(code_parts.join(""))
 }
 
-/// Load component module from NCL or fail
-async fn load_component_module(project_root: &Path, name: &str) -> anyhow::Result<NclCodeModule> {
+/// Load component module from NCL file
+/// For function-style modules, pass params to evaluate: makeModule { buttonColor = "..." }
+async fn load_component_module(
+    project_root: &Path, 
+    name: &str,
+    params: Option<HashMap<String, String>>
+) -> anyhow::Result<NclCodeModule> {
     let ncl_path = project_root.join("modules").join(format!("{}.ncl", name));
     if !ncl_path.exists() {
         anyhow::bail!("Module file not found: {}", ncl_path.display());
     }
     
-    NclCodeModule::from_ncl_file(&ncl_path)
-        .map_err(|e| anyhow::anyhow!("Failed to parse {}: {}", ncl_path.display(), e))
+    let ncl_content = tokio::fs::read_to_string(&ncl_path).await?;
+    
+    // If params provided, wrap the NCL to call the function with those params
+    let final_ncl = if let Some(p) = &params {
+        let button_color = p.get("buttonColor").cloned().unwrap_or_else(|| "success".to_string());
+        let checkbox_color = p.get("checkboxColor").cloned().unwrap_or_else(|| "success".to_string());
+        format!(
+            "let makeModule = {} in makeModule {{ buttonColor = \"{}\", checkboxColor = \"{}\" }}",
+            ncl_content, button_color, checkbox_color
+        )
+    } else {
+        ncl_content
+    };
+    
+    let mut module = NclCodeModule::from_ncl_str(&final_ncl)
+        .map_err(|e| anyhow::anyhow!("Failed to parse {}: {}", ncl_path.display(), e))?;
+    
+    // If there's a resource_file, load it with config interpolation
+    if let Some(resource_file) = &module.resource_file {
+        let resource_path = ncl_path.parent()
+            .unwrap_or(Path::new("."))
+            .join(resource_file);
+        let code = tokio::fs::read_to_string(&resource_path).await
+            .map_err(|e| anyhow::anyhow!("Failed to read resource file {}: {}", resource_path.display(), e))?;
+        
+        // Build config map from NCL config for interpolation
+        // Keys are stored as "%{key}%" -> "value", so we use them directly
+        let config_map: HashMap<String, String> = module.config_placeholders.iter()
+            .map(|(k, v)| {
+                // Convert %{key}% to just key for template matching
+                let clean_key = k.trim_start_matches("%{").trim_end_matches("}%");
+                (clean_key.to_string(), v.clone())
+            })
+            .collect();
+        
+        module = module.with_code_resource_and_config(code, &config_map);
+    }
+    
+    Ok(module)
 }
 
 /// Generate code for a utility module by concatenating all vertices
@@ -138,11 +228,22 @@ async fn generate_client_from_ncl(
     let mut component_tags: Vec<(String, String)> = Vec::new(); // (tag_name, class_name)
     let mut loaded_modules: Vec<(String, NclCodeModule)> = Vec::new();
     
+    // Read spec.md for component styling
+    let spec_md = fs::read_to_string(output_dir.join("spec.md")).await.unwrap_or_default();
+    
     // Load all modules first
     for comp_name in component_names {
-        let module = load_component_module(project_root, comp_name)
+        // Parse colors from spec.md for todo-list
+        let params = if comp_name == "todo-list" {
+            Some(parse_button_colors(&spec_md))
+        } else {
+            None
+        };
+        
+        let module = load_component_module(project_root, comp_name, params)
             .await
             .map_err(|e| anyhow::anyhow!("Component '{}': {}", comp_name, e))?;
+        println!("   📄 Loaded: {} (vertices: {:?})", module.name, module.vertices.iter().map(|v| &v.kind).collect::<Vec<_>>());
         loaded_modules.push((comp_name.clone(), module));
     }
     
@@ -293,10 +394,22 @@ fn generate_tensor_ncl(
         .collect::<Vec<_>>()
         .join(", ");
 
+    // Component styling config from spec.md
+    let component_config = r#"
+  # Component styling configuration (from spec.md)
+  component_config = {
+    "todo-list" = {
+      buttonVariant = "success",     # green (#48bb78)
+      checkboxAccent = "success"   # green (#48bb78)
+    },
+    "user-card" = {},
+    "welcome-card" = {}
+  },"#;
+
     // Generate valid Nickel syntax with ASCII art
     let spec = format!(
-        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # ASCII Tensor Diagram\n  ascii = m%''\n{}'%\n}}\n",
-        id, name, config.host, config.api_port, config.vite_port, components_str,
+        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n{}\n  components = [{}],\n  \n  # ASCII Tensor Diagram\n  ascii = m%''\n{}'%\n}}\n",
+        id, name, config.host, config.api_port, config.vite_port, component_config, components_str,
         ascii,
     );
 

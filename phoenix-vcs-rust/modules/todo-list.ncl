@@ -1,3 +1,7 @@
+# Todo List Component - accepts config from generator
+# Called as: makeModule { buttonColor = "success", checkboxColor = "success" }
+
+fun params =>
 {
   id = "todo-list",
   name = "Todo List Component",
@@ -6,11 +10,10 @@
   language = "typescript",
   is_infrastructure = false,
 
-  # Config values available for code generation
-  # These are evaluated by Nickel and passed to the template
+  # Config from spec.md via generator
   config = {
-    buttonVariant = "success",
-    checkboxAccent = "success",
+    buttonVariant = params.buttonColor,
+    checkboxAccent = params.checkboxColor,
     showProgress = true,
     maxItems = 100
   },
@@ -19,7 +22,6 @@
     protocol = "typescript",
     vertex_kinds = ["ClassDecl", "Import"],
     resource_file = "todo-list-template.ts",
-    # The config values above are passed to the template during generation
   },
 
   provides = [

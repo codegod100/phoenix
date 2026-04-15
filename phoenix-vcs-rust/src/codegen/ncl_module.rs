@@ -85,22 +85,35 @@ impl NclCodeModule {
         self.resource_file.clone()
     }
     
-    /// Create a new module with code loaded from external resource
-    fn with_code_resource(mut self, code: String) -> Self {
+    /// Create a new module with code loaded from external resource (public for generator)
+    pub fn with_code_resource(mut self, code: String) -> Self {
+        self.with_code_resource_and_config(code, &HashMap::new())
+    }
+    
+    /// Create a new module with code loaded from external resource, with config interpolation
+    /// Replaces %{key}% placeholders with values from config
+    pub fn with_code_resource_and_config(mut self, code: String, config: &HashMap<String, String>) -> Self {
+        // Replace placeholders in the code
+        // Template format: %{key}%
+        let mut processed_code = code;
+        for (key, value) in config {
+            processed_code = processed_code.replace(&format!("%{{{}}}%", key), value);
+        }
+        
         let mut vertices = vec![];
         let mut vertex_kinds = vec![];
         
         // Check if code contains mounting logic (ExprStmt pattern)
-        let has_mounting = code.contains("DOMContentLoaded") || 
-                           code.contains("document.createElement") ||
-                           code.contains("document.body.appendChild");
+        let has_mounting = processed_code.contains("DOMContentLoaded") || 
+                           processed_code.contains("document.createElement") ||
+                           processed_code.contains("document.body.appendChild");
         
         if has_mounting {
             // Split the code - everything before the mounting comment is ClassDecl
             // The mounting code is ExprStmt
-            if let Some(mount_pos) = code.find("// Mount the application") {
-                let class_code = code[..mount_pos].trim().to_string();
-                let mount_code = code[mount_pos..].to_string();
+            if let Some(mount_pos) = processed_code.find("// Mount the application") {
+                let class_code = processed_code[..mount_pos].trim().to_string();
+                let mount_code = processed_code[mount_pos..].to_string();
                 
                 if !class_code.is_empty() {
                     vertices.push(VertexDef {
@@ -122,7 +135,7 @@ impl NclCodeModule {
                 vertices.push(VertexDef {
                     id: format!("{}_class", self.id),
                     kind: "ClassDecl".to_string(),
-                    text: code,
+                    text: processed_code,
                 });
                 vertex_kinds.push("ClassDecl".to_string());
             }
@@ -131,7 +144,7 @@ impl NclCodeModule {
             vertices.push(VertexDef {
                 id: format!("{}_class", self.id),
                 kind: "ClassDecl".to_string(),
-                text: code,
+                text: processed_code,
             });
             vertex_kinds.push("ClassDecl".to_string());
         }
