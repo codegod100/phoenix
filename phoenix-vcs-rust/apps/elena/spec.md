@@ -16,7 +16,7 @@ Full-stack TypeScript application featuring:
 - Theme: `arc-dark`
 - Options: `catppuccin-mocha`, `arc-dark`
 
-**Catppuccin Mocha:** Soft pastel dark theme with purple accents
+**Catppuccin Mocha:** Soft pastel dark theme with purple accents  
 **Arc-Dark:** Classic dark theme with blue accents
 
 ## Server Configuration
