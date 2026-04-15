@@ -115,50 +115,111 @@ async fn generate_client_from_ncl(
     project_root: &Path,
     component_names: &[String]
 ) -> anyhow::Result<String> {
-    use crate::codegen::emit_bundle::{create_protocol, EmitBuilder, emit_schema};
-
-    // Create TypeScript protocol
-    let protocol = create_protocol(
-        "typescript",
-        vec!["ImportDecl".to_string(), "ClassDecl".to_string(), "ExprStmt".to_string()],
-        vec![],
-    );
-
-    let mut b = EmitBuilder::new(&protocol, "client");
-
-    // Import Elena
-    b = b.vertex("import_elena", "ImportDecl", Some("import { Elena, html } from '@elenajs/core';\n\n"))
-        .map_err(|e| anyhow::anyhow!(e))?;
-
-    // Load and add each component from NCL modules
+    let mut output = String::new();
+    
+    // Add imports
+    output.push_str("import { Elena, html } from '@elenajs/core';\n\n");
+    
+    // Collect component tag names for registration
+    let mut component_tags: Vec<(String, String)> = Vec::new(); // (tag_name, class_name)
+    
+    // Load and generate each component
     for comp_name in component_names {
-        let module = match load_component_module(project_root, comp_name).await {
-            Ok(m) => {
-                println!("   📄 Loaded component module: {}", m.name);
-                m
+        let class_name = comp_name.split('-').map(|s| {
+            let mut chars = s.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str().to_lowercase().as_str()
             }
-            Err(e) => {
-                eprintln!("   ⚠️  {}", e);
-                continue;
+        }).collect::<String>();
+        
+        let tag_name = comp_name.to_lowercase();
+        
+        match load_component_module(project_root, comp_name).await {
+            Ok(module) => {
+                println!("   📄 Loaded component module: {}", module.name);
+                
+                // Add component class from vertices
+                for vertex in &module.vertices {
+                    if vertex.kind == "ClassDecl" {
+                        output.push_str(&vertex.text);
+                        output.push_str("\n\n");
+                    }
+                }
+                
+                // If no ClassDecl vertices, generate a placeholder
+                if !module.vertices.iter().any(|v| v.kind == "ClassDecl") {
+                    generate_placeholder_component(&mut output, &class_name, &tag_name, &module.name);
+                }
+                
+                component_tags.push((tag_name.clone(), class_name.clone()));
             }
-        };
-
-        // Add component vertices
-        for vertex in &module.vertices {
-            let vertex_id = format!("{}_{}", comp_name.replace("-", "_"), vertex.id);
-            b = b.vertex(&vertex_id, &vertex.kind, Some(&vertex.text))
-                .map_err(|e| anyhow::anyhow!(e))?;
+            Err(_) => {
+                // Generate placeholder component
+                println!("   ⚠️  No NCL module for '{}', generating placeholder", comp_name);
+                generate_placeholder_component(&mut output, &class_name, &tag_name, &comp_name);
+                component_tags.push((tag_name, class_name));
+            }
         }
     }
+    
+    // Add root App component
+    output.push_str("// Root Application Component\n");
+    output.push_str("export class ElenaApp extends Elena(HTMLElement) {\n");
+    output.push_str("  static tagName = 'elena-app';\n\n");
+    output.push_str("  render() {\n");
+    output.push_str("    return html`\n");
+    output.push_str("      <div style=\"max-width: 1200px; margin: 0 auto; padding: 2rem;\">\n");
+    output.push_str("        <h1 style=\"color: #333; margin-bottom: 2rem;\">Elena Dashboard</h1>\n");
+    output.push_str("        \n");
+    
+    // Render each component
+    for (tag_name, _) in &component_tags {
+        output.push_str(&format!("        <{}></{}>\n", tag_name, tag_name));
+    }
+    
+    output.push_str("      </div>\n");
+    output.push_str("    `;\n");
+    output.push_str("  }\n");
+    output.push_str("}\n\n");
+    
+    // Register all components
+    output.push_str("// Register all web components\n");
+    for (tag_name, class_name) in &component_tags {
+        output.push_str(&format!(
+            "customElements.define('{}', {});\n",
+            tag_name, class_name
+        ));
+    }
+    output.push_str("customElements.define('elena-app', ElenaApp);\n\n");
+    
+    // Mount app
+    output.push_str("// Mount the application\n");
+    output.push_str("document.addEventListener('DOMContentLoaded', () => {\n");
+    output.push_str("  const app = document.createElement('elena-app');\n");
+    output.push_str("  document.body.appendChild(app);\n");
+    output.push_str("  console.log('Elena Dashboard mounted');\n");
+    output.push_str("});\n");
+    
+    Ok(output)
+}
 
-    // Register components (from NCL module definitions)
-    let register_code = "// Register all components (defined in NCL modules)\n".to_string();
-    b = b.vertex("register", "ExprStmt", Some(&register_code))
-        .map_err(|e| anyhow::anyhow!(e))?;
-
-    // Emit
-    let schema = b.build().map_err(|e| anyhow::anyhow!(e))?;
-    emit_schema(&schema, "typescript").map_err(|e| anyhow::anyhow!(e))
+fn generate_placeholder_component(output: &mut String, class_name: &str, tag_name: &str, display_name: &str) {
+    output.push_str(&format!(
+        "export class {} extends Elena(HTMLElement) {{\n",
+        class_name
+    ));
+    output.push_str(&format!("  static tagName = '{}';\n\n", tag_name));
+    output.push_str("  render() {\n");
+    output.push_str(&format!(
+        "    return html`<div style=\"border: 2px dashed #ccc; padding: 1rem; margin: 1rem 0; border-radius: 8px;\">\n"));
+    output.push_str(&format!(
+        "      <h3>{}</h3>\n", display_name
+    ));
+    output.push_str("      <p>Component placeholder - add vertices to NCL module for custom implementation</p>\n");
+    output.push_str("    </div>`;\n");
+    output.push_str("  }\n");
+    output.push_str("}\n\n");
 }
 
 /// Generate vite.config.ts
