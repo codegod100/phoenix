@@ -234,6 +234,22 @@ impl DevenvGenerator {
             pos += scripts_nix.len();
         }
         
+        // enterShell - automatically run bun install on shell enter
+        let entershell_nix = r#"
+  enterShell = ''
+    # Auto-install dependencies if needed
+    if [ ! -d node_modules ] || [ package.json -nt node_modules ]; then
+      echo "📦 Installing dependencies..."
+      bun install
+    fi
+    
+    echo "🔥 Elena dev environment ready!"
+    echo "  Run 'bun run dev' to start the dev server"
+  '';
+"#;
+        builder = builder.vertex("enterShell", "Binding", Some(entershell_nix))?;
+        pos += entershell_nix.len();
+        
         // pre-commit - disabled for now as it requires git-hooks input
         // if !config.pre_commit_hooks.is_empty() {
         //     let precommit_nix = Self::generate_precommit(&config.pre_commit_hooks);
