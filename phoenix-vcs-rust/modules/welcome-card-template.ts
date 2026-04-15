@@ -1,7 +1,13 @@
 @customElement('welcome-card')
 export class WelcomeCard extends LitElement {
-  @property({ type: String }) title = 'Welcome';
-  @property({ type: String }) message = 'Get started with Lit';
+  @property({ type: String }) declare title: string;
+  @property({ type: String }) declare message: string;
+
+  constructor() {
+    super();
+    this.title = 'Welcome';
+    this.message = 'Get started with Lit';
+  }
 
   static styles = css`
     :host {

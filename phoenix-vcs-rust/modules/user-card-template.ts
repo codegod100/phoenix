@@ -1,7 +1,13 @@
 @customElement('user-card')
 export class UserCard extends LitElement {
-  @property({ type: String }) name = 'User';
-  @property({ type: String }) email = 'user@example.com';
+  @property({ type: String }) declare name: string;
+  @property({ type: String }) declare email: string;
+
+  constructor() {
+    super();
+    this.name = 'User';
+    this.email = 'user@example.com';
+  }
 
   static styles = css`
     :host {

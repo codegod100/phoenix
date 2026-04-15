@@ -6,9 +6,16 @@ interface Todo {
 
 @customElement('todo-list')
 export class TodoList extends LitElement {
-  @state() private todos: Todo[] = [];
-  @state() private newTodoText = '';
-  @state() private loading = false;
+  @state() private declare todos: Todo[];
+  @state() private declare newTodoText: string;
+  @state() private declare loading: boolean;
+
+  constructor() {
+    super();
+    this.todos = [];
+    this.newTodoText = '';
+    this.loading = false;
+  }
 
   static styles = css`
     :host {
