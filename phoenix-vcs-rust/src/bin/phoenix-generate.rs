@@ -105,6 +105,9 @@ async fn main() -> anyhow::Result<()> {
         }
     }
     
+    // Add utility modules that aren't in the spec components list
+    component_names.push("style-utils".to_string());
+    
     println!("   Server config: host={}, api_port={}, vite_port={}",
         server_config.host, server_config.api_port, server_config.vite_port);
     println!("   Components: {}", component_names.join(", "));

@@ -28,7 +28,7 @@ pub async fn generate_app(
     println!("✅ Generated: src/server.ts (from NCL module)");
 
     // Generate client main.ts
-    let client_code = generate_client_from_ncl(project_root, component_names).await?;
+    let client_code = generate_client_from_ncl(project_root, output_dir, component_names).await?;
     fs::write(output_dir.join("src/main.ts"), client_code).await?;
     println!("✅ Generated: src/main.ts (from NCL modules)");
 
@@ -113,13 +113,27 @@ async fn load_component_module(project_root: &Path, name: &str) -> anyhow::Resul
         .map_err(|e| anyhow::anyhow!("Failed to parse {}: {}", ncl_path.display(), e))
 }
 
+/// Generate code for a utility module by concatenating all vertices
+fn generate_module_code(module: &NclCodeModule) -> anyhow::Result<String> {
+    let mut code_parts = Vec::new();
+    
+    for vertex in &module.vertices {
+        code_parts.push(vertex.text.clone());
+    }
+    
+    Ok(code_parts.join("\n\n"))
+}
+
 /// Generate client main.ts from component NCL modules
+/// Also generates separate files for utility modules
 /// Fails if any component module is missing or incomplete
 /// Root app is the last component that has ExprStmt (mounting) code
 async fn generate_client_from_ncl(
     project_root: &Path,
+    output_dir: &Path,
     component_names: &[String]
 ) -> anyhow::Result<String> {
+    use tokio::fs;
     let mut output = String::new();
     let mut component_tags: Vec<(String, String)> = Vec::new(); // (tag_name, class_name)
     let mut loaded_modules: Vec<(String, NclCodeModule)> = Vec::new();
@@ -137,11 +151,29 @@ async fn generate_client_from_ncl(
         .rposition(|(_, m)| m.vertices.iter().any(|v| v.kind == "ExprStmt"))
         .ok_or_else(|| anyhow::anyhow!("No root app found - one component must have ExprStmt for mounting"))?;
     
-    // Build component list (excluding root)
-    let mut regular_components = Vec::new();
+    // Separate modules: regular components, utility modules, root app
     let root_module = loaded_modules.remove(root_idx);
+    let mut regular_components = Vec::new();
+    let mut utility_modules = Vec::new();
+    
     for (name, module) in loaded_modules {
-        regular_components.push((name, module));
+        // Utility modules provide non-WebComponent interfaces and aren't web components
+        let is_utility = module.provides.iter().all(|p| p.interface != "WebComponent") 
+            && module.needs.is_empty();
+        
+        if is_utility {
+            utility_modules.push((name, module));
+        } else {
+            regular_components.push((name, module));
+        }
+    }
+    
+    // Generate utility modules as separate files
+    for (util_name, module) in &utility_modules {
+        println!("   📄 Loaded utility module: {}", module.name);
+        let util_code = generate_module_code(module)?;
+        fs::write(output_dir.join("src").join(format!("{}.ts", util_name)), util_code).await?;
+        println!("   ✅ Generated: src/{}.ts (utility module)", util_name);
     }
     
     // Add import statement

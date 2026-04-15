@@ -1,32 +1,21 @@
 {
   id = "todo-list",
   name = "Todo List Component",
+  description = "Full-featured todo list with database persistence",
   version = "1.0.0",
-  
-  provides = ["ui-component", "elena-component"],
-  needs = ["database", "styling"],
+  language = "typescript",
+  is_infrastructure = false,
   
   generation = {
-    target = "typescript",
-    exports = ["TodoList"],
-    resource_file = "todo-list.ts",
-    
-    vertices = [
-      {
-        type = "Import",
-        source = "elenajs-core",
-        items = ["Elena", "html"]
-      },
-      {
-        type = "Import",
-        source = "style-utils", 
-        items = ["styles", "theme"]
-      },
-      {
-        type = "ClassDecl",
-        name = "TodoList",
-        code = m%"RESOURCE:todo-list.ts"%
-      }
-    ]
-  }
+    protocol = "typescript",
+    vertex_kinds = ["ClassDecl", "Import"],
+    resource_file = "todo-list-styled.ts",
+    config_placeholders = {}
+  },
+  
+  provides = [
+    { interface = "WebComponent", properties = { tag = "todo-list" } }
+  ],
+  
+  needs = ["database", "styling"]
 }
