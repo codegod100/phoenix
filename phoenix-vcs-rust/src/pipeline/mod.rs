@@ -1505,3 +1505,5 @@ pub use equations::{
     VerificationResult, VerificationReport, MorphismPreservationResult,
 };
 
+pub mod kitty_integration;
+pub mod kitty_panproto_bridge;
