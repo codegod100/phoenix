@@ -6,14 +6,20 @@
   language = "typescript",
   is_infrastructure = false,
 
+  # Config values available for code generation
+  # These are evaluated by Nickel and passed to the template
+  config = {
+    buttonVariant = "success",
+    checkboxAccent = "success",
+    showProgress = true,
+    maxItems = 100
+  },
+
   generation = {
     protocol = "typescript",
     vertex_kinds = ["ClassDecl", "Import"],
-    resource_file = "todo-list-styled.ts",
-    config_placeholders = {
-      "{{BUTTON_VARIANT}}" = "success",
-      "{{CHECKBOX_ACCENT}}" = "success"
-    }
+    resource_file = "todo-list-template.ts",
+    # The config values above are passed to the template during generation
   },
 
   provides = [

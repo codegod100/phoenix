@@ -158,8 +158,11 @@ impl NclCodeModule {
         let is_infrastructure = get_bool_field(&record, "is_infrastructure")
             .unwrap_or(false);
         
+        // Extract top-level config (new style with NCL evaluation)
+        let config = extract_config_from_record(&record);
+        
         // Extract generation block
-        let (protocol, vertex_kinds, vertices, config_placeholders, resource_file) = 
+        let (protocol, vertex_kinds, vertices, mut config_placeholders, resource_file) = 
             if let Some(gen_expr) = record.value_by_name("generation") {
                 if let Some(gen_record) = gen_expr.as_record() {
                     let protocol = get_string_field(&gen_record, "protocol")
@@ -175,6 +178,12 @@ impl NclCodeModule {
             } else {
                 ("typescript".to_string(), vec![], vec![], HashMap::new(), None)
             };
+        
+        // Merge top-level config into placeholders (new style takes precedence)
+        // Template syntax: %{key}% 
+        for (key, value) in config {
+            config_placeholders.insert(format!("%{{{}}}%", key), value);
+        }
         
         // Extract capabilities
         let provides = extract_provides_from_record(&record);
@@ -286,6 +295,29 @@ fn get_multiline_string_field(record: &NickelRecord, name: &str) -> Option<Strin
     }
     
     None
+}
+
+fn extract_config_from_record(record: &NickelRecord) -> HashMap<String, String> {
+    let mut config = HashMap::new();
+    
+    if let Some(expr) = record.value_by_name("config") {
+        if let Some(cfg_record) = expr.as_record() {
+            for (field_name, value_opt) in cfg_record.iter() {
+                if let Some(value_expr) = value_opt {
+                    // Convert Nickel value to string representation
+                    // Handle strings and booleans directly
+                    if let Some(s) = value_expr.as_str() {
+                        config.insert(field_name.to_string(), s.to_string());
+                    } else if let Some(b) = value_expr.as_bool() {
+                        config.insert(field_name.to_string(), b.to_string());
+                    }
+                    // Note: numbers would need special handling - skip for now
+                }
+            }
+        }
+    }
+    
+    config
 }
 
 fn extract_placeholders_from_record(record: &NickelRecord) -> HashMap<String, String> {
