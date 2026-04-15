@@ -71,6 +71,3 @@ bun run build
 # Start production server
 bun start
 ```
-
-## Template
-template = "elena"
