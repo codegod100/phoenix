@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, Operation, SortKind, Term, Equation};
 
 /// Lit configuration data (concrete)
@@ -20,7 +20,7 @@ pub struct LitConfig {
 /// Lift LitConfig into a panproto Term
 /// 
 /// Lifting: LitConfig → Term::App("config", [name, theme, colors])
-#[cfg(feature = "panproto")]
+
 pub fn lift_config(config: &LitConfig) -> Term {
     Term::app(
         "config",
@@ -37,7 +37,7 @@ pub fn lift_config(config: &LitConfig) -> Term {
 /// Lower a Term back to a LitConfig
 /// 
 /// Lowering: Term::App("config", [...]) → LitConfig
-#[cfg(feature = "panproto")]
+
 pub fn lower_config(term: &Term) -> Option<LitConfig> {
     match term {
         Term::App { op, args } if op.as_ref() == "config" => {
@@ -76,7 +76,7 @@ pub fn lower_config(term: &Term) -> Option<LitConfig> {
 /// Operations represent transformations we can verify:
 /// - generate: Config → ThPackageJson (generating package.json)
 /// - compose: (ThMain, ThComponents) → ThApp (composing components)
-#[cfg(feature = "panproto")]
+
 pub fn lit_theory_with_lifting() -> Theory {
     Theory::new(
         Arc::from("ThLitLifted"),
@@ -124,7 +124,7 @@ pub fn lit_theory_with_lifting() -> Theory {
 /// Algebraic equations (laws) for Lit theory
 /// 
 /// These enable verification that transformations respect structure.
-#[cfg(feature = "panproto")]
+
 fn lit_equations() -> Vec<Equation> {
     vec![
         // E1: Idempotence of generate
@@ -167,7 +167,7 @@ fn lit_equations() -> Vec<Equation> {
 /// 
 /// This is the core lifting transformation:
 ///   apply(generate_package, lift_config(cfg)) → Term representing package.json
-#[cfg(feature = "panproto")]
+
 pub fn apply_generate(
     op_name: &str,
     config_term: &Term,
@@ -183,7 +183,7 @@ pub fn apply_generate(
 /// Lower a generated term back to code string
 /// 
 /// This is the final step: Term → String (actual code)
-#[cfg(feature = "panproto")]
+
 pub fn lower_to_code(term: &Term, config: &LitConfig) -> String {
     match term {
         Term::App { op, .. } => match op.as_ref() {
@@ -300,7 +300,7 @@ fn pascal_case(s: &str) -> String {
 /// 2. Create TheoryMorphism (Config → Code)  
 /// 3. Apply morphism using `morphism.apply_to_term()`
 /// 4. Lower result → Code
-#[cfg(feature = "panproto")]
+
 pub fn generate_with_morphism(config: &LitConfig) -> HashMap<String, String> {
     use panproto_gat::TheoryMorphism;
     
@@ -353,7 +353,7 @@ pub fn generate_with_morphism(config: &LitConfig) -> HashMap<String, String> {
 }
 
 /// Lower a term transformed by morphism.apply_to_term()
-#[cfg(feature = "panproto")]
+
 fn lower_transformed_term(term: &Term, config: &LitConfig) -> String {
     match term {
         Term::App { op, .. } => match op.as_ref() {
@@ -367,7 +367,7 @@ fn lower_transformed_term(term: &Term, config: &LitConfig) -> String {
 }
 
 /// Simple lifting pipeline (without morphism)
-#[cfg(feature = "panproto")]
+
 pub fn generate_with_lifting(config: &LitConfig) -> HashMap<String, String> {
     let mut outputs = HashMap::new();
     
@@ -396,18 +396,5 @@ pub fn generate_with_lifting(config: &LitConfig) -> HashMap<String, String> {
         outputs.insert(filename.to_string(), code);
     }
     
-    outputs
-}
-
-// ============================================================================
-// When panproto is disabled, use simple string generation
-// ============================================================================
-
-#[cfg(not(feature = "panproto"))]
-pub fn generate_with_lifting(config: &LitConfig) -> HashMap<String, String> {
-    let mut outputs = HashMap::new();
-    outputs.insert("package.json".to_string(), generate_package_json(config));
-    outputs.insert("src/main.ts".to_string(), generate_main_ts(config));
-    outputs.insert("src/hero.ts".to_string(), generate_hero_component(config));
     outputs
 }

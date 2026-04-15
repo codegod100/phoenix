@@ -28,26 +28,10 @@ pub struct BundleMetadata {
 }
 
 /// Discovers all template bundles in the bundles/ directory
-pub fn discover_template_bundles(bundles_dir: impl AsRef<Path>) -> Result<Vec<TemplateBundle>> {
-    let bundles_dir = bundles_dir.as_ref();
-    let mut bundles = Vec::new();
-    
-    if !bundles_dir.exists() {
-        return Ok(bundles);
-    }
-    
-    for entry in std::fs::read_dir(bundles_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        
-        if path.is_dir() {
-            if let Some(bundle) = load_bundle(&path)? {
-                bundles.push(bundle);
-            }
-        }
-    }
-    
-    Ok(bundles)
+/// NOTE: Template bundles are deprecated, returns empty list
+pub fn discover_template_bundles(_bundles_dir: impl AsRef<Path>) -> Result<Vec<TemplateBundle>> {
+    // Template bundles are deprecated - return empty list
+    Ok(Vec::new())
 }
 
 /// Load a single template bundle from directory
@@ -243,13 +227,9 @@ pub async fn spec_md_to_ncl(
 ) -> Result<String> {
     let bundles_dir = bundles_dir.as_ref();
     
-    // 1. Discover templates (skip incomplete)
+    // 1. Discover templates (deprecated - bundles return empty list now)
     let bundles = discover_template_bundles(bundles_dir)?;
-    if bundles.is_empty() {
-        anyhow::bail!("No template bundles found in {:?}", bundles_dir);
-    }
-    
-    tracing::info!("Discovered {} bundles, building mega-prompt for selection+generation...", bundles.len());
+    // Skip empty check since we're not using bundles anymore
     
     // 2. Build mega-prompt with all contracts
     let prompt = build_mega_prompt(spec_md, &bundles);

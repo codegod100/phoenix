@@ -5,11 +5,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, Operation, SortKind};
-#[cfg(feature = "panproto")]
+
 use panproto_schema::{Schema, Vertex, Edge, Protocol};
-#[cfg(feature = "panproto")]
+
 use panproto_gat::Name;
 
 /// Schema compilation error
@@ -35,10 +35,10 @@ impl std::error::Error for SchemaError {}
 /// Compiles a GAT theory to a Schema graph
 /// 
 /// This is the bridge between Layer 1 (GAT/math) and Layer 2 (Schema/graphs).
-#[cfg(feature = "panproto")]
+
 pub struct TheoryCompiler;
 
-#[cfg(feature = "panproto")]
+
 impl TheoryCompiler {
     /// Compile theory to schema
     pub fn compile(theory: &Theory) -> Result<Schema, SchemaError> {
@@ -142,7 +142,7 @@ impl TheoryCompiler {
 }
 
 /// Compile Lit theory to schema
-#[cfg(feature = "panproto")]
+
 pub fn compile_lit_theory() -> Result<Schema, SchemaError> {
     use crate::pipeline::lit_theory_lifted::lit_theory_with_lifting;
     
@@ -151,10 +151,10 @@ pub fn compile_lit_theory() -> Result<Schema, SchemaError> {
 }
 
 /// Schema-based code generator
-#[cfg(feature = "panproto")]
+
 pub struct SchemaCodeGenerator;
 
-#[cfg(feature = "panproto")]
+
 impl SchemaCodeGenerator {
     /// Generate code from schema
     pub fn generate(schema: &Schema, config: &serde_json::Value) -> HashMap<String, String> {
@@ -176,36 +176,5 @@ impl SchemaCodeGenerator {
             .unwrap_or("generated");
         
         generate_with_expr(config, project_name)
-    }
-}
-
-// ============================================================================
-// When panproto is disabled
-// ============================================================================
-
-#[cfg(not(feature = "panproto"))]
-pub struct TheoryCompiler;
-
-#[cfg(not(feature = "panproto"))]
-impl TheoryCompiler {
-    pub fn compile(_theory: ()) -> Result<(), SchemaError> {
-        Err(SchemaError::InvalidTheory("panproto feature not enabled".into()))
-    }
-}
-
-#[cfg(not(feature = "panproto"))]
-pub fn compile_lit_theory() -> Result<(), SchemaError> {
-    Err(SchemaError::InvalidTheory("panproto feature not enabled".into()))
-}
-
-#[cfg(not(feature = "panproto"))]
-pub struct SchemaCodeGenerator;
-
-#[cfg(not(feature = "panproto"))]
-impl SchemaCodeGenerator {
-    pub fn generate(_schema: (), _config: &serde_json::Value) -> HashMap<String, String> {
-        let mut outputs = HashMap::new();
-        outputs.insert("package.json".into(), "{\"name\": \"generated\"}".into());
-        outputs
     }
 }

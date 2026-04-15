@@ -7,11 +7,11 @@
 //! The key morphism: μ_template: ThIU → ThTemplateVars
 //! Maps: IU → {name: String, title: String, widgets: [...], ...}
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, SortKind, Operation, TheoryMorphism, Term, Equation};
-#[cfg(feature = "panproto")]
+
 use std::collections::HashMap;
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 
 use crate::pipeline::ImplementationUnit;
@@ -21,7 +21,7 @@ use crate::ncl::CodeTemplate;
 ///
 /// This theory describes the structure of data that can be
 /// bound to template placeholders like {{name}}, {{title}}, etc.
-#[cfg(feature = "panproto")]
+
 pub fn template_vars_theory() -> Theory {
     Theory::new(
         Arc::from("ThTemplateVars"),
@@ -73,7 +73,7 @@ pub fn template_vars_theory() -> Theory {
 }
 
 /// ThTemplate: Theory of code templates with placeholders
-#[cfg(feature = "panproto")]
+
 pub fn template_theory() -> Theory {
     Theory::new(
         Arc::from("ThTemplate"),
@@ -109,14 +109,14 @@ pub fn template_theory() -> Theory {
 }
 
 /// OBSOLETE: μ_iu_to_vars removed - use direct spec→code pipeline
-#[cfg(feature = "panproto")]
+
 pub fn iu_to_vars_morphism() -> TheoryMorphism {
     panic!("iu_to_vars_morphism is obsolete - use direct spec→code pipeline")
 }
 
 /// Template validation equations
 /// These enforce that rendered code satisfies IU contracts
-#[cfg(feature = "panproto")]
+
 pub fn template_equations() -> Vec<Equation> {
     vec![
         // Equation: The rendered app name MUST equal IU name
@@ -175,7 +175,7 @@ pub fn template_equations() -> Vec<Equation> {
 ///
 /// This represents the actual rendering operation as a theory morphism.
 /// It takes template variables and a template, produces code.
-#[cfg(feature = "panproto")]
+
 pub fn template_render_morphism() -> TheoryMorphism {
     let mut sort_map = HashMap::new();
     // TemplateVars + Template → Code
@@ -198,7 +198,7 @@ pub fn template_render_morphism() -> TheoryMorphism {
 }
 
 /// OBSOLETE: codegen_morphism_composed removed - use direct spec→code pipeline
-#[cfg(feature = "panproto")]
+
 pub fn codegen_morphism_composed() -> TheoryMorphism {
     panic!("codegen_morphism_composed is obsolete - use direct spec→code pipeline")
 }

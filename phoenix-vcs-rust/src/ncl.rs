@@ -1,9 +1,9 @@
-//! NCL (Nickel) spec parser using tree-sitter-nickel
+//! NCL (Nickel) spec parser using nickel-lang
 //!
-//! Parses .ncl spec files into structured data using the tree-sitter parser.
-//! This avoids the complexity of full Nickel evaluation and works with panproto.
+//! Parses .ncl spec files into structured data using the official nickel-lang crate.
 
-use tree_sitter::{Node, Parser, Tree};
+use nickel_lang::{Context, Expr, Record, Array};
+use crate::pipeline::widget_config::WidgetConfig;
 use std::path::Path;
 use std::collections::HashMap;
 
@@ -45,11 +45,7 @@ pub struct ParsedNcl {
     pub pyproject: Option<PyProjectConfig>,
     /// Generic record content
     pub generic: Option<HashMap<String, String>>,
-    /// Template name to use for code generation (e.g., "python-textual", "rust")
-    /// Takes precedence over build_type inference
-    pub template: Option<String>,
     /// Build type specified in spec (e.g., "python", "rust", "pyo3")
-    /// Used for both template selection and flake configuration
     pub build_type: Option<String>,
     /// Top-level name from spec (used as pname if no flake.pname)
     pub name: Option<String>,
@@ -62,58 +58,13 @@ pub struct ParsedNcl {
 impl ParsedNcl {
     /// Load and merge template configuration
     /// 
-    /// Priority: explicit `template` field > `build_type` field > none
-    pub fn merge_template(&mut self, template_dir: impl AsRef<Path>) {
-        // Determine which template to load: explicit template > build_type > none
-        let template_name = self.template.clone()
-            .or_else(|| self.build_type.clone());
-        
-        if let Some(ref template_name) = template_name {
-            let template_path = template_dir.as_ref().join(format!("{}.ncl", template_name));
-            if let Ok(template_content) = std::fs::read_to_string(&template_path) {
-                if let Ok(template_parsed) = parse_ncl_spec(&template_content, &template_path.to_string_lossy()) {
-                    // Create a spec FlakeConfig from top-level fields if no flake section exists
-                    let spec_flake = self.flake.clone().or_else(|| {
-                        // Only create synthetic flake config if we have at least name
-                        self.name.as_ref().map(|name| FlakeConfig {
-                            pname: Some(name.clone()),
-                            version: self.version.clone(),
-                            description: self.description.clone(),
-                            build_type: self.build_type.clone().or_else(|| template_parsed.build_type.clone()),
-                            ..Default::default()
-                        })
-                    });
-                    
-                    // Merge template flake config into spec
-                    if let Some(template_flake) = template_parsed.flake {
-                        self.flake = Some(merge_flake_configs(&template_flake, spec_flake.as_ref()));
-                    }
-                    
-                    // Merge pyproject config - spec overrides template
-                    if self.pyproject.is_none() {
-                        if let Some(template_pyproject) = template_parsed.pyproject {
-                            self.pyproject = Some(template_pyproject);
-                        } else if template_name.starts_with("python") {
-                            // Use default Python config
-                            self.pyproject = Some(PyProjectConfig::python_default());
-                        }
-                    }
-                    
-                    // Merge generic fields from template
-                    if let Some(template_generic) = template_parsed.generic {
-                        let mut merged = template_generic.clone();
-                        if let Some(ref spec_generic) = self.generic {
-                            merged.extend(spec_generic.clone());
-                        }
-                        self.generic = Some(merged);
-                    }
-                }
-            }
-        }
+    /// DEPRECATED: Template merging is no longer supported.
+    /// This function is now a no-op and will be removed in a future version.
+    pub fn merge_template(&mut self, _template_dir: impl AsRef<Path>) {
+        // Template merging is deprecated - specs are now self-contained
     }
     
-    /// Convert to a panproto Theory (when panproto feature is enabled)
-    #[cfg(feature = "panproto")]
+    /// Convert to a panproto Theory
     pub fn to_panproto_theory(&self) -> panproto_gat::Theory {
         crate::ncl_panproto::requirements_to_theory(self)
     }
@@ -206,264 +157,74 @@ pub fn parse_ncl_file<P: AsRef<Path>>(path: P) -> Result<ParsedNcl, String> {
     parse_ncl_spec(&content, path.to_str().unwrap_or("unknown.ncl"))
 }
 
-/// Parse NCL spec content using tree-sitter-nickel
+/// Parse NCL spec content using nickel-lang
 pub fn parse_ncl_spec(content: &str, _source_name: &str) -> Result<ParsedNcl, String> {
-    let mut parser = Parser::new();
-    parser
-        .set_language(&tree_sitter_nickel::LANGUAGE.into())
-        .map_err(|e| format!("Failed to set language: {}", e))?;
+    // Use nickel-lang to evaluate the spec
+    let mut context = Context::new();
+    let expr = context.eval_deep(content)
+        .map_err(|e| format!("Failed to parse NCL: {:?}", e))?;
     
-    let tree = parser
-        .parse(content, None)
-        .ok_or_else(|| "Failed to parse".to_string())?;
-    
-    // Debug: print the tree structure
-    if std::env::var("DEBUG_NCL").is_ok() {
-        let root = tree.root_node();
-        eprintln!("DEBUG: Root kind: {}", root.kind());
-        eprintln!("DEBUG: Root child count: {}", root.child_count());
-        for i in 0..root.child_count() {
-            if let Some(child) = root.child(i) {
-                eprintln!("DEBUG: Child {}: kind={}", i, child.kind());
-            }
-        }
-    }
-    
-    extract_from_tree(&tree, content)
+    extract_from_expr(&expr)
 }
 
-/// Extract data from tree-sitter parse tree
-fn extract_from_tree(tree: &Tree, source: &str) -> Result<ParsedNcl, String> {
+/// Extract data from a Nickel Expr
+fn extract_from_expr(expr: &Expr) -> Result<ParsedNcl, String> {
     let mut result = ParsedNcl::default();
-    let root = tree.root_node();
     
-    // Debug: print detailed structure
-    if std::env::var("DEBUG_NCL").is_ok() {
-        eprintln!("DEBUG: Traversing tree...");
-        traverse_node(root, source, 0);
+    // Get the record from the expression
+    let record = expr.as_record()
+        .ok_or_else(|| "Expected a record".to_string())?;
+    
+    // Extract top-level fields
+    result.name = get_string_field(&record, "name");
+    result.version = get_string_field(&record, "version");
+    result.description = get_string_field(&record, "description");
+    result.build_type = get_string_field(&record, "build_type");
+    
+    // Extract nested records
+    if let Some(flake_expr) = record.value_by_name("flake") {
+        if let Some(flake_record) = flake_expr.as_record() {
+            result.flake = extract_flake(&flake_record)?;
+        }
     }
     
-    // NCL file structure: term -> uni_term -> record {...}
-    // or term -> let_in with body containing record
-    extract_from_term(root, source, &mut result)?;
-    
-    Ok(result)
-}
-
-/// Recursively traverse and print node structure
-fn traverse_node(node: Node, source: &str, depth: usize) {
-    let indent = "  ".repeat(depth);
-    let text = node_text(node, source).unwrap_or_default();
-    let preview = if text.len() > 50 { &text[..50] } else { &text };
-    eprintln!("{}{}: {}...", indent, node.kind(), preview);
-    
-    let mut cursor = node.walk();
-    for child in node.children(&mut cursor) {
-        traverse_node(child, source, depth + 1);
+    if let Some(pyproject_expr) = record.value_by_name("pyproject") {
+        if let Some(pyproject_record) = pyproject_expr.as_record() {
+            result.pyproject = extract_pyproject(&pyproject_record)?;
+        }
     }
-}
-
-/// Extract from a term node - handles the full hierarchy
-fn extract_from_term(node: Node, source: &str, result: &mut ParsedNcl) -> Result<(), String> {
-    match node.kind() {
-        "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
-            // These are wrapper nodes - traverse down to find the actual record
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                extract_from_term(child, source, result)?;
-            }
-            Ok(())
+    
+    // Extract requirements array
+    if let Some(reqs_expr) = record.value_by_name("requirements") {
+        if let Some(array) = reqs_expr.as_array() {
+            result.requirements = extract_requirements(&array)?;
         }
-        "record" | "uni_record" => {
-            extract_record_fields(node, source, result)
-        }
-        "let_in" | "let_in_block" | "let_expr" => {
-            // Extract from the 'in' part (the body)
-            if let Some(body) = node.child_by_field_name("body") {
-                extract_from_term(body, source, result)?;
-            } else {
-                // Try to find body as the last child
-                // let_expr: [let_in_block or bindings], body
-                let mut cursor = node.walk();
-                let children: Vec<_> = node.children(&mut cursor).collect();
-                if children.len() >= 2 {
-                    let last_child = children.last().unwrap();
-                    extract_from_term(*last_child, source, result)?;
-                }
-            }
-            Ok(())
-        }
-        _ => Ok(()),
     }
-}
-
-/// Extract fields from a record node
-fn extract_record_fields(node: Node, source: &str, result: &mut ParsedNcl) -> Result<(), String> {
+    
+    // Extract morphisms array
+    if let Some(morphs_expr) = record.value_by_name("morphisms") {
+        if let Some(array) = morphs_expr.as_array() {
+            result.morphisms = extract_morphisms(&array)?;
+        }
+    }
+    
+    // Extract compositions array
+    if let Some(comps_expr) = record.value_by_name("compositions") {
+        if let Some(array) = comps_expr.as_array() {
+            result.compositions = extract_morphisms(&array)?;
+        }
+    }
+    
+    // Extract generic fields (everything else that's a string)
     let mut generic = HashMap::new();
-    
-    // Handle different record node types: "record", "uni_record", "atom" containing record
-    let record_node = match node.kind() {
-        "record" | "uni_record" => Some(node),
-        "atom" | "record_operand" | "applicative" | "infix_expr" | "uni_term" | "term" => {
-            // Look for uni_record child
-            let mut cursor = node.walk();
-            let mut found = None;
-            for child in node.children(&mut cursor) {
-                if child.kind() == "uni_record" || child.kind() == "record" {
-                    found = Some(child);
-                    break;
-                }
-            }
-            found
-        }
-        _ => None,
-    };
-    
-    let record_node = match record_node {
-        Some(n) => n,
-        None => return Ok(()),
-    };
-    
-    // Iterate over field declarations
-    let mut cursor = record_node.walk();
-    for child in record_node.children(&mut cursor) {
-        // Handle both regular fields (field_decl) and the last field (last_field) in a record
-        if child.kind() != "field_decl" && child.kind() != "last_field" {
+    for (field_name, value_opt) in record.iter() {
+        // Skip already processed fields
+        if matches!(field_name, "name" | "version" | "description" | "build_type" | "flake" | "pyproject" | "requirements" | "morphisms" | "compositions") {
             continue;
         }
-        
-        // Get field_def inside field_decl or last_field
-        let mut cursor = child.walk();
-        let children: Vec<_> = child.children(&mut cursor).collect();
-        
-        // For field_decl, look for field_def directly
-        // For last_field, look for field_decl then field_def inside it
-        let field_def = if child.kind() == "field_decl" {
-            children.iter()
-                .find(|c| c.kind() == "field_def")
-                .copied()
-        } else if child.kind() == "last_field" {
-            // last_field contains field_decl which contains field_def
-            if let Some(field_decl) = children.iter().find(|c| c.kind() == "field_decl") {
-                let mut inner_cursor = field_decl.walk();
-                let inner_children: Vec<_> = field_decl.children(&mut inner_cursor).collect();
-                inner_children.iter().find(|c| c.kind() == "field_def").copied()
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-        
-        let field_def = match field_def {
-            Some(fd) => fd,
-            None => continue,
-        };
-        
-        // Extract field name from field_path
-        let name = extract_field_name(field_def, source)?;
-        if name.is_empty() {
-            continue;
-        }
-        
-        // Debug: print field name
-        if std::env::var("DEBUG_NCL").is_ok() {
-            eprintln!("DEBUG: Processing field: {}", name);
-        }
-        
-        // Extract value
-        let value_node = find_field_value_node(field_def);
-        
-        // Handle based on field name
-        match name.as_str() {
-            "template" => {
-                let val = extract_string_from_node(value_node, source)?;
-                if std::env::var("DEBUG_NCL").is_ok() {
-                    eprintln!("DEBUG: template value: {:?}", val);
-                }
-                if let Some(s) = val {
-                    result.template = Some(s);
-                }
-            }
-            "build_type" => {
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    result.build_type = Some(s);
-                }
-            }
-            "name" => {
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    result.name = Some(s);
-                }
-            }
-            "version" => {
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    result.version = Some(s);
-                }
-            }
-            "description" => {
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    result.description = Some(s);
-                }
-            }
-            "flake" => {
-                if let Some(node) = value_node {
-                    result.flake = extract_flake(node, source)?;
-                }
-            }
-            "pyproject" => {
-                if let Some(node) = value_node {
-                    result.pyproject = extract_pyproject(node, source)?;
-                }
-            }
-            "requirements" => {
-                if let Some(node) = value_node {
-                    result.requirements = extract_requirements(node, source)?;
-                }
-            }
-            "morphisms" => {
-                if let Some(node) = value_node {
-                    result.morphisms = extract_morphisms(node, source)?;
-                }
-            }
-            "compositions" => {
-                if let Some(node) = value_node {
-                    result.compositions = extract_morphisms(node, source)?;
-                }
-            }
-            "llm_prompt" => {
-                if std::env::var("DEBUG_NCL").is_ok() {
-                    eprintln!("DEBUG: Processing llm_prompt field");
-                    if let Some(node) = value_node {
-                        eprintln!("DEBUG: llm_prompt value_node kind: {}", node.kind());
-                        // Print full tree
-                        fn print_tree(node: Node, source: &str, depth: usize) {
-                            let indent = "  ".repeat(depth);
-                            let text = &source[node.start_byte()..node.end_byte().min(node.start_byte() + 50)];
-                            eprintln!("DEBUG: {}{}: {:?}", indent, node.kind(), text.replace('\n', "\\n"));
-                            let mut cursor = node.walk();
-                            for child in node.children(&mut cursor) {
-                                print_tree(child, source, depth + 1);
-                            }
-                        }
-                        print_tree(node, source, 1);
-                    } else {
-                        eprintln!("DEBUG: llm_prompt value_node is None");
-                    }
-                }
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    if std::env::var("DEBUG_NCL").is_ok() {
-                        eprintln!("DEBUG: llm_prompt found, length: {}", s.len());
-                    }
-                    generic.insert(name, s);
-                } else if std::env::var("DEBUG_NCL").is_ok() {
-                    eprintln!("DEBUG: llm_prompt extract_string_from_node returned None");
-                }
-            }
-            _ => {
-                // Store in generic fields
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    generic.insert(name, s);
-                }
+        if let Some(value_expr) = value_opt {
+            if let Some(s) = value_expr.as_str() {
+                generic.insert(field_name.to_string(), s.to_string());
             }
         }
     }
@@ -472,737 +233,187 @@ fn extract_record_fields(node: Node, source: &str, result: &mut ParsedNcl) -> Re
         result.generic = Some(generic);
     }
     
-    Ok(())
+    Ok(result)
 }
 
-/// Extract field name from field_def node
-fn extract_field_name(field_def: Node, source: &str) -> Result<String, String> {
-    let mut cursor = field_def.walk();
-    
-    // Find field_path
-    for child in field_def.children(&mut cursor) {
-        if child.kind() == "field_path" {
-            // Get the first field_path_elem -> ident
-            let mut elem_cursor = child.walk();
-            for elem in child.children(&mut elem_cursor) {
-                if elem.kind() == "field_path_elem" {
-                    let mut ident_cursor = elem.walk();
-                    for ident in elem.children(&mut ident_cursor) {
-                        if ident.kind() == "ident" {
-                            return node_text(ident, source);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    Ok(String::new())
+/// Get a string field from a record
+fn get_string_field(record: &Record, name: &str) -> Option<String> {
+    record.value_by_name(name)?.as_str().map(|s| s.to_string())
 }
 
-/// Find the value node in a field_def (after the '=')
-fn find_field_value_node(field_def: Node) -> Option<Node> {
-    let mut cursor = field_def.walk();
-    let mut found_eq = false;
-    
-    for child in field_def.children(&mut cursor) {
-        if found_eq {
-            return Some(child);
-        }
-        if child.kind() == "=" {
-            found_eq = true;
-        }
-    }
-    
-    None
-}
-
-/// Extract string value from a node (handles term/uni_term nesting)
-fn extract_string_from_node(node: Option<Node>, source: &str) -> Result<Option<String>, String> {
-    let node = match node {
-        Some(n) => n,
-        None => return Ok(None),
-    };
-    
-    // Navigate through term -> uni_term -> infix_expr -> applicative -> record_operand -> atom -> str_chunks
-    let mut current = node;
-    let kinds = ["term", "uni_term", "infix_expr", "applicative", "record_operand", "atom"];
-    
-    loop {
-        if current.kind() == "str_chunks" || current.kind() == "str_chunks_single" {
-            break;
-        }
-        
-        // Try to find a child with one of the expected kinds
-        let mut cursor = current.walk();
-        let mut found = None;
-        for child in current.children(&mut cursor) {
-            if child.kind() == "str_chunks" || child.kind() == "str_chunks_single" 
-                || child.kind() == "chunk_literal_single" || child.kind() == "str_literal" {
-                found = Some(child);
-                break;
-            }
-            if kinds.contains(&child.kind()) {
-                found = Some(child);
-                break;
-            }
-        }
-        
-        match found {
-            Some(next) => current = next,
-            None => break,
-        }
-    }
-    
-    match current.kind() {
-        "str_chunks" => {
-            // Check for both single-line and multiline strings
-            let mut cursor = current.walk();
-            for child in current.children(&mut cursor) {
-                match child.kind() {
-                    "str_chunks_single" => {
-                        // Single-line: str_chunks_single -> chunk_literal_single -> str_literal
-                        let mut inner = child.walk();
-                        for chunk_lit in child.children(&mut inner) {
-                            if chunk_lit.kind() == "chunk_literal_single" {
-                                let mut inner2 = chunk_lit.walk();
-                                for str_lit in chunk_lit.children(&mut inner2) {
-                                    if str_lit.kind() == "str_literal" {
-                                        let text = node_text(str_lit, source)?;
-                                        let trimmed = text.trim_matches('"');
-                                        return Ok(Some(trimmed.to_string()));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    "str_chunks_multi" => {
-                        // Multiline: str_chunks_multi contains multiple chunk_literal_multi
-                        let mut result = String::new();
-                        let mut inner = child.walk();
-                        for chunk in child.children(&mut inner) {
-                            if chunk.kind() == "chunk_literal_multi" {
-                                let mut inner2 = chunk.walk();
-                                for literal in chunk.children(&mut inner2) {
-                                    match literal.kind() {
-                                        "mult_str_literal" => {
-                                            let text = node_text(literal, source)?;
-                                            result.push_str(&text);
-                                        }
-                                        "double_quote" => {
-                                            result.push('"');
-                                        }
-                                        "str_esc_char" => {
-                                            let text = node_text(literal, source)?;
-                                            // Handle escaped chars like \"
-                                            if text == "\\\"" {
-                                                result.push('"');
-                                            } else {
-                                                result.push_str(&text);
-                                            }
-                                        }
-                                        "percent" => {
-                                            result.push('%');
-                                        }
-                                        _ => {
-                                            // Debug unknown literal types in multiline strings
-                                            if std::env::var("DEBUG_NCL").is_ok() {
-                                                let text = node_text(literal, source).unwrap_or_default();
-                                                eprintln!("DEBUG: Unknown multiline literal type: {} = {:?}", literal.kind(), text);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if !result.is_empty() {
-                            return Ok(Some(result));
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            Ok(None)
-        }
-        "str_literal" => {
-            let text = node_text(current, source)?;
-            let trimmed = text.trim_matches('"');
-            return Ok(Some(trimmed.to_string()));
-        }
-        _ => Ok(None),
-    }
-}
-
-/// Extract string value from a node (wrapper for compatibility)
-fn extract_string(node: Node, source: &str) -> Result<Option<String>, String> {
-    extract_string_from_node(Some(node), source)
-}
-
-/// Extract text from a node
-fn node_text(node: Node, source: &str) -> Result<String, String> {
-    let start = node.start_byte();
-    let end = node.end_byte();
-    if end > source.len() {
-        return Err("Node extends past source".to_string());
-    }
-    Ok(source[start..end].to_string())
-}
-
-/// Extract flake config from a record node (tree-sitter version)
-fn extract_flake(node: Node, source: &str) -> Result<Option<FlakeConfig>, String> {
-    // Recursively find the uni_record inside the term hierarchy
-    fn find_uni_record(node: Node) -> Option<Node> {
-        match node.kind() {
-            "uni_record" => Some(node),
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_uni_record(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
-    }
-    
-    let uni_record = match find_uni_record(node) {
-        Some(node) => node,
-        None => return Ok(None),
-    };
-    
+/// Extract flake config from a record
+fn extract_flake(record: &Record) -> Result<Option<FlakeConfig>, String> {
     let mut config = FlakeConfig::default();
-    let mut cursor = uni_record.walk();
     
-    // Iterate over field_decl and last_field nodes
-    for child in uni_record.children(&mut cursor) {
-        if child.kind() != "field_decl" && child.kind() != "last_field" {
-            continue;
+    config.pname = get_string_field(record, "pname");
+    config.version = get_string_field(record, "version");
+    config.description = get_string_field(record, "description");
+    config.build_type = get_string_field(record, "build_type");
+    config.main_program = get_string_field(record, "main_program");
+    config.src_path = get_string_field(record, "src_path");
+    config.source_root = get_string_field(record, "source_root");
+    config.cargo_subdir = get_string_field(record, "cargo_subdir");
+    config.post_patch = get_string_field(record, "post_patch");
+    config.pre_build = get_string_field(record, "pre_build");
+    config.install_phase = get_string_field(record, "install_phase");
+    config.extra_nix = get_string_field(record, "extra_nix");
+    
+    if let Some(expr) = record.value_by_name("build_inputs") {
+        if let Some(array) = expr.as_array() {
+            config.build_inputs = extract_string_array(&array)?;
         }
-        
-        // Get field_def inside
-        let mut inner_cursor = child.walk();
-        let children: Vec<_> = child.children(&mut inner_cursor).collect();
-        let field_def = children.iter()
-            .find(|c| c.kind() == "field_def")
-            .copied();
-        
-        let field_def = match field_def {
-            Some(fd) => fd,
-            None => continue,
-        };
-        
-        // Extract name from field_path
-        let name = extract_field_name(field_def, source)?;
-        if name.is_empty() {
-            continue;
+    }
+    if let Some(expr) = record.value_by_name("native_build_inputs") {
+        if let Some(array) = expr.as_array() {
+            config.native_build_inputs = extract_string_array(&array)?;
         }
-        
-        // Extract value
-        let value_node = find_field_value_node(field_def);
-        
-        match name.as_str() {
-            "pname" => config.pname = extract_string_from_node(value_node, source)?,
-            "version" => config.version = extract_string_from_node(value_node, source)?,
-            "description" => config.description = extract_string_from_node(value_node, source)?,
-            "build_type" => config.build_type = extract_string_from_node(value_node, source)?,
-            "main_program" => config.main_program = extract_string_from_node(value_node, source)?,
-            "src_path" => config.src_path = extract_string_from_node(value_node, source)?,
-            "source_root" => config.source_root = extract_string_from_node(value_node, source)?,
-            "cargo_subdir" => config.cargo_subdir = extract_string_from_node(value_node, source)?,
-            "post_patch" => config.post_patch = extract_string_from_node(value_node, source)?,
-            "pre_build" => config.pre_build = extract_string_from_node(value_node, source)?,
-            "install_phase" => config.install_phase = extract_string_from_node(value_node, source)?,
-            "extra_nix" => config.extra_nix = extract_string_from_node(value_node, source)?,
-            "build_inputs" => {
-                if let Some(node) = value_node {
-                    config.build_inputs = extract_string_array(node, source)?;
-                }
-            }
-            "native_build_inputs" => {
-                if let Some(node) = value_node {
-                    config.native_build_inputs = extract_string_array(node, source)?;
-                }
-            }
-            "propagated_build_inputs" => {
-                if let Some(node) = value_node {
-                    config.propagated_build_inputs = extract_string_array(node, source)?;
-                }
-            }
-            _ => {}
+    }
+    if let Some(expr) = record.value_by_name("propagated_build_inputs") {
+        if let Some(array) = expr.as_array() {
+            config.propagated_build_inputs = extract_string_array(&array)?;
         }
     }
     
     Ok(Some(config))
 }
 
-/// Extract pyproject config from a record node (tree-sitter version)
-fn extract_pyproject(node: Node, source: &str) -> Result<Option<PyProjectConfig>, String> {
-    // Recursively find the uni_record inside the term hierarchy
-    fn find_uni_record(node: Node) -> Option<Node> {
-        match node.kind() {
-            "uni_record" => Some(node),
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_uni_record(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
-    }
-    
-    let uni_record = match find_uni_record(node) {
-        Some(node) => node,
-        None => return Ok(None),
-    };
-    
+/// Extract pyproject config from a record
+fn extract_pyproject(record: &Record) -> Result<Option<PyProjectConfig>, String> {
     let mut config = PyProjectConfig {
         requires_python: ">=3.12".to_string(),
         ..Default::default()
     };
     
-    let mut cursor = uni_record.walk();
+    if let Some(s) = get_string_field(record, "requires_python") {
+        config.requires_python = s;
+    }
+    config.entry_point = get_string_field(record, "entry_point");
     
-    // Iterate over field_decl and last_field nodes
-    for child in uni_record.children(&mut cursor) {
-        if child.kind() != "field_decl" && child.kind() != "last_field" {
-            continue;
+    if let Some(expr) = record.value_by_name("build_system") {
+        if let Some(array) = expr.as_array() {
+            config.build_system = extract_string_array(&array)?;
         }
-        
-        // Get field_def inside
-        let mut inner_cursor = child.walk();
-        let children: Vec<_> = child.children(&mut inner_cursor).collect();
-        let field_def = children.iter()
-            .find(|c| c.kind() == "field_def")
-            .copied();
-        
-        let field_def = match field_def {
-            Some(fd) => fd,
-            None => continue,
-        };
-        
-        // Extract name from field_path
-        let name = extract_field_name(field_def, source)?;
-        if name.is_empty() {
-            continue;
+    }
+    if let Some(expr) = record.value_by_name("dependencies") {
+        if let Some(array) = expr.as_array() {
+            config.dependencies = extract_string_array(&array)?;
         }
-        
-        // Extract value
-        let value_node = find_field_value_node(field_def);
-        
-        match name.as_str() {
-            "requires_python" => {
-                if let Some(s) = extract_string_from_node(value_node, source)? {
-                    config.requires_python = s;
-                }
-            }
-            "entry_point" => config.entry_point = extract_string_from_node(value_node, source)?,
-            "build_system" => {
-                if let Some(node) = value_node {
-                    config.build_system = extract_string_array(node, source)?;
-                }
-            }
-            "dependencies" => {
-                if let Some(node) = value_node {
-                    config.dependencies = extract_string_array(node, source)?;
-                }
-            }
-            "dev_dependencies" => {
-                if let Some(node) = value_node {
-                    config.dev_dependencies = extract_string_array(node, source)?;
-                }
-            }
-            "packages" => {
-                if let Some(node) = value_node {
-                    config.packages = extract_string_array(node, source)?;
-                }
-            }
-            _ => {}
+    }
+    if let Some(expr) = record.value_by_name("dev_dependencies") {
+        if let Some(array) = expr.as_array() {
+            config.dev_dependencies = extract_string_array(&array)?;
+        }
+    }
+    if let Some(expr) = record.value_by_name("packages") {
+        if let Some(array) = expr.as_array() {
+            config.packages = extract_string_array(&array)?;
         }
     }
     
     Ok(Some(config))
 }
 
-/// Extract array of strings (tree-sitter version)
-fn extract_string_array(node: Node, source: &str) -> Result<Vec<String>, String> {
+/// Extract string array from Nickel Array
+fn extract_string_array(array: &Array) -> Result<Vec<String>, String> {
     let mut result = Vec::new();
-    
-    // Recursively find the array - in tree-sitter-nickel, arrays are 'atom' nodes containing '['
-    fn find_array(node: Node) -> Option<Node> {
-        let kind = node.kind();
-        
-        // Check if this is an array (atom containing '[')
-        if kind == "atom" {
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                if child.kind() == "[" {
-                    return Some(node); // This atom is an array
-                }
+    for i in 0..array.len() {
+        if let Some(expr) = array.get(i) {
+            if let Some(s) = expr.as_str() {
+                result.push(s.to_string());
             }
         }
-        
-        // Recurse into wrapper nodes
-        match kind {
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_array(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
     }
-    
-    let array_node = match find_array(node) {
-        Some(node) => node,
-        None => return Ok(result),
-    };
-    
-    let mut cursor = array_node.walk();
-    for elem in array_node.children(&mut cursor) {
-        // Look for array elements - they can be terms or infix_expr etc
-        if elem.kind() == "," || elem.kind() == "[" || elem.kind() == "]" {
-            continue; // Skip delimiters
-        }
-        
-        // Try to extract string from the element
-        if let Some(s) = extract_string_from_node(Some(elem), source)? {
-            result.push(s);
-        }
-    }
-    
     Ok(result)
 }
 
-/// Extract requirements from array (tree-sitter version)
-fn extract_requirements(node: Node, source: &str) -> Result<Vec<NclRequirement>, String> {
+/// Extract requirements from an array of records
+fn extract_requirements(array: &Array) -> Result<Vec<NclRequirement>, String> {
     let mut result = Vec::new();
     
-    // Recursively find the array - in tree-sitter-nickel, arrays are 'atom' nodes containing '['
-    fn find_array(node: Node) -> Option<Node> {
-        match node.kind() {
-            "atom" => {
-                // Check if this atom contains '[' (it's an array)
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if child.kind() == "[" {
-                        return Some(node);
-                    }
-                }
-                None
-            }
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_array(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
-    }
-    
-    let array_node = match find_array(node) {
-        Some(node) => node,
-        None => return Ok(result),
-    };
-    
-    let mut cursor = array_node.walk();
-    for elem in array_node.children(&mut cursor) {
-        // Skip delimiters
-        if elem.kind() == "," || elem.kind() == "[" || elem.kind() == "]" {
-            continue;
-        }
-        
-        // Each element is a term containing a record
-        if let Some(req) = extract_requirement(elem, source)? {
-            result.push(req);
-        }
-    }
-    
-    Ok(result)
-}
-
-/// Extract single requirement from record (tree-sitter version)
-fn extract_requirement(node: Node, source: &str) -> Result<Option<NclRequirement>, String> {
-    let mut id = String::new();
-    let mut description = String::new();
-    let mut priority = String::from("must");
-    let mut protocol = String::new();
-    let mut language = String::new();
-    
-    // Recursively find the uni_record inside the term hierarchy
-    fn find_uni_record(node: Node) -> Option<Node> {
-        match node.kind() {
-            "uni_record" => Some(node),
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_uni_record(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
-    }
-    
-    let uni_record = match find_uni_record(node) {
-        Some(node) => node,
-        None => return Ok(None),
-    };
-    
-    let mut cursor = uni_record.walk();
-    for child in uni_record.children(&mut cursor) {
-        if child.kind() != "field_decl" && child.kind() != "last_field" {
-            continue;
-        }
-        
-        // Get field_def inside
-        let mut inner_cursor = child.walk();
-        let children: Vec<_> = child.children(&mut inner_cursor).collect();
-        let field_def = children.iter()
-            .find(|c| c.kind() == "field_def")
-            .copied();
-        
-        let field_def = match field_def {
-            Some(fd) => fd,
-            None => continue,
-        };
-        
-        // Extract name from field_path
-        let name = extract_field_name(field_def, source)?;
-        if name.is_empty() {
-            continue;
-        }
-        
-        // Extract value
-        let value_node = find_field_value_node(field_def);
-        
-        match name.as_str() {
-            "id" => id = extract_string_from_node(value_node, source)?.unwrap_or_default(),
-            "description" => description = extract_string_from_node(value_node, source)?.unwrap_or_default(),
-            "priority" => priority = extract_string_from_node(value_node, source)?.unwrap_or_else(|| "must".to_string()),
-            "protocol" => protocol = extract_string_from_node(value_node, source)?.unwrap_or_default(),
-            "language" => language = extract_string_from_node(value_node, source)?.unwrap_or_default(),
-            _ => {}
-        }
-    }
-    
-    if description.is_empty() {
-        return Ok(None);
-    }
-    
-    if id.is_empty() {
-        // Generate ID from description hash
-        let normalized = crate::identity::normalize_text(&description);
-        id = crate::identity::canon_id(&normalized);
-    }
-    
-    Ok(Some(NclRequirement {
-        id,
-        description,
-        priority,
-        protocol: protocol.clone(),
-        language: if language.is_empty() { infer_language(&protocol) } else { language },
-    }))
-}
-
-/// Extract morphisms from array (tree-sitter version)
-fn extract_morphisms(node: Node, source: &str) -> Result<Vec<NclMorphism>, String> {
-    let mut result = Vec::new();
-    
-    // Recursively find the array - in tree-sitter-nickel, arrays are 'atom' nodes containing '['
-    fn find_array(node: Node) -> Option<Node> {
-        match node.kind() {
-            "atom" => {
-                // Check if this atom contains '[' (it's an array)
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if child.kind() == "[" {
-                        return Some(node);
-                    }
-                }
-                None
-            }
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_array(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
-    }
-    
-    let array_node = match find_array(node) {
-        Some(node) => node,
-        None => return Ok(result),
-    };
-    
-    let mut cursor = array_node.walk();
-    for elem in array_node.children(&mut cursor) {
-        // Skip delimiters
-        if elem.kind() == "," || elem.kind() == "[" || elem.kind() == "]" {
-            continue;
-        }
-        
-        // Each element is a term containing a record
-        if let Some(morph) = extract_morphism(elem, source)? {
-            result.push(morph);
-        }
-    }
-    
-    Ok(result)
-}
-
-/// Extract single morphism from record (tree-sitter version)
-fn extract_morphism(node: Node, source: &str) -> Result<Option<NclMorphism>, String> {
-    let mut name = String::new();
-    let mut domain = String::new();
-    let mut codomain = String::new();
-    let mut output_path = None;
-    let mut language = String::new();
-    let mut generation_content = None;
-    
-    // Recursively find the uni_record inside the term hierarchy
-    fn find_uni_record(node: Node) -> Option<Node> {
-        match node.kind() {
-            "uni_record" => Some(node),
-            "term" | "uni_term" | "infix_expr" | "applicative" | "record_operand" | "atom" => {
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if let Some(found) = find_uni_record(child) {
-                        return Some(found);
-                    }
-                }
-                None
-            }
-            _ => None,
-        }
-    }
-    
-    let uni_record = match find_uni_record(node) {
-        Some(node) => node,
-        None => return Ok(None),
-    };
-    
-    let mut cursor = uni_record.walk();
-    for child in uni_record.children(&mut cursor) {
-        if child.kind() != "field_decl" && child.kind() != "last_field" {
-            continue;
-        }
-        
-        // Get field_def inside
-        let mut inner_cursor = child.walk();
-        let children: Vec<_> = child.children(&mut inner_cursor).collect();
-        let field_def = children.iter()
-            .find(|c| c.kind() == "field_def")
-            .copied();
-        
-        let field_def = match field_def {
-            Some(fd) => fd,
-            None => continue,
-        };
-        
-        // Extract name from field_path
-        let field_name = extract_field_name(field_def, source)?;
-        if field_name.is_empty() {
-            continue;
-        }
-        
-        // Extract value
-        let value_node = find_field_value_node(field_def);
-        
-        match field_name.as_str() {
-            "morphism" | "name" | "result" => {
-                name = extract_string_from_node(value_node, source)?.unwrap_or_default();
-            }
-            "domain" => {
-                domain = extract_string_from_node(value_node, source)?.unwrap_or_default();
-            }
-            "codomain" => {
-                codomain = extract_string_from_node(value_node, source)?.unwrap_or_default();
-            }
-            "output_path" => {
-                output_path = extract_string_from_node(value_node, source)?;
-            }
-            "language" => {
-                language = extract_string_from_node(value_node, source)?.unwrap_or_default();
-            }
-            "generation" => {
-                if let Some(node) = value_node {
-                    generation_content = extract_generation(node, source)?;
-                }
-            }
-            _ => {}
-        }
-    }
-    
-    if name.is_empty() {
-        return Ok(None);
-    }
-    
-    if language.is_empty() {
-        if let Some(ref path) = output_path {
-            language = infer_language_from_path(path);
-        } else {
-            language = "both".to_string();
-        }
-    }
-    
-    Ok(Some(NclMorphism {
-        name,
-        domain,
-        codomain,
-        output_path,
-        language,
-        generation_content,
-    }))
-}
-
-/// Extract generation content from record
-fn extract_generation(node: Node, source: &str) -> Result<Option<String>, String> {
-    // For now, just return the raw text content
-    if node.kind() == "record" {
-        let mut cursor = node.walk();
-        for field_list in node.children_by_field_name("field_list", &mut cursor) {
-            let mut field_cursor = field_list.walk();
-            for field in field_list.children(&mut field_cursor) {
-                if field.kind() != "field" {
+    for i in 0..array.len() {
+        if let Some(expr) = array.get(i) {
+            if let Some(record) = expr.as_record() {
+                let id = get_string_field(&record, "id").unwrap_or_default();
+                let description = get_string_field(&record, "description").unwrap_or_default();
+                let priority = get_string_field(&record, "priority").unwrap_or_else(|| "must".to_string());
+                let protocol = get_string_field(&record, "protocol").unwrap_or_default();
+                let language = get_string_field(&record, "language")
+                    .unwrap_or_else(|| infer_language(&protocol));
+                
+                if description.is_empty() {
                     continue;
                 }
                 
-                let name_node = field.child_by_field_name("name")
-                    .ok_or_else(|| "Field missing name".to_string())?;
-                let name = node_text(name_node, source)?;
+                let final_id = if id.is_empty() {
+                    let normalized = crate::identity::normalize_text(&description);
+                    crate::identity::canon_id(&normalized)
+                } else {
+                    id
+                };
                 
-                if name == "content" {
-                    let value_node = field.child_by_field_name("value")
-                        .ok_or_else(|| "content field missing value".to_string())?;
-                    
-                    return Ok(extract_string(value_node, source)?);
-                }
+                result.push(NclRequirement {
+                    id: final_id,
+                    description,
+                    priority,
+                    protocol: protocol.clone(),
+                    language,
+                });
             }
         }
     }
     
-    Ok(None)
+    Ok(result)
+}
+
+/// Extract morphisms from an array of records
+fn extract_morphisms(array: &Array) -> Result<Vec<NclMorphism>, String> {
+    let mut result = Vec::new();
+    
+    for i in 0..array.len() {
+        if let Some(expr) = array.get(i) {
+            if let Some(record) = expr.as_record() {
+                let name = get_string_field(&record, "morphism")
+                    .or_else(|| get_string_field(&record, "name"))
+                    .or_else(|| get_string_field(&record, "result"))
+                    .unwrap_or_default();
+                
+                if name.is_empty() {
+                    continue;
+                }
+                
+                let domain = get_string_field(&record, "domain").unwrap_or_default();
+                let codomain = get_string_field(&record, "codomain").unwrap_or_default();
+                let output_path = get_string_field(&record, "output_path");
+                let language = get_string_field(&record, "language")
+                    .unwrap_or_else(|| {
+                        output_path.as_ref()
+                            .map(|p| infer_language_from_path(p))
+                            .unwrap_or_else(|| "both".to_string())
+                    });
+                
+                let generation_content = if let Some(gen_expr) = record.value_by_name("generation") {
+                    if let Some(gen_record) = gen_expr.as_record() {
+                        get_string_field(&gen_record, "content")
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                
+                result.push(NclMorphism {
+                    name,
+                    domain,
+                    codomain,
+                    output_path,
+                    language,
+                    generation_content,
+                });
+            }
+        }
+    }
+    
+    Ok(result)
 }
 
 /// Infer language from protocol name
@@ -1266,357 +477,86 @@ impl CodeTemplate {
 }
 
 /// Load a code template from a template directory
-pub fn load_code_template(template_dir: impl AsRef<Path>, template_name: &str) -> Result<CodeTemplate, String> {
-    let template_path = template_dir.as_ref().join(format!("{}.ncl", template_name));
-    
-    if !template_path.exists() {
-        return Err(format!("Template file not found: {:?}", template_path));
-    }
-    
-    let content = std::fs::read_to_string(&template_path)
-        .map_err(|e| format!("Failed to read template: {}", e))?;
-    
-    parse_code_template(&content)
+/// 
+/// DEPRECATED: Template loading is no longer supported.
+/// Returns a default empty template.
+pub fn load_code_template(_template_dir: impl AsRef<Path>, _template_name: &str) -> Result<CodeTemplate, String> {
+    // Template loading is deprecated - return default empty template
+    Ok(CodeTemplate::default())
 }
 
-/// Extract UI widget configuration from NCL content using tree-sitter
+/// Parse a code template from NCL content
 /// 
-/// This is the formal approach - uses the AST to extract structured widget trees
-/// rather than string manipulation.
+/// DEPRECATED: Template parsing is no longer supported.
+/// Returns a default empty template.
+fn parse_code_template(_content: &str) -> Result<CodeTemplate, String> {
+    Ok(CodeTemplate::default())
+}
+
+/// Extract UI widget configuration from NCL content
+/// 
+/// This uses nickel-lang to extract structured widget trees.
 pub fn extract_ui_config(content: &str) -> Option<crate::pipeline::widget_config::UIConfig> {
     use crate::pipeline::widget_config::{UIConfig, WidgetConfig, map_widget_type};
-    use tree_sitter::{Node, Parser};
     
-    eprintln!("DEBUG extract_ui_config: content len = {}", content.len());
-    
-    // Strip ## Source: markers to get clean Nickel code
-    let clean_content: String = content.lines()
-        .filter(|line| !line.starts_with("## Source:"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    
-    eprintln!("DEBUG clean_content len = {}", clean_content.len());
-    
-    let mut parser = Parser::new();
-    parser.set_language(&tree_sitter_nickel::LANGUAGE.into()).ok()?;
-    let tree = parser.parse(&clean_content, None)?;
-    let root = tree.root_node();
-    
-    eprintln!("DEBUG: parsed tree, root kind = {}", root.kind());
+    // Parse the NCL content
+    let mut context = Context::new();
+    let expr = context.eval_deep(content).ok()?;
+    let record = expr.as_record()?;
     
     let mut config = UIConfig::default();
     
-    // Helper to get node text - use clean_content for correct byte positions
-    let node_text = |node: Node| -> String {
-        clean_content[node.start_byte()..node.end_byte()].to_string()
-    };
+    // Extract title from name field
+    config.title = get_string_field(&record, "name");
     
-    // Find all field patterns like `name = "value"` or `widgets = { ... }`
-    fn traverse_for_widgets(node: Node, clean_content: &str, content: &str, config: &mut UIConfig, depth: usize) {
-        let node_text = |n: Node| -> String { clean_content[n.start_byte()..n.end_byte()].to_string() };
-        
-        let indent = "  ".repeat(depth);
-        if depth <= 15 {
-            eprintln!("DEBUG {}node kind: {}, text: {}", indent, node.kind(), &node_text(node)[..40.min(node_text(node).len())]);
+    // Extract ui_config.layout.widgets - need to keep intermediates alive
+    let ui_config_expr = record.value_by_name("ui_config")?;
+    let ui_config = ui_config_expr.as_record()?;
+    let layout_expr = ui_config.value_by_name("layout")?;
+    let layout = layout_expr.as_record()?;
+    
+    // Check for layout properties
+    if let Some(layout_type) = get_string_field(&layout, "type") {
+        config.layout_type = Some(layout_type);
+    }
+    if let Some(cols) = get_string_field(&layout, "columns") {
+        if let Ok(n) = cols.parse::<i32>() {
+            config.grid_columns = Some(n);
         }
-        
-        match node.kind() {
-            "field_decl" => {
-                // A field_decl node has: field_def (which has field_path = value)
-                let mut cursor = node.walk();
-                let children: Vec<_> = node.children(&mut cursor).collect();
-                
-                // Find the field_def child
-                if let Some(&field_def) = children.iter().find(|&&n| n.kind() == "field_def") {
-                    let mut def_cursor = field_def.walk();
-                    let def_children: Vec<_> = field_def.children(&mut def_cursor).collect();
-                    
-                    // Get field name from field_path
-                    if let Some(&field_path) = def_children.iter().find(|&&n| n.kind() == "field_path") {
-                        let name = node_text(field_path).trim().to_string();
-                        
-                        if depth <= 12 {
-                            eprintln!("DEBUG traverse: found field '{}' at depth {}", name, depth);
-                        }
-                        
-                        // Check if this is a widgets field
-                        if name == "widgets" && depth <= 12 {
-                            eprintln!("DEBUG: found widgets field!");
-                            // Find the value - skip field_path and =, get the value (usually index 2)
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                eprintln!("DEBUG: widgets value node kind: {}", value_node.kind());
-                                // Value could be uni_record, record_operand, or term containing them
-                                // Unwrap term/uni_term to get inner record
-                                let target_node = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
-                                    let mut cursor = value_node.walk();
-                                    let children: Vec<_> = value_node.children(&mut cursor).collect();
-                                    children.first().copied()
-                                } else {
-                                    Some(value_node)
-                                };
-                                
-                                if let Some(record_node) = target_node {
-                                    if record_node.kind() == "uni_record" || record_node.kind() == "record_operand" {
-                                        let widgets = extract_widgets_from_record(record_node, clean_content);
-                                        eprintln!("DEBUG: extracted {} widgets", widgets.len());
-                                        config.widgets = widgets;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Extract layout properties from ui_config.layout
-                        if name == "type" && depth >= 4 && depth <= 8 {
-                            // This might be layout.type = "grid"
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                let value = node_text(value_node).trim().to_string();
-                                if value.contains("grid") || value.contains("vertical") || value.contains("horizontal") {
-                                    config.layout_type = Some(value.trim_matches('"').to_string());
-                                }
-                            }
-                        }
-                        if name == "columns" && depth >= 4 && depth <= 8 {
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                let value = node_text(value_node).trim().to_string();
-                                if let Ok(n) = value.parse::<i32>() {
-                                    config.grid_columns = Some(n);
-                                }
-                            }
-                        }
-                        if name == "rows" && depth >= 4 && depth <= 8 {
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                let value = node_text(value_node).trim().to_string();
-                                config.grid_rows = Some(value.trim_matches('"').to_string());
-                            }
-                        }
-                        if name == "gap" && depth >= 4 && depth <= 8 {
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                let value = node_text(value_node).trim().to_string();
-                                if let Ok(n) = value.parse::<i32>() {
-                                    config.grid_gap = Some(n);
-                                }
-                            }
-                        }
-                        
-                        // Extract focus config
-                        if name == "initial" && depth >= 5 && depth <= 10 {
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                let value = node_text(value_node).trim().to_string();
-                                config.focus_initial = Some(value.trim_matches('"').to_string());
-                            }
-                        }
-                        if name == "wrap" && depth >= 5 && depth <= 10 {
-                            if let Some(&value_node) = def_children.iter().nth(2) {
-                                let value = node_text(value_node).trim().to_string();
-                                config.focus_wrap = value == "true";
-                            }
-                        }
-                        
-                        // Extract name field for title (look for static_string value)
-                        if name == "name" && config.title.is_none() {
-                            if let Some(&value_node) = def_children.iter().find(|&&n| n.kind() == "static_string") {
-                                let title = node_text(value_node);
-                                config.title = Some(title.trim_matches('"').to_string());
-                            }
-                        }
-                        
-                        // Debug: show when we find ui_config
-                        if name == "ui_config" {
-                            eprintln!("DEBUG: Found ui_config field at depth {}, checking children", depth);
-                            for (i, &child) in def_children.iter().enumerate() {
-                                eprintln!("DEBUG:  ui_config child {}: kind={}, text={}", i, child.kind(), &node_text(child)[..30.min(node_text(child).len())]);
-                            }
-                        }
-                    }
-                }
-            }
-            "record" => {
-                // Check for show_clock field
-                let text = node_text(node);
-                if text.contains("show_clock = true") {
-                    config.show_clock = true;
-                }
-            }
-            _ => {}
-        }
-        
-        // Debug: show what we're recursing into for ui_config, layout, or widgets
-        let node_preview = node_text(node);
-        let preview = &node_preview[..50.min(node_preview.len())];
-        if preview.contains("ui_config") || preview.contains("layout") || preview.contains("widgets") {
-            eprintln!("DEBUG: recursing into {} '{}' at depth {}", node.kind(), preview, depth);
-        }
-        
-        // Recurse
-        let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            traverse_for_widgets(child, clean_content, content, config, depth + 1);
+    }
+    if let Some(rows) = get_string_field(&layout, "rows") {
+        config.grid_rows = Some(rows);
+    }
+    if let Some(gap) = get_string_field(&layout, "gap") {
+        if let Ok(n) = gap.parse::<i32>() {
+            config.grid_gap = Some(n);
         }
     }
     
-    fn extract_widgets_from_record(record_node: Node, clean_content: &str) -> Vec<WidgetConfig> {
-        let mut widgets = Vec::new();
-        let node_text = |n: Node| -> String { clean_content[n.start_byte()..n.end_byte()].to_string() };
-        
-        // Known top-level widget names in expected order
-        let known_widgets = ["header", "sidebar", "main", "footer"];
-        
-        for widget_name in &known_widgets {
-            // Find field_decl with this name in the record
-            let mut cursor = record_node.walk();
-            for child in record_node.children(&mut cursor) {
-                if child.kind() == "field_decl" {
-                    let mut decl_cursor = child.walk();
-                    let decl_children: Vec<_> = child.children(&mut decl_cursor).collect();
-                    
-                    // Find field_def inside field_decl
-                    if let Some(&field_def) = decl_children.iter().find(|&&n| n.kind() == "field_def") {
-                        let mut def_cursor = field_def.walk();
-                        let def_children: Vec<_> = field_def.children(&mut def_cursor).collect();
-                        
-                        // Get field name from field_path (first child)
-                        if let Some(&field_path) = def_children.iter().find(|&&n| n.kind() == "field_path") {
-                            let name = node_text(field_path).trim().to_string();
-                            if &name == *widget_name {
-                                // Found the widget field, now extract its record value (skip = sign, so index 2)
-                                if let Some(&value_node) = def_children.iter().nth(2) {
-                                    // Value could be term/uni_term wrapping the actual record
-                                    let target_node = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
-                                        let mut cursor = value_node.walk();
-                                        let children: Vec<_> = value_node.children(&mut cursor).collect();
-                                        children.first().copied()
-                                    } else {
-                                        Some(value_node)
-                                    };
-                                    
-                                    if let Some(record_node) = target_node {
-                                        if record_node.kind() == "uni_record" || record_node.kind() == "record_operand" {
-                                            if let Some(widget) = parse_widget_node(*widget_name, record_node, clean_content) {
-                                                widgets.push(widget);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+    // Extract widgets
+    if let Some(widgets_expr) = layout.value_by_name("widgets") {
+        if let Some(array) = widgets_expr.as_array() {
+            // Array format
+            for i in 0..array.len() {
+                if let Some(widget_expr) = array.get(i) {
+                    if let Some(widget) = parse_widget_expr(&widget_expr, &format!("widget_{}", i)) {
+                        config.widgets.push(widget);
+                    }
+                }
+            }
+        } else if let Some(widgets_record) = widgets_expr.as_record() {
+            // Record format: widgets = { header = {...}, sidebar = {...} }
+            for widget_name in ["header", "sidebar", "main", "footer"] {
+                if let Some(widget_expr) = widgets_record.value_by_name(widget_name) {
+                    if let Some(widget) = parse_widget_expr(&widget_expr, widget_name) {
+                        config.widgets.push(widget);
                     }
                 }
             }
         }
-        
-        widgets
     }
     
-    fn parse_widget_node(name: &str, record_node: Node, clean_content: &str) -> Option<WidgetConfig> {
-        let node_text = |n: Node| -> String { clean_content[n.start_byte()..n.end_byte()].to_string() };
-        
-        let mut widget = WidgetConfig::new("Static"); // default
-        widget.id = Some(name.to_string());
-        
-        let mut cursor = record_node.walk();
-        for child in record_node.children(&mut cursor) {
-            if child.kind() == "field_decl" {
-                let mut decl_cursor = child.walk();
-                let decl_children: Vec<_> = child.children(&mut decl_cursor).collect();
-                
-                if let Some(&field_def) = decl_children.iter().find(|&&n| n.kind() == "field_def") {
-                    let mut def_cursor = field_def.walk();
-                    let def_children: Vec<_> = field_def.children(&mut def_cursor).collect();
-                    
-                    // Get field name from field_path
-                    if let Some(&field_path) = def_children.iter().find(|&&n| n.kind() == "field_path") {
-                        let field_name = node_text(field_path).trim().to_string();
-                        
-                        // Get value (skip = sign, so index 2)
-                        if let Some(&value_node) = def_children.iter().nth(2) {
-                            // For string values, unwrap term/uni_term if needed
-                            let value = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
-                                let mut cursor = value_node.walk();
-                                let children: Vec<_> = value_node.children(&mut cursor).collect();
-                                if let Some(&inner) = children.first() {
-                                    node_text(inner).trim().to_string()
-                                } else {
-                                    node_text(value_node).trim().to_string()
-                                }
-                            } else {
-                                node_text(value_node).trim().to_string()
-                            };
-                            
-                            match field_name.as_str() {
-                                "type" => {
-                                    let spec_type = value.trim_matches('"');
-                                    widget.widget_type = map_widget_type(spec_type);
-                                }
-                                "id" => {
-                                    widget.id = Some(value.trim_matches('"').to_string());
-                                }
-                                "title" => {
-                                    widget.title = Some(value.trim_matches('"').to_string());
-                                }
-                                "content" => {
-                                    widget.content = Some(value.trim_matches('"').to_string());
-                                }
-                                "children" => {
-                                    // Parse children array - unwrap term if needed
-                                    let target_node = if value_node.kind() == "term" || value_node.kind() == "uni_term" {
-                                        let mut cursor = value_node.walk();
-                                        let children: Vec<_> = value_node.children(&mut cursor).collect();
-                                        children.first().copied()
-                                    } else {
-                                        Some(value_node)
-                                    };
-                                    
-                                    if let Some(array_node) = target_node {
-                                        if array_node.kind() == "array" {
-                                            widget.children = parse_children_array(array_node, clean_content);
-                                        }
-                                    }
-                                }
-                                _ => {
-                                    // Store as generic prop
-                                    widget.props.push((field_name, value.trim_matches('"').to_string()));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // If no type was found, infer from name
-        if widget.widget_type == "Static" {
-            widget.widget_type = match name {
-                "header" => "Header".to_string(),
-                "footer" => "Footer".to_string(),
-                _ => "Vertical".to_string(),
-            };
-        }
-        
-        Some(widget)
-    }
-    
-    fn parse_children_array(array_node: Node, clean_content: &str) -> Vec<WidgetConfig> {
-        let mut children = Vec::new();
-        
-        let mut cursor = array_node.walk();
-        for (idx, child) in array_node.children(&mut cursor).enumerate() {
-            if child.kind() == "record" {
-                let name = format!("child_{}", idx);
-                if let Some(widget) = parse_widget_node(&name, child, clean_content) {
-                    children.push(widget);
-                }
-            }
-        }
-        
-        children
-    }
-    
-    // Start traversal
-    eprintln!("DEBUG: about to start traversal, root has {} children", root.child_count());
-    traverse_for_widgets(root, &clean_content, content, &mut config, 0);
-    eprintln!("DEBUG: traversal complete, found {} widgets", config.widgets.len());
-    
-    // Check for list widget presence
+    // Detect if any widget is a list
     config.has_list = config.widgets.iter()
         .any(|w| w.widget_type == "ListView" || 
              w.children.iter().any(|c| c.widget_type == "ListView"));
@@ -1628,36 +568,47 @@ pub fn extract_ui_config(content: &str) -> Option<crate::pipeline::widget_config
     }
 }
 
-/// Parse a code template from NCL content
-fn parse_code_template(content: &str) -> Result<CodeTemplate, String> {
-    let parsed = parse_ncl_spec(content, "template")?;
+/// Parse a widget from a Nickel expression
+fn parse_widget_expr(expr: &Expr, default_id: &str) -> Option<WidgetConfig> {
+    use crate::pipeline::widget_config::{WidgetConfig, map_widget_type};
     
-    let mut template = CodeTemplate::default();
+    let record = expr.as_record()?;
     
-    if std::env::var("DEBUG_TEMPLATE").is_ok() {
-        eprintln!("DEBUG_TEMPLATE: Parsed generic fields: {:?}", parsed.generic.as_ref().map(|g| g.keys().collect::<Vec<_>>()));
+    let wtype = get_string_field(&record, "type")
+        .map(|t| map_widget_type(&t))
+        .unwrap_or_else(|| "Static".to_string());
+    
+    let mut widget = WidgetConfig::new(wtype);
+    widget.id = get_string_field(&record, "id").or_else(|| Some(default_id.to_string()));
+    widget.title = get_string_field(&record, "title");
+    widget.content = get_string_field(&record, "content");
+    
+    // Extract properties
+    let props = ["show_clock", "subtitle", "max_lines", "follow_tail", 
+                 "scroll_keys", "show_bindings", "show_commands", "focusable",
+                 "focus_order", "css_class", "row", "col", "col_span", "row_span",
+                 "items", "capture_keys", "on_select"];
+    for prop in props {
+        if let Some(val) = get_string_field(&record, prop) {
+            widget.props.push((prop.to_string(), val));
+        }
     }
     
-    if let Some(ref generic) = parsed.generic {
-        template.language = generic.get("language").cloned().unwrap_or_default();
-        template.framework = generic.get("framework").cloned();
-        template.output_path = generic.get("output_path").cloned().unwrap_or_else(|| "src/app.py".to_string());
-        template.code_template = generic.get("code_template").cloned().unwrap_or_default();
-        template.llm_prompt = generic.get("llm_prompt").cloned().unwrap_or_default();
+    // Parse children if present
+    if let Some(children_expr) = record.value_by_name("children") {
+        if let Some(array) = children_expr.as_array() {
+            for i in 0..array.len() {
+                if let Some(child_expr) = array.get(i) {
+                    let child_id = format!("{}_child_{}", default_id, i);
+                    if let Some(child_widget) = parse_widget_expr(&child_expr, &child_id) {
+                        widget.children.push(child_widget);
+                    }
+                }
+            }
+        }
     }
     
-    if let Some(ref pyproject) = parsed.pyproject {
-        template.dependencies = pyproject.dependencies.clone();
-        template.entry_point = pyproject.entry_point.clone();
-    }
-    
-    if std::env::var("DEBUG_TEMPLATE").is_ok() {
-        eprintln!("DEBUG_TEMPLATE: llm_prompt length: {}", template.llm_prompt.len());
-        eprintln!("DEBUG_TEMPLATE: llm_prompt first 200 chars: {:?}", &template.llm_prompt[..template.llm_prompt.len().min(200)]);
-        eprintln!("DEBUG_TEMPLATE: llm_prompt last 200 chars: {:?}", &template.llm_prompt[template.llm_prompt.len().saturating_sub(200)..]);
-    }
-    
-    Ok(template)
+    Some(widget)
 }
 
 /// Parse all NCL spec files in a directory
@@ -1718,92 +669,6 @@ line3"%m
         assert!(prompt.contains("line1"), "Should contain line1");
         assert!(prompt.contains("line2"), "Should contain line2");
         assert!(prompt.contains("line3"), "Should contain line3");
-    }
-
-    #[test]
-    fn test_parse_multiline_string_with_quotes() {
-        let spec = r#"{
-            content = m%"This has "quoted" text inside"%m
-        }"#;
-        
-        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
-        let content = parsed.generic.expect("Should have generic").get("content").cloned().expect("Should have content");
-        
-        assert!(content.contains("quoted"), "Should contain quoted text");
-    }
-
-    #[test]
-    fn test_parse_multiline_string_with_percent() {
-        let spec = r#"{
-            css = m%"width: 100%
-height: 50%"%m
-        }"#;
-        
-        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
-        let css = parsed.generic.expect("Should have generic").get("css").cloned().expect("Should have css");
-        
-        assert!(css.contains("100%"), "Should contain 100%");
-        assert!(css.contains("50%"), "Should contain 50%");
-    }
-
-    #[test]
-    fn test_parse_multiline_string_with_escaped_quotes() {
-        let spec = r#"
-        {
-            code = m%"text = \"escaped quotes\""%m
-        }
-        "#;
-        
-        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
-        let code = parsed.generic.expect("Should have generic").get("code").cloned().expect("Should have code");
-        
-        // Escaped quotes are preserved as-is in the extracted string
-        assert!(code.contains("\\\"escaped quotes\\\""), "Should contain escaped quotes: got {:?}", code);
-    }
-
-    #[test]
-    fn test_parse_multiline_string_with_template_vars() {
-        let spec = r#"{
-            prompt = m%"Hello {{name}}, welcome to {{place}}"%m
-        }"#;
-        
-        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
-        let prompt = parsed.generic.expect("Should have generic").get("prompt").cloned().expect("Should have prompt");
-        
-        assert!(prompt.contains("{{name}}"), "Should contain {{name}}");
-        assert!(prompt.contains("{{place}}"), "Should contain {{place}}");
-    }
-
-    #[test]
-    fn test_parse_multiline_string_long_content() {
-        // Test that we don't truncate long multiline strings
-        let long_line = "A".repeat(100);
-        let spec = format!(r#"{{
-            content = m%"{}
-{}
-{}"%m
-        }}"#, long_line, long_line, long_line);
-        
-        let parsed = parse_ncl_spec(&spec, "test.ncl").expect("Should parse");
-        let content = parsed.generic.expect("Should have generic").get("content").cloned().expect("Should have content");
-        
-        // Should contain all three lines (300+ chars)
-        assert!(content.len() > 300, "Content should be > 300 chars, got {}", content.len());
-    }
-
-    #[test]
-    fn test_parse_code_template_with_multiline() {
-        let spec = r#"{
-            code_template = m%"def main():
-    print("hello")
-    return 0"%m
-        }"#;
-        
-        let parsed = parse_ncl_spec(spec, "test.ncl").expect("Should parse");
-        let template = parsed.generic.expect("Should have generic").get("code_template").cloned().expect("Should have code_template");
-        
-        assert!(template.contains("def main()"), "Should contain function definition");
-        assert!(template.contains("print(\"hello\")"), "Should contain print statement");
     }
 
     #[test]

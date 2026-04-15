@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, Operation, SortKind};
 
 /// A bundle that can generate code via Theory
@@ -265,7 +265,7 @@ where
 // Example: Lit Bundle using the Theory system
 // ============================================================================
 
-#[cfg(feature = "panproto")]
+
 pub mod lit_theory {
     use super::*;
     
@@ -528,10 +528,10 @@ console.log('🔥 {} app loaded');
 // ============================================================================
 
 /// Lit bundle using Theory-based generation
-#[cfg(feature = "panproto")]
+
 pub struct LitTheoryBundle;
 
-#[cfg(feature = "panproto")]
+
 impl TheoryBundle for LitTheoryBundle {
     fn theory(&self) -> Theory {
         lit_theory::lit_theory()
@@ -547,18 +547,9 @@ impl TheoryBundle for LitTheoryBundle {
 }
 
 // Easy function to generate Lit bundle
-#[cfg(feature = "panproto")]
+
 pub fn generate_lit_bundle(project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
     let mut engine = TheoryCodegen::new();
     engine.register_bundle("lit", Box::new(LitTheoryBundle));
     engine.generate("lit", project_name, spec_content)
-}
-
-// Non-panproto stub for when feature is disabled
-#[cfg(not(feature = "panproto"))]
-pub fn generate_lit_bundle(project_name: &str, _spec_content: &str) -> HashMap<PathBuf, String> {
-    // Fallback to simple string generation
-    let mut outputs = HashMap::new();
-    outputs.insert(PathBuf::from("package.json"), format!(r#"{{"name": "{}"}}"#, project_name));
-    outputs
 }

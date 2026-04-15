@@ -9,9 +9,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[cfg(feature = "panproto")]
+
 use panproto_lens::{get, put, Complement, Lens};
-#[cfg(feature = "panproto")]
+
 use panproto_schema::{Schema, Vertex, Edge};
 
 /// Trait for bundle-specific lens implementations
@@ -357,7 +357,7 @@ pub fn detect_bundle_from_spec(spec_content: &str) -> Option<String> {
 ///
 /// Focuses on a specific aspect of the code that can be extracted (get)
 /// and updated (put) to reflect changes back to config.
-#[cfg(feature = "panproto")]
+
 pub struct CodeLens {
     /// What this lens focuses on (e.g., "project_name", "theme")
     pub field: String,
@@ -368,7 +368,7 @@ pub struct CodeLens {
 }
 
 /// How to extract a value from code
-#[cfg(feature = "panproto")]
+
 #[derive(Debug, Clone)]
 pub enum Extractor {
     /// Regex pattern with capture group
@@ -380,7 +380,7 @@ pub enum Extractor {
 }
 
 /// Result of extracting a value from code
-#[cfg(feature = "panproto")]
+
 #[derive(Debug, Clone)]
 pub struct ExtractedValue {
     pub field: String,
@@ -388,7 +388,7 @@ pub struct ExtractedValue {
     pub location: CodeLocation,
 }
 
-#[cfg(feature = "panproto")]
+
 #[derive(Debug, Clone)]
 pub struct CodeLocation {
     pub file: String,
@@ -400,10 +400,10 @@ pub struct CodeLocation {
 ///
 /// get: Extract "name" from package.json
 /// put: Update "name" in package.json
-#[cfg(feature = "panproto")]
+
 pub struct ProjectNameLens;
 
-#[cfg(feature = "panproto")]
+
 impl ProjectNameLens {
     /// Extract project name from package.json
     pub fn get(code: &HashMap<String, String>) -> Option<String> {
@@ -435,10 +435,10 @@ impl ProjectNameLens {
 }
 
 /// Version lens - extracts version from package.json
-#[cfg(feature = "panproto")]
+
 pub struct VersionLens;
 
-#[cfg(feature = "panproto")]
+
 impl VersionLens {
     /// Extract version from package.json
     pub fn get(code: &HashMap<String, String>) -> Option<String> {
@@ -451,10 +451,10 @@ impl VersionLens {
 }
 
 /// Lens for theme extraction/updates
-#[cfg(feature = "panproto")]
+
 pub struct ThemeLens;
 
-#[cfg(feature = "panproto")]
+
 impl ThemeLens {
     /// Extract theme from generated hero component
     pub fn get(code: &HashMap<String, String>) -> Option<String> {
@@ -488,20 +488,20 @@ impl ThemeLens {
 }
 
 /// Collection of lenses for a bundle
-#[cfg(feature = "panproto")]
+
 pub struct LensBundle {
     pub lenses: Vec<Box<dyn CodeLensTrait>>,
 }
 
 /// Trait for code lenses
-#[cfg(feature = "panproto")]
+
 pub trait CodeLensTrait: Send + Sync {
     fn field_name(&self) -> &str;
     fn get(&self, code: &HashMap<String, String>) -> Option<String>;
     fn put(&self, value: &str, code: &mut HashMap<String, String>) -> Result<(), String>;
 }
 
-#[cfg(feature = "panproto")]
+
 impl CodeLensTrait for CodeLens {
     fn field_name(&self) -> &str {
         &self.field
@@ -527,7 +527,7 @@ impl CodeLensTrait for CodeLens {
 }
 
 /// Sync engine: Detect changes and upstream to config
-#[cfg(feature = "panproto")]
+
 pub struct SyncEngine {
     /// Last known state of generated code
     last_known: HashMap<String, String>,
@@ -535,7 +535,7 @@ pub struct SyncEngine {
     lenses: LensBundle,
 }
 
-#[cfg(feature = "panproto")]
+
 impl SyncEngine {
     pub fn new(lenses: LensBundle) -> Self {
         Self {
@@ -619,7 +619,7 @@ impl SyncEngine {
     }
 }
 
-#[cfg(feature = "panproto")]
+
 #[derive(Debug, Clone)]
 pub struct DetectedChange {
     pub field: String,
@@ -628,7 +628,7 @@ pub struct DetectedChange {
     pub lens_type: ChangeType,
 }
 
-#[cfg(feature = "panproto")]
+
 #[derive(Debug, Clone)]
 pub enum ChangeType {
     Simple,      // Field value changed
@@ -637,7 +637,7 @@ pub enum ChangeType {
 }
 
 /// Create default lens bundle for Lit bundle
-#[cfg(feature = "panproto")]
+
 pub fn lit_lens_bundle() -> LensBundle {
     let lenses: Vec<Box<dyn CodeLensTrait>> = vec![
         Box::new(CodeLens {
@@ -657,23 +657,4 @@ pub fn lit_lens_bundle() -> LensBundle {
     ];
     
     LensBundle { lenses }
-}
-
-// ============================================================================
-// When panproto is disabled
-// ============================================================================
-
-#[cfg(not(feature = "panproto"))]
-pub struct SyncEngine;
-
-#[cfg(not(feature = "panproto"))]
-impl SyncEngine {
-    pub fn detect_changes(&self, _current: &HashMap<String, String>) -> Vec<()> {
-        vec![]
-    }
-}
-
-#[cfg(not(feature = "panproto"))]
-pub fn lit_lens_bundle() -> () {
-    ()
 }

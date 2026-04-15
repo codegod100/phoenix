@@ -24,11 +24,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, Operation, SortKind, Term, Equation, TheoryMorphism};
 
 /// Example: We've built this layer
-#[cfg(feature = "panproto")]
+
 pub fn gat_layer_example() {
     // 1. Define theory
     let theory = Theory::new(
@@ -82,11 +82,11 @@ pub fn gat_layer_example() {
 // 
 //  What we need: Bridge GAT theory → Schema graph
 
-#[cfg(feature = "panproto")]
+
 use panproto_schema::{Schema, SchemaBuilder, Vertex, Edge, Protocol};
 
 /// What we COULD build: Theory → Schema
-#[cfg(feature = "panproto")]
+
 pub fn theory_to_schema(theory: &Theory) -> Schema {
     // This would convert:
     // - Sorts → Vertex types
@@ -139,11 +139,11 @@ pub fn theory_to_schema(theory: &Theory) -> Schema {
 // 
 //  What we need: Expr programs that generate code strings.
 
-#[cfg(feature = "panproto")]
+
 use panproto_expr::{Expr, BuiltinOp, eval, Env, Literal};
 
 /// What we COULD build: Code generation as Expr evaluation
-#[cfg(feature = "panproto")]
+
 pub fn generate_via_expr(config: &serde_json::Value) -> String {
     // Example: Build an expression that generates package.json
     // Uses actual panproto-expr API
@@ -236,7 +236,7 @@ pub fn generate_via_expr(config: &serde_json::Value) -> String {
 /// └────────────────────────────────────────────────────────────────────┘
 /// ```
 
-#[cfg(feature = "panproto")]
+
 pub struct TheoryInterpreter {
     /// Convert GAT theory to Schema
     theory: Theory,
@@ -244,7 +244,7 @@ pub struct TheoryInterpreter {
     schema: Option<Schema>,
 }
 
-#[cfg(feature = "panproto")]
+
 impl TheoryInterpreter {
     pub fn new(theory: Theory) -> Self {
         Self { theory, schema: None }
@@ -290,7 +290,7 @@ impl TheoryInterpreter {
 //  4. Enable user-defined functions in bundles
 
 /// Summary of what's available in panproto crates we already depend on:
-#[cfg(feature = "panproto")]
+
 pub mod available_crates {
     // These are already in Cargo.toml but unused:
     

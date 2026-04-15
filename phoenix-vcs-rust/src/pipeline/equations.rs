@@ -8,15 +8,15 @@
 //! - Optimization: Rewrite terms using equations
 //! - Documentation: Formal specification of expected behavior
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Equation, Term, alpha_equivalent};
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 
 /// Equations for ThClause: Laws governing clause parsing
 ///
 /// These ensure that parsing and canonicalization behave correctly.
-#[cfg(feature = "panproto")]
+
 pub fn clause_equations() -> Vec<Equation> {
     vec![
         // E1: Idempotence of normalize
@@ -68,7 +68,7 @@ pub fn clause_equations() -> Vec<Equation> {
 /// Equations for ThCanon: Laws governing canonicalization
 ///
 /// These ensure that deduplication and canonicalization are well-behaved.
-#[cfg(feature = "panproto")]
+
 pub fn canon_equations() -> Vec<Equation> {
     vec![
         // E1: Canonize is idempotent
@@ -119,7 +119,7 @@ pub fn canon_equations() -> Vec<Equation> {
 /// Equations for ThIU: Laws governing IU planning
 ///
 /// These ensure that IUs are well-formed and traceable.
-#[cfg(feature = "panproto")]
+
 pub fn iu_equations() -> Vec<Equation> {
     vec![
         // E1: IU structure is well-formed
@@ -247,7 +247,7 @@ pub fn iu_equations() -> Vec<Equation> {
 /// Equations for ThDomain: Laws governing domain extraction
 ///
 /// These formalize how domain extraction works from canon node statements.
-#[cfg(feature = "panproto")]
+
 pub fn domain_equations() -> Vec<Equation> {
     vec![
         // E1: Domain extraction is deterministic
@@ -323,7 +323,7 @@ pub fn domain_equations() -> Vec<Equation> {
 /// Equations for ThCode: Laws governing code generation
 ///
 /// These ensure that code generation produces valid, traceable artifacts.
-#[cfg(feature = "panproto")]
+
 pub fn code_equations() -> Vec<Equation> {
     vec![
         // E1: Hash is deterministic
@@ -373,7 +373,7 @@ pub fn code_equations() -> Vec<Equation> {
 /// Cross-theory equations: Laws about morphism compositions
 ///
 /// These ensure that the pipeline stages compose correctly.
-#[cfg(feature = "panproto")]
+
 pub fn pipeline_equations() -> Vec<Equation> {
     vec![
         // E1: μ_canon preserves identity
@@ -391,7 +391,7 @@ pub fn pipeline_equations() -> Vec<Equation> {
 }
 
 /// Extract variables from a term pattern
-#[cfg(feature = "panproto")]
+
 fn extract_variables(term: &Term) -> std::collections::HashSet<Arc<str>> {
     let mut vars = std::collections::HashSet::new();
     fn collect_vars(t: &Term, set: &mut std::collections::HashSet<Arc<str>>) {
@@ -408,7 +408,7 @@ fn extract_variables(term: &Term) -> std::collections::HashSet<Arc<str>> {
 
 /// Try to match a pattern against a concrete term
 /// Returns variable bindings if match succeeds
-#[cfg(feature = "panproto")]
+
 fn match_pattern(
     pattern: &Term,
     concrete: &Term,
@@ -434,7 +434,7 @@ fn match_pattern(
 }
 
 /// Substitute bindings into a term
-#[cfg(feature = "panproto")]
+
 fn substitute(term: &Term, bindings: &std::collections::HashMap<Arc<str>, Term>) -> Term {
     match term {
         Term::Var(name) => {
@@ -453,7 +453,7 @@ fn substitute(term: &Term, bindings: &std::collections::HashMap<Arc<str>, Term>)
 ///
 /// Tries to match the term against the equation pattern, then checks
 /// if lhs = rhs under the variable bindings.
-#[cfg(feature = "panproto")]
+
 pub fn verify_equation(equation: &Equation, concrete_term: &Term) -> VerificationResult {
     let mut bindings = std::collections::HashMap::new();
     
@@ -511,7 +511,7 @@ impl VerificationResult {
 }
 
 /// Comprehensive verification of all pipeline equations against actual data
-#[cfg(feature = "panproto")]
+
 pub fn verify_pipeline_equations(
     clauses: &[crate::pipeline::Clause],
     canon_nodes: &[crate::pipeline::CanonNode],
@@ -576,7 +576,7 @@ pub fn verify_pipeline_equations(
 
 /// Verify that all canon nodes are accounted for in IUs (aggregation completeness)
 /// This checks: ∀cn ∈ canon_nodes. ∃iu ∈ ius. cn.id ∈ iu.source_canon_ids
-#[cfg(feature = "panproto")]
+
 fn verify_aggregation_completeness(
     canon_nodes: &[crate::pipeline::CanonNode],
     ius: &[crate::pipeline::ImplementationUnit],
@@ -663,7 +663,7 @@ fn extract_domain(statement: &str) -> String {
 ///
 /// Formal pipeline:
 /// - Each canon gets its own IU (no clustering, 1:1 mapping)
-#[cfg(feature = "panproto")]
+
 fn verify_domain_clustering(
     canon_nodes: &[crate::pipeline::CanonNode],
     ius: &[crate::pipeline::ImplementationUnit],
@@ -880,7 +880,7 @@ impl VerificationReport {
 ///
 /// For morphism f: A → B, and equation e in A,
 /// f(e) should hold in B.
-#[cfg(feature = "panproto")]
+
 pub fn verify_morphism_preserves_equations(
     morphism: &panproto_gat::TheoryMorphism,
     equations: &[Equation]
@@ -988,7 +988,7 @@ fn format_term_compact(term: &Term) -> String {
 // These theories are no longer used in the v2 direct spec→code pipeline.
 
 /// Create ThCode with equations
-#[cfg(feature = "panproto")]
+
 pub fn code_theory_with_equations() -> panproto_gat::Theory {
     use crate::pipeline::formal::code_theory;
     
@@ -998,7 +998,7 @@ pub fn code_theory_with_equations() -> panproto_gat::Theory {
 }
 
 /// Run all equation verification tests
-#[cfg(feature = "panproto")]
+
 pub fn verify_all_equations() -> Vec<(String, Vec<(String, MorphismPreservationResult)>)> {
     use crate::pipeline::formal::codegen_morphism;
     
@@ -1015,7 +1015,7 @@ mod tests {
     // These equation sets are no longer used in the v2 direct spec→code pipeline.
 
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_equation_formatting() {
         let eq = Equation::new(
             "test_eq",

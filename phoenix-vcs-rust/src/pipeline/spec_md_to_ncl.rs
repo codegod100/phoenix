@@ -139,7 +139,6 @@ impl Theory for NaturalLanguageTheory {
 pub struct StructuredSpec {
     pub project_name: String,
     pub project_description: String,
-    pub template: String,
     pub build_type: String,
     pub routes: Vec<RouteSpec>,
     pub models: Vec<ModelSpec>,
@@ -241,17 +240,6 @@ impl SchemaCompiler for NLSchemaCompiler {
 // Layer 3: Lens (Natural Language → Structured Data)
 // ============================================================================
 
-/// Helper function to determine build type from template
-fn build_type_for_template(template: &str) -> String {
-    match template {
-        "nodejs-express" => "nodejs".to_string(),
-        "ts-hono" => "typescript".to_string(),
-        "python-flask" => "python".to_string(),
-        "lit" => "typescript".to_string(),
-        _ => "nodejs".to_string(),
-    }
-}
-
 /// Parser for natural language spec.md files
 pub struct SpecMdLens;
 
@@ -259,7 +247,6 @@ impl SpecMdLens {
     /// Parse spec.md into structured specification
     pub fn parse(spec_md: &str) -> StructuredSpec {
         let mut spec = StructuredSpec {
-            template: "nodejs-express".to_string(),
             build_type: "nodejs".to_string(),
             server_config: ServerConfig {
                 port: 3000,
@@ -276,14 +263,12 @@ impl SpecMdLens {
         while i < lines.len() {
             let line = lines[i].trim();
             
-            // Parse template directive: template = "..."
-            if line.starts_with("template = \"") || line.starts_with("template=\"") {
-                let template_line = line.trim_start_matches("template = ").trim_start_matches("template=");
-                if let Some(start) = template_line.find('"') {
-                    if let Some(end) = template_line[start+1..].find('"') {
-                        spec.template = template_line[start+1..start+1+end].to_string();
-                        // Update build_type based on template
-                        spec.build_type = build_type_for_template(&spec.template);
+            // Parse build_type directive: build_type = "..."
+            if line.starts_with("build_type = \"") || line.starts_with("build_type=\"") {
+                let build_type_line = line.trim_start_matches("build_type = ").trim_start_matches("build_type=");
+                if let Some(start) = build_type_line.find('"') {
+                    if let Some(end) = build_type_line[start+1..].find('"') {
+                        spec.build_type = build_type_line[start+1..start+1+end].to_string();
                     }
                 }
                 i += 1;
@@ -376,10 +361,7 @@ impl SpecMdLens {
             spec.routes = Self::infer_routes_from_description(&spec.project_description);
         }
         
-        // If no models found, try common defaults
-        if spec.models.is_empty() {
-            spec.models = Self::default_models_for_template(&spec.template);
-        }
+        // If no models found, leave empty (no template-based defaults)
         
         spec
     }
@@ -665,23 +647,6 @@ impl SpecMdLens {
         routes
     }
     
-    /// Default models for template
-    fn default_models_for_template(template: &str) -> Vec<ModelSpec> {
-        match template {
-            "nodejs-express" => vec![
-                ModelSpec {
-                    name: "User".to_string(),
-                    fields: vec![
-                        FieldSpec { name: "name".to_string(), field_type: "String".to_string(), required: true, unique: None, default: None, reference: None },
-                        FieldSpec { name: "email".to_string(), field_type: "String".to_string(), required: true, unique: Some(true), default: None, reference: None },
-                        FieldSpec { name: "createdAt".to_string(), field_type: "Date".to_string(), required: false, unique: None, default: Some("Date.now".to_string()), reference: None },
-                    ],
-                },
-            ],
-            _ => vec![],
-        }
-    }
-    
     fn to_pascal_case(s: &str) -> String {
         s.split_whitespace()
             .map(|word| {
@@ -713,15 +678,12 @@ impl NclSpecGenerator {
   description = "{}",
   theory = "{}",
 
-  # Template selection
-  template = "{}",
   build_type = "{}",
 
 "#, 
             spec.project_name,
             spec.project_description,
-            Self::theory_name_for_template(&spec.template),
-            spec.template,
+            "GenericServer",
             spec.build_type
         ));
         
@@ -762,7 +724,6 @@ impl NclSpecGenerator {
         output.push_str("  phoenix_config = {\n");
         output.push_str(&format!("    project_name = \"{}\",\n", spec.project_name));
         output.push_str(&format!("    project_description = \"{}\",\n", spec.project_description));
-        output.push_str(&format!("    template = \"{}\",\n", spec.template));
         output.push_str(&format!("    build_type = \"{}\",\n", spec.build_type));
         output.push_str("    server_config = {\n");
         output.push_str(&format!("      port = {},\n", spec.server_config.port));
@@ -814,16 +775,6 @@ impl NclSpecGenerator {
         output
     }
     
-    fn theory_name_for_template(template: &str) -> String {
-        match template {
-            "nodejs-express" => "NodejsExpressServer".to_string(),
-            "python-flask" => "PythonFlaskServer".to_string(),
-            "ts-hono" => "TypescriptHonoServer".to_string(),
-            "lit" => "LitWebComponents".to_string(),
-            _ => "GenericServer".to_string(),
-        }
-    }
-    
 }
 
 // ============================================================================
@@ -853,7 +804,6 @@ impl SyncLens for SpecMdSyncLens {
             
             values.insert("project_name".to_string(), structured.project_name);
             values.insert("project_description".to_string(), structured.project_description);
-            values.insert("template".to_string(), structured.template);
             values.insert("routes_count".to_string(), structured.routes.len().to_string());
             values.insert("models_count".to_string(), structured.models.len().to_string());
         }
@@ -1121,177 +1071,4 @@ pub fn verify_transformation(spec_md: &str, generated_ncl: &str) -> Result<(), S
     }
     
     Ok(())
-}
-
-// ============================================================================
-// Layer 4 (New): NCL Generator using emit_with_protocol
-// ============================================================================
-
-/// Generate spec.ncl using emit_with_protocol with nickel protocol
-/// 
-/// This uses panproto-parse's official emitter instead of format! strings
-pub fn generate_ncl_with_emit(spec: &StructuredSpec) -> Result<String, String> {
-    use crate::codegen::emit_bundle::{EmitBuilder, ncl_rules, create_protocol, emit_schema};
-    
-    // Create protocol for nickel with NCL-specific kinds
-    let obj_kinds = vec![
-        "program".to_string(),
-        "comment".to_string(),
-        "record".to_string(),
-        "field".to_string(),
-        "array".to_string(),
-        "string".to_string(),
-        "number".to_string(),
-    ];
-    
-    // Custom rules for NCL structure
-    let protocol = create_protocol("nickel", obj_kinds, ncl_rules());
-    let mut builder = EmitBuilder::new(&protocol, "nickel");
-    
-    // Build header comment
-    let header = format!(
-        "# Generated spec.ncl for {}\n# Template: {}\n\n",
-        spec.project_name,
-        spec.template
-    );
-    builder = builder.vertex("header", "comment", Some(&header)).unwrap();
-    
-    // Build main record
-    let main_record = format!(
-        "{{\n  id = \"dev.phoenix.{}\",\n  description = \"{}\",\n  template = \"{}\",\n  build_type = \"{}\",\n",
-        spec.project_name,
-        spec.project_description,
-        spec.template,
-        spec.build_type
-    );
-    builder = builder.vertex("main", "record", Some(&main_record)).unwrap();
-    builder = builder.edge("header", "main", "next").unwrap();
-    
-    // Build routes array
-    let mut routes_text = "  routes = [\n".to_string();
-    for route in &spec.routes {
-        routes_text.push_str(&format!(
-            "    {{ method = \"{}\", path = \"{}\" }},\n",
-            route.method,
-            route.path
-        ));
-    }
-    routes_text.push_str("  ],\n}");
-    
-    builder = builder.vertex("routes", "array", Some(&routes_text)).unwrap();
-    builder = builder.edge("main", "routes", "next").unwrap();
-    
-    // Build and emit
-    let schema = builder.build()?;
-    emit_schema(&schema, "nickel")
-}
-
-/// Transform spec.md to NCL using emit_with_protocol
-pub fn transform_spec_md_to_ncl_emit(spec_md: &str) -> Result<String, String> {
-    // Parse structured spec
-    let structured = SpecMdLens::parse(spec_md);
-    
-    // Validate
-    if structured.project_name.is_empty() {
-        return Err("Could not extract project name from spec.md".to_string());
-    }
-    
-    if structured.routes.is_empty() {
-        return Err("No routes detected in spec.md".to_string());
-    }
-    
-    // Generate using emit_with_protocol
-    generate_ncl_with_emit(&structured)
-}
-
-#[cfg(test)]
-mod emit_tests {
-    use super::*;
-
-    #[test]
-    fn test_ncl_generation_with_emit() {
-        let spec = StructuredSpec {
-            project_name: "test-api".to_string(),
-            project_description: "Test API server".to_string(),
-            template: "ts-hono".to_string(),
-            build_type: "bun".to_string(),
-            server_config: ServerConfig {
-                port: 3000,
-                host: "0.0.0.0".to_string(),
-            },
-            routes: vec![
-                RouteSpec {
-                    method: "GET".to_string(),
-                    path: "/health".to_string(),
-                    handler: "health_handler".to_string(),
-                    description: "Health check".to_string(),
-                },
-                RouteSpec {
-                    method: "POST".to_string(),
-                    path: "/api/users".to_string(),
-                    handler: "create_user".to_string(),
-                    description: "Create user".to_string(),
-                },
-            ],
-            models: vec![],
-        };
-
-        let result = generate_ncl_with_emit(&spec);
-        
-        match result {
-            Ok(ncl) => {
-                println!("Generated NCL:\n{}", ncl);
-                assert!(ncl.contains("test-api"), "Should contain project name");
-                assert!(ncl.contains("ts-hono"), "Should contain template");
-                assert!(ncl.contains("routes"), "Should contain routes array");
-            }
-            Err(e) => {
-                // If nickel protocol not available, this is expected
-                println!("NCL emit failed (nickel may not be available): {}", e);
-            }
-        }
-    }
-
-    #[test]
-    fn test_emit_vs_format_comparison() {
-        let spec = StructuredSpec {
-            project_name: "compare-test".to_string(),
-            project_description: "Comparison test".to_string(),
-            template: "nodejs-express".to_string(),
-            build_type: "npm".to_string(),
-            server_config: ServerConfig {
-                port: 3000,
-                host: "localhost".to_string(),
-            },
-            routes: vec![
-                RouteSpec {
-                    method: "GET".to_string(),
-                    path: "/".to_string(),
-                    handler: "root".to_string(),
-                    description: "Root".to_string(),
-                },
-            ],
-            models: vec![],
-        };
-
-        // Generate using both methods
-        let format_ncl = NclSpecGenerator::generate(&spec);
-        
-        println!("=== format! generated NCL ===");
-        println!("{}", format_ncl);
-        
-        match generate_ncl_with_emit(&spec) {
-            Ok(emit_ncl) => {
-                println!("\n=== emit_with_protocol generated NCL ===");
-                println!("{}", emit_ncl);
-                
-                // Both should contain key elements
-                assert!(format_ncl.contains("compare-test"));
-                assert!(emit_ncl.contains("compare-test"));
-            }
-            Err(e) => {
-                println!("emit_with_protocol not available: {}", e);
-            }
-        }
-    }
 }

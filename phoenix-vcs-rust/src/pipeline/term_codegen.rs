@@ -6,9 +6,9 @@
 //!
 //! The CodeTerm is constructed algebraically, not by filling holes in strings.
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, SortKind, Operation};
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 
 use crate::pipeline::ImplementationUnit;
@@ -32,7 +32,7 @@ use crate::pipeline::ImplementationUnit;
 // the complete development environment and build instructions.
 // ============================================================================
 
-#[cfg(feature = "panproto")]
+
 pub fn python_textual_theory() -> Theory {
     Theory::new(
         Arc::from("ThPythonTextual"),
@@ -1035,14 +1035,14 @@ pub fn to_pascal_case(s: &str) -> String {
 // Theory-Driven Code Generation: ThSpec → ThPythonTextual
 // ============================================================================
 
-#[cfg(feature = "panproto")]
+
 use serde_json::Value;
 
 /// Generate Python code directly from a Theory + ui_config
 /// 
 /// ThSpec (the theory structure) defines the sorts and operations
 /// ui_config (the instance) provides concrete values for generation
-#[cfg(feature = "panproto")]
+
 pub fn generate_from_theory(
     theory: &Theory,
     ui_config: &Value,

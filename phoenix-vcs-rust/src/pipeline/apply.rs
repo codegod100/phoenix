@@ -4,9 +4,9 @@
 //! pipeline implementation by converting data to/from panproto Terms
 //! and applying TheoryMorphism transformations.
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Term, TheoryMorphism};
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 
 use crate::pipeline::{Clause, CanonNode, ImplementationUnit};
@@ -15,7 +15,7 @@ use crate::pipeline::formal::{canonize_morphism, plan_morphism, codegen_morphism
 /// Convert a Clause to a formal Term
 ///
 /// Represents the clause as: parse("text") with classification
-#[cfg(feature = "panproto")]
+
 pub fn clause_to_term(clause: &Clause) -> Term {
     // Represent as: parse(normalize("raw_text"), classify(type), identify())
     Term::app(
@@ -31,7 +31,7 @@ pub fn clause_to_term(clause: &Clause) -> Term {
 /// Convert a CanonNode to a formal Term
 ///
 /// Represents the canonicalized node
-#[cfg(feature = "panproto")]
+
 pub fn canon_node_to_term(node: &CanonNode) -> Term {
     // Represent as: canonize(parse(...), confidence)
     Term::app(
@@ -47,7 +47,7 @@ pub fn canon_node_to_term(node: &CanonNode) -> Term {
 /// Convert an IU to a formal Term
 ///
 /// Represents the implementation unit as a planned node
-#[cfg(feature = "panproto")]
+
 pub fn iu_to_term(iu: &ImplementationUnit) -> Term {
     // Represent as: plan(canon_nodes, name, contract, risk, language, output)
     let sources: Vec<Term> = iu.source_canon_ids
@@ -71,7 +71,7 @@ pub fn iu_to_term(iu: &ImplementationUnit) -> Term {
 /// Convert a CanonNode to a domain extraction term
 ///
 /// Represents the domain extraction from a canon node statement
-#[cfg(feature = "panproto")]
+
 pub fn canon_node_to_domain_term(node: &CanonNode) -> Term {
     // Represent as: extract_domain(canon_node_statement)
     // This captures the domain classification of the node's clean statement
@@ -115,7 +115,7 @@ fn extract_domain_simple(statement: &str) -> &'static str {
 /// Apply canonize morphism to a clause term
 ///
 /// Transforms: ThClause → ThCanon
-#[cfg(feature = "panproto")]
+
 pub fn apply_canonize(clause_term: &Term) -> Term {
     let morphism = canonize_morphism();
     morphism.apply_to_term(clause_term)
@@ -124,7 +124,7 @@ pub fn apply_canonize(clause_term: &Term) -> Term {
 /// Apply plan morphism to a canon node term
 ///
 /// Transforms: ThCanon → ThIU  
-#[cfg(feature = "panproto")]
+
 pub fn apply_plan(canon_term: &Term) -> Term {
     let morphism = plan_morphism();
     morphism.apply_to_term(canon_term)
@@ -133,7 +133,7 @@ pub fn apply_plan(canon_term: &Term) -> Term {
 /// Apply codegen morphism to an IU term
 ///
 /// Transforms: ThIU → ThCode
-#[cfg(feature = "panproto")]
+
 pub fn apply_codegen(iu_term: &Term) -> Term {
     let morphism = codegen_morphism();
     morphism.apply_to_term(iu_term)
@@ -142,7 +142,7 @@ pub fn apply_codegen(iu_term: &Term) -> Term {
 /// Full pipeline transformation: Clause → Code (formal)
 ///
 /// Applies the composition: μ_codegen ∘ μ_plan ∘ μ_canon
-#[cfg(feature = "panproto")]
+
 pub fn pipeline_transform(clause: &Clause) -> Term {
     let clause_term = clause_to_term(clause);
     let canon_term = apply_canonize(&clause_term);
@@ -151,7 +151,7 @@ pub fn pipeline_transform(clause: &Clause) -> Term {
 }
 
 /// Pretty-print a term for debugging
-#[cfg(feature = "panproto")]
+
 pub fn format_term(term: &Term) -> String {
     match term {
         Term::Var(name) => name.to_string(),
@@ -168,7 +168,7 @@ pub fn format_term(term: &Term) -> String {
 /// Verify that pipeline transformation preserves structure
 ///
 /// Checks that applying the morphism chain produces valid terms
-#[cfg(feature = "panproto")]
+
 pub fn verify_pipeline_transform(clauses: &[Clause]) -> Vec<(String, Term, Term, Term, Term)> {
     let mut results = Vec::new();
     
@@ -191,7 +191,7 @@ pub fn verify_pipeline_transform(clauses: &[Clause]) -> Vec<(String, Term, Term,
 }
 
 /// Apply morphism and report the transformation
-#[cfg(feature = "panproto")]
+
 pub fn apply_and_report(name: &str, morphism: &TheoryMorphism, term: &Term) -> Term {
     let result = morphism.apply_to_term(term);
     println!("   ↳ {}: {} → {}", 
@@ -203,7 +203,7 @@ pub fn apply_and_report(name: &str, morphism: &TheoryMorphism, term: &Term) -> T
 }
 
 /// Demonstrate full pipeline morphism application
-#[cfg(feature = "panproto")]
+
 pub fn demonstrate_pipeline_morphisms(clause: &Clause) {
     println!("   📐 Formal Term Transformations:");
     
@@ -223,7 +223,7 @@ pub fn demonstrate_pipeline_morphisms(clause: &Clause) {
 }
 
 /// Create a term representing generated code with provenance
-#[cfg(feature = "panproto")]
+
 pub fn code_file_term(iu_id: &str, content: &str, hash: &str) -> Term {
     Term::app(
         "file",
@@ -239,7 +239,7 @@ pub fn code_file_term(iu_id: &str, content: &str, hash: &str) -> Term {
 }
 
 /// Trace term back through morphism (conceptual - requires inverse)
-#[cfg(feature = "panproto")]
+
 pub fn trace_term_provenance(term: &Term) -> Vec<String> {
     let mut provenance = Vec::new();
     
@@ -259,7 +259,7 @@ pub fn trace_term_provenance(term: &Term) -> Vec<String> {
 }
 
 /// Extract string from a term that should be a variable or simple operation
-#[cfg(feature = "panproto")]
+
 fn extract_string(term: &Term) -> Option<String> {
     match term {
         Term::Var(name) => Some(name.to_string()),
@@ -278,7 +278,7 @@ fn extract_string(term: &Term) -> Option<String> {
 /// Convert a term back to a CanonNode
 /// 
 /// Expects term structure: canonize(get_id(id), get_type(t), stmt)
-#[cfg(feature = "panproto")]
+
 pub fn term_to_canon_node(term: &Term, source_clause_ids: Vec<String>) -> Option<CanonNode> {
     match term {
         Term::App { op, args } if op.as_ref() == "canonize" && args.len() >= 3 => {
@@ -326,7 +326,7 @@ pub fn term_to_canon_node(term: &Term, source_clause_ids: Vec<String>) -> Option
 /// Convert a term back to an ImplementationUnit
 ///
 /// Expects term structure: plan(sources(srcs), name(n), contract_of(c), risk(r), target(l), output(o))
-#[cfg(feature = "panproto")]
+
 pub fn term_to_iu(term: &Term, iu_id: String) -> Option<ImplementationUnit> {
     match term {
         Term::App { op, args } if op.as_ref() == "plan" && args.len() >= 6 => {
@@ -408,7 +408,7 @@ pub fn term_to_iu(term: &Term, iu_id: String) -> Option<ImplementationUnit> {
 /// - Clause ID becomes CanonNode ID
 /// - Clause type becomes NodeType
 /// - Normalized text becomes clean_statement
-#[cfg(feature = "panproto")]
+
 pub fn formal_canonize(clause: &Clause) -> Option<CanonNode> {
     // The formal canonize morphism transforms:
     // - identify → get_id
@@ -441,7 +441,7 @@ pub fn formal_canonize(clause: &Clause) -> Option<CanonNode> {
 /// - CanonNode ID becomes source_canon_id
 /// - Node type determines contract
 /// - Language is set from parameter
-#[cfg(feature = "panproto")]
+
 pub fn formal_plan(node: &CanonNode, lang: &str) -> Option<ImplementationUnit> {
     // The formal plan morphism transforms:
     // - canonize(get_id(id), get_type(t), stmt) → plan(sources([id]), name(t), contract, risk, target(lang), output)
@@ -482,7 +482,7 @@ pub fn formal_plan(node: &CanonNode, lang: &str) -> Option<ImplementationUnit> {
 /// Build canon graph using formal morphisms
 ///
 /// Alternative to canonicalize_lens that uses formal transformations
-#[cfg(feature = "panproto")]
+
 pub fn formal_canonicalize(clauses: &[Clause]) -> crate::lens::CanonGraph {
     use crate::lens::CanonGraph;
     
@@ -496,7 +496,7 @@ pub fn formal_canonicalize(clauses: &[Clause]) -> crate::lens::CanonGraph {
 /// Build IU graph using formal morphisms
 ///
 /// Alternative to plan_lens that uses formal transformations
-#[cfg(feature = "panproto")]
+
 pub fn formal_plan_nodes(nodes: &[CanonNode], lang: &str) -> crate::lens::IUGraph {
     use crate::lens::IUGraph;
     
@@ -511,7 +511,7 @@ pub fn formal_plan_nodes(nodes: &[CanonNode], lang: &str) -> crate::lens::IUGrap
 ///
 /// Groups canon nodes by extracted domain, creating one IU per domain
 /// This implements the μ_domain ∘ μ_plan morphism composition
-#[cfg(feature = "panproto")]
+
 pub fn formal_plan_nodes_by_domain(nodes: &[CanonNode], lang: &str) -> Vec<ImplementationUnit> {
     use std::collections::HashMap;
     
@@ -613,7 +613,7 @@ mod tests {
     // These functions are no longer used in the v2 direct spec→code pipeline.
 
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_term_formatting() {
         let var_term = Term::var("test_var");
         assert_eq!(format_term(&var_term), "test_var");
@@ -629,7 +629,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_trace_provenance() {
         let term = Term::app("generate", vec![
             Term::var("iu_123"),
@@ -642,7 +642,7 @@ mod tests {
     }
     
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_term_to_canon_node() {
         let term = Term::app("canonize", vec![
             Term::app("get_id", vec![Term::var("test_id")]),
@@ -659,7 +659,7 @@ mod tests {
     }
     
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_term_to_iu() {
         let term = Term::app("plan", vec![
             Term::app("sources", vec![Term::var("src_1"), Term::var("src_2")]),
@@ -679,7 +679,7 @@ mod tests {
     }
     
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_formal_canonize() {
         let clause = Clause {
             id: "test_rt".to_string(),
@@ -703,7 +703,7 @@ mod tests {
     }
     
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_formal_plan() {
         let node = CanonNode {
             id: "test_node".to_string(),

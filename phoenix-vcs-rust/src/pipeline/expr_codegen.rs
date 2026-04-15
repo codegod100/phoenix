@@ -9,20 +9,20 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[cfg(feature = "panproto")]
+
 use panproto_expr::{Expr, Literal, eval, Env, EvalConfig, ExprError};
 
 /// Code generator using panproto-expr
 /// 
 /// Uses the Expr language for structure, with code construction
 /// happening through string literals and concatenation.
-#[cfg(feature = "panproto")]
+
 pub struct ExprCodeGenerator {
     env: Env,
     config: EvalConfig,
 }
 
-#[cfg(feature = "panproto")]
+
 impl ExprCodeGenerator {
     /// Create new code generator with default environment
     pub fn new() -> Self {
@@ -155,7 +155,7 @@ impl ExprCodeGenerator {
     }
 }
 
-#[cfg(feature = "panproto")]
+
 impl Default for ExprCodeGenerator {
     fn default() -> Self {
         Self::new()
@@ -163,7 +163,7 @@ impl Default for ExprCodeGenerator {
 }
 
 /// Convert JSON value to Literal
-#[cfg(feature = "panproto")]
+
 fn json_to_literal(value: &serde_json::Value) -> Literal {
     match value {
         serde_json::Value::Null => Literal::Null,
@@ -194,7 +194,7 @@ fn json_to_literal(value: &serde_json::Value) -> Literal {
 /// Full code generation using Expr stack
 /// 
 /// This demonstrates the Layer 4 approach: config → Expr eval → code
-#[cfg(feature = "panproto")]
+
 pub fn generate_with_expr(
     config: &serde_json::Value,
     project_name: &str,
@@ -227,17 +227,4 @@ pub fn generate_with_expr(
     outputs
 }
 
-// ============================================================================
-// When panproto is disabled
-// ============================================================================
 
-#[cfg(not(feature = "panproto"))]
-pub fn generate_with_expr(
-    _config: &serde_json::Value,
-    _project_name: &str,
-) -> HashMap<String, String> {
-    let mut outputs = HashMap::new();
-    outputs.insert("package.json".into(), "{\"name\": \"generated\"}".into());
-    outputs.insert("src/main.ts".into(), "// Generated".into());
-    outputs
-}

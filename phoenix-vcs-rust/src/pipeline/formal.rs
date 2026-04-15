@@ -15,11 +15,11 @@
 //! Each theory has sorts (types) and operations (transformations).
 //! Morphisms between theories are structure-preserving maps.
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, SortKind, Operation, TheoryMorphism};
-#[cfg(feature = "panproto")]
+
 use std::collections::HashMap;
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 
 use crate::pipeline::{Clause, CanonNode, ImplementationUnit};
@@ -33,7 +33,7 @@ use crate::identity::{canon_id, clause_semhash, normalize_text};
 /// ThUI was an intermediate theory between spec and code.
 /// Now ThSpec directly contains ThPythonTextual as its single sort,
 /// and ThPythonTextual's sorts (Header, Sidebar, etc.) come from spec.ncl.
-#[cfg(feature = "panproto")]
+
 #[deprecated(since = "2.0.0", note = "Use ThPythonTextual loaded from spec.ncl")]
 pub fn ui_theory() -> Theory {
     panic!("ThUI is obsolete - ThPythonTextual is loaded from spec.ncl")
@@ -52,7 +52,7 @@ pub fn ui_theory() -> Theory {
 ///   - hash: Code → CodeHash
 ///   - write: CodeFile → IO
 ///   - trace: Code → TraceId
-#[cfg(feature = "panproto")]
+
 pub fn code_theory() -> Theory {
     Theory::new(
         Arc::from("ThCode"),
@@ -107,7 +107,7 @@ pub fn code_theory() -> Theory {
 /// Operations:
 ///   - load: Path → ThPythonTextual (load theory from spec.ncl)
 ///   - generate: ThPythonTextual × UIConfig → Code (generate app from theory + instance)
-#[cfg(feature = "panproto")]
+
 pub fn spec_theory() -> Theory {
     Theory::new(
         Arc::from("ThSpec"),
@@ -149,7 +149,7 @@ pub fn spec_theory() -> Theory {
 ///   - extract_domain: Statement → Domain
 ///   - matches_keyword: Statement × Keyword → Bool
 ///   - get_keywords: Domain → List[Keyword]
-#[cfg(feature = "panproto")]
+
 pub fn domain_theory() -> Theory {
     Theory::new(
         Arc::from("ThDomain"),
@@ -189,25 +189,25 @@ pub fn domain_theory() -> Theory {
 }
 
 /// OBSOLETE: μ_domain removed - use direct spec→code pipeline
-#[cfg(feature = "panproto")]
+
 pub fn domain_morphism() -> TheoryMorphism {
     panic!("domain_morphism is obsolete - use direct spec→code pipeline")
 }
 
 /// OBSOLETE: μ_canon removed - use direct spec→code pipeline
-#[cfg(feature = "panproto")]
+
 pub fn canonize_morphism() -> TheoryMorphism {
     panic!("canonize_morphism is obsolete - use direct spec→code pipeline")
 }
 
 /// OBSOLETE: μ_plan removed - use direct spec→code pipeline
-#[cfg(feature = "panproto")]
+
 pub fn plan_morphism() -> TheoryMorphism {
     panic!("plan_morphism is obsolete - use direct spec→code pipeline")
 }
 
 /// OBSOLETE: μ_codegen removed - use direct spec→code pipeline
-#[cfg(feature = "panproto")]
+
 pub fn codegen_morphism() -> TheoryMorphism {
     panic!("codegen_morphism is obsolete - use direct spec→code pipeline")
 }
@@ -223,7 +223,7 @@ pub fn codegen_morphism() -> TheoryMorphism {
 /// Operation mapping:
 /// - load → read (load theory from file)
 /// - generate → generate (apply theory to generate code)
-#[cfg(feature = "panproto")]
+
 pub fn spec_to_code_morphism() -> TheoryMorphism {
     let _domain = spec_theory();
     let _codomain = code_theory();
@@ -251,7 +251,7 @@ pub fn spec_to_code_morphism() -> TheoryMorphism {
 /// 
 /// This prevents "dashboard hallucination" where spec properties
 /// don't map to generated code.
-#[cfg(feature = "panproto")]
+
 pub fn verify_spec_completeness(spec: &crate::pipeline::widget_config::UIConfig, generated_code: &str) -> Vec<String> {
     let mut gaps = vec![];
     
@@ -292,7 +292,7 @@ pub fn verify_spec_completeness(spec: &crate::pipeline::widget_config::UIConfig,
 // Use direct spec→code pipeline
 
 /// Print formal theory summary
-#[cfg(feature = "panproto")]
+
 pub fn print_theory_summary(theory: &Theory, name: &str) {
     println!("   🧮 {}: {} sorts, {} operations", 
         name, theory.sorts.len(), theory.ops.len());
@@ -315,7 +315,7 @@ pub fn print_theory_summary(theory: &Theory, name: &str) {
 }
 
 /// Print morphism summary
-#[cfg(feature = "panproto")]
+
 pub fn print_morphism_summary(morphism: &TheoryMorphism) {
     println!("   ↳ {}: {} → {} ({} sorts, {} ops)",
         morphism.name,
@@ -343,7 +343,7 @@ mod tests {
     // The pipeline now uses ThPythonTextual and ThNix theories directly.
 
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_code_theory() {
         let theory = code_theory();
         assert_eq!(theory.name.as_ref(), "ThCode");

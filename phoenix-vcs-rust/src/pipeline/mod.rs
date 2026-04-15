@@ -98,7 +98,7 @@ pub async fn ingest_specs(project_root: impl AsRef<Path>, target_lang: &str) -> 
     }
     
     // Report formal morphism when panproto is enabled
-    #[cfg(feature = "panproto")]
+    
     if let Some(parsed) = first_parsed {
         let theory = parsed.to_panproto_theory();
         match crate::pipeline::morphisms::create_ncl_to_code_morphism(&theory, target_lang) {
@@ -1415,7 +1415,7 @@ pub mod term_codegen;
 pub mod term_codegen_parsing;
 pub mod widget_config;
 pub mod nix_codegen;
-pub mod template_bundle;
+
 
 // Spec.md parsing and template selection
 pub mod spec_md;
@@ -1472,11 +1472,11 @@ pub mod js_algebraic;
 pub mod equations;
 
 // Re-export key morphism types when panproto is enabled
-#[cfg(feature = "panproto")]
+
 pub use morphisms::{CodeMorphism, create_ncl_to_code_morphism, generate_with_morphism};
 
 // Re-export formal theory types when panproto is enabled
-#[cfg(feature = "panproto")]
+
 pub use formal::{
     code_theory,
     canonize_morphism, plan_morphism, codegen_morphism,
@@ -1484,7 +1484,7 @@ pub use formal::{
 };
 
 // Re-export apply functions when panproto is enabled
-#[cfg(feature = "panproto")]
+
 pub use apply::{
     clause_to_term, canon_node_to_term, iu_to_term,
     term_to_canon_node, term_to_iu,
@@ -1496,7 +1496,7 @@ pub use apply::{
 };
 
 // Re-export equation functions when panproto is enabled
-#[cfg(feature = "panproto")]
+
 pub use equations::{
     code_equations,
     print_equations, verify_morphism_preserves_equations,

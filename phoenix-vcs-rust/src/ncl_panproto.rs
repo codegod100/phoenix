@@ -3,11 +3,11 @@
 //! This module provides integration between NCL spec parsing and panproto's
 //! Generalized Algebraic Theory (GAT) system.
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, SortKind, Operation};
-#[cfg(feature = "panproto")]
+
 use panproto_theory_dsl::{load, load_and_compile};
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 use crate::ncl::ParsedNcl;
 
@@ -15,7 +15,7 @@ use crate::ncl::ParsedNcl;
 /// 
 /// Uses panproto_theory_dsl to parse the spec file into a formal theory.
 /// The spec must follow the TheoryDocument format with `id`, `description`, and `theory` fields.
-#[cfg(feature = "panproto")]
+
 pub fn load_spec_as_theory(path: &std::path::Path) -> Result<Theory, Box<dyn std::error::Error>> {
     // Load and compile the theory document with a simple resolver
     let resolver = |_name: &str| -> Option<Theory> { None };
@@ -29,7 +29,7 @@ pub fn load_spec_as_theory(path: &std::path::Path) -> Result<Theory, Box<dyn std
 }
 
 /// Load spec content directly as a theory (without file)
-#[cfg(feature = "panproto")]
+
 pub fn load_spec_content_as_theory(content: &str, source_name: &str) -> Result<Theory, Box<dyn std::error::Error>> {
     // Write to temp file, load, then cleanup
     let temp_dir = std::env::temp_dir();
@@ -46,13 +46,13 @@ pub fn load_spec_content_as_theory(content: &str, source_name: &str) -> Result<T
 /// 
 /// This evaluates the Nickel content directly (no subprocess needed)
 /// and extracts the ui_config field.
-#[cfg(feature = "panproto")]
+
 pub fn extract_ui_config_from_theory(content: &str) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     use nickel_lang::Context;
     
     // Evaluate the Nickel content
     let mut ctx = Context::new();
-    let expr = ctx.eval_deep_for_export(content)
+    let expr = ctx.eval_deep(content)
         .map_err(|e| format!("Nickel evaluation failed: {:?}", e))?;
     
     // Convert to JSON value
@@ -66,7 +66,7 @@ pub fn extract_ui_config_from_theory(content: &str) -> Result<serde_json::Value,
 }
 
 /// Load spec as theory and extract UI config in one step
-#[cfg(feature = "panproto")]
+
 pub fn load_spec_with_config(path: &std::path::Path) -> Result<(Theory, serde_json::Value), Box<dyn std::error::Error>> {
     let theory = load_spec_as_theory(path)?;
     let content = std::fs::read_to_string(path)?;
@@ -78,7 +78,7 @@ pub fn load_spec_with_config(path: &std::path::Path) -> Result<(Theory, serde_js
 ///
 /// Each requirement becomes a sort in the theory, and the relations between
 /// requirements become operations.
-#[cfg(feature = "panproto")]
+
 pub fn requirements_to_theory(parsed: &ParsedNcl) -> Theory {
     let theory_name = parsed.name.clone()
         .unwrap_or_else(|| "unnamed".to_string());
@@ -121,7 +121,7 @@ pub fn requirements_to_theory(parsed: &ParsedNcl) -> Theory {
 /// Parse NCL content directly into a panproto Theory
 ///
 /// This uses the full panproto ecosystem for parsing theories from NCL specs.
-#[cfg(feature = "panproto")]
+
 pub fn parse_theory(content: &str, source_name: &str) -> Result<Theory, String> {
     // First parse with our NCL parser
     let parsed = crate::ncl::parse_ncl_spec(content, source_name)?;
@@ -142,7 +142,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(feature = "panproto")]
     fn test_requirements_to_theory() {
         let parsed = ParsedNcl {
             name: Some("test".to_string()),
@@ -165,7 +164,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "panproto")]
     fn test_parse_theory() {
         let ncl = r#"
         {
@@ -188,7 +186,6 @@ mod tests {
     }
     
     #[test]
-    #[cfg(feature = "panproto")]
     fn test_load_spec_as_theory() {
         // A spec.ncl in panproto theory document format
         let spec_ncl = r#"

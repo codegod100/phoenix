@@ -14,7 +14,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-#[cfg(feature = "panproto")]
 use panproto_expr::{Expr, Env, Literal, eval};
 
 /// Generic code generator using Expr evaluation

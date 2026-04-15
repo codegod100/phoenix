@@ -271,7 +271,7 @@ pub struct ProtocolPaths {
 }
 
 /// Load and validate a protocol theory using panproto (if feature enabled)
-#[cfg(feature = "panproto")]
+
 pub mod panproto_integration {
     use super::*;
     use panproto_gat::Theory;

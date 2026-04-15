@@ -17,9 +17,9 @@
 //! Term constructors form an initial algebra: Term(Σ_Nix, ∅)
 //! The morphism μ_spec→nix: ThSpec → ThNix preserves structure.
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, Sort, SortKind, Operation};
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ use std::collections::HashMap;
 pub struct ThNix;
 
 /// Returns the panproto Theory definition for ThNix
-#[cfg(feature = "panproto")]
+
 pub fn nix_theory() -> Theory {
     Theory::new(
         Arc::from("ThNix"),

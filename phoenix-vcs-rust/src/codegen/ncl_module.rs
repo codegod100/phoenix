@@ -1,20 +1,43 @@
-//! Generate code from NCL module definitions using panproto-parse
+//! Generate code from NCL module definitions using nickel-lang
 //!
-//! Uses panproto-parse to validate NCL syntax, then extracts fields.
+//! Uses nickel-lang crate to properly parse and evaluate NCL files.
 
 use std::collections::HashMap;
 use std::path::Path;
-use panproto_parse::ParserRegistry;
+use nickel_lang::{Context, Expr, Record as NickelRecord};
 
-/// A code-generating module defined in NCL
+/// A code-generating module defined in NCL (combined mod.ncl + module.ncl format)
 #[derive(Debug, Clone)]
 pub struct NclCodeModule {
     pub id: String,
     pub name: String,
+    pub description: Option<String>,
+    pub version: Option<String>,
     pub protocol: String,
     pub vertex_kinds: Vec<String>,
     pub vertices: Vec<VertexDef>,
     pub config_placeholders: HashMap<String, String>,
+    // Combined format fields (from mod.ncl)
+    pub provides: Vec<ProvidedCapability>,
+    pub needs: Vec<NeededCapability>,
+    pub language: String,
+    pub is_infrastructure: bool,
+}
+
+/// A provided capability
+#[derive(Debug, Clone)]
+pub struct ProvidedCapability {
+    pub interface: String,
+    pub properties: HashMap<String, String>,
+    pub endpoint: Option<String>,
+}
+
+/// A needed capability
+#[derive(Debug, Clone)]
+pub struct NeededCapability {
+    pub interface: String,
+    pub strategy: String,
+    pub optional: bool,
 }
 
 /// A vertex definition
@@ -26,46 +49,74 @@ pub struct VertexDef {
 }
 
 impl NclCodeModule {
-    /// Load a module from its NCL file
+    /// Load a module from its NCL file using nickel-lang
     pub fn from_ncl_file(path: &Path) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)?;
         Self::from_ncl_str(&content)
     }
     
-    /// Parse module from NCL string
+    /// Parse module from NCL string using nickel-lang evaluation
     pub fn from_ncl_str(content: &str) -> anyhow::Result<Self> {
-        // Use panproto-parse to validate NCL syntax
-        let registry = ParserRegistry::new();
+        // Use nickel-lang to evaluate the NCL content
+        let mut context = Context::new();
+        let expr = context.eval_deep(content)
+            .map_err(|e| anyhow::anyhow!("NCL evaluation failed: {:?}", e))?;
         
-        // Parse to validate and get schema structure
-        let _schema = registry.parse_with_protocol("nickel", content.as_bytes(), "module.ncl")
-            .map_err(|e| anyhow::anyhow!("NCL syntax error: {:?}", e))?;
-        
-        // Extract module definition from content using regex
-        // (Schema doesn't contain the literal values we need)
-        Self::from_content(content)
+        // Extract from the evaluated expression
+        Self::from_expr(&expr)
     }
     
-    /// Extract module from NCL content using regex
-    fn from_content(content: &str) -> anyhow::Result<Self> {
-        let id = extract_string_field(content, "id")
+    /// Extract module from evaluated Nickel Expr
+    fn from_expr(expr: &Expr) -> anyhow::Result<Self> {
+        let record = expr.as_record()
+            .ok_or_else(|| anyhow::anyhow!("Expected a record"))?;
+        
+        // Extract top-level fields
+        let id = get_string_field(&record, "id")
             .ok_or_else(|| anyhow::anyhow!("Missing 'id' field"))?;
-        let name = extract_string_field(content, "name")
+        let name = get_string_field(&record, "name")
             .unwrap_or_else(|| id.clone());
-        let protocol = extract_string_field(content, "protocol")
+        let description = get_string_field(&record, "description");
+        let version = get_string_field(&record, "version");
+        let language = get_string_field(&record, "language")
             .unwrap_or_else(|| "typescript".to_string());
-        let vertex_kinds = extract_string_array(content, "vertex_kinds")
-            .unwrap_or_default();
-        let vertices = extract_vertices(content)?;
-        let config_placeholders = extract_placeholders(content);
+        let is_infrastructure = get_bool_field(&record, "is_infrastructure")
+            .unwrap_or(false);
+        
+        // Extract generation block
+        let (protocol, vertex_kinds, vertices, config_placeholders) = 
+            if let Some(gen_expr) = record.value_by_name("generation") {
+                if let Some(gen_record) = gen_expr.as_record() {
+                    let protocol = get_string_field(&gen_record, "protocol")
+                        .unwrap_or_else(|| "typescript".to_string());
+                    let vertex_kinds = get_string_array(&gen_record, "vertex_kinds");
+                    let vertices = extract_vertices_from_record(&gen_record)?;
+                    let placeholders = extract_placeholders_from_record(&gen_record);
+                    (protocol, vertex_kinds, vertices, placeholders)
+                } else {
+                    ("typescript".to_string(), vec![], vec![], HashMap::new())
+                }
+            } else {
+                ("typescript".to_string(), vec![], vec![], HashMap::new())
+            };
+        
+        // Extract capabilities
+        let provides = extract_provides_from_record(&record);
+        let needs = extract_needs_from_record(&record);
         
         Ok(Self {
             id,
             name,
+            description,
+            version,
             protocol,
             vertex_kinds,
             vertices,
             config_placeholders,
+            provides,
+            needs,
+            language,
+            is_infrastructure,
         })
     }
     
@@ -100,117 +151,133 @@ impl NclCodeModule {
     }
 }
 
-// Extraction helpers
+// Nickel record extraction helpers
 
-fn extract_string_field(content: &str, field: &str) -> Option<String> {
-    let patterns = [
-        format!(r#"{}\s*=\s*"([^"]+)""#, regex::escape(field)),
-        format!(r#"{}\s*=\s*'([^']+)'"#, regex::escape(field)),
-    ];
-    
-    for pattern in &patterns {
-        let regex = regex::Regex::new(pattern).ok()?;
-        if let Some(cap) = regex.captures(content) {
-            return cap.get(1).map(|m| m.as_str().to_string());
-        }
-    }
-    None
+fn get_string_field(record: &NickelRecord, name: &str) -> Option<String> {
+    record.value_by_name(name)?.as_str().map(|s| s.to_string())
 }
 
-fn extract_string_array(content: &str, field: &str) -> Option<Vec<String>> {
-    let pattern = format!(r#"{}\s*=\s*\[([^\]]+)\]"#, regex::escape(field));
-    let regex = regex::Regex::new(&pattern).ok()?;
-    
-    let cap = regex.captures(content)?;
-    let array_content = cap.get(1)?.as_str();
-    
-    Some(
-        array_content
-            .split(',')
-            .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
-            .filter(|s| !s.is_empty())
-            .collect()
-    )
+fn get_bool_field(record: &NickelRecord, name: &str) -> Option<bool> {
+    record.value_by_name(name)?.as_bool()
 }
 
-fn extract_vertices(content: &str) -> anyhow::Result<Vec<VertexDef>> {
-    let mut vertices = Vec::new();
-    
-    // Extract just the vertices array block
-    let vertices_start = content.find("vertices = [")
-        .ok_or_else(|| anyhow::anyhow!("Missing 'vertices' array"))?;
-    let after_start = &content[vertices_start + "vertices = [".len()..];
-    
-    // Find matching closing bracket (respect nesting)
-    let mut depth = 1;
-    let mut block_end = 0;
-    for (i, c) in after_start.char_indices() {
-        match c {
-            '[' => depth += 1,
-            ']' => {
-                depth -= 1;
-                if depth == 0 {
-                    block_end = i;
-                    break;
+fn get_string_array(record: &NickelRecord, name: &str) -> Vec<String> {
+    if let Some(expr) = record.value_by_name(name) {
+        if let Some(array) = expr.as_array() {
+            let mut result = Vec::new();
+            for i in 0..array.len() {
+                if let Some(item) = array.get(i) {
+                    if let Some(s) = item.as_str() {
+                        result.push(s.to_string());
+                    }
                 }
             }
-            _ => {}
+            return result;
         }
     }
+    vec![]
+}
+
+fn extract_vertices_from_record(record: &NickelRecord) -> anyhow::Result<Vec<VertexDef>> {
+    let mut vertices = Vec::new();
     
-    let block = &after_start[..block_end];
-    
-    // Parse each vertex record - use simpler pattern for '' strings
-    // Pattern: { id = "NAME", kind = "KIND", text = ''CONTENT'' }
-    let vertex_re = regex::Regex::new(
-        r#"\{\s*id\s*=\s*"([^"]+)"\s*,\s*kind\s*=\s*"([^"]+)"\s*,\s*text\s*=\s*''((?s:.*?))''\s*\}"#
-    ).map_err(|e| anyhow::anyhow!("Regex error: {}", e))?;
-    
-    for cap in vertex_re.captures_iter(block) {
-        let id = cap.get(1).unwrap().as_str().to_string();
-        let kind = cap.get(2).unwrap().as_str().to_string();
-        let text = cap.get(3).unwrap().as_str().to_string();
-        vertices.push(VertexDef { id, kind, text });
+    if let Some(expr) = record.value_by_name("vertices") {
+        if let Some(array) = expr.as_array() {
+            for i in 0..array.len() {
+                if let Some(vertex_expr) = array.get(i) {
+                    if let Some(vertex_record) = vertex_expr.as_record() {
+                        let id = get_string_field(&vertex_record, "id")
+                            .ok_or_else(|| anyhow::anyhow!("Vertex {} missing id", i))?;
+                        let kind = get_string_field(&vertex_record, "kind")
+                            .unwrap_or_else(|| "ExprStmt".to_string());
+                        let text = get_multiline_string_field(&vertex_record, "text")
+                            .unwrap_or_default();
+                        vertices.push(VertexDef { id, kind, text });
+                    }
+                }
+            }
+        }
     }
     
     Ok(vertices)
 }
 
-fn extract_placeholders(content: &str) -> HashMap<String, String> {
+fn get_multiline_string_field(record: &NickelRecord, name: &str) -> Option<String> {
+    // Try regular string first - this handles both regular and multiline strings
+    if let Some(s) = get_string_field(record, name) {
+        return Some(s);
+    }
+    
+    None
+}
+
+fn extract_placeholders_from_record(record: &NickelRecord) -> HashMap<String, String> {
     let mut placeholders = HashMap::new();
     
-    if let Some(start) = content.find("config_placeholders = {") {
-        let after = &content[start + "config_placeholders = {".len()..];
-        
-        // Find matching }
-        let mut depth = 1;
-        let mut end_pos = 0;
-        for (i, c) in after.char_indices() {
-            match c {
-                '{' => depth += 1,
-                '}' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        end_pos = i;
-                        break;
+    if let Some(expr) = record.value_by_name("config_placeholders") {
+        if let Some(ph_record) = expr.as_record() {
+            for (field_name, value_opt) in ph_record.iter() {
+                if let Some(value_expr) = value_opt {
+                    if let Some(s) = value_expr.as_str() {
+                        placeholders.insert(field_name.to_string(), s.to_string());
                     }
                 }
-                _ => {}
             }
-        }
-        
-        let block = &after[..end_pos];
-        
-        // Parse "{{KEY}}" = "value" patterns
-        let regex = regex::Regex::new(r#""(\{\{[^}]+\}\})"\s*=\s*"([^"]+)""#).unwrap();
-        for cap in regex.captures_iter(block) {
-            let key = cap.get(1).unwrap().as_str().to_string();
-            let value = cap.get(2).unwrap().as_str().to_string();
-            placeholders.insert(key, value);
         }
     }
     
     placeholders
+}
+
+fn extract_provides_from_record(record: &NickelRecord) -> Vec<ProvidedCapability> {
+    let mut provides = Vec::new();
+    
+    if let Some(expr) = record.value_by_name("provides") {
+        if let Some(array) = expr.as_array() {
+            for i in 0..array.len() {
+                if let Some(cap_expr) = array.get(i) {
+                    if let Some(cap_record) = cap_expr.as_record() {
+                        if let Some(interface) = get_string_field(&cap_record, "interface") {
+                            let endpoint = get_string_field(&cap_record, "endpoint");
+                            provides.push(ProvidedCapability {
+                                interface,
+                                properties: HashMap::new(),
+                                endpoint,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    provides
+}
+
+fn extract_needs_from_record(record: &NickelRecord) -> Vec<NeededCapability> {
+    let mut needs = Vec::new();
+    
+    if let Some(expr) = record.value_by_name("needs") {
+        if let Some(array) = expr.as_array() {
+            for i in 0..array.len() {
+                if let Some(need_expr) = array.get(i) {
+                    if let Some(need_record) = need_expr.as_record() {
+                        if let Some(interface) = get_string_field(&need_record, "interface") {
+                            let optional = get_bool_field(&need_record, "optional")
+                                .unwrap_or(false);
+                            needs.push(NeededCapability {
+                                interface,
+                                strategy: "first_available".to_string(),
+                                optional,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    needs
 }
 
 #[cfg(test)]
@@ -218,9 +285,26 @@ mod tests {
     use super::*;
     
     #[test]
-    fn test_extract_string_field() {
-        let ncl = r#"id = "test-module", name = 'Test Module'"#;
-        assert_eq!(extract_string_field(ncl, "id"), Some("test-module".to_string()));
-        assert_eq!(extract_string_field(ncl, "name"), Some("Test Module".to_string()));
+    fn test_parse_simple_module() {
+        let ncl = r#"{
+            id = "test-module",
+            name = "Test Module",
+            language = "typescript",
+            generation = {
+                protocol = "typescript",
+                vertex_kinds = ["ImportDecl", "VarDecl"],
+                vertices = [
+                    { id = "import", kind = "ImportDecl", text = "import { foo } from 'bar';" },
+                ],
+            },
+        }"#;
+        
+        let module = NclCodeModule::from_ncl_str(ncl).expect("Should parse");
+        assert_eq!(module.id, "test-module");
+        assert_eq!(module.name, "Test Module");
+        assert_eq!(module.language, "typescript");
+        assert_eq!(module.protocol, "typescript");
+        assert_eq!(module.vertex_kinds.len(), 2);
+        assert_eq!(module.vertices.len(), 1);
     }
 }

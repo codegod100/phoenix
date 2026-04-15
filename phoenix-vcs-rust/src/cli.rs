@@ -1156,12 +1156,7 @@ async fn cmd_pipeline_single(
             if let Ok(content) = tokio::fs::read_to_string(&path).await {
                 match crate::ncl::parse_ncl_spec(&content, &path.to_string_lossy()) {
                     Ok(parsed) => {
-                        // Explicit template takes precedence
-                        if parsed.template.is_some() {
-                            template_name = parsed.template.clone();
-                            break;
-                        }
-                        // Fall back to build_type if no explicit template
+                        // Use build_type for template selection
                         if template_name.is_none() && parsed.build_type.is_some() {
                             template_name = parsed.build_type.clone();
                         }
@@ -1200,7 +1195,7 @@ async fn cmd_pipeline_single(
     }
     
     // Clone content for formal morphism (used when panproto is enabled)
-    #[cfg(feature = "panproto")]
+    
     let content_for_morphism = combined_content.clone();
     
     // Extract project name and clone content before combined_content is moved
@@ -1222,7 +1217,7 @@ async fn cmd_pipeline_single(
     let total_clauses = clause_graph.clauses.len();
     
     // Create and report formal theories and morphisms (when panproto is enabled)
-    #[cfg(feature = "panproto")]
+    
     {
         println!("   📐 Formal Pipeline Theories (v2 - Direct Spec→Code):");
         
@@ -1261,7 +1256,7 @@ async fn cmd_pipeline_single(
     
     // Equation verification (temporarily disabled during v2 migration)
     // TODO: Re-enable with ThPythonTextual equations
-    #[cfg(feature = "panproto")]
+    
     {
         println!("\n   🔍 Equation verification: SKIPPED (v2 migration)");
     }
@@ -1301,25 +1296,12 @@ async fn cmd_pipeline_single(
             if let Err(e) = generate_bundle_from_theory(&output_dir, &project_name).await {
                 println!("   ⚠ Bundle generation from theory failed: {}", e);
             }
-        } else if let Some(bundle) = crate::pipeline::template_bundle::get_bundle(template) {
-            println!("   📦 Template bundle: {} ({} files)", bundle.name, bundle.files.len());
-            let bundle_files = crate::pipeline::template_bundle::generate_bundle(
-                &bundle,
-                &project_name,
-                &bundle_content,
-                &iu_graph.ius,
-            );
-            for (path, content) in bundle_files {
-                let full_path = output_dir.join(&path);
-                tokio::fs::write(&full_path, content).await?;
-                println!("   📄 Bundle: {}", path.display());
-            }
         }
         
         // === THEORY-DRIVEN CODE GENERATION (v2) ===
         // Use ThSpec loaded from spec.ncl to drive generation
         // Only for Python templates - TypeScript/Rust use template-based generation
-        #[cfg(feature = "panproto")]
+        
         {
             let is_python_template = template.starts_with("python") || template == "py";
             let spec_ncl_path = output_dir.join("spec.ncl");

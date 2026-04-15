@@ -1,0 +1,57 @@
+{
+  id = "dev.phoenix.elena-dashboard",
+  description = "- **Styling**: CSS-in-component with beautiful gradients",
+  theory = "GenericServer",
+  build_type = "nodejs",
+  template = "ts-hono",
+
+  # Sorts - domain types
+  sorts = [
+    { name = "ThPackageJson", kind = {{ type = "structural" }} },
+    { name = "ThApp", kind = {{ type = "structural" }} },
+    { name = "ThNix", kind = {{ type = "structural" }} },
+    { name = "ThREADME", kind = {{ type = "structural" }} },
+    { name = "ThIntegratedApp", kind = {{ type = "structural" }} },
+
+    { name = "ProjectName", kind = {{ type = "val", value_kind = "string" }} },
+    { name = "ProjectDescription", kind = {{ type = "val", value_kind = "string" }} },
+    { name = "Port", kind = {{ type = "val", value_kind = "integer" }} },
+    { name = "Host", kind = {{ type = "val", value_kind = "string" }} },
+
+    { name = "RouteTable", kind = {{ type = "structural" }} },
+    { name = "ModelDef", kind = {{ type = "structural" }} },
+
+    # HTTP Methods
+    { name = "GET", kind = {{ type = "structural" }} },
+    { name = "POST", kind = {{ type = "structural" }} },
+    { name = "PUT", kind = {{ type = "structural" }} },
+    { name = "DELETE", kind = {{ type = "structural" }} },
+  ],
+
+  # Operations - constructors
+  ops = [
+    { name = "generate_package_json", inputs = [{ name = "name", sort = "ProjectName" }], output = "ThPackageJson" },
+    { name = "generate_app", inputs = [{ name = "routes", sort = "RouteTable" }], output = "ThApp" },
+    { name = "mk_project_name", inputs = [{ name = "name", sort = "String" }], output = "ProjectName" },
+    { name = "mk_route_table", inputs = [{ name = "routes", sort = "String" }], output = "RouteTable" },
+  ],
+
+  phoenix_config = {
+    project_name = "elena-dashboard",
+    project_description = "- **Styling**: CSS-in-component with beautiful gradients",
+    build_type = "nodejs",
+    server_config = {
+      port = 3000,
+      host = "0.0.0.0",
+    },
+  },
+
+  # Routes definition
+  routes = [
+    { method = "GET", path = "/api/health", handler = "listHealth", description = "Server status" },
+    { method = "GET", path = "/api/users", handler = "listUsers", description = "List all users" },
+    { method = "GET", path = "/api/todos", handler = "listTodos", description = "List all todos" },
+    { method = "POST", path = "/api/todos", handler = "createTodos", description = "Create new todo" },
+  ],
+
+}

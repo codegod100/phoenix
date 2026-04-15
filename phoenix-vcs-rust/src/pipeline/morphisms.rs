@@ -4,11 +4,11 @@
 //! with Phoenix's NCL spec parsing to enable formal, verifiable code generation
 //! via TheoryMorphisms.
 
-#[cfg(feature = "panproto")]
+
 use panproto_gat::{Theory, TheoryMorphism};
-#[cfg(feature = "panproto")]
+
 use std::collections::HashMap;
-#[cfg(feature = "panproto")]
+
 use std::sync::Arc;
 use crate::ncl::ParsedNcl;
 
@@ -19,7 +19,7 @@ use crate::ncl::ParsedNcl;
 #[derive(Debug, Clone)]
 pub struct CodeMorphism {
     /// The underlying panproto theory morphism
-    #[cfg(feature = "panproto")]
+    
     pub morphism: TheoryMorphism,
     /// Target language (python, rust, etc.)
     pub target_language: String,
@@ -33,7 +33,7 @@ pub struct CodeMorphism {
 ///
 /// This creates a formal mapping between the "Requirement" sorts
 /// in the NCL theory and the "Code" sorts in the target language theory.
-#[cfg(feature = "panproto")]
+
 pub fn create_ncl_to_code_morphism(
     ncl_theory: &Theory,
     target_lang: &str,
@@ -82,7 +82,7 @@ pub fn create_ncl_to_code_morphism(
 ///
 /// This applies the theory morphism to transform requirements
 /// into code structure, then uses LLM to fill in implementation.
-#[cfg(feature = "panproto")]
+
 pub fn generate_with_morphism(
     parsed: &ParsedNcl,
     target_lang: &str,
@@ -120,7 +120,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(feature = "panproto")]
+    
     fn test_create_morphism() {
         let parsed = ParsedNcl {
             name: Some("test".to_string()),
