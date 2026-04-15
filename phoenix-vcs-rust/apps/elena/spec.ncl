@@ -11,11 +11,11 @@
   
   # Tensor Network
   modules = [
+    { id = "elenajs", name = "ElenaJS", language = "typescript" },
     { id = "bun-runtime", name = "Bun Runtime", language = "nix" },
-    { id = "hono-server", name = "Hono Server", language = "typescript" },
-    { id = "sqlite", name = "SQLite", language = "nix" },
     { id = "vite-dev-server", name = "Vite Dev Server", language = "typescript" },
-    { id = "elenajs", name = "ElenaJS", language = "typescript" }
+    { id = "sqlite", name = "SQLite", language = "nix" },
+    { id = "hono-server", name = "Hono Server", language = "typescript" }
   ],
   connections = [
     { provider = "sqlite", consumer = "hono-server", interface = "Database" },
