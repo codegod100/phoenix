@@ -1,24 +1,32 @@
 {
   id = "todo-list",
   name = "Todo List Component",
-  description = "Interactive todo management with API integration",
   version = "1.0.0",
-  language = "typescript",
-  is_infrastructure = false,
-
-  # Metadata for code generation
+  
+  provides = ["ui-component", "elena-component"],
+  needs = ["database", "styling"],
+  
   generation = {
-    protocol = "typescript",
-    vertex_kinds = ["ClassDecl"],
+    target = "typescript",
+    exports = ["TodoList"],
     resource_file = "todo-list.ts",
-    config_placeholders = {}
-  },
-
-  provides = [
-    { interface = "WebComponent", properties = { tag = "todo-list", framework = "elenajs" } }
-  ],
-
-  needs = [
-    { interface = "HttpServer", strategy = { type = "first_available" }, optional = false }
-  ]
+    
+    vertices = [
+      {
+        type = "Import",
+        source = "elenajs-core",
+        items = ["Elena", "html"]
+      },
+      {
+        type = "Import",
+        source = "style-utils", 
+        items = ["styles", "theme"]
+      },
+      {
+        type = "ClassDecl",
+        name = "TodoList",
+        code = m%"RESOURCE:todo-list.ts"%
+      }
+    ]
+  }
 }
