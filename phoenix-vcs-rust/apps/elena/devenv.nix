@@ -2,8 +2,9 @@
 
 {
   packages = [
-    pkgs.bun
     pkgs.nix
+    pkgs.bun
+    pkgs.concurrently
   ];
 
   env = {

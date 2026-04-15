@@ -75,6 +75,10 @@ impl DevenvConfig {
                     if !packages.contains(&"bun".to_string()) {
                         packages.push("bun".to_string());
                     }
+                    // Add concurrently for running multiple dev servers
+                    if !packages.contains(&"concurrently".to_string()) {
+                        packages.push("concurrently".to_string());
+                    }
                 }
                 "nix" => {
                     packages.push("nix".to_string());
