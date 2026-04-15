@@ -19,6 +19,7 @@ use crate::kitty::diagram::{Box, Diagram, Layer};
 use crate::kitty::types::PregroupType;
 use crate::capability_fulfillment::{CapabilityInterface, Module, ProvidedCapability, NeededCapability};
 use std::collections::HashMap;
+use serde_json::json;
 
 /// A module as a box in the tensor network
 /// 
@@ -79,12 +80,61 @@ impl ModuleBox {
 /// 
 /// In tensor terms: provider.cod.r ⊗ consumer.dom.l → I
 /// This "contracts" the types, connecting provider to consumer
+/// 
+/// Edge metadata (config) flows from provider to consumer,
+/// parameterizing how the consumer uses the capability
 #[derive(Debug, Clone)]
 pub struct FulfillmentCup {
     pub provider: String,      // Module ID providing
     pub consumer: String,      // Module ID consuming
     pub interface: CapabilityInterface,  // What capability flows
     pub wire_type: Box,        // The cup box
+    pub config: serde_json::Value,  // Edge metadata: config for consumer
+}
+
+impl FulfillmentCup {
+    /// Create a new fulfillment cup with configuration
+    pub fn with_config(
+        provider: String,
+        consumer: String,
+        interface: CapabilityInterface,
+        config: serde_json::Value,
+    ) -> Self {
+        let cap_type = Self::capability_to_type(&interface);
+        let left = cap_type.clone();
+        let right = cap_type.adjoint_right();
+        let wire_type = Box::cup(left, right)
+            .expect("Failed to create cup - type mismatch");
+        
+        Self {
+            provider,
+            consumer,
+            interface,
+            wire_type,
+            config,
+        }
+    }
+    
+    fn capability_to_type(cap: &CapabilityInterface) -> PregroupType {
+        let name = match cap {
+            CapabilityInterface::Database => "Database",
+            CapabilityInterface::Cache => "Cache",
+            CapabilityInterface::HttpServer => "HttpServer",
+            CapabilityInterface::WebSocket => "WebSocket",
+            CapabilityInterface::Queue => "Queue",
+            CapabilityInterface::ObjectStorage => "Storage",
+            CapabilityInterface::Email => "Email",
+            CapabilityInterface::Search => "Search",
+            CapabilityInterface::AuthProvider => "Auth",
+            CapabilityInterface::Logging => "Logging",
+            CapabilityInterface::Metrics => "Metrics",
+            CapabilityInterface::WebComponents => "WebComponents",
+            CapabilityInterface::ReactiveUI => "ReactiveUI",
+            CapabilityInterface::Custom(s) => s.as_str(),
+            _ => "Unknown",
+        };
+        PregroupType::atomic(name)
+    }
 }
 
 /// Tensor network for a system of modules
@@ -155,6 +205,7 @@ impl ModuleTensorNetwork {
                 consumer: consumer_id.clone(),
                 interface: interface.clone(),
                 wire_type: cup,
+                config: json!({}),  // Empty config by default - can be populated from spec
             });
             
             fulfilled_needs.push((consumer_id, interface));
