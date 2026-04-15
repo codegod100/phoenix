@@ -23,15 +23,41 @@ fn pascal_to_kebab(s: &str) -> String {
 /// Generic spec.md config parser - knows nothing about specific modules
 /// Parses format: ### ModuleName followed by - `key` = `value` lines
 /// Also extracts child component props from HTML-like tags: <tag-name prop="value">
+/// And global Theme Configuration section
 fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> {
     let mut configs: HashMap<String, HashMap<String, String>> = HashMap::new();
     let mut current_module: Option<String> = None;
+    let mut in_theme_section = false;
     
+    // Parse global theme config first
     for line in spec_md.lines() {
+        // Track Theme Configuration section
+        if line.starts_with("## Theme Configuration") {
+            in_theme_section = true;
+            continue;
+        }
+        if line.starts_with("## ") && !line.contains("Theme") {
+            in_theme_section = false;
+        }
+        
+        // Parse theme: `value` format in theme section
+        if in_theme_section && line.contains("Theme: `") {
+            if let Some(start) = line.find('`') {
+                if let Some(end) = line[start+1..].find('`') {
+                    let theme_name = &line[start+1..start+1+end];
+                    // Theme applies to all modules that need it
+                    configs.entry("style-utils".to_string())
+                        .or_insert_with(HashMap::new)
+                        .insert("themeName".to_string(), theme_name.to_string());
+                }
+            }
+        }
+        
         // Track current module: ### ModuleName
         if line.starts_with("### ") {
             let module_name = line[4..].trim().split_whitespace().next().unwrap_or("");
             current_module = Some(pascal_to_kebab(module_name));
+            in_theme_section = false; // Theme section ends when modules start
             continue;
         }
         
@@ -217,22 +243,46 @@ fn generate_server_from_ncl(
 
 /// Resolve imports in NCL content by inlining them
 /// Replaces `import "file.ncl"` with the actual file content
-async fn resolve_ncl_imports(project_root: &Path, content: &str) -> anyhow::Result<String> {
+/// Also handles dynamic imports with placeholders like `import "theme-%{themeName}%.ncl"`
+async fn resolve_ncl_imports(project_root: &Path, content: &str, params: Option<&HashMap<String, String>>) -> anyhow::Result<String> {
     let import_regex = regex::Regex::new(r#"import\s+"([^"]+)""#).unwrap();
-    let mut result = content.to_string();
     
-    // Find all imports and replace them
-    for cap in import_regex.captures_iter(content) {
-        if let Some(import_path) = cap.get(1) {
-            let import_file = import_path.as_str();
-            let full_path = project_root.join("modules").join(import_file);
-            
-            let import_content = tokio::fs::read_to_string(&full_path).await
-                .map_err(|e| anyhow::anyhow!("Failed to read import {}: {}", full_path.display(), e))?;
-            
-            // Replace the import statement with the content
-            let full_import = cap.get(0).unwrap().as_str();
-            result = result.replace(full_import, &format!("({})", import_content.trim()));
+    // First, replace placeholders with param values in the content
+    let mut result = content.to_string();
+    if let Some(p) = params {
+        for (key, value) in p {
+            // Replace %{key}% with value (full placeholder syntax)
+            result = result.replace(&format!("%{{{}}}%", key), value);
+        }
+    }
+    
+    // Now find all imports (with placeholders resolved) and inline them
+    // Keep looping until no more imports found (for nested imports)
+    loop {
+        let mut found_import = false;
+        let mut new_result = result.clone();
+        
+        for cap in import_regex.captures_iter(&result) {
+            if let Some(import_path) = cap.get(1) {
+                let import_file = import_path.as_str();
+                let full_path = project_root.join("modules").join(import_file);
+                
+                // Check if file exists before trying to read
+                if full_path.exists() {
+                    let import_content = tokio::fs::read_to_string(&full_path).await
+                        .map_err(|e| anyhow::anyhow!("Failed to read import {}: {}", full_path.display(), e))?;
+                    
+                    // Replace the import statement with the content
+                    let full_import = cap.get(0).unwrap().as_str();
+                    new_result = new_result.replace(full_import, &format!("({})", import_content.trim()));
+                    found_import = true;
+                }
+            }
+        }
+        
+        result = new_result;
+        if !found_import {
+            break;
         }
     }
     
@@ -253,8 +303,8 @@ async fn load_component_module(
     
     let ncl_content = tokio::fs::read_to_string(&ncl_path).await?;
     
-    // Resolve imports by inlining them
-    let resolved_content = resolve_ncl_imports(project_root, &ncl_content).await?;
+    // Resolve imports by inlining them (with param substitution for dynamic imports)
+    let resolved_content = resolve_ncl_imports(project_root, &ncl_content, params.as_ref()).await?;
     
     // If params provided, wrap the NCL to call the function with those params
     let final_ncl = if let Some(p) = &params {
@@ -327,12 +377,23 @@ async fn generate_client_from_ncl(
     let spec_md = fs::read_to_string(output_dir.join("spec.md")).await.unwrap_or_default();
     let all_configs = parse_spec_config(&spec_md);
     
+    // Extract global theme from config (set by style-utils entry)
+    let global_theme = all_configs.get("style-utils")
+        .and_then(|c| c.get("themeName"))
+        .cloned()
+        .unwrap_or_else(|| "catppuccin-mocha".to_string());
+    
     // Load all modules first
     for comp_name in component_names {
         // Get config for this component from spec.md
-        let params = all_configs.get(comp_name).cloned();
+        let mut params = all_configs.get(comp_name).cloned().unwrap_or_default();
         
-        let module = load_component_module(project_root, comp_name, params)
+        // Inject themeName if not already set
+        if !params.contains_key("themeName") {
+            params.insert("themeName".to_string(), global_theme.clone());
+        }
+        
+        let module = load_component_module(project_root, comp_name, Some(params))
             .await
             .map_err(|e| anyhow::anyhow!("Component '{}': {}", comp_name, e))?;
         println!("   📄 Loaded: {} (vertices: {:?})", module.name, module.vertices.iter().map(|v| &v.kind).collect::<Vec<_>>());

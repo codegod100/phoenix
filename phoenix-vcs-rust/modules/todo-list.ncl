@@ -1,8 +1,9 @@
 # Todo List Component
-# Imports theme directly from NCL
+# Imports theme based on themeName param from spec.md
 
-let theme = import "theme.ncl" in
 fun params =>
+let themeName = params.themeName in
+let theme = import "theme-%{themeName}%.ncl" in
 {
   id = "todo-list",
   name = "Todo List Component",

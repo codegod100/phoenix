@@ -1,8 +1,9 @@
 # User Card Component
-# Imports theme directly from NCL
+# Imports theme based on themeName param from spec.md
 
-let theme = import "theme.ncl" in
 fun params =>
+let themeName = params.themeName in
+let theme = import "theme-%{themeName}%.ncl" in
 {
   id = "user-card",
   name = "User Card",
@@ -11,7 +12,7 @@ fun params =>
   language = "typescript",
   is_infrastructure = false,
 
-  # Config uses theme colors directly
+  # Config uses theme colors
   config = {
     mauve = theme.mauve,
     base = theme.base,

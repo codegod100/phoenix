@@ -1,18 +1,17 @@
 # Style Utils Module
-# Imports theme.ncl directly - no generator involvement needed
+# Imports theme based on themeName param from spec.md
 
-let theme = import "theme.ncl" in
-
+fun params =>
+let themeName = params.themeName in
+let theme = import "theme-%{themeName}%.ncl" in
 {
-  # Module metadata
   id = "style-utils",
   name = "Style Utilities",
-  description = "CSS-in-JS utilities with Catppuccin theme",
+  description = "CSS-in-JS utilities with %{themeName}% theme",
   version = "1.0.0",
   language = "typescript",
   is_infrastructure = false,
 
-  # Config is computed from imported theme
   config = {
     rosewater = theme.rosewater,
     flamingo = theme.flamingo,
@@ -42,7 +41,6 @@ let theme = import "theme.ncl" in
     crust = theme.crust
   },
 
-  # Generation spec - tells generator how to build this module
   generation = {
     protocol = "typescript",
     vertex_kinds = ["ClassDecl"],
@@ -50,11 +48,8 @@ let theme = import "theme.ncl" in
   },
 
   provides = [
-    { interface = "Styling", properties = { type = "css-in-js", framework = "vanilla" } }
+    { interface = "Styling", properties = { type = "css-in-js", framework = "vanilla", theme = themeName } }
   ],
 
-  needs = [],
-
-  # Helper function to get a color (demonstrates modules can have functions)
-  getColor = fun name => theme."%{name}%"
+  needs = []
 }

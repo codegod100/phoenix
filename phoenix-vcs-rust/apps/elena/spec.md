@@ -11,6 +11,14 @@ Full-stack TypeScript application featuring:
 - **API**: REST endpoints with database persistence
 - **Styling**: CSS-in-component with beautiful gradients
 
+## Theme Configuration
+
+- Theme: `arc-dark`
+- Options: `catppuccin-mocha`, `arc-dark`
+
+**Catppuccin Mocha:** Soft pastel dark theme with purple accents
+**Arc-Dark:** Classic dark theme with blue accents
+
 ## Server Configuration
 
 - Host: `100.115.154.32` (bind address for all servers)
