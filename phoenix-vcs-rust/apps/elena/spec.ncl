@@ -7,20 +7,5 @@
     api_port = 3000,
     vite_port = 5173
   },
-  components = ["todo-list", "user-card", "welcome-card"],
-  
-  # Tensor Network
-  modules = [
-    { id = "elenajs", name = "ElenaJS", language = "typescript" },
-    { id = "bun-runtime", name = "Bun Runtime", language = "nix" },
-    { id = "vite-dev-server", name = "Vite Dev Server", language = "typescript" },
-    { id = "sqlite", name = "SQLite", language = "nix" },
-    { id = "hono-server", name = "Hono Server", language = "typescript" }
-  ],
-  connections = [
-    { provider = "sqlite", consumer = "hono-server", interface = "Database" },
-    { provider = "hono-server", consumer = "vite-dev-server", interface = "HttpServer" },
-    { provider = "vite-dev-server", consumer = "elenajs", interface = "Custom(\"DevServer\")" }
-  ],
-  dangling = []
+  components = ["elena-app", "todo-list", "user-card", "welcome-card"]
 }

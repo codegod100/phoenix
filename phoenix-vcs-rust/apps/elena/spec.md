@@ -65,10 +65,10 @@ User profile display with avatar initials.
 - Props: `name`, `email`
 - Features: Gradient avatar, hover effects
 
-## ElenaApp
-Main application container component.
-- Combines all sub-components
-- Responsive layout with max-width container
+### ElenaApp
+Root application container.
+- Props: none
+- Features: Combines all sub-components, responsive layout
 
 ## Development
 

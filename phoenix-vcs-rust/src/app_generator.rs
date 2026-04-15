@@ -7,14 +7,12 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use crate::codegen::ncl_module::NclCodeModule;
 use crate::kitty::module_bridge::ParsedModuleSpec;
-use crate::kitty::module_tensor_network::ModuleTensorNetwork;
 
 /// Orchestrate generation from NCL modules
 pub async fn generate_app(
     project_root: &Path,
     output_dir: &Path,
     _parsed: &ParsedModuleSpec,
-    network: &ModuleTensorNetwork,
     server_config: &ServerConfig,
     component_names: &[String],
 ) -> anyhow::Result<()> {
@@ -38,15 +36,15 @@ pub async fn generate_app(
     fs::write(output_dir.join("vite.config.ts"), vite_code).await?;
     println!("✅ Generated: vite.config.ts");
 
-    // Generate spec.ncl output with tensor network
-    let spec_ncl = generate_spec_ncl(output_dir, network, server_config, component_names)?;
+    // Generate spec.ncl output
+    let spec_ncl = generate_spec_ncl(output_dir, server_config, component_names)?;
     fs::write(output_dir.join("spec.ncl"), spec_ncl).await?;
     println!("✅ Generated: spec.ncl");
 
     Ok(())
 }
 
-/// Server configuration
+/// Server configuration  
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
     pub host: String,
@@ -57,7 +55,7 @@ pub struct ServerConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            host: "127.0.0.1".to_string(),
+            host: "100.115.154.32".to_string(),
             api_port: 3000,
             vite_port: 5173,
         }
@@ -67,63 +65,89 @@ impl Default for ServerConfig {
 /// Generate server.ts from NCL module definition
 fn generate_server_from_ncl(
     project_root: &Path,
-    config: &ServerConfig
+    config: &ServerConfig,
 ) -> anyhow::Result<String> {
-    let ncl_path = project_root.join("modules/hono-server.ncl");
-    let module = NclCodeModule::from_ncl_file(&ncl_path)
-        .map_err(|e| anyhow::anyhow!("Failed to load {}: {}", ncl_path.display(), e))?;
-
-    println!("   📄 Loaded server module: {}", module.name);
-
-    // Build config map from placeholders
-    let mut config_map = HashMap::new();
-    for placeholder in module.config_placeholders.keys() {
-        let value = match placeholder.as_str() {
-            "{{HOST}}" => config.host.clone(),
-            "{{API_PORT}}" => config.api_port.to_string(),
-            _ => continue,
+    let modules_dir = project_root.join("modules");
+    
+    // Find a server module (infrastructure with generation protocol)
+    let modules: Vec<_> = std::fs::read_dir(&modules_dir)?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map(|ext| ext == "ncl").unwrap_or(false))
+        .filter_map(|e| NclCodeModule::from_ncl_file(&e.path()).ok())
+        .filter(|m| m.is_infrastructure && m.protocol == "typescript")
+        .collect();
+    
+    let server_module = modules.into_iter()
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("No TypeScript server NCL module found in {}", modules_dir.display()))?;
+    
+    println!("   📄 Loaded server module: {}", server_module.name);
+    
+    // Generate code using the module's code generation spec
+    let mut code_parts = Vec::new();
+    
+    // Emit vertices in order
+    for vertex in &server_module.vertices {
+        let text = if vertex.text.contains("{{HOST}}") {
+            vertex.text.replace("{{HOST}}", &config.host)
+        } else if vertex.text.contains("{{API_PORT}}") {
+            vertex.text.replace("{{API_PORT}}", &config.api_port.to_string())
+        } else {
+            vertex.text.clone()
         };
-        config_map.insert(placeholder.clone(), value);
+        code_parts.push(text);
     }
-
-    module.generate(&config_map)
+    
+    Ok(code_parts.join(""))
 }
 
-/// Load component module from NCL or return error
+/// Load component module from NCL or fail
 async fn load_component_module(project_root: &Path, name: &str) -> anyhow::Result<NclCodeModule> {
-    // Flat structure: modules/{name}.ncl
     let ncl_path = project_root.join("modules").join(format!("{}.ncl", name));
-    if ncl_path.exists() {
-        return NclCodeModule::from_ncl_file(&ncl_path)
-            .map_err(|e| anyhow::anyhow!("Failed to load {}: {}", ncl_path.display(), e));
+    if !ncl_path.exists() {
+        anyhow::bail!("Module file not found: {}", ncl_path.display());
     }
-
-    anyhow::bail!("No NCL module found for component '{}' (tried: {})",
-        name, ncl_path.display())
-}
-
-fn capitalize(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        None => String::new(),
-        Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase(),
-    }
+    
+    NclCodeModule::from_ncl_file(&ncl_path)
+        .map_err(|e| anyhow::anyhow!("Failed to parse {}: {}", ncl_path.display(), e))
 }
 
 /// Generate client main.ts from component NCL modules
 /// Fails if any component module is missing or incomplete
+/// Root app is the last component that has ExprStmt (mounting) code
 async fn generate_client_from_ncl(
     project_root: &Path,
     component_names: &[String]
 ) -> anyhow::Result<String> {
     let mut output = String::new();
     let mut component_tags: Vec<(String, String)> = Vec::new(); // (tag_name, class_name)
+    let mut loaded_modules: Vec<(String, NclCodeModule)> = Vec::new();
+    
+    // Load all modules first
+    for comp_name in component_names {
+        let module = load_component_module(project_root, comp_name)
+            .await
+            .map_err(|e| anyhow::anyhow!("Component '{}': {}", comp_name, e))?;
+        loaded_modules.push((comp_name.clone(), module));
+    }
+    
+    // Find root app (module with ExprStmt for mounting)
+    let root_idx = loaded_modules.iter()
+        .rposition(|(_, m)| m.vertices.iter().any(|v| v.kind == "ExprStmt"))
+        .ok_or_else(|| anyhow::anyhow!("No root app found - one component must have ExprStmt for mounting"))?;
+    
+    // Build component list (excluding root)
+    let mut regular_components = Vec::new();
+    let root_module = loaded_modules.remove(root_idx);
+    for (name, module) in loaded_modules {
+        regular_components.push((name, module));
+    }
     
     // Add import statement
     output.push_str("import { Elena, html } from '@elenajs/core';\n\n");
     
-    // Load and generate each component - fail if any missing
-    for comp_name in component_names {
+    // Generate regular components
+    for (comp_name, module) in regular_components {
         let class_name = comp_name.split('-').map(|s| {
             let mut chars = s.chars();
             match chars.next() {
@@ -133,10 +157,6 @@ async fn generate_client_from_ncl(
         }).collect::<String>();
         
         let tag_name = comp_name.to_lowercase();
-        
-        let module = load_component_module(project_root, comp_name)
-            .await
-            .map_err(|e| anyhow::anyhow!("Component '{}': {}", comp_name, e))?;
         
         println!("   📄 Loaded component module: {}", module.name);
         
@@ -160,20 +180,27 @@ async fn generate_client_from_ncl(
         component_tags.push((tag_name, class_name));
     }
     
-    // Require elena-app module for root component
-    let app_module = load_component_module(project_root, "elena-app")
-        .await
-        .map_err(|e| anyhow::anyhow!("Required root 'elena-app' module: {}", e))?;
+    // Process root app
+    let (root_name, root_module) = root_module;
+    println!("   📄 Loaded root app module: {}", root_module.name);
     
-    println!("   📄 Loaded root app module: {}", app_module.name);
+    let root_class_name = root_name.split('-').map(|s| {
+        let mut chars = s.chars();
+        match chars.next() {
+            None => String::new(),
+            Some(first) => first.to_uppercase().collect::<String>() + chars.as_str().to_lowercase().as_str()
+        }
+    }).collect::<String>();
     
-    // Add root app component from module
-    let has_app_class = app_module.vertices.iter().any(|v| v.kind == "ClassDecl");
+    let root_tag_name = root_name.to_lowercase();
+    
+    // Add root app class
+    let has_app_class = root_module.vertices.iter().any(|v| v.kind == "ClassDecl");
     if !has_app_class {
-        anyhow::bail!("'elena-app' module has no ClassDecl vertices");
+        anyhow::bail!("Root module '{}' has no ClassDecl vertices", root_name);
     }
     
-    for vertex in &app_module.vertices {
+    for vertex in &root_module.vertices {
         if vertex.kind == "ClassDecl" {
             output.push_str(&vertex.text);
             output.push_str("\n\n");
@@ -188,15 +215,18 @@ async fn generate_client_from_ncl(
             tag_name, class_name
         ));
     }
-    output.push_str("customElements.define('elena-app', ElenaApp);\n\n");
+    output.push_str(&format!(
+        "customElements.define('{}', {});\n\n",
+        root_tag_name, root_class_name
+    ));
     
     // Mount app from module
-    let has_mount = app_module.vertices.iter().any(|v| v.kind == "ExprStmt");
+    let has_mount = root_module.vertices.iter().any(|v| v.kind == "ExprStmt");
     if !has_mount {
-        anyhow::bail!("'elena-app' module missing ExprStmt for mounting");
+        anyhow::bail!("Root module '{}' missing ExprStmt for mounting", root_name);
     }
     
-    for vertex in &app_module.vertices {
+    for vertex in &root_module.vertices {
         if vertex.kind == "ExprStmt" {
             output.push_str(&vertex.text);
             output.push('\n');
@@ -208,7 +238,6 @@ async fn generate_client_from_ncl(
 
 /// Generate vite.config.ts
 fn generate_vite_config(config: &ServerConfig) -> anyhow::Result<String> {
-    // Direct string formatting - avoid emit_bundle which escapes braces
     let vite_code = format!(
         "import {{ defineConfig }} from 'vite';\n\nexport default defineConfig({{\n  server: {{\n    host: '{}',\n    port: {},\n    proxy: {{\n      '/api': 'http://{}:{}'\n    }}\n  }},\n  build: {{\n    outDir: 'dist'\n  }}\n}});\n",
         config.host, config.vite_port, config.host, config.api_port
@@ -216,10 +245,9 @@ fn generate_vite_config(config: &ServerConfig) -> anyhow::Result<String> {
     Ok(vite_code)
 }
 
-/// Generate spec.ncl output with tensor network
+/// Generate spec.ncl output
 fn generate_spec_ncl(
     output_dir: &Path,
-    network: &ModuleTensorNetwork,
     config: &ServerConfig,
     component_names: &[String]
 ) -> anyhow::Result<String> {
@@ -232,81 +260,11 @@ fn generate_spec_ncl(
         .map(|c| format!("\"{}\"", c))
         .collect::<Vec<_>>()
         .join(", ");
-    
-    // Generate modules list
-    let modules_str = if network.module_boxes.is_empty() {
-        "".to_string()
-    } else {
-        network.module_boxes.values()
-            .map(|mb| {
-                let lang = &mb.module.language;
-                format!(
-                    "    {{ id = \"{}\", name = \"{}\", language = \"{}\" }}",
-                    mb.module.id,
-                    mb.module.name,
-                    lang
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(",\n")
-    };
-    
-    // Generate connections (cups)
-    let connections_str = if network.cups.is_empty() {
-        "".to_string()
-    } else {
-        network.cups.iter()
-            .map(|cup| {
-                let iface = format!("{:?}", cup.interface)
-                    .replace('"', "\\\"");  // Escape internal quotes
-                format!(
-                    "    {{ provider = \"{}\", consumer = \"{}\", interface = \"{}\" }}",
-                    cup.provider, cup.consumer, iface
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(",\n")
-    };
-    
-    // Generate dangling (unfulfilled needs)
-    let dangling_str = if network.dangling.is_empty() {
-        "".to_string()
-    } else {
-        network.dangling.iter()
-            .map(|(module_id, iface)| {
-                let iface_str = format!("{:?}", iface)
-                    .replace('"', "\\\"");  // Escape internal quotes
-                format!(
-                    "    {{ module = \"{}\", needs = \"{}\" }}",
-                    module_id, iface_str
-                )
-            })
-            .collect::<Vec<_>>()
-            .join(",\n")
-    };
-
-    // Build array contents with proper formatting
-    let modules_content = if modules_str.is_empty() { 
-        "".to_string() 
-    } else { 
-        format!("\n{}\n  ", modules_str) 
-    };
-    let connections_content = if connections_str.is_empty() { 
-        "".to_string() 
-    } else { 
-        format!("\n{}\n  ", connections_str) 
-    };
-    let dangling_content = if dangling_str.is_empty() { 
-        "".to_string() 
-    } else { 
-        format!("\n{}\n  ", dangling_str) 
-    };
 
     // Generate valid Nickel syntax
     let spec = format!(
-        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # Tensor Network\n  modules = [{}],\n  connections = [{}],\n  dangling = [{}]\n}}\n",
-        id, name, config.host, config.api_port, config.vite_port, components_str,
-        modules_content, connections_content, dangling_content
+        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}]\n}}\n",
+        id, name, config.host, config.api_port, config.vite_port, components_str
     );
 
     Ok(spec)
