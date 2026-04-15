@@ -7,6 +7,7 @@ pub mod capability_bundle;
 pub mod capability_demo;
 pub mod devenv;
 pub mod emit_bundle;
+pub mod ncl_module;
 pub mod template_gen;
 pub mod typescript;
 

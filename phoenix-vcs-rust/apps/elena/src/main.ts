@@ -107,11 +107,7 @@ export class TodoList extends Elena(HTMLElement) {
       </div>
     `;
   }
-}
-
-import { Elena, html } from '@elenajs/core';
-
-export class WelcomeCard extends Elena(HTMLElement) {
+}export class WelcomeCard extends Elena(HTMLElement) {
   static tagName = 'welcome-card';
   static props = ['title', 'message'];
   
@@ -126,9 +122,7 @@ export class WelcomeCard extends Elena(HTMLElement) {
       </div>
     `;
   }
-}
-
-class ElenaApp extends Elena(HTMLElement) {
+}class ElenaApp extends Elena(HTMLElement) {
   static tagName = 'elena-app';
   
   render() {
@@ -143,9 +137,9 @@ class ElenaApp extends Elena(HTMLElement) {
   }
 }
 // Register all components
-Todolist.define();
-Usercard.define();
-Welcomecard.define();
+TodoList.define();
+UserCard.define();
+WelcomeCard.define();
 ElenaApp.define();
 
 // Mount the app

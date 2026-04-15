@@ -84,7 +84,10 @@ pub fn pascal_case(s: &str) -> String {
             let mut chars = word.chars();
             match chars.next() {
                 None => String::new(),
-                Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase(),
+                Some(first) => {
+                    let rest: String = chars.collect();
+                    first.to_uppercase().to_string() + &rest.to_lowercase()
+                }
             }
         })
         .collect()
@@ -96,7 +99,10 @@ pub fn camel_case(s: &str) -> String {
     let mut chars = pascal.chars();
     match chars.next() {
         None => String::new(),
-        Some(first) => first.to_lowercase().collect::<String>() + chars.as_str(),
+        Some(first) => {
+            let rest: String = chars.collect();
+            first.to_lowercase().to_string() + &rest
+        }
     }
 }
 

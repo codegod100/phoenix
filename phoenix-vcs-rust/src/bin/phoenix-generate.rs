@@ -67,15 +67,27 @@ async fn main() -> anyhow::Result<()> {
     println!("✅ Tensor network valid");
     
     // Extract configs from tensor network
-    let mut component_configs = std::collections::HashMap::new();
+    let mut component_names = Vec::new();
     let mut server_config = phoenix_vcs::app_generator::ServerConfig::default();
     
     for cup in &network.cups {
         if let serde_json::Value::Object(ref config) = cup.config {
-            // Component configs
+            // Extract component names
             if let Some(serde_json::Value::Object(components)) = config.get("components") {
-                for (name, cfg) in components {
-                    component_configs.insert(name.clone(), cfg.clone());
+                for name in components.keys() {
+                    // Convert PascalCase to kebab-case for file lookup
+                    let kebab = name.chars()
+                        .map(|c| {
+                            if c.is_uppercase() {
+                                format!("-{}", c.to_lowercase())
+                            } else {
+                                c.to_string()
+                            }
+                        })
+                        .collect::<String>()
+                        .trim_start_matches('-')
+                        .to_string();
+                    component_names.push(kebab);
                 }
             }
             // Server config
@@ -95,10 +107,7 @@ async fn main() -> anyhow::Result<()> {
     
     println!("   Server config: host={}, api_port={}, vite_port={}",
         server_config.host, server_config.api_port, server_config.vite_port);
-    
-    if !component_configs.is_empty() {
-        println!("   Components: {}", component_configs.keys().cloned().collect::<Vec<_>>().join(", "));
-    }
+    println!("   Components: {}", component_names.join(", "));
     
     // Generate
     let output_dir = args.output.unwrap_or_else(|| args.path.clone());
@@ -109,7 +118,7 @@ async fn main() -> anyhow::Result<()> {
         &output_dir,
         &parsed,
         &server_config,
-        &component_configs,
+        &component_names,
     ).await {
         eprintln!("\n❌ Generation failed: {}", e);
         std::process::exit(1);
