@@ -40,7 +40,7 @@ impl ModuleBox {
         
         // Domain: needs as left adjoints (n.l)
         let dom: Vec<PregroupType> = module.needs.iter()
-            .map(|need| Self::capability_to_type(&need.interface).left())
+            .map(|need| Self::capability_to_type(&need.interface).adjoint_left())
             .collect();
         
         // Codomain: provides as atomic types (n)
@@ -145,9 +145,10 @@ impl ModuleTensorNetwork {
             // Create cup connecting provider output to consumer input
             let cap_type = Self::capability_to_type(&interface);
             let left = cap_type.clone();
-            let right = cap_type.right();  // The adjoint
+            let right = cap_type.adjoint_right();  // The adjoint
             
-            let cup = Box::cup(left, right);
+            let cup = Box::cup(left, right)
+                .expect("Failed to create cup - type mismatch");
             
             cups.push(FulfillmentCup {
                 provider: provider_id.clone(),
