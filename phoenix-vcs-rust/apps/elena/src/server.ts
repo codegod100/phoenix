@@ -20,7 +20,8 @@ app.post('/api/todos', async (c) => {
   return c.json({ id: Date.now(), text: body.text, completed: false });
 });
 
+const hostname = '100.115.154.32';
 const port = 3000;
-console.log(`Server running at http://localhost:${port}`);
+console.log(`Server running at http://${hostname}:${port}`);
 
-serve({ fetch: app.fetch, port });
+serve({ fetch: app.fetch, port, hostname });

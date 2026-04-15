@@ -193,9 +193,10 @@ fn generate_server_ts_with_emit(protocol: &panproto_schema::Protocol, _name: &st
     b = b.vertex("todos_post", "RouteHandler", Some(
         "app.post('/api/todos', async (c) => {\n  const body = await c.req.json();\n  return c.json({ id: Date.now(), text: body.text, completed: false });\n});\n\n"
     )).map_err(|e| anyhow::anyhow!(e))?;
+    b = b.vertex("hostname_const", "VarDecl", Some("const hostname = '100.115.154.32';\n")).map_err(|e| anyhow::anyhow!(e))?;
     b = b.vertex("port_const", "VarDecl", Some("const port = 3000;\n")).map_err(|e| anyhow::anyhow!(e))?;
-    b = b.vertex("log_stmt", "ExprStmt", Some("console.log(`Server running at http://localhost:${port}`);\n\n")).map_err(|e| anyhow::anyhow!(e))?;
-    b = b.vertex("serve_call", "ExprStmt", Some("serve({ fetch: app.fetch, port });\n")).map_err(|e| anyhow::anyhow!(e))?;
+    b = b.vertex("log_stmt", "ExprStmt", Some("console.log(`Server running at http://${hostname}:${port}`);\n\n")).map_err(|e| anyhow::anyhow!(e))?;
+    b = b.vertex("serve_call", "ExprStmt", Some("serve({ fetch: app.fetch, port, hostname });\n")).map_err(|e| anyhow::anyhow!(e))?;
     
     let schema = b.build().map_err(|e| anyhow::anyhow!(e))?;
     phoenix_vcs::codegen::emit_bundle::emit_schema(&schema, "typescript").map_err(|e| anyhow::anyhow!(e))
