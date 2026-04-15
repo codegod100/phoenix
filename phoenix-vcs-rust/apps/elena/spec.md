@@ -60,24 +60,25 @@ Interactive todo management with API integration.
 - Props: `todos`, `newTodo`
 - Features: Add, toggle, delete todos; API persistence
 - Config:
-  - `buttonColor` = `orange`
-  - `checkboxColor` = `green`
+  - `buttonColor` = `mauve`
+  - `checkboxColor` = `teal`
 
 ### UserCard
 User profile display with avatar initials.
 - Props: `name`, `email`
 - Features: Gradient avatar, hover effects
 - Config:
-  - `avatarColor` = `#4287f5`
+  - `avatarColor` = `mauve`
 
 ### ElenaApp
-Root application container.
+Root application container with Catppuccin Mocha theme.
 - Props: none
-- Features: Combines all sub-components, responsive layout
+- Features: Dark theme, combines all sub-components, responsive layout
+- Theme: Catppuccin Mocha (dark purple/blue)
 - Children:
   - `<todo-list></todo-list>` - Todo management
   - `<user-card name="Elsa Snow" email="elsa@example.com"></user-card>` - User profile
-  - `<welcome-card title="Welcome" message="Elena Dashboard with SQLite persistence"></welcome-card>` - Hero section
+  - `<welcome-card title="Welcome" message="Elena Dashboard with Catppuccin Theme"></welcome-card>` - Hero section
 
 ## Development
 

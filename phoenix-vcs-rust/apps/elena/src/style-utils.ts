@@ -1,12 +1,45 @@
+// Catppuccin Mocha Theme
+// https://github.com/catppuccin/catppuccin
+
+const catppuccin = {
+  rosewater: '#f5e0dc',
+  flamingo: '#f2cdcd',
+  pink: '#f5c2e7',
+  mauve: '#cba6f7',
+  red: '#f38ba8',
+  maroon: '#eba0ac',
+  peach: '#fab387',
+  yellow: '#f9e2af',
+  green: '#a6e3a1',
+  teal: '#94e2d5',
+  sky: '#89dceb',
+  sapphire: '#74c7ec',
+  blue: '#89b4fa',
+  lavender: '#b4befe',
+  text: '#cdd6f4',
+  subtext1: '#bac2de',
+  subtext0: '#a6adc8',
+  overlay2: '#9399b2',
+  overlay1: '#7f849c',
+  overlay0: '#6c7086',
+  surface2: '#585b70',
+  surface1: '#45475a',
+  surface0: '#313244',
+  base: '#1e1e2e',
+  mantle: '#181825',
+  crust: '#11111b'
+};
+
 export class StyleUtils {
   static card(options = {}) {
     const { padding = '1.5rem', maxWidth = '500px', shadow = true } = options;
     return `
-      background: white;
+      background: ${catppuccin.surface0};
       border-radius: 12px;
       padding: ${padding};
-      ${shadow ? 'box-shadow: 0 2px 8px rgba(0,0,0,0.1);' : ''}
+      ${shadow ? `box-shadow: 0 4px 16px ${catppuccin.crust}40;` : ''}
       ${maxWidth ? `max-width: ${maxWidth};` : ''}
+      border: 1px solid ${catppuccin.surface1};
     `;
   }
 
@@ -14,10 +47,11 @@ export class StyleUtils {
     const { variant = 'primary', size = 'medium' } = options;
 
     const colors = {
-      primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      danger: '#ff6b6b',
-      success: '#48bb78',
-      orange: '#ff8c00'
+      primary: catppuccin.mauve,
+      danger: catppuccin.red,
+      success: catppuccin.green,
+      warning: catppuccin.peach,
+      secondary: catppuccin.surface1
     };
 
     const sizes = {
@@ -29,12 +63,16 @@ export class StyleUtils {
     return `
       padding: ${sizes[size]};
       background: ${colors[variant]};
-      color: white;
+      color: ${catppuccin.base};
       border: none;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
       transition: transform 0.1s, opacity 0.2s;
+      &:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
     `;
   }
 
@@ -42,11 +80,19 @@ export class StyleUtils {
     return `
       flex: 1;
       padding: 0.75rem;
-      border: 2px solid #e0e0e0;
+      background: ${catppuccin.surface1};
+      border: 2px solid ${catppuccin.surface2};
       border-radius: 8px;
+      color: ${catppuccin.text};
       font-size: 1rem;
       outline: none;
       transition: border-color 0.2s;
+      &::placeholder {
+        color: ${catppuccin.overlay0};
+      }
+      &:focus {
+        border-color: ${catppuccin.mauve};
+      }
     `;
   }
 
@@ -64,15 +110,7 @@ export const css = (strings, ...values) =>
   strings.reduce((acc, str, i) => acc + str + (values[i] || ''), '');
 
 export const theme = {
-  colors: {
-    primary: '#667eea',
-    secondary: '#764ba2',
-    danger: '#ff6b6b',
-    success: '#48bb78',
-    text: '#333',
-    muted: '#666',
-    border: '#e0e0e0'
-  },
+  colors: catppuccin,
   spacing: {
     xs: '0.25rem',
     sm: '0.5rem',

@@ -107,7 +107,7 @@ export class TodoList extends Elena(HTMLElement) {
         <h2 style="${StyleUtils.flex({ gap: '0.5rem' })}; margin: 0 0 1rem 0; color: ${theme.colors.text};">
           <span>✅</span>
           <span>Todo List</span>
-          <span style="margin-left: auto; font-size: 0.85rem; color: ${theme.colors.muted}; font-weight: normal;">
+          <span style="margin-left: auto; font-size: 0.85rem; color: ${theme.colors.subtext0}; font-weight: normal;">
             ${completedCount}/${total}
           </span>
         </h2>
@@ -125,14 +125,14 @@ export class TodoList extends Elena(HTMLElement) {
 
         <ul style="list-style: none; padding: 0; margin: 0;">
           ${this.todos.map(todo => html`
-            <li style="${StyleUtils.flex({ gap: '0.75rem' })}; padding: 0.75rem; border-bottom: 1px solid ${theme.colors.border};">
+            <li style="${StyleUtils.flex({ gap: '0.75rem' })}; padding: 0.75rem; border-bottom: 1px solid ${theme.colors.surface1};">
               <input
                 type="checkbox"
                 data-id="${todo.id}"
                 ${todo.completed ? 'checked' : ''}
                 style="width: 20px; height: 20px; cursor: pointer; accent-color: ${theme.colors.%{checkboxAccent}%};"
               />
-              <span style="flex: 1; ${todo.completed ? 'text-decoration: line-through; color: #999;' : `color: ${theme.colors.text};`}">
+              <span style="flex: 1; ${todo.completed ? `text-decoration: line-through; color: ${theme.colors.overlay0};` : `color: ${theme.colors.text};`}">
                 ${todo.text}
               </span>
               <button
@@ -148,7 +148,7 @@ export class TodoList extends Elena(HTMLElement) {
         </ul>
 
         ${this.todos.length === 0 ? html`
-          <div style="text-align: center; padding: 2rem; color: ${theme.colors.muted};">
+          <div style="text-align: center; padding: 2rem; color: ${theme.colors.overlay0};">
             <div style="font-size: 3rem; margin-bottom: 0.5rem;">📝</div>
             <div>No todos yet. Add one above!</div>
           </div>
