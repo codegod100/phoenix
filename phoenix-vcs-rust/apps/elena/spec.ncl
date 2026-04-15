@@ -11,10 +11,10 @@
   
   # Tensor Network
   modules = [
-    { id = "elenajs", name = "ElenaJS", language = "typescript" },
+    { id = "bun-runtime", name = "Bun Runtime", language = "nix" },
     { id = "hono-server", name = "Hono Server", language = "typescript" },
     { id = "vite-dev-server", name = "Vite Dev Server", language = "typescript" },
-    { id = "bun-runtime", name = "Bun Runtime", language = "nix" }
+    { id = "elenajs", name = "ElenaJS", language = "typescript" }
   ],
   connections = [
     { provider = "hono-server", consumer = "vite-dev-server", interface = "HttpServer" },

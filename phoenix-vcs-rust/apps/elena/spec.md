@@ -7,7 +7,8 @@ A modern dashboard application built with ElenaJS web components and Hono backen
 Full-stack TypeScript application featuring:
 - **Frontend**: ElenaJS reactive web components
 - **Backend**: Hono HTTP server with Bun runtime
-- **API**: REST endpoints for data fetching
+- **Database**: SQLite for persistent todo storage with SQL schema
+- **API**: REST endpoints with database persistence
 - **Styling**: CSS-in-component with beautiful gradients
 
 ## Server Configuration
@@ -34,6 +35,18 @@ Full-stack TypeScript application featuring:
 - **POST** `/api/todos` - Create new todo
   - Body: `{ "text": "string" }`
   - Response: `{ "id", "text", "completed", "created" }`
+
+## Database Schema
+
+SQLite database with `todos` table:
+```sql
+CREATE TABLE todos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text TEXT NOT NULL,
+  completed INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ## Components
 
