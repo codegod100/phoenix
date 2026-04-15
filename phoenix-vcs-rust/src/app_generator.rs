@@ -185,52 +185,27 @@ fn generate_vite_config(config: &ServerConfig) -> anyhow::Result<String> {
     emit_schema(&schema, "typescript").map_err(|e| anyhow::anyhow!(e))
 }
 
-/// Generate spec.ncl output
+/// Generate spec.ncl output with valid Nickel syntax
 fn generate_spec_ncl(
     output_dir: &Path,
     config: &ServerConfig,
     component_names: &[String]
 ) -> anyhow::Result<String> {
-    use crate::codegen::emit_bundle::{create_protocol, EmitBuilder, emit_schema};
-    
-    let protocol = create_protocol(
-        "nickel",
-        vec!["comment".to_string(), "field".to_string(), "record".to_string(), "array".to_string()],
-        vec![],
-    );
-    
     let name = output_dir.file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("app");
     let id = format!("dev.phoenix.{}", name.replace("-", "_"));
     
-    let mut b = EmitBuilder::new(&protocol, "spec");
-    
-    b = b.vertex("header", "comment", Some("# Phoenix Generated Specification\n"))
-        .map_err(|e| anyhow::anyhow!(e))?;
-
-    b = b.vertex("id_field", "field", Some(&format!("id = '{}'\n", id)))
-        .map_err(|e| anyhow::anyhow!(e))?;
-        
-    b = b.vertex("name_field", "field", Some(&format!("name = '{}'\n", name)))
-        .map_err(|e| anyhow::anyhow!(e))?;
-    
-    // Server config
-    let server_config = format!(
-        "server = {{\n  host = '{}'\n  api_port = {}\n  vite_port = {}\n}}\n",
-        config.host, config.api_port, config.vite_port
-    );
-    b = b.vertex("server_record", "record", Some(&server_config))
-        .map_err(|e| anyhow::anyhow!(e))?;
-    
-    // Components array
     let components_str = component_names.iter()
-        .map(|c| format!("'{}'", c))
+        .map(|c| format!("\"{}\"", c))
         .collect::<Vec<_>>()
         .join(", ");
-    b = b.vertex("components_array", "array", Some(&format!("components = [{}]\n", components_str)))
-        .map_err(|e| anyhow::anyhow!(e))?;
     
-    let schema = b.build().map_err(|e| anyhow::anyhow!(e))?;
-    emit_schema(&schema, "nickel").map_err(|e| anyhow::anyhow!(e))
+    // Generate valid Nickel syntax with proper commas (Nickel uses double quotes)
+    let spec = format!(
+        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}]\n}}\n",
+        id, name, config.host, config.api_port, config.vite_port, components_str
+    );
+    
+    Ok(spec)
 }
