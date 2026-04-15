@@ -59,6 +59,10 @@ pub mod free_interface_demo;
 pub mod panproto_schema_bridge;
 pub mod integration;
 
+// Capability-focused parsers (categorical/DisCoCat approach)
+pub mod capability_parser;
+pub mod categorical_capability;
+
 // Re-exports for convenient access
 pub use types::PregroupType;
 pub use diagram::{Diagram, Layer, Box};
