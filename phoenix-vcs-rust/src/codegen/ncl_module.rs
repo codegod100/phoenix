@@ -22,6 +22,8 @@ pub struct NclCodeModule {
     pub needs: Vec<NeededCapability>,
     pub language: String,
     pub is_infrastructure: bool,
+    // External resource file (optional)
+    pub resource_file: Option<String>,
 }
 
 /// A provided capability
@@ -52,7 +54,19 @@ impl NclCodeModule {
     /// Load a module from its NCL file using nickel-lang
     pub fn from_ncl_file(path: &Path) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)?;
-        Self::from_ncl_str(&content)
+        let module = Self::from_ncl_str(&content)?;
+        
+        // If there's a resource_file, load it and create vertices
+        if let Some(resource_file) = module.get_resource_file() {
+            let resource_path = path.parent()
+                .unwrap_or(Path::new("."))
+                .join(&resource_file);
+            let code = std::fs::read_to_string(&resource_path)
+                .map_err(|e| anyhow::anyhow!("Failed to read resource file {}: {}", resource_path.display(), e))?;
+            Ok(module.with_code_resource(code))
+        } else {
+            Ok(module)
+        }
     }
     
     /// Parse module from NCL string using nickel-lang evaluation
@@ -64,6 +78,24 @@ impl NclCodeModule {
         
         // Extract from the evaluated expression
         Self::from_expr(&expr)
+    }
+    
+    /// Get resource_file from generation block if present
+    fn get_resource_file(&self) -> Option<String> {
+        self.resource_file.clone()
+    }
+    
+    /// Create a new module with code loaded from external resource
+    fn with_code_resource(mut self, code: String) -> Self {
+        // Create a ClassDecl vertex from the code
+        let vertex = VertexDef {
+            id: format!("{}_class", self.id),
+            kind: "ClassDecl".to_string(),
+            text: code,
+        };
+        self.vertices = vec![vertex];
+        self.vertex_kinds = vec!["ClassDecl".to_string()];
+        self
     }
     
     /// Extract module from evaluated Nickel Expr
@@ -84,7 +116,7 @@ impl NclCodeModule {
             .unwrap_or(false);
         
         // Extract generation block
-        let (protocol, vertex_kinds, vertices, config_placeholders) = 
+        let (protocol, vertex_kinds, vertices, config_placeholders, resource_file) = 
             if let Some(gen_expr) = record.value_by_name("generation") {
                 if let Some(gen_record) = gen_expr.as_record() {
                     let protocol = get_string_field(&gen_record, "protocol")
@@ -92,12 +124,13 @@ impl NclCodeModule {
                     let vertex_kinds = get_string_array(&gen_record, "vertex_kinds");
                     let vertices = extract_vertices_from_record(&gen_record)?;
                     let placeholders = extract_placeholders_from_record(&gen_record);
-                    (protocol, vertex_kinds, vertices, placeholders)
+                    let resource_file = get_string_field(&gen_record, "resource_file");
+                    (protocol, vertex_kinds, vertices, placeholders, resource_file)
                 } else {
-                    ("typescript".to_string(), vec![], vec![], HashMap::new())
+                    ("typescript".to_string(), vec![], vec![], HashMap::new(), None)
                 }
             } else {
-                ("typescript".to_string(), vec![], vec![], HashMap::new())
+                ("typescript".to_string(), vec![], vec![], HashMap::new(), None)
             };
         
         // Extract capabilities
@@ -117,6 +150,7 @@ impl NclCodeModule {
             needs,
             language,
             is_infrastructure,
+            resource_file,
         })
     }
     
