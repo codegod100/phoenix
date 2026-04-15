@@ -344,6 +344,7 @@ async fn generate_client_from_ncl(
     
     // Add import statement
     output.push_str("import { Elena, html } from '@elenajs/core';\n\n");
+    output.push_str("import { StyleUtils, theme } from './style-utils';\n\n");
     
     // Generate regular components
     for (comp_name, module) in regular_components {

@@ -1,19 +1,3 @@
-// Catppuccin Mocha Theme
-const theme = {
-  colors: {
-    base: '#1e1e2e',
-    mantle: '#181825',
-    crust: '#11111b',
-    surface0: '#313244',
-    surface1: '#45475a',
-    text: '#cdd6f4',
-    subtext1: '#bac2de',
-    mauve: '#cba6f7',
-    lavender: '#b4befe',
-    pink: '#f5c2e7'
-  }
-};
-
 export class WelcomeCard extends Elena(HTMLElement) {
   static tagName = 'welcome-card';
   static props = ['title', 'message'];

@@ -1,22 +1,3 @@
-// Catppuccin Mocha Theme
-const theme = {
-  colors: {
-    base: '#1e1e2e',
-    mantle: '#181825',
-    crust: '#11111b',
-    surface0: '#313244',
-    surface1: '#45475a',
-    surface2: '#585b70',
-    text: '#cdd6f4',
-    subtext1: '#bac2de',
-    subtext0: '#a6adc8',
-    mauve: '#cba6f7',
-    lavender: '#b4befe',
-    pink: '#f5c2e7',
-    blue: '#89b4fa'
-  }
-};
-
 export class ElenaApp extends Elena(HTMLElement) {
   static tagName = 'elena-app';
 

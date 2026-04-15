@@ -1,7 +1,7 @@
 // Catppuccin Mocha Theme
 // https://github.com/catppuccin/catppuccin
 
-const catppuccin = {
+export const catppuccin = {
   rosewater: '#f5e0dc',
   flamingo: '#f2cdcd',
   pink: '#f5c2e7',
@@ -31,7 +31,7 @@ const catppuccin = {
 };
 
 export class StyleUtils {
-  static card(options = {}) {
+  static card(options: { padding?: string; maxWidth?: string; shadow?: boolean } = {}) {
     const { padding = '1.5rem', maxWidth = '500px', shadow = true } = options;
     return `
       background: ${catppuccin.surface0};
@@ -43,18 +43,20 @@ export class StyleUtils {
     `;
   }
 
-  static button(options = {}) {
+  static button(options: { variant?: string; size?: string } = {}) {
     const { variant = 'primary', size = 'medium' } = options;
 
-    const colors = {
+    const colors: Record<string, string> = {
       primary: catppuccin.mauve,
       danger: catppuccin.red,
       success: catppuccin.green,
       warning: catppuccin.peach,
-      secondary: catppuccin.surface1
+      secondary: catppuccin.surface1,
+      mauve: catppuccin.mauve,
+      teal: catppuccin.teal
     };
 
-    const sizes = {
+    const sizes: Record<string, string> = {
       small: '0.4rem 0.8rem',
       medium: '0.75rem 1.5rem',
       large: '1rem 2rem'
@@ -62,7 +64,7 @@ export class StyleUtils {
 
     return `
       padding: ${sizes[size]};
-      background: ${colors[variant]};
+      background: ${colors[variant] || catppuccin.mauve};
       color: ${catppuccin.base};
       border: none;
       border-radius: 8px;
@@ -76,7 +78,7 @@ export class StyleUtils {
     `;
   }
 
-  static input(options = {}) {
+  static input() {
     return `
       flex: 1;
       padding: 0.75rem;
@@ -96,7 +98,7 @@ export class StyleUtils {
     `;
   }
 
-  static flex(options = {}) {
+  static flex(options: { gap?: string; align?: string } = {}) {
     const { gap = '0.5rem', align = 'center' } = options;
     return `
       display: flex;
@@ -106,8 +108,8 @@ export class StyleUtils {
   }
 }
 
-export const css = (strings, ...values) =>
-  strings.reduce((acc, str, i) => acc + str + (values[i] || ''), '');
+export const css = (strings: TemplateStringsArray, ...values: (string | number)[]): string =>
+  strings.reduce((acc: string, str: string, i: number) => acc + str + (values[i] || ''), '');
 
 export const theme = {
   colors: catppuccin,

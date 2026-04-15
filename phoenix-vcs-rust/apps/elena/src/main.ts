@@ -2,10 +2,16 @@ import { Elena, html } from '@elenajs/core';
 
 import { StyleUtils, theme } from './style-utils';
 
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
 export class TodoList extends Elena(HTMLElement) {
   static tagName = 'todo-list';
 
-  todos = [];
+  todos: Todo[] = [];
 
   async firstUpdated() {
     await this.loadTodos();
@@ -25,9 +31,10 @@ export class TodoList extends Elena(HTMLElement) {
     if (list) list.addEventListener('click', this._onListClick);
   }
 
-  _onSubmit = (e) => {
+  _onSubmit = (e: Event) => {
     e.preventDefault();
-    const input = e.target.querySelector('input[type="text"]');
+    const target = e.target as HTMLFormElement;
+    const input = target.querySelector('input[type="text"]') as HTMLInputElement | null;
     const val = input?.value?.trim();
     if (val) {
       this.addTodo(val).then(success => {
@@ -36,11 +43,11 @@ export class TodoList extends Elena(HTMLElement) {
     }
   };
 
-  _onListClick = (e) => {
-    const target = e.target;
+  _onListClick = (e: Event) => {
+    const target = e.target as HTMLElement;
     if (target.dataset?.action === 'delete' && target.dataset?.id) {
       this.deleteTodo(parseInt(target.dataset.id));
-    } else if (target.type === 'checkbox' && target.dataset?.id) {
+    } else if ((target as HTMLInputElement).type === 'checkbox' && target.dataset?.id) {
       this.toggleTodo(parseInt(target.dataset.id));
     }
   };
@@ -48,7 +55,7 @@ export class TodoList extends Elena(HTMLElement) {
   async loadTodos() {
     try {
       const res = await fetch('/api/todos');
-      const data = await res.json();
+      const data = await res.json() as { todos: Todo[] };
       this.todos = data.todos || [];
       this.requestUpdate();
     } catch (err) {
@@ -56,7 +63,7 @@ export class TodoList extends Elena(HTMLElement) {
     }
   }
 
-  async addTodo(text) {
+  async addTodo(text: string) {
     if (!text.trim()) return false;
     try {
       const res = await fetch('/api/todos', {
@@ -74,8 +81,8 @@ export class TodoList extends Elena(HTMLElement) {
     return false;
   }
 
-  async toggleTodo(id) {
-    const todo = this.todos.find(t => t.id === id);
+  async toggleTodo(id: number) {
+    const todo = this.todos.find((t: Todo) => t.id === id);
     if (!todo) return;
     try {
       const res = await fetch(`/api/todos/${id}`, {
@@ -89,7 +96,7 @@ export class TodoList extends Elena(HTMLElement) {
     }
   }
 
-  async deleteTodo(id) {
+  async deleteTodo(id: number) {
     try {
       const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
       if (res.ok) await this.loadTodos();
@@ -99,7 +106,7 @@ export class TodoList extends Elena(HTMLElement) {
   }
 
   render() {
-    const completedCount = this.todos.filter(t => t.completed).length;
+    const completedCount = this.todos.filter((t: Todo) => t.completed).length;
     const total = this.todos.length;
 
     // Use StyleUtils for consistent, reusable styling
@@ -126,7 +133,7 @@ export class TodoList extends Elena(HTMLElement) {
         </form>
 
         <ul style="list-style: none; padding: 0; margin: 0;">
-          ${this.todos.map(todo => html`
+          ${this.todos.map((todo: Todo) => html`
             <li style="${StyleUtils.flex({ gap: '0.75rem' })}; padding: 0.75rem; border-bottom: 1px solid ${theme.colors.surface1};">
               <input
                 type="checkbox"
@@ -183,22 +190,6 @@ export class UserCard extends Elena(HTMLElement) {
   }
 }
 
-// Catppuccin Mocha Theme
-const theme = {
-  colors: {
-    base: '#1e1e2e',
-    mantle: '#181825',
-    crust: '#11111b',
-    surface0: '#313244',
-    surface1: '#45475a',
-    text: '#cdd6f4',
-    subtext1: '#bac2de',
-    mauve: '#cba6f7',
-    lavender: '#b4befe',
-    pink: '#f5c2e7'
-  }
-};
-
 export class WelcomeCard extends Elena(HTMLElement) {
   static tagName = 'welcome-card';
   static props = ['title', 'message'];
@@ -220,25 +211,6 @@ export class WelcomeCard extends Elena(HTMLElement) {
     `;
   }
 }
-
-// Catppuccin Mocha Theme
-const theme = {
-  colors: {
-    base: '#1e1e2e',
-    mantle: '#181825',
-    crust: '#11111b',
-    surface0: '#313244',
-    surface1: '#45475a',
-    surface2: '#585b70',
-    text: '#cdd6f4',
-    subtext1: '#bac2de',
-    subtext0: '#a6adc8',
-    mauve: '#cba6f7',
-    lavender: '#b4befe',
-    pink: '#f5c2e7',
-    blue: '#89b4fa'
-  }
-};
 
 export class ElenaApp extends Elena(HTMLElement) {
   static tagName = 'elena-app';
