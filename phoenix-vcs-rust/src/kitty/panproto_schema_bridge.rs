@@ -15,6 +15,7 @@ use panproto_gat::Name;
 use crate::kitty::schema::{DiagramSchema, BoxSchema, TypePattern};
 use crate::kitty::diagram::Diagram;
 use crate::kitty::types::PregroupType;
+use crate::codegen::emit_bundle::{emit_schema, EmitBuilder, create_protocol, ncl_rules};
 
 /// Bridge between kitty's categorical schema and panproto's schema
 pub struct KittyPanprotoSchemaBridge;
@@ -320,6 +321,75 @@ impl KittyPanprotoSchemaBridge {
     }
 
     //===========================================================================
+    // Layer 4: Schema → Code via emit_with_protocol
+    //===========================================================================
+
+    /// Generate NCL code from kitty schema using emit_with_protocol
+    ///
+    /// This demonstrates the full pipeline:
+    /// 1. Convert kitty DiagramSchema to panproto Schema
+    /// 2. Use emit_schema() to generate Nickel code
+    pub fn to_ncl(kitty_schema: &DiagramSchema) -> Result<String, String> {
+        // Step 1: Convert to panproto schema (Layer 2)
+        let panproto_schema = Self::to_panproto_schema(kitty_schema)?;
+
+        // Step 2: Create emit-compatible schema via EmitBuilder
+        let obj_kinds = vec![
+            "pregroup_type".to_string(),
+            "box_generator".to_string(),
+            "cup".to_string(),
+            "cap".to_string(),
+        ];
+
+        let protocol = create_protocol("nickel", obj_kinds, ncl_rules());
+        let mut builder = EmitBuilder::new(&protocol, "nickel");
+
+        // Add header comment
+        builder = builder
+            .vertex("header", "comment", Some("# Generated from DisCoCat Tensor Network\n"))
+            .map_err(|e| format!("Failed to add header: {:?}", e))?;
+
+        // Add type definitions as record fields
+        let mut types_text = "types = {\n".to_string();
+        for type_name in &kitty_schema.atomic_types {
+            types_text.push_str(&format!("  {} = \"pregroup_type\",\n", type_name));
+        }
+        types_text.push_str("},\n");
+
+        builder = builder
+            .vertex("types", "field", Some(&types_text))
+            .map_err(|e| format!("Failed to add types: {:?}", e))?;
+        builder = builder
+            .edge("header", "types", "next")
+            .map_err(|e| format!("Failed to add edge: {:?}", e))?;
+
+        // Add box generators
+        let mut boxes_text = "boxes = [\n".to_string();
+        for (idx, box_schema) in kitty_schema.box_schemas.iter().enumerate() {
+            boxes_text.push_str(&format!(
+                "  {{ name = \"{}\", idx = {} }},\n",
+                box_schema.name, idx
+            ));
+        }
+        boxes_text.push_str("],\n");
+
+        builder = builder
+            .vertex("boxes", "field", Some(&boxes_text))
+            .map_err(|e| format!("Failed to add boxes: {:?}", e))?;
+        builder = builder
+            .edge("types", "boxes", "next")
+            .map_err(|e| format!("Failed to add edge: {:?}", e))?;
+
+        // Build the emit schema
+        let emit_schema_obj = builder.build()
+            .map_err(|e| format!("Failed to build emit schema: {:?}", e))?;
+
+        // Step 3: Generate NCL using emit_with_protocol
+        emit_schema(&emit_schema_obj, "nickel")
+            .map_err(|e| format!("Failed to emit NCL: {:?}", e))
+    }
+
+    //===========================================================================
     // Layer 4: Schema → Visual Representations
     //===========================================================================
 
@@ -356,12 +426,17 @@ impl KittyPanprotoSchemaBridge {
 /// Extension trait for converting kitty schemas to panproto
 pub trait ToPanprotoSchema {
     fn to_panproto(&self) -> Result<Schema, String>;
+    fn to_ncl(&self) -> Result<String, String>;
     fn to_mermaid(&self) -> String;
 }
 
 impl ToPanprotoSchema for DiagramSchema {
     fn to_panproto(&self) -> Result<Schema, String> {
         KittyPanprotoSchemaBridge::to_panproto_schema(self)
+    }
+
+    fn to_ncl(&self) -> Result<String, String> {
+        KittyPanprotoSchemaBridge::to_ncl(self)
     }
 
     fn to_mermaid(&self) -> String {
@@ -442,5 +517,23 @@ mod tests {
 
         println!("Tensor protocol has {} object kinds", protocol.obj_kinds.len());
         println!("Tensor protocol has {} edge rules", protocol.edge_rules.len());
+    }
+
+    #[test]
+    fn test_schema_to_ncl_with_emit() {
+        let kitty_schema = DiagramSchema::minimal();
+        let ncl = kitty_schema.to_ncl();
+
+        if let Err(e) = &ncl {
+            println!("Error generating NCL: {}", e);
+        }
+
+        assert!(ncl.is_ok(), "Failed to generate NCL: {:?}", ncl.err());
+        let ncl_code = ncl.unwrap();
+
+        // Should contain generated NCL
+        assert!(ncl_code.contains("Generated from DisCoCat"));
+        assert!(ncl_code.contains("types ="));
+        println!("Generated NCL:\n{}", ncl_code);
     }
 }
