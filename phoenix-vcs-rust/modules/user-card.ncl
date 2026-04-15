@@ -12,6 +12,9 @@ let theme = import "theme-%{themeName}%.ncl" in
   language = "typescript",
   is_infrastructure = false,
 
+  # Core logic module used by this component
+  logic_module = "component-logic",
+
   config = {
     activeTheme = themeName,
     mauve = theme.mauve,

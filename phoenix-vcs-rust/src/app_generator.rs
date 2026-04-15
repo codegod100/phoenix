@@ -171,6 +171,14 @@ pub async fn generate_app(
     fs::write(output_dir.join("src/main.ts"), client_code).await?;
     println!("✅ Generated: src/main.ts (from NCL modules)");
 
+    // Copy shared component logic file
+    let logic_src = project_root.join("modules/component-logic.ts");
+    if logic_src.exists() {
+        let logic_code = std::fs::read_to_string(&logic_src)?;
+        fs::write(output_dir.join("src/component-logic.ts"), logic_code).await?;
+        println!("✅ Generated: src/component-logic.ts (shared logic)");
+    }
+
     // Generate vite config
     let vite_code = generate_vite_config(server_config)?;
     fs::write(output_dir.join("vite.config.ts"), vite_code).await?;

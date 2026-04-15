@@ -1,3 +1,5 @@
+import { UserLogic } from './component-logic';
+
 @customElement('user-card')
 export class UserCard extends LitElement {
   @property({ type: String }) declare name: string;
@@ -56,19 +58,28 @@ export class UserCard extends LitElement {
       opacity: 0.7;
       font-size: 0.9rem;
     }
+    
+    .invalid-email {
+      color: %{danger}%;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
   `;
 
   private getInitials(): string {
-    return this.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return UserLogic.getInitials(this.name);
   }
 
   render() {
+    const isValidEmail = UserLogic.isValidEmail(this.email);
+
     return html`
       <div class="user-card">
         <div class="avatar">${this.getInitials()}</div>
         <div class="info">
           <h3>${this.name}</h3>
           <p>${this.email}</p>
+          ${!isValidEmail ? html`<span class="invalid-email">Invalid email</span>` : ''}
         </div>
       </div>
     `;

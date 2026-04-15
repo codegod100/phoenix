@@ -1,8 +1,4 @@
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-}
+import { Todo, TodoStats, TodoLogic, Api } from './component-logic';
 
 @customElement('todo-list')
 export class TodoList extends LitElement {
@@ -140,26 +136,26 @@ export class TodoList extends LitElement {
 
   async loadTodos() {
     try {
-      const res = await fetch('/api/todos');
+      const res = await fetch(Api.todos);
       const data = await res.json();
-      this.todos = data.todos || [];
+      this.todos = data.todos.map(TodoLogic.fromApi);
     } catch (err) {
       console.error('Failed to load todos:', err);
     }
   }
 
   async addTodo() {
-    if (!this.newTodoText.trim()) return;
+    if (!TodoLogic.validateText(this.newTodoText)) return;
     
     this.loading = true;
     try {
-      const res = await fetch('/api/todos', {
+      const res = await fetch(Api.todos, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: this.newTodoText })
+        body: JSON.stringify({ text: this.newTodoText.trim() })
       });
       const data = await res.json();
-      this.todos = [...this.todos, data];
+      this.todos = TodoLogic.add(this.todos, TodoLogic.fromApi(data));
       this.newTodoText = '';
     } catch (err) {
       console.error('Failed to add todo:', err);
@@ -172,25 +168,32 @@ export class TodoList extends LitElement {
     const todo = this.todos.find(t => t.id === id);
     if (!todo) return;
     
+    // Optimistic update
+    this.todos = TodoLogic.toggle(this.todos, id);
+    
     try {
-      await fetch(`/api/todos/${id}`, {
-        method: 'PUT',
+      await fetch(Api.todo(id), {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ completed: !todo.completed })
       });
-      this.todos = this.todos.map(t => 
-        t.id === id ? { ...t, completed: !t.completed } : t
-      );
     } catch (err) {
+      // Revert on error
+      this.todos = TodoLogic.toggle(this.todos, id);
       console.error('Failed to toggle todo:', err);
     }
   }
 
   async deleteTodo(id: number) {
+    // Optimistic update
+    const previous = this.todos;
+    this.todos = TodoLogic.delete(this.todos, id);
+    
     try {
-      await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-      this.todos = this.todos.filter(t => t.id !== id);
+      await fetch(Api.todo(id), { method: 'DELETE' });
     } catch (err) {
+      // Revert on error
+      this.todos = previous;
       console.error('Failed to delete todo:', err);
     }
   }
@@ -202,8 +205,7 @@ export class TodoList extends LitElement {
   }
 
   render() {
-    const completed = this.todos.filter(t => t.completed).length;
-    const total = this.todos.length;
+    const stats = TodoLogic.getStats(this.todos);
 
     return html`
       <div class="container">
@@ -220,7 +222,7 @@ export class TodoList extends LitElement {
           <button 
             class="add-btn" 
             @click=${this.addTodo}
-            ?disabled=${!this.newTodoText.trim() || this.loading}
+            ?disabled=${!TodoLogic.validateText(this.newTodoText) || this.loading}
           >
             ${this.loading ? 'Adding...' : 'Add'}
           </button>
@@ -246,9 +248,9 @@ export class TodoList extends LitElement {
           `)
         }
 
-        ${total > 0 ? html`
+        ${stats.total > 0 ? html`
           <div class="stats">
-            ${completed}/${total} completed (${Math.round((completed / total) * 100)}%)
+            ${stats.completed}/${stats.total} completed (${stats.percentComplete}%)
           </div>
         ` : ''}
       </div>
