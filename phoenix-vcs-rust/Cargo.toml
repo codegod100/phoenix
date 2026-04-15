@@ -11,6 +11,10 @@ repository = "https://github.com/example/phoenix-vcs-rust"
 name = "phoenix-vcs"
 path = "src/main.rs"
 
+[[bin]]
+name = "phoenix-generate"
+path = "src/bin/phoenix-generate.rs"
+
 [lib]
 name = "phoenix_vcs"
 path = "src/lib.rs"
@@ -44,7 +48,7 @@ indexmap = "2.2"
 panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
-panproto-grammars = { git = "https://github.com/panproto/panproto", optional = true, features = ["lang-nickel"] }
+panproto-grammars = { git = "https://github.com/panproto/panproto", optional = true, features = ["lang-nickel", "lang-nix", "lang-typescript", "lang-bash"] }
 panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-theory-dsl = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-mig = { git = "https://github.com/panproto/panproto", optional = true }
