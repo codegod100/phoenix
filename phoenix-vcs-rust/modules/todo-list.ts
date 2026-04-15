@@ -10,18 +10,29 @@ export class TodoList extends Elena(HTMLElement) {
   }
   
   _setupListeners() {
-    // Form submit handler using ID
-    const form = this.shadowRoot?.querySelector('#todo-form');
     const input = this.shadowRoot?.querySelector('#todo-input');
+    const addButton = this.shadowRoot?.querySelector('#add-btn');
     
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const val = input?.value?.trim();
-        if (val) {
-          this.newTodo = val;
-          this.addTodo(e);
-          if (input) input.value = '';
+    const handleAdd = () => {
+      const val = input?.value?.trim();
+      if (val) {
+        this.newTodo = val;
+        this.addTodo({ preventDefault: () => {}, stopPropagation: () => {} });
+        if (input) input.value = '';
+      }
+    };
+    
+    // Bind Add button click
+    if (addButton) {
+      addButton.addEventListener('click', handleAdd);
+    }
+    
+    // Handle Enter key in input
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAdd();
         }
       });
     }
@@ -129,7 +140,8 @@ export class TodoList extends Elena(HTMLElement) {
             style="flex: 1; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none;"
           />
           <button
-            type="submit"
+            type="button"
+            id="add-btn"
             style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;"
           >
             Add
