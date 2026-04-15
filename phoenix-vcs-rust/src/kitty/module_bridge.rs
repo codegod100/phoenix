@@ -35,6 +35,8 @@ use crate::kitty::tree::PregroupTreeNode;
 use crate::kitty::types::PregroupType;
 use crate::kitty::module_tensor_network::{ModuleTensorNetwork, ModuleBox, FulfillmentCup};
 use crate::capability_fulfillment::{Module, CapabilityInterface, ProvidedCapability, NeededCapability, FulfillmentStrategy, ModuleSource};
+use serde_json::json;
+use std::collections::HashMap;
 
 /// Parsed module specification from natural language
 #[derive(Debug)]
@@ -59,6 +61,7 @@ pub struct ModuleConnection {
     pub provider: String,        // Module that provides
     pub interface: CapabilityInterface,
     pub relation: ConnectionRelation,  // How they're connected (with, to, via, etc.)
+    pub config: serde_json::Value,     // Edge metadata: config for consumer
 }
 
 #[derive(Debug, Clone)]
@@ -83,9 +86,23 @@ impl KittyModuleParser {
         let modules = Self::extract_modules(&ccg_tree, spec)?;
         
         // Step 3: Extract connections from CCG tree
-        let connections = Self::extract_connections(&ccg_tree, &modules, spec)?;
+        let mut connections = Self::extract_connections(&ccg_tree, &modules, spec)?;
         
-        // Step 4: Convert to pregroup tree
+        // Step 4: Extract component configs and add to connections
+        let component_configs = Self::extract_component_configs(spec);
+        for conn in &mut connections {
+            // If this connection is for a component that has config, add it
+            if let Some(config) = component_configs.get(&conn.consumer) {
+                // Merge the component config into the connection config
+                let merged = json!({
+                    "component": config,
+                    "relation": format!("{:?}", conn.relation),
+                });
+                conn.config = merged;
+            }
+        }
+        
+        // Step 5: Convert to pregroup tree
         let pregroup = Self::ccg_to_pregroup(&ccg_tree, &modules, &connections)?;
         
         Ok(ParsedModuleSpec {
@@ -98,11 +115,16 @@ impl KittyModuleParser {
     
     /// Generate tensor network from parsed spec
     pub fn to_tensor_network(spec: &ParsedModuleSpec) -> ModuleTensorNetwork {
-        let fulfillments: Vec<(String, String, CapabilityInterface)> = spec.connections.iter()
-            .map(|conn| (conn.consumer.clone(), conn.provider.clone(), conn.interface.clone()))
+        let fulfillments: Vec<(String, String, CapabilityInterface, serde_json::Value)> = spec.connections.iter()
+            .map(|conn| (
+                conn.consumer.clone(), 
+                conn.provider.clone(), 
+                conn.interface.clone(),
+                conn.config.clone(),
+            ))
             .collect();
         
-        ModuleTensorNetwork::compose(spec.modules.clone(), fulfillments)
+        ModuleTensorNetwork::compose_with_configs(spec.modules.clone(), fulfillments)
     }
     
     /// Parse spec to CCG tree (simplified version)
@@ -373,6 +395,97 @@ impl KittyModuleParser {
         Ok(modules)
     }
     
+    /// Extract component configurations from spec.md Components section
+    /// 
+    /// Parses sections like:
+    /// ### TodoList
+    /// Interactive todo management.
+    /// - Props: `todos`, `newTodo`
+    /// - Features: Add, toggle, delete todos
+    fn extract_component_configs(spec: &str) -> HashMap<String, serde_json::Value> {
+        let mut configs = HashMap::new();
+        let lines: Vec<&str> = spec.lines().collect();
+        
+        let mut in_components_section = false;
+        let mut current_component: Option<String> = None;
+        let mut current_config: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+        
+        for line in lines {
+            let trimmed = line.trim();
+            
+            // Detect Components section
+            if trimmed.to_lowercase().starts_with("## components") {
+                in_components_section = true;
+                continue;
+            }
+            
+            // Exit on next ## section
+            if in_components_section && trimmed.starts_with("## ") && !trimmed.to_lowercase().contains("components") {
+                // Save last component if any
+                if let Some(name) = current_component.take() {
+                    configs.insert(name, serde_json::Value::Object(current_config.clone()));
+                }
+                break;
+            }
+            
+            if !in_components_section {
+                continue;
+            }
+            
+            // Detect component header (### ComponentName)
+            if trimmed.starts_with("### ") {
+                // Save previous component
+                if let Some(name) = current_component.take() {
+                    configs.insert(name, serde_json::Value::Object(current_config.clone()));
+                }
+                
+                let name = trimmed[4..].trim().to_string();
+                current_component = Some(name);
+                current_config = serde_json::Map::new();
+                continue;
+            }
+            
+            // Parse props line
+            if trimmed.to_lowercase().starts_with("- props:") {
+                let props_str = trimmed[8..].trim();
+                // Extract backtick-enclosed prop names
+                let props: Vec<String> = props_str
+                    .split('`')
+                    .enumerate()
+                    .filter(|(i, _)| i % 2 == 1)  // Odd indices are inside backticks
+                    .map(|(_, s)| s.to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                
+                if !props.is_empty() {
+                    current_config.insert("props".to_string(), json!(props));
+                }
+            }
+            
+            // Parse features line
+            if trimmed.to_lowercase().starts_with("- features:") {
+                let features_str = trimmed[11..].trim();
+                // Split by semicolon or comma
+                let features: Vec<String> = features_str
+                    .split(|c| c == ';' || c == ',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                
+                if !features.is_empty() {
+                    current_config.insert("features".to_string(), json!(features));
+                }
+            }
+        }
+        
+        // Save last component
+        if let Some(name) = current_component {
+            configs.insert(name, serde_json::Value::Object(current_config));
+        }
+        
+        configs
+    }
+    
     /// Extract connections from CCG tree
     fn extract_connections(_ccg_tree: &CCGTree, modules: &[Module], spec: &str) -> Result<Vec<ModuleConnection>, String> {
         let mut connections = vec![];
@@ -407,6 +520,7 @@ impl KittyModuleParser {
                     provider,
                     interface,
                     relation,
+                    config: json!({}),
                 });
             }
         }
@@ -434,6 +548,7 @@ impl KittyModuleParser {
                                 provider: provider_id,
                                 interface: need.interface.clone(),
                                 relation: ConnectionRelation::Direct,
+                                config: json!({}),
                             });
                         }
                     }

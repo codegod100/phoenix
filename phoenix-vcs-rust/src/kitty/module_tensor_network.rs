@@ -231,6 +231,73 @@ impl ModuleTensorNetwork {
         }
     }
     
+    /// Build tensor network with configs flowing across edges
+    pub fn compose_with_configs(
+        modules: Vec<Module>, 
+        fulfillments: Vec<(String, String, CapabilityInterface, serde_json::Value)>
+    ) -> Self 
+    where 
+        String: Clone,
+        CapabilityInterface: Clone,
+    {
+        let mut module_boxes = HashMap::new();
+        let mut boxes: Vec<Box> = vec![];
+        
+        // Create boxes for each module
+        for module in modules {
+            let mb = ModuleBox::from_module(module.clone());
+            boxes.push(mb.box_type.clone());
+            module_boxes.insert(module.id.clone(), mb);
+        }
+        
+        // Build diagram as tensor product of all modules
+        let diagram = if boxes.is_empty() {
+            Diagram::empty()
+        } else {
+            let mut diag = Diagram::from_box(boxes[0].clone());
+            for i in 1..boxes.len() {
+                let next = Diagram::from_box(boxes[i].clone());
+                diag = diag.tensor(&next);
+            }
+            diag
+        };
+        
+        // Create cups for fulfillments WITH CONFIGS
+        let mut cups = vec![];
+        let mut dangling = vec![];
+        let mut fulfilled_needs: Vec<(String, CapabilityInterface)> = vec![];
+        
+        for (consumer_id, provider_id, interface, config) in fulfillments {
+            cups.push(FulfillmentCup::with_config(
+                provider_id.clone(),
+                consumer_id.clone(),
+                interface.clone(),
+                config,
+            ));
+            
+            fulfilled_needs.push((consumer_id, interface));
+        }
+        
+        // Find dangling needs (not fulfilled)
+        for (module_id, mb) in &module_boxes {
+            for need in &mb.module.needs {
+                let is_fulfilled = fulfilled_needs.iter()
+                    .any(|(cid, cap)| cid == module_id && *cap == need.interface);
+                
+                if !is_fulfilled && !need.optional {
+                    dangling.push((module_id.clone(), need.interface.clone()));
+                }
+            }
+        }
+        
+        Self {
+            diagram,
+            module_boxes,
+            cups,
+            dangling,
+        }
+    }
+    
     /// Check if network is fully connected (no dangling needs)
     pub fn is_valid(&self) -> bool {
         self.dangling.is_empty()
