@@ -265,7 +265,7 @@ fn generate_tensor_ncl(
 
     // Generate valid Nickel syntax with ASCII art
     let spec = format!(
-        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # ASCII Tensor Diagram\n  ascii = m%''{}'%\n}}\n",
+        "# Phoenix Generated Specification\n{{\n  id = \"{}\",\n  name = \"{}\",\n  server = {{\n    host = \"{}\",\n    api_port = {},\n    vite_port = {}\n  }},\n  components = [{}],\n  \n  # ASCII Tensor Diagram\n  ascii = m%''\n{}'%\n}}\n",
         id, name, config.host, config.api_port, config.vite_port, components_str,
         ascii,
     );
