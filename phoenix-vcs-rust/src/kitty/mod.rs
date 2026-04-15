@@ -55,6 +55,7 @@ pub mod tree;
 pub mod parser;
 pub mod schema;
 pub mod tensor_contract;
+pub mod free_interface_demo;
 pub mod integration;
 
 // Re-exports for convenient access
