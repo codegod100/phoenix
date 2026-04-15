@@ -1,19 +1,45 @@
-# Todo List Component - Lit wrapper
-# Uses shared component-logic.ts for core functionality
+# Todo List Component - Polymorphic by framework
+# ONE definition, ANY framework output
 
 fun params =>
 let themeName = params.themeName in
+let framework = params.framework in  # "lit" | "elenajs" | "react" | ...
 let theme = import "theme-%{themeName}%.ncl" in
+
+# Framework-specific template mapping
+let template_file = 
+  if framework == "lit" then "todo-list-lit.ts"
+  else if framework == "elenajs" then "todo-list-elenajs.ts"
+  else "todo-list-lit.ts"  # default
+in
+
+# Framework-specific framework module
+let framework_module =
+  if framework == "lit" then "lit-core"
+  else if framework == "elenajs" then "elenajs-core"
+  else "lit-core"
+in
+
+# Framework-specific vertex kinds
+let vkinds =
+  if framework == "lit" then ["ClassDecl"]
+  else if framework == "elenajs" then ["ClassDecl"]
+  else ["ClassDecl"]
+in
+
 {
-  id = "lit-todo-list",
-  name = "Lit Todo List",
+  id = "todo-list",
+  name = "Todo List",
   description = "Todo list with add/complete/delete and API persistence",
   version = "1.0.0",
   language = "typescript",
   is_infrastructure = false,
 
-  # Core logic module used by this component
+  # Core logic module used by this component (shared across frameworks)
   logic_module = "component-logic",
+
+  # Target framework (used by generator to pick right template)
+  target_framework = params.framework,
 
   config = {
     activeTheme = themeName,
@@ -29,15 +55,16 @@ let theme = import "theme-%{themeName}%.ncl" in
 
   generation = {
     protocol = "typescript",
-    vertex_kinds = ["ClassDecl"],
-    resource_file = "todo-list-template.ts",
+    vertex_kinds = vkinds,
+    # Template selected by framework parameter
+    resource_file = template_file,
   },
 
   provides = [
-    { interface = "WebComponent", properties = { tag = "todo-list", framework = "lit" } }
+    { interface = "WebComponent", properties = { tag = "todo-list", framework = params.framework } }
   ],
 
   needs = [
-    { interface = "WebFramework", strategy = { type = "named", name = "lit-core" }, optional = false }
+    { interface = "WebFramework", strategy = { type = "named", name = framework_module }, optional = false }
   ]
 }

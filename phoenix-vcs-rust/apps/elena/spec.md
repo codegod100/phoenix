@@ -1,11 +1,11 @@
 # Elena Dashboard
 
-A modern dashboard application built with Lit web components and Hono backend.
+A modern dashboard application built with ElenaJS web components and Hono backend.
 
 ## Overview
 
 Full-stack TypeScript application featuring:
-- **Frontend**: Lit web components with reactive templates
+- **Frontend**: ElenaJS reactive web components
 - **Backend**: Hono HTTP server with Bun runtime
 - **Database**: SQLite for persistent todo storage with SQL schema
 - **API**: REST endpoints with database persistence
@@ -16,8 +16,13 @@ Full-stack TypeScript application featuring:
 - Theme: `arc-dark`
 - Options: `catppuccin-mocha`, `arc-dark`
 
-**Catppuccin Mocha:** Soft pastel dark theme with purple accents  
-**Arc-Dark:** Classic dark theme with blue accents
+## Framework Configuration
+
+- Frontend Framework: `elenajs`
+- Options: `lit`, `elenajs`
+
+**Lit:** Web components with decorators and reactive properties  
+**ElenaJS:** Functional reactive components with hooks
 
 ## Server Configuration
 
@@ -58,12 +63,12 @@ CREATE TABLE todos (
 
 ## Components
 
-### WelcomeCard (Lit)
+### WelcomeCard (ElenaJS)
 Hero section with gradient background and badge.
 - Props: `title`, `message`
 - Features: Gradient styling, centered layout
 
-### TodoList (Lit)
+### TodoList (ElenaJS)
 Interactive todo management with API integration.
 - Props: `todos`, `newTodo`
 - Features: Add, toggle, delete todos; API persistence
@@ -71,14 +76,14 @@ Interactive todo management with API integration.
   - `buttonColor` = `mauve`
   - `checkboxColor` = `teal`
 
-### UserCard (Lit)
+### UserCard (ElenaJS)
 User profile display with avatar initials.
 - Props: `name`, `email`
 - Features: Gradient avatar, hover effects
 - Config:
   - `avatarColor` = `mauve`
 
-### ElenaApp (Lit Root)
+### ElenaApp (ElenaJS Root)
 Root application container with theme support.
 - Props: `title`, `userCardName`, `userCardEmail`
 - Features: Dark theme, combines all sub-components, responsive layout

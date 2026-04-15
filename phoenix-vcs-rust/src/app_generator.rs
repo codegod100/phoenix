@@ -28,16 +28,26 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
     let mut configs: HashMap<String, HashMap<String, String>> = HashMap::new();
     let mut current_module: Option<String> = None;
     let mut in_theme_section = false;
+    let mut in_framework_section = false;
+    let mut global_framework = "lit".to_string(); // default
     
-    // Parse global theme config first
+    // Parse global config first
     for line in spec_md.lines() {
         // Track Theme Configuration section
         if line.starts_with("## Theme Configuration") {
             in_theme_section = true;
+            in_framework_section = false;
             continue;
         }
-        if line.starts_with("## ") && !line.contains("Theme") {
+        // Track Framework Configuration section
+        if line.starts_with("## Framework Configuration") {
+            in_framework_section = true;
             in_theme_section = false;
+            continue;
+        }
+        if line.starts_with("## ") && !line.contains("Theme") && !line.contains("Framework") {
+            in_theme_section = false;
+            in_framework_section = false;
         }
         
         // Parse theme: `value` format in theme section
@@ -53,11 +63,21 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
             }
         }
         
+        // Parse Frontend Framework: `value` format in framework section
+        if in_framework_section && line.contains("Frontend Framework: `") {
+            if let Some(start) = line.find('`') {
+                if let Some(end) = line[start+1..].find('`') {
+                    global_framework = line[start+1..start+1+end].to_string();
+                }
+            }
+        }
+        
         // Track current module: ### ModuleName
         if line.starts_with("### ") {
             let module_name = line[4..].trim().split_whitespace().next().unwrap_or("");
             current_module = Some(pascal_to_kebab(module_name));
             in_theme_section = false; // Theme section ends when modules start
+            in_framework_section = false;
             continue;
         }
         
@@ -143,6 +163,11 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
             }
         }
     }
+    
+    // Store global framework in _global entry for all components to access
+    configs.entry("_global".to_string())
+        .or_insert_with(HashMap::new)
+        .insert("framework".to_string(), global_framework);
     
     configs
 }
@@ -386,20 +411,28 @@ async fn generate_client_from_ncl(
     let spec_md = fs::read_to_string(output_dir.join("spec.md")).await.unwrap_or_default();
     let all_configs = parse_spec_config(&spec_md);
     
-    // Extract global theme from config (set by style-utils entry)
+    // Extract global theme and framework from config
     let global_theme = all_configs.get("style-utils")
         .and_then(|c| c.get("themeName"))
         .cloned()
         .unwrap_or_else(|| "catppuccin-mocha".to_string());
+    
+    let global_framework = all_configs.get("_global")
+        .and_then(|c| c.get("framework"))
+        .cloned()
+        .unwrap_or_else(|| "lit".to_string());
     
     // Load all modules first
     for comp_name in component_names {
         // Get config for this component from spec.md
         let mut params = all_configs.get(comp_name).cloned().unwrap_or_default();
         
-        // Inject themeName if not already set
+        // Inject themeName and framework if not already set
         if !params.contains_key("themeName") {
             params.insert("themeName".to_string(), global_theme.clone());
+        }
+        if !params.contains_key("framework") {
+            params.insert("framework".to_string(), global_framework.clone());
         }
         
         let module = load_component_module(project_root, comp_name, Some(params))
