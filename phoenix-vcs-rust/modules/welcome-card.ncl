@@ -14,6 +14,7 @@ let theme = import "theme-%{themeName}%.ncl" in
 
   # Theme colors for template
   config = {
+    activeTheme = themeName,
     mauve = theme.mauve,
     lavender = theme.lavender,
     text = theme.text,

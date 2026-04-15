@@ -4,7 +4,7 @@ export class ElenaApp extends Elena(HTMLElement) {
   render() {
     return html`
       <div style="max-width: 1200px; margin: 0 auto; padding: 2rem; background: %{base}%; min-height: 100vh;">
-        <h1 style="color: %{text}%; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard</h1>
+        <h1 style="color: %{text}%; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard <span style="font-size: 0.5em; opacity: 0.7;">(%{activeTheme}%)</span></h1>
         <welcome-card title="Welcome" message="Elena Dashboard - Styled"></welcome-card>
         <user-card name="%{userCardName}%" email="%{userCardEmail}%"></user-card>
         <todo-list></todo-list>

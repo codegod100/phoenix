@@ -12,10 +12,11 @@ let theme = import "theme-%{themeName}%.ncl" in
   language = "typescript",
   is_infrastructure = false,
 
-  # Config from spec.md via params, plus theme colors
+  # Config from spec.md via params, plus theme info
   config = {
     userCardName = params.userCardName,
     userCardEmail = params.userCardEmail,
+    activeTheme = themeName,
     # Theme colors for template
     mauve = theme.mauve,
     lavender = theme.lavender,
