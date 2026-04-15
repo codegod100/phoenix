@@ -56,6 +56,7 @@ pub mod parser;
 pub mod schema;
 pub mod tensor_contract;
 pub mod free_interface_demo;
+pub mod panproto_schema_bridge;
 pub mod integration;
 
 // Re-exports for convenient access
@@ -65,6 +66,7 @@ pub use tree::PregroupTreeNode;
 pub use parser::{CCGType, CCGTree, SimpleCCGParser, NLAPIParser};
 pub use schema::{DiagramSchema, DiagramValidator, ValidationResult, DiagramSchemaExt};
 pub use tensor_contract::{TensorContractor, SolvedSpec, TensorContractExt, TensorView};
+pub use panproto_schema_bridge::{KittyPanprotoSchemaBridge, ToPanprotoSchema, DiagramToPanproto};
 pub use integration::{KittyBridge, APISpecBuilder};
 
 /// Version information
@@ -84,6 +86,8 @@ pub mod prelude {
         DiagramSchemaExt,
         TensorContractExt,
         TensorContractor,
+        KittyPanprotoSchemaBridge,
+        ToPanprotoSchema,
     };
     pub use super::types::api_types;
     pub use super::integration::utils;
