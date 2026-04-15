@@ -3,6 +3,8 @@
 //! This trait provides a fluent API that abstracts away low-level Schema construction
 //! while still producing full panproto Schemas for round-trip capable code generation.
 
+pub mod capability_bundle;
+pub mod capability_demo;
 pub mod emit_bundle;
 pub mod typescript;
 

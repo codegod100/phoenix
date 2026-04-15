@@ -52,6 +52,30 @@ app.get('/api/projects/:id/tasks', (c) => {
 app.post('/api/projects/:id/tasks', (c) => {
   return c.json({ status: 'ok' });
 });
+app.get('/api/projects/:id/:extra/:deeply/nested/path', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.post('not-a-valid-path-format', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.get('/api/spaces', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.patch('/api/partial', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.get('/api/users/:id/posts/:postId/comments/:commentId', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.post('/api/upload', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.get('/api/search?q=test&filter=active', (c) => {
+  return c.json({ status: 'ok' });
+});
+app.delete('/api/items/bulk', (c) => {
+  return c.json({ status: 'ok' });
+});
 app.get('/api/status', (c) => {
   return c.json({ status: 'ok' });
 });

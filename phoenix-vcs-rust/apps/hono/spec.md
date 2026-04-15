@@ -111,6 +111,20 @@ A fast, lightweight REST API server built with Hono and TypeScript. Designed for
   - Response: `{ "task_id": "task-1", "project_id": "proj-1", "created": true }`
   - Status: 201
 
+#### Chaos Test - Malformed Routes
+- **WHAT** `/api/??` - Invalid HTTP method
+- **GET** `/api/projects/:id/:extra/:deeply/nested/path` - Super deeply nested route
+- **POST** `not-a-valid-path-format` - Missing backticks
+-  **GET**    `/api/spaces`    - Weird spacing everywhere
+- **PATCH** `/api/partial` - Unsupported method (only GET/POST/PUT/DELETE)
+- **GET** `/api/users/:id/posts/:postId/comments/:commentId` - Triple nested params
+
+#### Chaos Test - Edge Cases
+- **POST** `/api/upload` - File upload endpoint
+  - Description with special chars: <>&"' and unicode: 日本語 🚀 ñ
+- **GET** `/api/search?q=test&filter=active` - Query params in path
+- **DELETE** `/api/items/bulk` - Bulk delete without :id param
+
 ### Status
 - **GET** `/api/status` - Get API status
   - Response: `{ "version": "1.0.0", "uptime": "2d 4h" }`
@@ -136,6 +150,29 @@ A fast, lightweight REST API server built with Hono and TypeScript. Designed for
   price: number;
   category: string;
   inStock: boolean;
+}
+```
+
+### ChaosModel
+Malformed model with missing braces and weird types
+```typescript
+id: string;
+name: unknown_type;
+data: { nested: { deeply: { too_deep: any } } };
+```
+
+### EmptyModel
+```typescript
+{
+}
+```
+
+### UnicodeModel
+```typescript
+{
+  名前: string;
+  emoji: 🚀;
+  special: <>&"';
 }
 ```
 
@@ -236,6 +273,16 @@ template = "ts-hono"
   - Body: `{ "title": "string", "description": "string", "priority": "high|medium|low" }`
   - Response: `{ "task_id": "task-1", "project_id": "proj-1", "created": true }`
   - Status: 201
+
+#### Duplicate Route Test
+- **GET** `/api/users` - Duplicate of existing route
+- **GET** `/api/users` - Another duplicate with different description
+
+#### Empty Route
+-
+
+#### Broken Format
+- **GET** `/api/broken`
 
 ## Production Deployment
 

@@ -1,0 +1,7 @@
+[package]
+name = "dataflow___stream_processing_pipeline"
+version = "0.1.0"
+edition = "2021"
+description = "A high-performance data processing pipeline for ETL (Extract, Transform, Load) operations. Not a web server - this processes data streams through a directed graph of transformations."
+
+[dependencies]
