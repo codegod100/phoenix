@@ -50,7 +50,12 @@ fn simplify_label(label: &str) -> String {
 }
 
 /// Parse a simple Mermaid graph and convert to ASCII
-pub fn mermaid_to_ascii(mermaid: &str, max_width: usize) -> String {
+/// Includes component names in the output
+pub fn mermaid_to_ascii_with_components(
+    mermaid: &str, 
+    max_width: usize,
+    component_names: &[String]
+) -> String {
     let lines: Vec<&str> = mermaid.lines().collect();
     
     // Parse nodes and connections
@@ -102,64 +107,47 @@ pub fn mermaid_to_ascii(mermaid: &str, max_width: usize) -> String {
     }
     
     // Generate ASCII layout
-    generate_ascii_layout(&nodes, &connections, max_width)
+    generate_ascii_layout(&nodes, &connections, max_width, component_names)
 }
 
+/// Legacy wrapper without components (for backward compatibility)
+pub fn mermaid_to_ascii(mermaid: &str, max_width: usize) -> String {
+    mermaid_to_ascii_with_components(mermaid, max_width, &[])
+}
+
+/// Generate ASCII layout showing both type flow and components
 fn generate_ascii_layout(
     nodes: &HashMap<String, String>,
     connections: &[(String, String, String)],
     max_width: usize,
+    component_names: &[String],
 ) -> String {
     let mut result = String::new();
     
-    // Calculate node display sizes
-    let node_widths: HashMap<String, usize> = nodes.iter()
-        .map(|(id, label)| {
-            let display_len = label.chars().count();
-            let width = display_len.max(10).min(max_width - 4);
-            (id.clone(), width)
-        })
-        .collect();
+    // Get the type flow from the first node (tensor expression)
+    let type_flow = if let Some((_, label)) = nodes.iter().next() {
+        simplify_label(label)
+    } else {
+        "(no tensor)".to_string()
+    };
     
-    // Simple vertical layout: nodes stacked with connections between
-    let node_ids: Vec<String> = nodes.keys().cloned().collect();
+    // Draw type flow banner
+    let banner_width = type_flow.chars().count() + 4;
+    result.push_str("╔");
+    result.push_str(&"═".repeat(banner_width));
+    result.push_str("╗\n║ ");
+    result.push_str(&type_flow);
+    result.push_str(" ║\n╚");
+    result.push_str(&"═".repeat(banner_width));
+    result.push_str("╝\n\n");
     
-    for (i, node_id) in node_ids.iter().enumerate() {
-        let label = nodes.get(node_id).unwrap();
-        let width = node_widths.get(node_id).copied().unwrap_or(20);
-        
-        // Draw node box
-        result.push_str(&draw_box(label, width));
-        
-        // Draw connection to next node
-        if i < node_ids.len() - 1 {
-            let next_id = &node_ids[i + 1];
-            // Find if there's a connection between these nodes
-            let has_connection = connections.iter()
-                .any(|(from, to, _)| (from == node_id && to == next_id) || (from == next_id && to == node_id));
-            
-            if has_connection {
-                result.push_str(&draw_connection(width, true));
-            } else {
-                result.push('\n');
-            }
-        }
-    }
-    
-    // Add connection summary
-    if !connections.is_empty() {
-        result.push('\n');
-        result.push_str("Connections:\n");
-        for (from, to, arrow) in connections {
-            let arrow_char = match arrow.as_str() {
-                "==>" => "=>>",
-                "-.->" => "~~>",
-                "---" => "---",
-                _ => "-->",
-            };
-            let from_label = nodes.get(from).map(|s| s.as_str()).unwrap_or(from);
-            let to_label = nodes.get(to).map(|s| s.as_str()).unwrap_or(to);
-            result.push_str(&format!("  {} {} {}\n", from_label, arrow_char, to_label));
+    // Draw component boxes
+    result.push_str("Components:\n");
+    for (i, comp) in component_names.iter().enumerate() {
+        let display = format!(" {} {}", i + 1, comp);
+        result.push_str(&draw_component_box(&display, max_width / 2));
+        if i < component_names.len() - 1 {
+            result.push_str("      │\n      ▼\n");
         }
     }
     
@@ -215,6 +203,34 @@ fn draw_connection(width: usize, has_arrow: bool) -> String {
     }
     
     line
+}
+
+fn draw_component_box(label: &str, width: usize) -> String {
+    let mut result = String::new();
+    let content_len = label.chars().count();
+    let box_width = content_len.max(20).min(width);
+    let padding = (box_width - content_len) / 2;
+    
+    // Top border
+    result.push_str("┌");
+    result.push_str(&"─".repeat(box_width + 2));
+    result.push_str("┐\n");
+    
+    // Content with padding
+    let left_pad = " ".repeat(padding + 1);
+    let right_pad = " ".repeat(box_width - content_len - padding + 1);
+    result.push_str("│");
+    result.push_str(&left_pad);
+    result.push_str(label);
+    result.push_str(&right_pad);
+    result.push_str("│\n");
+    
+    // Bottom border
+    result.push_str("└");
+    result.push_str(&"─".repeat(box_width + 2));
+    result.push_str("┘\n");
+    
+    result
 }
 
 /// Simple text-based tree layout for diagrams

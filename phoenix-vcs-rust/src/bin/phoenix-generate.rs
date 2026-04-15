@@ -116,8 +116,10 @@ async fn main() -> anyhow::Result<()> {
     // Generate Mermaid diagram from tensor network
     let mermaid = network.diagram.to_mermaid();
     
-    // Generate ASCII representation
-    let ascii = phoenix_vcs::kitty::mermaid_ascii::mermaid_to_ascii(&mermaid, 60);
+    // Generate ASCII representation with components
+    let ascii = phoenix_vcs::kitty::mermaid_ascii::mermaid_to_ascii_with_components(
+        &mermaid, 60, &component_names
+    );
     println!("📊 Tensor diagram:\n{}", ascii);
     
     if let Err(e) = phoenix_vcs::app_generator::generate_app(
