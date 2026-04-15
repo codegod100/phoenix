@@ -2,13 +2,51 @@ import { Elena, html } from '@elenajs/core';
 
 export class TodoList extends Elena(HTMLElement) {
   static tagName = 'todo-list';
-  static props = ['newTodo'];
   
   todos = [];
   newTodo = '';
   
   async firstUpdated() {
     await this.loadTodos();
+    this._setupListeners();
+  }
+  
+  _setupListeners() {
+    // Event delegation on the container
+    this.shadowRoot?.addEventListener('click', (e) => {
+      const target = e.target;
+      
+      // Handle checkbox toggle
+      if (target.type === 'checkbox' && target.dataset.id) {
+        e.stopPropagation();
+        this.toggleTodo(parseInt(target.dataset.id));
+      }
+      
+      // Handle delete button
+      if (target.dataset.action === 'delete' && target.dataset.id) {
+        e.stopPropagation();
+        this.deleteTodo(parseInt(target.dataset.id));
+      }
+      
+      // Handle Add button (click or form submit)
+      if (target.type === 'submit' || target.closest('button[type="submit"]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const input = this.shadowRoot?.querySelector('input[type="text"]');
+        if (input) {
+          this.newTodo = input.value;
+          this.addTodo(e);
+        }
+      }
+    });
+    
+    // Input listener for new todo text
+    const input = this.shadowRoot?.querySelector('input[type="text"]');
+    if (input) {
+      input.addEventListener('input', (e) => {
+        this.newTodo = e.target.value;
+      });
+    }
   }
   
   async loadTodos() {
@@ -33,6 +71,9 @@ export class TodoList extends Elena(HTMLElement) {
       });
       if (res.ok) {
         this.newTodo = '';
+        // Clear input
+        const input = this.shadowRoot?.querySelector('input[type="text"]');
+        if (input) input.value = '';
         await this.loadTodos();
       }
     } catch (err) {
@@ -68,10 +109,6 @@ export class TodoList extends Elena(HTMLElement) {
     }
   }
   
-  updateNewTodo(e) {
-    this.newTodo = e.target.value;
-  }
-  
   render() {
     const completedCount = this.todos.filter(t => t.completed).length;
     const total = this.todos.length;
@@ -86,11 +123,10 @@ export class TodoList extends Elena(HTMLElement) {
           </span>
         </h2>
         
-        <form @submit="${this.addTodo}" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <form style="display: flex; gap: 0.5rem; margin-bottom: 1rem;" onsubmit="return false;">
           <input
             type="text"
-            .value="${this.newTodo}"
-            @input="${this.updateNewTodo}"
+            value="${this.newTodo}"
             placeholder="What needs to be done?"
             style="flex: 1; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none;"
           />
@@ -107,15 +143,16 @@ export class TodoList extends Elena(HTMLElement) {
             <li style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #f0f0f0; transition: background 0.2s;">
               <input
                 type="checkbox"
-                .checked="${todo.completed}"
-                @change="${() => this.toggleTodo(todo.id)}"
+                data-id="${todo.id}"
+                ${todo.completed ? 'checked' : ''}
                 style="width: 20px; height: 20px; cursor: pointer; accent-color: #667eea;"
               />
               <span style="flex: 1; ${todo.completed ? 'text-decoration: line-through; color: #999;' : 'color: #333;'}">
                 ${todo.text}
               </span>
               <button
-                @click="${() => this.deleteTodo(todo.id)}"
+                data-action="delete"
+                data-id="${todo.id}"
                 style="padding: 0.4rem 0.8rem; background: #ff6b6b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;"
               >
                 🗑️
