@@ -4,35 +4,49 @@
 
 use std::collections::HashMap;
 
-/// Simplify long tensor expression labels
+/// Extract type flow from tensor expression
 fn simplify_label(label: &str) -> String {
     if label.len() < 40 {
         return label.to_string();
     }
     
-    // Extract module names from complex tensor expressions
-    let modules = [
-        ("hono-server", "🌐 Hono"),
-        ("sqlite", "🗄️ SQLite"),
-        ("vite-dev-server", "⚡ Vite"),
-        ("elenajs", "🎨 ElenaJS"),
-        ("bun-runtime", "🚀 Bun"),
-    ];
+    // Extract type transitions: X → Y pattern
+    let mut types: Vec<String> = Vec::new();
     
-    let mut found = Vec::new();
-    for (pattern, name) in &modules {
-        if label.to_lowercase().contains(pattern) {
-            found.push(*name);
+    // Parse capability interfaces like "HttpServer", "Database", "DevServer", etc.
+    for part in label.split(|c: char| c == '@' || c == ':' || c == '(' || c == ')' || c == '→' || c == ',') {
+        let trimmed = part.trim();
+        if trimmed.is_empty() { continue; }
+        
+        // Skip internal type suffixes like .l .r
+        let base_type = trimmed.split('.').next().unwrap_or(trimmed);
+        
+        // Only keep meaningful type names (capitalized or specific keywords)
+        if base_type.chars().next().map(|c| c.is_uppercase()).unwrap_or(false)
+           || ["unit", "wire", "cap"].contains(&base_type.to_lowercase().as_str()) {
+            let simplified = match base_type {
+                "Logging" => "📝 Log",
+                "Database" => "🗄️ DB",  
+                "HttpServer" => "🌐 HTTP",
+                "DevServer" => "⚡ Dev",
+                "WebComponents" => "🎨 UI",
+                "JavaScriptRuntime" => "🚀 JS",
+                "unit" => "∅",
+                t => t,
+            };
+            if !types.contains(&simplified.to_string()) {
+                types.push(simplified.to_string());
+            }
         }
     }
     
-    if found.is_empty() {
-        let mut s = label.chars().take(25).collect::<String>();
+    if types.len() < 2 {
+        let mut s = label.chars().take(30).collect::<String>();
         s.push_str("...");
         return s;
     }
     
-    found.join(" → ")
+    types.join(" → ")
 }
 
 /// Parse a simple Mermaid graph and convert to ASCII
