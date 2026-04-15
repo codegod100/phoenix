@@ -92,38 +92,11 @@ impl EmitBuilder {
 pub fn emit_schema(schema: &Schema, protocol_name: &str) -> Result<String, String> {
     let registry = ParserRegistry::new();
     
-    if registry.protocol_names().any(|p| p == protocol_name) {
-        match registry.emit_with_protocol(protocol_name, schema) {
-            Ok(bytes) => String::from_utf8(bytes)
-                .map_err(|e| format!("UTF-8 error: {}", e)),
-            Err(e) => {
-                eprintln!("emit_with_protocol failed (using manual): {}", e);
-                Ok(manual_emit(schema))
-            }
-        }
-    } else {
-        Ok(manual_emit(schema))
+    match registry.emit_with_protocol(protocol_name, schema) {
+        Ok(bytes) => String::from_utf8(bytes)
+            .map_err(|e| format!("UTF-8 error: {}", e)),
+        Err(e) => Err(format!("Protocol '{}' error: {:?}", protocol_name, e))
     }
-}
-
-/// Manual emit fallback - collects fragments by position
-fn manual_emit(schema: &Schema) -> String {
-    let mut fragments: Vec<(usize, String)> = vec![];
-    
-    for (_vertex_id, constraints) in &schema.constraints {
-        let start = constraints.iter()
-            .find(|c| c.sort.as_ref() == "start-byte")
-            .and_then(|c| c.value.parse::<usize>().ok())
-            .unwrap_or(0);
-        
-        if let Some(lit) = constraints.iter()
-            .find(|c| c.sort.as_ref() == "literal-value") {
-            fragments.push((start, lit.value.clone()));
-        }
-    }
-    
-    fragments.sort_by_key(|(pos, _)| *pos);
-    fragments.into_iter().map(|(_, text)| text).collect()
 }
 
 /// Create standard protocol for a language
@@ -256,17 +229,10 @@ pub fn generate_with_emit(
         .map_err(|e| format!("Failed to build schema: {}", e))?;
     
     let registry = ParserRegistry::new();
-    if registry.protocol_names().any(|p| p == protocol_name) {
-        match registry.emit_with_protocol(protocol_name, &schema) {
-            Ok(bytes) => String::from_utf8(bytes)
-                .map_err(|e| format!("UTF-8 error: {}", e)),
-            Err(e) => {
-                eprintln!("emit_with_protocol failed (using manual): {}", e);
-                Ok(manual_emit(&schema))
-            }
-        }
-    } else {
-        Ok(manual_emit(&schema))
+    match registry.emit_with_protocol(protocol_name, &schema) {
+        Ok(bytes) => String::from_utf8(bytes)
+            .map_err(|e| format!("UTF-8 error: {}", e)),
+        Err(e) => Err(format!("Protocol '{}' error: {:?}", protocol_name, e))
     }
 }
 
@@ -316,11 +282,11 @@ mod tests {
         assert!(protocols.contains(&"python"), "python protocol should be available");
         
         // Note: javascript protocol may or may not be available depending on features
-        // If it's not available, emit_schema will fall back to manual_emit
+        // Check if JavaScript protocol is available
         if protocols.contains(&"javascript") {
             println!("JavaScript protocol is available");
         } else {
-            println!("JavaScript protocol NOT available - will use manual fallback");
+            println!("JavaScript protocol NOT available");
         }
     }
 
