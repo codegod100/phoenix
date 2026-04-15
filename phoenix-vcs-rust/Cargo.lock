@@ -1825,6 +1825,7 @@ dependencies = [
  "nickel-lang",
  "panproto-expr",
  "panproto-gat",
+ "panproto-grammars",
  "panproto-inst",
  "panproto-lens",
  "panproto-mig",

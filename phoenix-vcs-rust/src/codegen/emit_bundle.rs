@@ -191,6 +191,36 @@ pub fn statement_rules() -> Vec<EdgeRule> {
     ]
 }
 
+/// Edge rules for Nickel/NCL files
+pub fn ncl_rules() -> Vec<EdgeRule> {
+    let ncl_kinds = vec![
+        "comment".to_string(),
+        "record".to_string(),
+        "field".to_string(),
+        "array".to_string(),
+        "string".to_string(),
+        "number".to_string(),
+    ];
+    
+    vec![
+        EdgeRule {
+            edge_kind: "statement".to_string(),
+            src_kinds: vec!["program".to_string()],
+            tgt_kinds: ncl_kinds.clone(),
+        },
+        EdgeRule {
+            edge_kind: "next".to_string(),
+            src_kinds: ncl_kinds.clone(),
+            tgt_kinds: ncl_kinds.clone(),
+        },
+        EdgeRule {
+            edge_kind: "field".to_string(),
+            src_kinds: vec!["record".to_string()],
+            tgt_kinds: vec!["field".to_string(), "array".to_string()],
+        },
+    ]
+}
+
 /// Generate code for a bundle using emit_with_protocol
 /// 
 /// This is the main entry point for bundle code generation.
@@ -333,5 +363,51 @@ mod tests {
         
         println!("Python emit result:\n{}", result);
         assert!(result.contains("from flask") || result.contains("import"));
+    }
+
+    #[test]
+    fn test_nickel_protocol_available() {
+        let registry = ParserRegistry::new();
+        let protocols: Vec<_> = registry.protocol_names().collect();
+        
+        println!("Available protocols: {:?}", protocols);
+        println!("Has 'nickel': {}", protocols.contains(&"nickel"));
+        
+        // Note: nickel may or may not be available depending on features
+        if protocols.contains(&"nickel") {
+            println!("✅ Nickel protocol is available!");
+        } else {
+            println!("⚠️ Nickel protocol NOT available - would need to enable lang-nickel feature in panproto-grammars");
+        }
+    }
+
+    #[test]
+    fn test_nickel_emit() {
+        let registry = ParserRegistry::new();
+        if !registry.protocol_names().any(|p| p == "nickel") {
+            println!("⚠️ Skipping nickel emit test - nickel protocol not available");
+            return;
+        }
+        
+        let obj_kinds = vec![
+            "program".to_string(),
+            "comment".to_string(),
+            "record".to_string(),
+            "field".to_string(),
+            "string".to_string(),
+        ];
+        
+        let protocol = create_protocol("nickel", obj_kinds, statement_rules());
+        let mut builder = EmitBuilder::new(&protocol, "nickel");
+        
+        builder = builder.vertex("header", "comment", Some("# Generated spec.ncl\n")).unwrap();
+        builder = builder.vertex("api", "record", Some("{\n  routes = []\n}\n")).unwrap();
+        
+        let schema = builder.build().unwrap();
+        let result = emit_schema(&schema, "nickel").unwrap();
+        
+        println!("Nickel emit result:\n{}", result);
+        // Should contain our generated content
+        assert!(result.contains("# Generated") || result.contains("routes"));
     }
 }

@@ -44,6 +44,7 @@ indexmap = "2.2"
 panproto-gat = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-schema = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-parse = { git = "https://github.com/panproto/panproto", optional = true }
+panproto-grammars = { git = "https://github.com/panproto/panproto", optional = true, features = ["lang-nickel"] }
 panproto-project = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-theory-dsl = { git = "https://github.com/panproto/panproto", optional = true }
 panproto-mig = { git = "https://github.com/panproto/panproto", optional = true }
@@ -56,7 +57,7 @@ nickel-lang = { version = "2.0", default-features = false, optional = true }
 
 [features]
 default = ["panproto"]
-panproto = ["dep:panproto-gat", "dep:panproto-schema", "dep:panproto-parse", "dep:panproto-project", "dep:panproto-theory-dsl", "dep:panproto-mig", "dep:panproto-inst", "dep:panproto-expr", "dep:panproto-lens", "dep:nickel-lang"]
+panproto = ["dep:panproto-gat", "dep:panproto-schema", "dep:panproto-parse", "dep:panproto-grammars", "dep:panproto-project", "dep:panproto-theory-dsl", "dep:panproto-mig", "dep:panproto-inst", "dep:panproto-expr", "dep:panproto-lens", "dep:nickel-lang"]
 
 [dev-dependencies]
 tempfile = "3.10"
