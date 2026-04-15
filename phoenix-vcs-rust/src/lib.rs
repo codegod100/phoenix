@@ -17,6 +17,7 @@ pub mod identity;
 pub mod lens;
 pub mod reverse;
 pub mod llm;
+pub mod codegen;
 
 #[cfg(test)]
 pub mod experiments;
