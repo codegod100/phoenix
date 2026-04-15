@@ -6,12 +6,13 @@
 //! 2. **Diagrams** (`diagram`): String diagrams for categorical composition
 //! 3. **Trees** (`tree`): Compact tree representation of pregroup structures
 //! 4. **Parsers** (`parser`): CCG parsing and natural language understanding
-//! 5. **Integration** (`integration`): Bridge to panproto's 4-layer architecture
+//! 5. **Schema** (`schema`): Formal schema for diagram validation
+//! 6. **Integration** (`integration`): Bridge to panproto's 4-layer architecture
 //!
 //! # Quick Start
 //!
 //! ```rust
-//! use phoenix_vcs::kitty::{PregroupType, Diagram, Box, KittyBridge};
+//! use phoenix_vcs::kitty::{PregroupType, Diagram, Box, KittyBridge, DiagramSchema};
 //!
 //! // Create endpoint diagram
 //! let auth = PregroupType::atomic("AuthToken");
@@ -24,6 +25,10 @@
 //!
 //! let diagram = Diagram::from_box(endpoint);
 //!
+//! // Validate against formal schema
+//! let schema = DiagramSchema::api_schema();
+//! assert!(diagram.is_valid(&schema));
+//!
 //! // Generate NCL
 //! let ncl = KittyBridge::diagram_to_ncl(&diagram)?;
 //! ```
@@ -31,10 +36,10 @@
 //! # Architecture
 //!
 //! ```
-//! spec.md ──► parser ──► Diagram ──► KittyBridge ──► Schema ──► NCL
-//!              │                      │
-//!              ▼                      ▼
-//!         PregroupTree           Mermaid
+//! spec.md ──► parser ──► Diagram ──► Schema ──► KittyBridge ──► NCL
+//!              │            │           │
+//!              ▼            ▼           ▼
+//!         PregroupTree  Validation  Mermaid
 //!              │
 //!              ▼
 //!         CCG Parse Tree
@@ -48,6 +53,7 @@ pub mod types;
 pub mod diagram;
 pub mod tree;
 pub mod parser;
+pub mod schema;
 pub mod integration;
 
 // Re-exports for convenient access
@@ -55,6 +61,7 @@ pub use types::PregroupType;
 pub use diagram::{Diagram, Layer, Box};
 pub use tree::PregroupTreeNode;
 pub use parser::{CCGType, CCGTree, SimpleCCGParser, NLAPIParser};
+pub use schema::{DiagramSchema, DiagramValidator, ValidationResult, DiagramSchemaExt};
 pub use integration::{KittyBridge, APISpecBuilder};
 
 /// Version information
@@ -70,6 +77,8 @@ pub mod prelude {
         CCGType,
         KittyBridge,
         APISpecBuilder,
+        DiagramSchema,
+        DiagramSchemaExt,
     };
     pub use super::types::api_types;
     pub use super::integration::utils;
