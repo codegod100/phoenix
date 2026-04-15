@@ -233,7 +233,7 @@ fn generate_vite_ts_with_emit(protocol: &panproto_schema::Protocol, _name: &str)
     
     b = b.vertex("import_define", "ImportDecl", Some("import { defineConfig } from 'vite';\n\n")).map_err(|e| anyhow::anyhow!(e))?;
     b = b.vertex("export_default", "ExportDefault", Some(
-        "export default defineConfig({\n  server: {\n    port: 5173,\n    proxy: {\n      '/api': 'http://localhost:3000'\n    }\n  },\n  build: {\n    outDir: 'dist'\n  }\n});\n"
+        "export default defineConfig({\n  server: {\n    host: '100.115.154.32',\n    port: 5173,\n    proxy: {\n      '/api': 'http://100.115.154.32:3000'\n    }\n  },\n  build: {\n    outDir: 'dist'\n  }\n});\n"
     )).map_err(|e| anyhow::anyhow!(e))?;
     
     let schema = b.build().map_err(|e| anyhow::anyhow!(e))?;
