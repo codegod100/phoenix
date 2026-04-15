@@ -167,31 +167,26 @@ fn capitalize(s: &str) -> String {
 
 /// Standard statement edge rules
 pub fn statement_rules() -> Vec<EdgeRule> {
+    let statement_kinds = vec![
+        "comment".to_string(),
+        "import_statement".to_string(),
+        "expression_statement".to_string(),
+        "variable_declaration".to_string(),
+        "function_definition".to_string(),
+        "class_definition".to_string(),
+        "decorated_definition".to_string(),
+    ];
+    
     vec![
         EdgeRule {
             edge_kind: "statement".to_string(),
             src_kinds: vec!["program".to_string()],
-            tgt_kinds: vec![
-                "comment".to_string(),
-                "import_statement".to_string(),
-                "expression_statement".to_string(),
-                "function_definition".to_string(),
-            ],
+            tgt_kinds: statement_kinds.clone(),
         },
         EdgeRule {
             edge_kind: "next".to_string(),
-            src_kinds: vec![
-                "comment".to_string(),
-                "import_statement".to_string(),
-                "expression_statement".to_string(),
-                "function_definition".to_string(),
-            ],
-            tgt_kinds: vec![
-                "comment".to_string(),
-                "import_statement".to_string(),
-                "expression_statement".to_string(),
-                "function_definition".to_string(),
-            ],
+            src_kinds: statement_kinds.clone(),
+            tgt_kinds: statement_kinds.clone(),
         },
     ]
 }
@@ -272,5 +267,71 @@ impl RouteConfigExt for RouteConfig {
         self.path.trim_start_matches('/')
             .replace(['/', '-'], "_")
             .to_lowercase()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_available_protocols() {
+        let registry = ParserRegistry::new();
+        let protocols: Vec<_> = registry.protocol_names().collect();
+        
+        println!("Available protocols: {:?}", protocols);
+        
+        // Check that our bundles' protocols are available
+        assert!(protocols.contains(&"typescript"), "typescript protocol should be available");
+        assert!(protocols.contains(&"python"), "python protocol should be available");
+        
+        // Note: javascript protocol may or may not be available depending on features
+        // If it's not available, emit_schema will fall back to manual_emit
+        if protocols.contains(&"javascript") {
+            println!("JavaScript protocol is available");
+        } else {
+            println!("JavaScript protocol NOT available - will use manual fallback");
+        }
+    }
+
+    #[test]
+    fn test_typescript_emit() {
+        let obj_kinds = vec![
+            "program".to_string(),
+            "import_statement".to_string(),
+            "expression_statement".to_string(),
+        ];
+        
+        let protocol = create_protocol("typescript", obj_kinds, statement_rules());
+        let mut builder = EmitBuilder::new(&protocol, "typescript");
+        
+        builder = builder.vertex("import", "import_statement", Some("import { Hono } from 'hono';\n")).unwrap();
+        
+        let schema = builder.build().unwrap();
+        let result = emit_schema(&schema, "typescript").unwrap();
+        
+        println!("TypeScript emit result:\n{}", result);
+        assert!(result.contains("import"));
+        assert!(result.contains("Hono"));
+    }
+
+    #[test]
+    fn test_python_emit() {
+        let obj_kinds = vec![
+            "program".to_string(),
+            "import_statement".to_string(),
+            "function_definition".to_string(),
+        ];
+        
+        let protocol = create_protocol("python", obj_kinds, statement_rules());
+        let mut builder = EmitBuilder::new(&protocol, "python");
+        
+        builder = builder.vertex("import", "import_statement", Some("from flask import Flask\n")).unwrap();
+        
+        let schema = builder.build().unwrap();
+        let result = emit_schema(&schema, "python").unwrap();
+        
+        println!("Python emit result:\n{}", result);
+        assert!(result.contains("from flask") || result.contains("import"));
     }
 }

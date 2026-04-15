@@ -18,6 +18,7 @@ This Express.js API provides endpoints for managing users and items with full CR
 - `GET /api/unicorns` - 🦄 List all magical unicorns with rainbow powers
 - `GET /api/metrics` - 📊 Get system metrics (uptime, requests)
 - `POST /api/orders` - Create a new order
+- `GET /api/status` - Get API status
 
 ## Models
 

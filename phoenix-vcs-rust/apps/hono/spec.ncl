@@ -60,6 +60,7 @@
     { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
     { method = "GET", path = "/api/items/:id", handler = "getItemsByid", description = "Get item by ID" },
     { method = "POST", path = "/api/items", handler = "createItems", description = "Create new item" },
+    { method = "GET", path = "/api/status", handler = "listStatus", description = "Get API status" },
   ],
 
 }

@@ -69,6 +69,10 @@ A fast, lightweight REST API server built with Hono and TypeScript. Designed for
   - Response: `{ "id": "item-1", "created": true }`
   - Status: 201
 
+### Status
+- **GET** `/api/status` - Get API status
+  - Response: `{ "version": "1.0.0", "uptime": "2d 4h" }`
+
 ## Data Models
 
 ### User
