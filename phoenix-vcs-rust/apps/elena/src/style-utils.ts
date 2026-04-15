@@ -16,7 +16,8 @@ export class StyleUtils {
     const colors = {
       primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       danger: '#ff6b6b',
-      success: '#48bb78'
+      success: '#48bb78',
+      orange: '#ff8c00'
     };
 
     const sizes = {

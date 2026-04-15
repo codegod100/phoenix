@@ -60,7 +60,7 @@ Interactive todo management with API integration.
 - Props: `todos`, `newTodo`
 - Features: Add, toggle, delete todos; API persistence
 - Styling:
-  - Add button color: `green` (#48bb78)
+  - Add button color: `orange` (#ff8c00)
   - Delete button color: `red` (#ff6b6b)
   - Checkbox accent color: `green` (#48bb78)
 

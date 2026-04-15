@@ -103,7 +103,7 @@ export class TodoList extends Elena(HTMLElement) {
     const total = this.todos.length;
 
     // Use StyleUtils for consistent, reusable styling
-    // Config from NCL: buttonVariant = success, checkboxAccent = success
+    // Config from NCL: buttonVariant = orange, checkboxAccent = success
     return html`
       <div style="${StyleUtils.card()}">
         <h2 style="${StyleUtils.flex({ gap: '0.5rem' })}; margin: 0 0 1rem 0; color: ${theme.colors.text};">
@@ -120,7 +120,7 @@ export class TodoList extends Elena(HTMLElement) {
             placeholder="What needs to be done?"
             style="${StyleUtils.input()}"
           />
-          <button type="submit" style="${StyleUtils.button({ variant: 'success' })}">
+          <button type="submit" style="${StyleUtils.button({ variant: 'orange' })}">
             Add
           </button>
         </form>
