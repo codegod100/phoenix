@@ -60,6 +60,13 @@
     { method = "GET", path = "/api/items", handler = "listItems", description = "List all items" },
     { method = "GET", path = "/api/items/:id", handler = "getItemsByid", description = "Get item by ID" },
     { method = "POST", path = "/api/items", handler = "createItems", description = "Create new item" },
+    { method = "GET", path = "/api/projects", handler = "listProjects", description = "List all projects" },
+    { method = "GET", path = "/api/projects/:id", handler = "getProjectsByid", description = "Get project by ID" },
+    { method = "POST", path = "/api/projects", handler = "createProjects", description = "Create new project" },
+    { method = "PUT", path = "/api/projects/:id", handler = "updateProjectsByid", description = "Update project" },
+    { method = "DELETE", path = "/api/projects/:id", handler = "deleteProjectsByid", description = "Delete project" },
+    { method = "GET", path = "/api/projects/:id/tasks", handler = "listProjectsByidTasks", description = "List tasks for a project" },
+    { method = "POST", path = "/api/projects/:id/tasks", handler = "createProjectsByidTasks", description = "Create task under project" },
     { method = "GET", path = "/api/status", handler = "listStatus", description = "Get API status" },
   ],
 

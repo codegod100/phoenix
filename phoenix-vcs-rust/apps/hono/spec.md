@@ -69,6 +69,48 @@ A fast, lightweight REST API server built with Hono and TypeScript. Designed for
   - Response: `{ "id": "item-1", "created": true }`
   - Status: 201
 
+### Projects API
+
+#### List Projects
+- **GET** `/api/projects` - List all projects
+  - Query params: `status`, `owner_id`, `limit`
+  - Response: `{ "projects": [...], "total": 25 }`
+
+#### Get Project
+- **GET** `/api/projects/:id` - Get project by ID
+  - Params: `id` (string)
+  - Response: `{ "id": "proj-1", "name": "Website Redesign", "owner_id": "user-123", "status": "active" }`
+
+#### Create Project
+- **POST** `/api/projects` - Create new project
+  - Body: `{ "name": "string", "owner_id": "string", "description": "string" }`
+  - Response: `{ "id": "proj-1", "created": true }`
+  - Status: 201
+
+#### Update Project
+- **PUT** `/api/projects/:id` - Update project
+  - Params: `id` (string)
+  - Body: `{ "name": "string", "status": "string" }`
+  - Response: `{ "id": "proj-1", "updated": true }`
+
+#### Delete Project
+- **DELETE** `/api/projects/:id` - Delete project
+  - Params: `id` (string)
+  - Response: `{}` (204 No Content)
+
+#### List Project Tasks
+- **GET** `/api/projects/:id/tasks` - List tasks for a project
+  - Params: `id` (string)
+  - Query params: `status`, `priority`
+  - Response: `{ "project_id": "proj-1", "tasks": [...] }`
+
+#### Add Task to Project
+- **POST** `/api/projects/:id/tasks` - Create task under project
+  - Params: `id` (string)
+  - Body: `{ "title": "string", "description": "string", "priority": "high|medium|low" }`
+  - Response: `{ "task_id": "task-1", "project_id": "proj-1", "created": true }`
+  - Status: 201
+
 ### Status
 - **GET** `/api/status` - Get API status
   - Response: `{ "version": "1.0.0", "uptime": "2d 4h" }`
@@ -153,5 +195,64 @@ nix run
 ```
 
 ## Template
+template = "ts-hono"
 
+#### List Projects
+- **GET** `/api/projects` - List all projects
+  - Query params: `status`, `owner_id`, `limit`
+  - Response: `{ "projects": [...], "total": 25 }`
+
+#### Get Project
+- **GET** `/api/projects/:id` - Get project by ID
+  - Params: `id` (string)
+  - Response: `{ "id": "proj-1", "name": "Website Redesign", "owner_id": "user-123", "status": "active" }`
+
+#### Create Project
+- **POST** `/api/projects` - Create new project
+  - Body: `{ "name": "string", "owner_id": "string", "description": "string" }`
+  - Response: `{ "id": "proj-1", "created": true }`
+  - Status: 201
+
+#### Update Project
+- **PUT** `/api/projects/:id` - Update project
+  - Params: `id` (string)
+  - Body: `{ "name": "string", "status": "string" }`
+  - Response: `{ "id": "proj-1", "updated": true }`
+
+#### Delete Project
+- **DELETE** `/api/projects/:id` - Delete project
+  - Params: `id` (string)
+  - Response: `{}` (204 No Content)
+
+#### List Project Tasks
+- **GET** `/api/projects/:id/tasks` - List tasks for a project
+  - Params: `id` (string)
+  - Query params: `status`, `priority`
+  - Response: `{ "project_id": "proj-1", "tasks": [...] }`
+
+#### Add Task to Project
+- **POST** `/api/projects/:id/tasks` - Create task under project
+  - Params: `id` (string)
+  - Body: `{ "title": "string", "description": "string", "priority": "high|medium|low" }`
+  - Response: `{ "task_id": "task-1", "project_id": "proj-1", "created": true }`
+  - Status: 201
+
+## Production Deployment
+
+### Docker
+```dockerfile
+FROM oven/bun:latest
+WORKDIR /app
+COPY . .
+RUN bun install
+EXPOSE 3000
+CMD ["bun", "start"]
+```
+
+### Nix
+```bash
+nix run
+```
+
+## Template
 template = "ts-hono"
