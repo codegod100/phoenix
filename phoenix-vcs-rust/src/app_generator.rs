@@ -534,18 +534,8 @@ async fn generate_client_from_ncl(
         }
     }
     
-    // Register all components
-    output.push_str("// Register all web components\n");
-    for (tag_name, class_name) in &component_tags {
-        output.push_str(&format!(
-            "customElements.define('{}', {});\n",
-            tag_name, class_name
-        ));
-    }
-    output.push_str(&format!(
-        "customElements.define('{}', {});\n\n",
-        root_tag_name, root_class_name
-    ));
+    // Components are already registered via @customElement decorator
+    // No need for manual customElements.define() calls
     
     // Mount app from module
     let has_mount = root_module.vertices.iter().any(|v| v.kind == "ExprStmt");
