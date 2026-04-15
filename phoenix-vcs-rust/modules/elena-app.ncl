@@ -1,6 +1,7 @@
-# Elena App - Root component accepting props from spec.md
-# Called as: makeModule { userCardName = "John Doe", userCardEmail = "john@example.com" }
+# Elena App - Root component
+# Imports theme directly from NCL
 
+let theme = import "theme.ncl" in
 fun params =>
 {
   id = "elena-app",
@@ -10,10 +11,15 @@ fun params =>
   language = "typescript",
   is_infrastructure = false,
 
-  # Config from spec.md via generator
+  # Config from spec.md via params, plus theme colors
   config = {
     userCardName = params.userCardName,
-    userCardEmail = params.userCardEmail
+    userCardEmail = params.userCardEmail,
+    # Theme colors for template
+    mauve = theme.mauve,
+    lavender = theme.lavender,
+    text = theme.text,
+    base = theme.base
   },
 
   generation = {

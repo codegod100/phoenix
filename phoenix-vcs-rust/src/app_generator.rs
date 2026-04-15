@@ -215,6 +215,30 @@ fn generate_server_from_ncl(
     Ok(code_parts.join(""))
 }
 
+/// Resolve imports in NCL content by inlining them
+/// Replaces `import "file.ncl"` with the actual file content
+async fn resolve_ncl_imports(project_root: &Path, content: &str) -> anyhow::Result<String> {
+    let import_regex = regex::Regex::new(r#"import\s+"([^"]+)""#).unwrap();
+    let mut result = content.to_string();
+    
+    // Find all imports and replace them
+    for cap in import_regex.captures_iter(content) {
+        if let Some(import_path) = cap.get(1) {
+            let import_file = import_path.as_str();
+            let full_path = project_root.join("modules").join(import_file);
+            
+            let import_content = tokio::fs::read_to_string(&full_path).await
+                .map_err(|e| anyhow::anyhow!("Failed to read import {}: {}", full_path.display(), e))?;
+            
+            // Replace the import statement with the content
+            let full_import = cap.get(0).unwrap().as_str();
+            result = result.replace(full_import, &format!("({})", import_content.trim()));
+        }
+    }
+    
+    Ok(result)
+}
+
 /// Load component module from NCL file
 /// For function-style modules, pass params to evaluate: makeModule { buttonColor = "..." }
 async fn load_component_module(
@@ -229,6 +253,9 @@ async fn load_component_module(
     
     let ncl_content = tokio::fs::read_to_string(&ncl_path).await?;
     
+    // Resolve imports by inlining them
+    let resolved_content = resolve_ncl_imports(project_root, &ncl_content).await?;
+    
     // If params provided, wrap the NCL to call the function with those params
     let final_ncl = if let Some(p) = &params {
         // Build param assignments dynamically from the config HashMap
@@ -237,11 +264,11 @@ async fn load_component_module(
             .collect();
         format!(
             "let makeModule = {} in makeModule {{ {} }}",
-            ncl_content,
+            resolved_content,
             param_assignments.join(", ")
         )
     } else {
-        ncl_content
+        resolved_content
     };
     
     let mut module = NclCodeModule::from_ncl_str(&final_ncl)

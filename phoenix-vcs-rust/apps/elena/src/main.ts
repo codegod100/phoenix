@@ -109,14 +109,12 @@ export class TodoList extends Elena(HTMLElement) {
     const completedCount = this.todos.filter((t: Todo) => t.completed).length;
     const total = this.todos.length;
 
-    // Use StyleUtils for consistent, reusable styling
-    // Config from NCL: buttonVariant = mauve, checkboxAccent = teal
     return html`
       <div style="${StyleUtils.card()}">
-        <h2 style="${StyleUtils.flex({ gap: '0.5rem' })}; margin: 0 0 1rem 0; color: ${theme.colors.text};">
+        <h2 style="${StyleUtils.flex({ gap: '0.5rem' })}; margin: 0 0 1rem 0; color: #cdd6f4;">
           <span>✅</span>
           <span>Todo List</span>
-          <span style="margin-left: auto; font-size: 0.85rem; color: ${theme.colors.subtext0}; font-weight: normal;">
+          <span style="margin-left: auto; font-size: 0.85rem; color: #a6adc8; font-weight: normal;">
             ${completedCount}/${total}
           </span>
         </h2>
@@ -134,14 +132,14 @@ export class TodoList extends Elena(HTMLElement) {
 
         <ul style="list-style: none; padding: 0; margin: 0;">
           ${this.todos.map((todo: Todo) => html`
-            <li style="${StyleUtils.flex({ gap: '0.75rem' })}; padding: 0.75rem; border-bottom: 1px solid ${theme.colors.surface1};">
+            <li style="${StyleUtils.flex({ gap: '0.75rem' })}; padding: 0.75rem; border-bottom: 1px solid #45475a;">
               <input
                 type="checkbox"
                 data-id="${todo.id}"
                 ${todo.completed ? 'checked' : ''}
-                style="width: 20px; height: 20px; cursor: pointer; accent-color: ${theme.colors.teal};"
+                style="width: 20px; height: 20px; cursor: pointer; accent-color: teal;"
               />
-              <span style="flex: 1; ${todo.completed ? `text-decoration: line-through; color: ${theme.colors.overlay0};` : `color: ${theme.colors.text};`}">
+              <span style="flex: 1; ${todo.completed ? `text-decoration: line-through; color: #6c7086;` : `color: #cdd6f4;`}">
                 ${todo.text}
               </span>
               <button
@@ -157,7 +155,7 @@ export class TodoList extends Elena(HTMLElement) {
         </ul>
 
         ${this.todos.length === 0 ? html`
-          <div style="text-align: center; padding: 2rem; color: ${theme.colors.overlay0};">
+          <div style="text-align: center; padding: 2rem; color: #6c7086;">
             <div style="font-size: 3rem; margin-bottom: 0.5rem;">📝</div>
             <div>No todos yet. Add one above!</div>
           </div>
@@ -177,13 +175,13 @@ export class UserCard extends Elena(HTMLElement) {
   render() {
     const initials = this.name.split(' ').map(n => n[0]).join('').toUpperCase();
     return html`
-      <div style="border: 1px solid ${theme.colors.surface1}; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: flex; align-items: center; gap: 1rem; background: ${theme.colors.surface0};">
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: ${theme.colors.mauve}; display: flex; align-items: center; justify-content: center; color: ${theme.colors.base}; font-weight: bold;">
+      <div style="border: 1px solid #45475a; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: flex; align-items: center; gap: 1rem; background: #313244;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: #cba6f7; display: flex; align-items: center; justify-content: center; color: #1e1e2e; font-weight: bold;">
           ${initials}
         </div>
         <div>
-          <h3 style="margin: 0; color: ${theme.colors.text};">${this.name}</h3>
-          <p style="margin: 0; color: ${theme.colors.subtext0};">${this.email}</p>
+          <h3 style="margin: 0; color: #cdd6f4;">${this.name}</h3>
+          <p style="margin: 0; color: #a6adc8;">${this.email}</p>
         </div>
       </div>
     `;
@@ -199,11 +197,11 @@ export class WelcomeCard extends Elena(HTMLElement) {
   
   render() {
     return html`
-      <div style="background: linear-gradient(135deg, ${theme.colors.mauve} 0%, ${theme.colors.lavender} 100%); border-radius: 12px; padding: 2rem; margin: 1rem 0; color: ${theme.colors.base};">
+      <div style="background: linear-gradient(135deg, #cba6f7 0%, #b4befe 100%); border-radius: 12px; padding: 2rem; margin: 1rem 0; color: #1e1e2e;">
         <h2 style="margin: 0 0 0.5rem 0;">${this.title}</h2>
         <p style="margin: 0; opacity: 0.9;">${this.message}</p>
         <div style="margin-top: 1rem;">
-          <span style="display: inline-block; background: ${theme.colors.base}30; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;">
+          <span style="display: inline-block; background: #1e1e2e30; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem;">
             🧋 ElenaJS + Hono
           </span>
         </div>
@@ -217,8 +215,8 @@ export class ElenaApp extends Elena(HTMLElement) {
 
   render() {
     return html`
-      <div style="max-width: 1200px; margin: 0 auto; padding: 2rem; background: ${theme.colors.base}; min-height: 100vh;">
-        <h1 style="color: ${theme.colors.text}; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard 🧋</h1>
+      <div style="max-width: 1200px; margin: 0 auto; padding: 2rem; background: #1e1e2e; min-height: 100vh;">
+        <h1 style="color: #cdd6f4; margin-bottom: 2rem; font-family: system-ui, sans-serif;">Elena Dashboard 🧋</h1>
         <welcome-card title="Welcome" message="Elena Dashboard with Catppuccin Theme"></welcome-card>
         <user-card name="Elsa Snow" email="elsa@example.com"></user-card>
         <todo-list></todo-list>
@@ -236,7 +234,7 @@ customElements.define('elena-app', ElenaApp);
 // Mount the application
 document.addEventListener('DOMContentLoaded', () => {
   const app = document.createElement('elena-app');
-  document.body.style.background = theme.colors.base;
+  document.body.style.background = '#1e1e2e';
   document.body.style.margin = '0';
   document.body.appendChild(app);
   console.log('Elena Dashboard mounted with Catppuccin theme');
