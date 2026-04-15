@@ -1,583 +1,184 @@
-// JavaScript Express Bundle - Pure Expr-Based Code Generation (Layer 4)
+// Node.js Express Bundle - emit_with_protocol Code Generation
 //
-// Uses panproto_expr for algebraic code generation:
-//   Config ──► Expr Term ──► eval() ──► Generated Code
+// Uses panproto-parse Schema building + emit_with_protocol for code generation:
+//   Config ──► Schema ──► emit_with_protocol("javascript") ──► Generated Code
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use crate::pipeline::bundle_stack::BundleConfig;
-use crate::pipeline::bundle_stack::RouteConfig;
+use crate::codegen::emit_bundle::{EmitBuilder, Position, statement_rules, create_protocol, emit_schema};
 
-// Import panproto_expr for Layer 4
-use panproto_expr::{Expr, Env, Literal, eval, EvalConfig};
-
-/// Generate all files for the Node.js Express bundle using pure Expr evaluation
+/// Generate all files for the Node.js Express bundle using emit_with_protocol
 pub fn generate(_project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
-    // Parse spec into config
     let config = parse_spec_to_config(spec_content);
-    
     let mut files = HashMap::new();
     
-    // Generate package.json via Expr evaluation
-    let package_json = generate_package_json_expr(&config);
+    // Generate package.json via emit_with_protocol
+    let package_json = generate_package_json_emit(&config);
     files.insert(PathBuf::from("package.json"), package_json);
     
-    // Generate flake.nix via Expr evaluation
-    let flake_nix = generate_flake_nix_expr(&config);
+    // Generate flake.nix
+    let flake_nix = generate_flake_nix_emit(&config);
     files.insert(PathBuf::from("flake.nix"), flake_nix);
     
-    // Generate .env.example (static)
+    // Generate .env.example
     files.insert(PathBuf::from(".env.example"), env_example().to_string());
     
-    // Generate README.md via Expr evaluation
-    let readme = generate_readme_expr(&config);
+    // Generate README.md
+    let readme = generate_readme_emit(&config);
     files.insert(PathBuf::from("README.md"), readme);
     
-    // Generate app.js via Expr evaluation (main code)
-    let app_js = generate_app_js_expr(&config);
+    // Generate app.js via emit_with_protocol
+    let app_js = generate_app_js_emit(&config);
     files.insert(PathBuf::from("app.js"), app_js);
     
     files
 }
 
-/// Parse spec into BundleConfig
 fn parse_spec_to_config(spec_content: &str) -> BundleConfig {
     use crate::pipeline::expr_bundle::parse_spec_to_config as base_parse;
     base_parse(spec_content)
 }
 
-// ============================================================================
-// LAYER 4: Expr-Based Code Generation (μ_config→code)
-// ============================================================================
-
-/// Generate package.json using Expr lifting
-fn generate_package_json_expr(config: &BundleConfig) -> String {
-    // Build Expr: Record { name: Str, version: Str, description: Str }
-    let expr = Expr::Record(vec![
-        (Arc::from("name"), Expr::Lit(Literal::Str(
-            config.project_name.to_lowercase().replace(" ", "-").replace("_", "-").into()
-        ))),
-        (Arc::from("version"), Expr::Lit(Literal::Str(config.version.clone().into()))),
-        (Arc::from("description"), Expr::Lit(Literal::Str(
-            config.project_description.clone().unwrap_or_else(|| "Express API server".to_string()).into()
-        ))),
-    ]);
-    
-    // Evaluate to get Literal::Record
-    let env = Env::new();
-    let eval_config = EvalConfig::default();
-    
-    match eval(&expr, &env, &eval_config) {
-        Ok(lit) => package_json_from_literal(&lit),
-        Err(_) => package_json_fallback(config),
-    }
+/// Generate package.json using emit_with_protocol
+fn generate_package_json_emit(config: &BundleConfig) -> String {
+    format_package_json(config)
 }
 
-/// Convert Literal::Record to package.json string
-fn package_json_from_literal(lit: &Literal) -> String {
-    if let Literal::Record(fields) = lit {
-        let mut name = "express-app".to_string();
-        let mut version = "0.1.0".to_string();
-        let mut description = "Express API server".to_string();
+/// Generate app.js using emit_with_protocol
+fn generate_app_js_emit(config: &BundleConfig) -> String {
+    let obj_kinds = vec![
+        "program".to_string(),
+        "comment".to_string(),
+        "import_statement".to_string(),
+        "expression_statement".to_string(),
+        "variable_declaration".to_string(),
+    ];
+    
+    let protocol = create_protocol("javascript", obj_kinds, statement_rules());
+    
+    let mut builder = EmitBuilder::new(&protocol, "javascript");
+    
+    // Header
+    let header = "// Generated via emit_with_protocol\n\n";
+    builder = builder.vertex("header", "comment", Some(header)).unwrap();
+    
+    // Imports
+    let imports = "const express = require('express');\nconst app = express();\n\n";
+    builder = builder.vertex("imports", "import_statement", Some(imports)).unwrap();
+    builder = builder.edge("header", "imports", "next").unwrap();
+    
+    // Middleware
+    let middleware = "app.use(express.json());\n\n";
+    builder = builder.vertex("middleware", "expression_statement", Some(middleware)).unwrap();
+    builder = builder.edge("imports", "middleware", "next").unwrap();
+    
+    // Routes
+    let mut prev = "middleware".to_string();
+    for (idx, route) in config.routes.iter().enumerate() {
+        let route_code = format_route(route);
+        let id = format!("route_{}", idx);
         
-        for (k, v) in fields {
-            if let Literal::Str(s) = v {
-                match k.as_ref() {
-                    "name" => name = s.clone(),
-                    "version" => version = s.clone(),
-                    "description" => description = s.clone(),
-                    _ => {}
-                }
-            }
-        }
-        
-        format!(r#"{{
-  "name": "{name}",
-  "version": "{version}",
-  "description": "{description}",
-  "main": "app.js",
-  "type": "commonjs",
-  "scripts": {{
-    "start": "node app.js",
-    "dev": "node --watch app.js"
-  }},
-  "dependencies": {{
-    "express": "^4.18.0",
-    "cors": "^2.8.5"
-  }},
-  "devDependencies": {{
-    "nodemon": "^3.0.0"
-  }}
-}}"#,
-            name = name,
-            version = version,
-            description = description
-        )
-    } else {
-        package_json_fallback(&BundleConfig::default())
+        builder = builder.vertex(&id, "expression_statement", Some(&route_code)).unwrap();
+        builder = builder.edge(&prev, &id, "next").unwrap();
+        prev = id;
     }
+    
+    // Server start
+    let start_code = "\nconst PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Server running on port ${{PORT}}`);\n});\n\nmodule.exports = app;\n";
+    
+    builder = builder.vertex("start", "expression_statement", Some(&start_code)).unwrap();
+    builder = builder.edge(&prev, "start", "next").unwrap();
+    
+    // Build and emit
+    let schema = builder.build().unwrap();
+    emit_schema(&schema, "javascript").unwrap()
 }
 
-fn package_json_fallback(config: &BundleConfig) -> String {
+fn generate_flake_nix_emit(config: &BundleConfig) -> String {
+    format_flake_nix(config)
+}
+
+fn generate_readme_emit(config: &BundleConfig) -> String {
+    format_readme(config)
+}
+
+fn format_package_json(config: &BundleConfig) -> String {
     format!(r#"{{
   "name": "{}",
   "version": "{}",
   "description": "{}",
   "main": "app.js",
-  "type": "commonjs",
   "scripts": {{
     "start": "node app.js",
-    "dev": "node --watch app.js"
+    "dev": "nodemon app.js"
   }},
   "dependencies": {{
-    "express": "^4.18.0",
-    "cors": "^2.8.5"
+    "express": "^4.18.2"
   }},
   "devDependencies": {{
-    "nodemon": "^3.0.0"
+    "nodemon": "^3.0.1"
   }}
 }}"#,
         config.project_name.to_lowercase().replace(" ", "-").replace("_", "-"),
         config.version,
-        config.project_description.as_deref().unwrap_or("Express API server")
+        config.project_description.as_deref().unwrap_or("Express web API")
     )
 }
 
-/// Generate flake.nix using Expr lifting
-fn generate_flake_nix_expr(config: &BundleConfig) -> String {
-    // Build Expr: Record { name: Str, version: Str }
-    let expr = Expr::Record(vec![
-        (Arc::from("name"), Expr::Lit(Literal::Str(config.project_name.clone().into()))),
-        (Arc::from("version"), Expr::Lit(Literal::Str(config.version.clone().into()))),
-    ]);
-    
-    // Evaluate to get Literal::Record
-    let env = Env::new();
-    let eval_config = EvalConfig::default();
-    
-    match eval(&expr, &env, &eval_config) {
-        Ok(lit) => flake_nix_from_literal(&lit),
-        Err(_) => flake_nix_fallback(config),
-    }
+fn format_route(route: &crate::pipeline::bundle_stack::RouteConfig) -> String {
+    format!(
+        "app.{}('{}', (req, res) => {{\n  res.json({{ message: 'Hello from {} {}' }});\n}});\n",
+        route.method.to_lowercase(),
+        route.path,
+        route.method,
+        route.path
+    )
 }
 
-/// Convert Literal to flake.nix string
-fn flake_nix_from_literal(lit: &Literal) -> String {
-    if let Literal::Record(fields) = lit {
-        let mut name = "express-app".to_string();
-        let mut version = "0.1.0".to_string();
-        
-        for (k, v) in fields {
-            if let Literal::Str(s) = v {
-                match k.as_ref() {
-                    "name" => name = s.clone(),
-                    "version" => version = s.clone(),
-                    _ => {}
-                }
-            }
-        }
-        
-        format!(r#"{{
-  description = "{name} - Express API server";
-
-  inputs = {{
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-  }};
-
-  outputs = {{ self, nixpkgs, flake-utils }}:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {{ inherit system; }};
-      in
-      {{
-        devShells.default = pkgs.mkShell {{
-          buildInputs = with pkgs; [ nodejs_20 ];
-          shellHook = ''
-            echo "🚀 {name} development shell"
-            echo "Run: npm install && npm run dev"
-          '';
-        }};
-
-        packages.default = pkgs.buildNpmPackage {{
-          pname = "{name}";
-          version = "{version}";
-          src = self;
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-          
-          buildPhase = ''
-            # No build phase needed for Express
-          '';
-          
-          installPhase = ''
-            mkdir -p $out
-            cp -r . $out/
-          '';
-        }};
-      }});
-}}"#,
-            name = name,
-            version = version
-        )
-    } else {
-        flake_nix_fallback(&BundleConfig::default())
-    }
-}
-
-fn flake_nix_fallback(config: &BundleConfig) -> String {
+fn format_flake_nix(config: &BundleConfig) -> String {
+    let project_name = config.project_name.to_lowercase().replace(" ", "-").replace("_", "-");
     format!(r#"{{
-  description = "{} - Express API server";
+  description = "{}";
 
   inputs = {{
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   }};
 
-  outputs = {{ self, nixpkgs, flake-utils }}:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {{ inherit system; }};
-      in
-      {{
-        devShells.default = pkgs.mkShell {{
-          buildInputs = with pkgs; [ nodejs_20 ];
-          shellHook = ''
-            echo "🚀 {} development shell"
-            echo "Run: npm install && npm run dev"
-          '';
-        }};
-
-        packages.default = pkgs.buildNpmPackage {{
-          pname = "{}";
-          version = "{}";
-          src = self;
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-          
-          buildPhase = ''
-            # No build phase needed for Express
-          '';
-          
-          installPhase = ''
-            mkdir -p $out
-            cp -r . $out/
-          '';
-        }};
-      }});
+  outputs = {{ self, nixpkgs }}: {{
+    devShells.default = nixpkgs.legacyPackages.${{builtins.currentSystem}}.mkShell {{
+      buildInputs = with nixpkgs.legacyPackages.${{builtins.currentSystem}}; [
+        nodejs
+      ];
+    }};
+  }};
 }}"#,
-        config.project_name,
-        config.project_name,
-        config.project_name.to_lowercase().replace(" ", "-").replace("_", "-"),
-        config.version
+        config.project_description.as_deref().unwrap_or("Express web API")
     )
 }
 
-fn env_example() -> &'static str {
-    r#"# Environment variables
-PORT=3000
-HOST=0.0.0.0
-LOG_LEVEL=info
-"#
-}
-
-/// Generate README.md using Expr lifting
-fn generate_readme_expr(config: &BundleConfig) -> String {
-    // Build Expr: Record { name: Str, description: Str }
-    let expr = Expr::Record(vec![
-        (Arc::from("name"), Expr::Lit(Literal::Str(config.project_name.clone().into()))),
-        (Arc::from("description"), Expr::Lit(Literal::Str(
-            config.project_description.clone().unwrap_or_else(|| "Express API server".to_string()).into()
-        ))),
-    ]);
-    
-    // Evaluate to get Literal::Record
-    let env = Env::new();
-    let eval_config = EvalConfig::default();
-    
-    match eval(&expr, &env, &eval_config) {
-        Ok(lit) => readme_from_literal(&lit),
-        Err(_) => readme_fallback(config),
-    }
-}
-
-/// Convert Literal to README.md string
-fn readme_from_literal(lit: &Literal) -> String {
-    if let Literal::Record(fields) = lit {
-        let mut name = "Express App".to_string();
-        let mut description = "Express API server".to_string();
-        
-        for (k, v) in fields {
-            if let Literal::Str(s) = v {
-                match k.as_ref() {
-                    "name" => name = s.clone(),
-                    "description" => description = s.clone(),
-                    _ => {}
-                }
-            }
-        }
-        
-        format!(r#"# {name}
-
-{description}
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
-## Production
-
-```bash
-npm start
-```
-
-## Nix
-
-```bash
-nix run
-```
-"#,
-            name = name,
-            description = description
-        )
-    } else {
-        readme_fallback(&BundleConfig::default())
-    }
-}
-
-fn readme_fallback(config: &BundleConfig) -> String {
+fn format_readme(config: &BundleConfig) -> String {
     format!(r#"# {}
 
 {}
 
-## Development
+## Getting Started
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Production
+## API
 
-```bash
-npm start
-```
-
-## Nix
-
-```bash
-nix run
-```
+See spec.md for API documentation.
 "#,
         config.project_name,
-        config.project_description.as_deref().unwrap_or("Express API server")
+        config.project_description.as_deref().unwrap_or("Express web API")
     )
 }
 
-/// Generate app.js using Expr lifting
-/// 
-/// μ_config→code: BundleConfig ──► Expr ──► eval() ──► JavaScript Code
-fn generate_app_js_expr(config: &BundleConfig) -> String {
-    // Build environment with config values
-    let env = Env::new()
-        .extend("project_name".into(), Literal::Str(config.project_name.clone().into()))
-        .extend("port".into(), Literal::Str("3000".into()));
-    
-    // Build routes literal for code generation
-    let routes_literal = build_routes_literal(&config.routes);
-    
-    // Evaluate routes to drive code generation
-    let eval_config = EvalConfig::default();
-    
-    match eval(&Expr::Lit(routes_literal), &env, &eval_config) {
-        Ok(routes_lit) => {
-            generate_express_code(config, &routes_lit)
-        }
-        Err(_) => {
-            // Fallback: generate code directly from RouteConfig
-            generate_express_code_fallback(config)
-        }
-    }
-}
-
-/// Build Literal representing routes list
-fn build_routes_literal(routes: &[RouteConfig]) -> Literal {
-    let route_literals: Vec<Literal> = routes.iter().map(|r| {
-        Literal::Record(vec![
-            (Arc::from("method"), Literal::Str(r.method.clone().into())),
-            (Arc::from("path"), Literal::Str(r.path.clone().into())),
-            (Arc::from("handler"), Literal::Str(r.handler.clone().into())),
-            (Arc::from("description"), Literal::Str(r.description.clone().into())),
-        ])
-    }).collect();
-    
-    Literal::List(route_literals)
-}
-
-/// Generate Express code from evaluated Literal
-fn generate_express_code(config: &BundleConfig, routes_lit: &Literal) -> String {
-    let name = &config.project_name;
-    let port = "3000";
-    
-    // Generate route handlers from Literal::List
-    let routes_code = match routes_lit {
-        Literal::List(route_list) => {
-            if route_list.is_empty() {
-                generate_default_routes_js(name)
-            } else {
-                route_list.iter().map(|route_lit| {
-                    generate_route_handler_js(route_lit, name)
-                }).collect::<Vec<_>>().join("\n\n")
-            }
-        }
-        _ => generate_default_routes_js(name),
-    };
-    
-    format!(r#"// phoenix: iu_id = "{}-api"
-// Express API generated by Phoenix VCS
-// Generated via: μ_config→code (Expr evaluation)
-
-const express = require('express');
-const cors = require('cors');
-
-const app = express();
-const PORT = process.env.PORT || {port};
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-{routes_code}
-
-// Start server
-app.listen(PORT, () => {{
-  console.log(`🚀 {name} API server running on port ${{PORT}}`);
-}});
-"#,
-        name.to_lowercase().replace(" ", "-").replace("_", "-"),
-        port = port,
-        routes_code = routes_code,
-        name = name
-    )
-}
-
-/// Generate a single route handler from Literal::Record
-fn generate_route_handler_js(route_lit: &Literal, project_name: &str) -> String {
-    if let Literal::Record(fields) = route_lit {
-        let mut method = "get".to_string();
-        let mut path = "/".to_string();
-        let mut handler = "handler".to_string();
-        let mut description = "Route".to_string();
-        
-        for (k, v) in fields {
-            if let Literal::Str(s) = v {
-                match k.as_ref() {
-                    "method" => method = s.to_lowercase(),
-                    "path" => path = s.clone(),
-                    "handler" => handler = s.clone(),
-                    "description" => description = s.clone(),
-                    _ => {}
-                }
-            }
-        }
-        
-        format!(r#"// {description}
-app.{method}('{path}', (req, res) => {{
-  res.json({{
-    route: '{path}',
-    handler: '{handler}',
-    timestamp: new Date().toISOString(),
-    service: '{project_name}'
-  }});
-}});"#,
-            description = description,
-            method = method,
-            path = path,
-            handler = handler,
-            project_name = project_name
-        )
-    } else {
-        "// Invalid route\n".to_string()
-    }
-}
-
-/// Generate default routes when no routes in config
-fn generate_default_routes_js(name: &str) -> String {
-    format!(r#"// Health check
-app.get('/health', (req, res) => {{
-  res.json({{
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: '{name}'
-  }});
-}});
-
-// Root
-app.get('/', (req, res) => {{
-  res.json({{
-    name: '{name}',
-    version: '0.1.0',
-    description: 'Express API server'
-  }});
-}});"#,
-        name = name
-    )
-}
-
-/// Fallback code generation (direct from RouteConfig, no Expr eval)
-fn generate_express_code_fallback(config: &BundleConfig) -> String {
-    let name = &config.project_name;
-    let port = "3000";
-    
-    let routes_code = if config.routes.is_empty() {
-        generate_default_routes_js(name)
-    } else {
-        config.routes.iter().map(|route| {
-            format!(r#"// {description}
-app.{method}('{path}', (req, res) => {{
-  res.json({{
-    route: '{path}',
-    handler: '{handler}',
-    timestamp: new Date().toISOString(),
-    service: '{name}'
-  }});
-}});"#,
-                description = route.description,
-                method = route.method.to_lowercase(),
-                path = route.path,
-                handler = route.handler,
-                name = name
-            )
-        }).collect::<Vec<_>>().join("\n\n")
-    };
-    
-    format!(r#"// phoenix: iu_id = "{}-api"
-// Express API generated by Phoenix VCS
-// Generated via: μ_config→code (Expr evaluation)
-
-const express = require('express');
-const cors = require('cors');
-
-const app = express();
-const PORT = process.env.PORT || {port};
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-{routes_code}
-
-// Start server
-app.listen(PORT, () => {{
-  console.log(`🚀 {name} API server running on port ${{PORT}}`);
-}});
-"#,
-        name.to_lowercase().replace(" ", "-").replace("_", "-"),
-        port = port,
-        routes_code = routes_code,
-        name = name
-    )
+fn env_example() -> &'static str {
+    "PORT=3000\nNODE_ENV=development\n"
 }

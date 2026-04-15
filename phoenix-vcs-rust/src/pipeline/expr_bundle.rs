@@ -283,11 +283,11 @@ fn express_app_js(config: &BundleConfig) -> String {
     use crate::pipeline::js_algebraic::{generate_express_app, RouteSpec};
     
     let route_specs: Vec<RouteSpec> = routes.into_iter()
-        .map(|(method, path, handler)| RouteSpec {
-            method,
-            path,
-            handler,
-            description: String::new(),
+        .map(|r| RouteSpec {
+            method: r.method,
+            path: r.path,
+            handler: r.handler,
+            description: r.description,
         })
         .collect();
     
@@ -326,69 +326,44 @@ app.listen(PORT, () => {{
 }
 
 /// Parse routes from spec.ncl content
-fn parse_routes_from_spec(spec_content: &str) -> Vec<(String, String, String)> {
+fn parse_routes_from_spec(spec_content: &str) -> Vec<crate::pipeline::bundle_stack::RouteConfig> {
     let mut routes = Vec::new();
+    let mut in_routes_section = false;
     
-    // Look for route definitions in the spec
-    // Pattern: { method = "GET", path = "/api/users", handler = "listUsers" }
     for line in spec_content.lines() {
         let trimmed = line.trim();
-        // Match lines that look like route definitions
-        if trimmed.contains("{") && trimmed.contains("method =") && trimmed.contains("path =") {
-            // Extract method
-            let method = extract_quoted_after(trimmed, "method =")
-                .unwrap_or_else(|| "GET".to_string());
+        
+        // Detect start of routes array
+        if trimmed.starts_with("routes = [") {
+            in_routes_section = true;
+            continue;
+        }
+        
+        // Detect end of routes array
+        if in_routes_section && trimmed == "]" {
+            in_routes_section = false;
+            continue;
+        }
+        
+        // Parse route entry: { method = "GET", path = "/api/users", handler = "listUsers", description = "..." }
+        if in_routes_section && trimmed.starts_with("{ method = \"") {
+            let method = extract_value(trimmed, "method = \"", "\"");
+            let path = extract_value(trimmed, "path = \"", "\"");
+            let handler = extract_value(trimmed, "handler = \"", "\"");
+            let description = extract_value(trimmed, "description = \"", "\"");
             
-            // Extract path  
-            let path = extract_quoted_after(trimmed, "path =")
-                .unwrap_or_else(|| "/".to_string());
-            
-            // Extract handler or generate from path
-            let handler = extract_quoted_after(trimmed, "handler =")
-                .unwrap_or_else(|| generate_handler_name(&path, &method));
-            
-            routes.push((method, path, handler));
+            if let (Some(m), Some(p), Some(h)) = (method, path, handler) {
+                routes.push(crate::pipeline::bundle_stack::RouteConfig {
+                    method: m,
+                    path: p,
+                    handler: h,
+                    description: description.unwrap_or_default(),
+                });
+            }
         }
     }
     
     routes
-}
-
-fn extract_quoted_after(line: &str, prefix: &str) -> Option<String> {
-    line.find(prefix).and_then(|pos| {
-        let after_prefix = &line[pos + prefix.len()..];
-        // Find the next quoted string
-        after_prefix.find('"').map(|quote_pos| {
-            let after_first_quote = &after_prefix[quote_pos + 1..];
-            after_first_quote.split('"').next().map(|s| s.to_string())
-        })?
-    })
-}
-
-fn generate_handler_name(path: &str, method: &str) -> String {
-    // Generate handler name from path and method
-    // e.g., /api/users + GET -> getUsers
-    // e.g., /api/users/:id + GET -> getUserById
-    let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-    
-    let method_prefix = method.to_lowercase();
-    // e.g., /api/users + GET -> getUsers
-    // e.g., /api/users/:id + GET -> getUserById
-    let parts: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-    
-    let method_prefix = method.to_lowercase();
-    let resource = parts.last()
-        .map(|p| p.replace(":", "By").replace("id", "Id"))
-        .unwrap_or_else(|| "root".to_string());
-    
-    // Capitalize first letter of resource
-    let mut chars = resource.chars();
-    let capitalized = match chars.next() {
-        None => String::new(),
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-    };
-    
-    format!("{}{}", method_prefix, capitalized)
 }
 
 /// Rust bundle generator
@@ -440,7 +415,10 @@ pub fn generate_with_expr_bundle(bundle_name: &str, config: &BundleConfig) -> Ha
 /// Parse spec content to extract BundleConfig
 pub fn parse_spec_to_config(spec_content: &str) -> BundleConfig {
     let mut config = BundleConfig::default();
-    config.raw_spec = spec_content.to_string();  // CRITICAL: Save raw spec for route parsing!
+    config.raw_spec = spec_content.to_string();
+    
+    // Parse routes from spec
+    config.routes = parse_routes_from_spec(spec_content);
     
     // Extract project_name
     for line in spec_content.lines() {
@@ -506,4 +484,12 @@ fn to_pascal_case(s: &str) -> String {
             }
         })
         .collect()
+}
+
+/// Extract value between start and end delimiters
+fn extract_value(s: &str, start_delim: &str, end_delim: &str) -> Option<String> {
+    let start = s.find(start_delim)?;
+    let after_start = &s[start + start_delim.len()..];
+    let end = after_start.find(end_delim)?;
+    Some(after_start[..end].to_string())
 }

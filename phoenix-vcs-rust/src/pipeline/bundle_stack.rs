@@ -275,10 +275,21 @@ pub struct BundleConfig {
     pub version: String,
     pub project_description: Option<String>,
     pub theme: Option<String>,
+    /// Routes extracted from spec
+    pub routes: Vec<RouteConfig>,
     /// Extra bundle-specific fields
     pub extra: HashMap<String, String>,
     /// Raw spec content for advanced parsing
     pub raw_spec: String,
+}
+
+/// Route configuration extracted from spec
+#[derive(Debug, Clone, Default)]
+pub struct RouteConfig {
+    pub method: String,
+    pub path: String,
+    pub handler: String,
+    pub description: String,
 }
 
 // ============================================================================

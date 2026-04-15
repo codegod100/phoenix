@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::pipeline::bundle_stack::{BundleConfig, RouteConfig};
-use crate::codegen::emit_bundle::{EmitBuilder, Position, statement_rules, create_protocol, emit_schema};
+use crate::codegen::emit_bundle::{EmitBuilder, Position, statement_rules, create_protocol};
 
 /// Generate all files for the TypeScript Hono bundle using emit_with_protocol
 pub fn generate(_project_name: &str, spec_content: &str) -> HashMap<PathBuf, String> {
@@ -35,8 +35,29 @@ fn parse_spec_to_config(spec_content: &str) -> BundleConfig {
 
 /// Generate package.json using emit_with_protocol
 fn generate_package_json_emit(config: &BundleConfig) -> String {
-    // For JSON, we use the raw text approach since JSON isn't in the protocol list
-    format_package_json(config)
+    let obj_kinds = vec![
+        "program".to_string(),
+        "object".to_string(),
+        "pair".to_string(),
+        "string".to_string(),
+        "number".to_string(),
+        "boolean".to_string(),
+        "array".to_string(),
+    ];
+    
+    let protocol = create_protocol("json", obj_kinds, vec![]);
+    let mut builder = EmitBuilder::new(&protocol, "javascript");
+    let mut pos = Position::new();
+    
+    // For package.json, we'll just build it as a single literal
+    // In a full implementation, we'd build the object structure
+    let content = format_package_json(config);
+    
+    // Build minimal schema
+    builder = builder.vertex("root", "program", Some(&content)).unwrap();
+    
+    let schema = builder.build().unwrap();
+    builder.emit(&schema).unwrap()
 }
 
 /// Generate src/index.ts using emit_with_protocol
@@ -47,12 +68,13 @@ fn generate_index_ts_emit(config: &BundleConfig) -> String {
         "import_statement".to_string(),
         "expression_statement".to_string(),
         "variable_declaration".to_string(),
+        "call_expression".to_string(),
+        "arrow_function".to_string(),
+        "statement_block".to_string(),
     ];
     
     let protocol = create_protocol("typescript", obj_kinds, statement_rules());
     let mut pos = Position::new();
-    
-    // Build schema using macros for simplicity
     let mut builder = EmitBuilder::new(&protocol, "typescript");
     
     // Header comment
@@ -62,33 +84,31 @@ fn generate_index_ts_emit(config: &BundleConfig) -> String {
     // Import statement
     let import = "import { Hono } from 'hono';\n\n";
     builder = builder.vertex("import", "import_statement", Some(import)).unwrap();
-    builder = builder.edge("header", "import", "next").unwrap();
     
     // App creation
     let app_decl = "const app = new Hono();\n\n";
     builder = builder.vertex("app_decl", "variable_declaration", Some(app_decl)).unwrap();
-    builder = builder.edge("import", "app_decl", "next").unwrap();
     
     // Routes
-    let mut prev_vertex = "app_decl".to_string();
+    let mut prev_vertex = "app_decl";
     for (idx, route) in config.routes.iter().enumerate() {
         let route_code = format_route(route);
         let id = format!("route_{}", idx);
         
         builder = builder.vertex(&id, "expression_statement", Some(&route_code)).unwrap();
-        builder = builder.edge(&prev_vertex, &id, "next").unwrap();
-        prev_vertex = id;
+        builder = builder.edge(prev_vertex, &id, "next").unwrap();
+        prev_vertex = &id;
     }
     
-    // Export
-    let export_code = "\nexport default app;\n";
+    // Export and listen
+    let export_code = format!("\nexport default app;\n");
     let export_id = "export";
-    builder = builder.vertex(export_id, "expression_statement", Some(export_code)).unwrap();
-    builder = builder.edge(&prev_vertex, export_id, "next").unwrap();
+    builder = builder.vertex(export_id, "expression_statement", Some(&export_code)).unwrap();
+    builder = builder.edge(prev_vertex, export_id, "next").unwrap();
     
     // Build and emit
     let schema = builder.build().unwrap();
-    emit_schema(&schema, "typescript").unwrap()
+    builder.emit(&schema).unwrap()
 }
 
 fn format_package_json(config: &BundleConfig) -> String {
@@ -126,7 +146,7 @@ fn format_route(route: &RouteConfig) -> String {
 }
 
 fn hono_tsconfig() -> &'static str {
-    r#"{
+    r#'{
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
@@ -139,5 +159,8 @@ fn hono_tsconfig() -> &'static str {
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
-}"#
+}'#
 }
+
+// Keep the old Expr-based functions as fallback for now
+// (They'll be removed once emit_with_protocol is fully working)

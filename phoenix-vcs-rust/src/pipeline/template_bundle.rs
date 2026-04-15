@@ -983,7 +983,7 @@ mod tests {
         assert!(paths.contains(&PathBuf::from("package.json")));
         assert!(paths.contains(&PathBuf::from("tsconfig.json")));
         assert!(paths.contains(&PathBuf::from("README.md")));
-        assert!(paths.contains(&PathBuf::from("index.ts")));
+        assert!(paths.contains(&PathBuf::from("src/index.ts")));
     }
     
     #[test]

@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "description": "This Express.js API provides endpoints for managing users and items with full CRUD operations.",
   "main": "app.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "node --watch app.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"

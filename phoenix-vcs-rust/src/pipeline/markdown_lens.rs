@@ -579,6 +579,7 @@ pub fn parse_spec_to_config(spec_content: &str) -> BundleConfig {
         version: "0.1.0".to_string(),
         project_description: None,
         theme: None,
+        routes: Vec::new(),
         extra: HashMap::new(),
         raw_spec: spec_content.to_string(),
     };
