@@ -18,6 +18,9 @@ pub mod lens;
 pub mod reverse;
 pub mod llm;
 
+#[cfg(test)]
+pub mod experiments;
+
 /// Example modules demonstrating Phoenix VCS capabilities
 pub mod examples {
     /// NCL to Go function converter
