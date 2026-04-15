@@ -17,6 +17,10 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
     let mut todo_config = HashMap::new();
     let mut in_todo_list = false;
     
+    // Parse UserCard styling
+    let mut user_config = HashMap::new();
+    let mut in_user_card = false;
+    
     // Parse ElenaApp children props
     let mut in_elena_app = false;
     let mut elena_app_children = Vec::new();
@@ -25,6 +29,7 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
         // Track which component section we're in
         if line.starts_with("### ") {
             in_todo_list = line.contains("TodoList");
+            in_user_card = line.contains("UserCard");
             in_elena_app = line.contains("ElenaApp");
         }
         
@@ -52,6 +57,25 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
                         _ => color,
                     };
                     todo_config.insert("checkboxColor".to_string(), variant.to_string());
+                }
+            }
+        }
+        
+        // Parse UserCard avatar color
+        if in_user_card && line.contains("Avatar") && line.contains("color") {
+            if let Some(start) = line.find('`') {
+                if let Some(end) = line[start+1..].find('`') {
+                    let color_name = &line[start+1..start+1+end];
+                    // Map color names to actual CSS values
+                    let color_value = match color_name {
+                        "blue" => "#4287f5",
+                        "green" => "#48bb78",
+                        "red" => "#ff6b6b",
+                        "purple" => "#667eea",
+                        "orange" => "#ff8c00",
+                        _ => "#4287f5", // default blue
+                    };
+                    user_config.insert("avatarColor".to_string(), color_value.to_string());
                 }
             }
         }
@@ -84,6 +108,12 @@ fn parse_spec_config(spec_md: &str) -> HashMap<String, HashMap<String, String>> 
         todo_config.insert("checkboxColor".to_string(), "success".to_string());
     }
     configs.insert("todo-list".to_string(), todo_config);
+    
+    // Defaults for user-card
+    if !user_config.contains_key("avatarColor") {
+        user_config.insert("avatarColor".to_string(), "#667eea".to_string());
+    }
+    configs.insert("user-card".to_string(), user_config);
     
     // Defaults for elena-app
     let mut elena_config: HashMap<String, String> = elena_app_children.into_iter().collect();

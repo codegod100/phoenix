@@ -68,6 +68,8 @@ Interactive todo management with API integration.
 User profile display with avatar initials.
 - Props: `name`, `email`
 - Features: Gradient avatar, hover effects
+- Styling:
+  - Avatar color: `blue` (#4287f5)
 
 ### ElenaApp
 Root application container.
