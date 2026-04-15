@@ -1,5 +1,5 @@
-@customElement('elena-app')
-export class ElenaApp extends LitElement {
+@customElement('lit-app')
+export class LitApp extends LitElement {
   static styles = css`
     :host {
       display: block;
@@ -7,12 +7,12 @@ export class ElenaApp extends LitElement {
       background: %{base}%;
       color: %{text}%;
       font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
     }
     
     .container {
       max-width: 800px;
       margin: 0 auto;
-      padding: 2rem;
     }
     
     h1 {
@@ -27,7 +27,7 @@ export class ElenaApp extends LitElement {
     .subtitle {
       color: %{text}%;
       opacity: 0.7;
-      margin: 0 0 0.5rem 0;
+      margin-bottom: 2rem;
     }
     
     .theme-badge {
@@ -58,33 +58,20 @@ export class ElenaApp extends LitElement {
 
 // Mount the application
 document.addEventListener('DOMContentLoaded', () => {
-  const app = document.createElement('elena-app');
-  
-  // Create welcome card
-  const welcome = document.createElement('welcome-card');
-  welcome.setAttribute('title', 'Welcome');
-  welcome.setAttribute('message', '%{title}% - Lit Edition');
-  app.appendChild(welcome);
-  
-  // Create user card
-  const userCard = document.createElement('user-card');
-  userCard.setAttribute('name', '%{userCardName}%');
-  userCard.setAttribute('email', '%{userCardEmail}%');
-  app.appendChild(userCard);
-  
-  // Create todo list
-  const todoList = document.createElement('todo-list');
-  app.appendChild(todoList);
-  
+  const app = document.createElement('lit-app');
   document.body.style.margin = '0';
   document.body.style.background = '%{base}%';
   document.body.appendChild(app);
   
-  console.log('Lit Elena App mounted with theme: %{activeTheme}%');
+  // Add counter if available
+  const counter = document.createElement('lit-counter');
+  app.appendChild(counter);
+  
+  console.log('Lit App mounted with theme: %{activeTheme}%');
 });
 
 declare global {
   interface HTMLElementTagNameMap {
-    'elena-app': ElenaApp;
+    'lit-app': LitApp;
   }
 }

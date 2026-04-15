@@ -451,7 +451,9 @@ impl KittyModuleParser {
                     configs.insert(name, serde_json::Value::Object(current_config.clone()));
                 }
                 
-                let name = trimmed[4..].trim().to_string();
+                // Extract just the component name (first word before any space or parenthesis)
+                let after_header = trimmed[4..].trim();
+                let name = after_header.split(&[' ', '('][..]).next().unwrap_or(after_header).to_string();
                 current_component = Some(name);
                 current_config = serde_json::Map::new();
                 continue;

@@ -1,15 +1,22 @@
 # Ignore generated app files - only keep spec.md
-apps/*/src/
-apps/*/dist/
-apps/*/node_modules/
-apps/*/*.db
-apps/*/package-lock.json
-apps/*/yarn.lock
-apps/*/bun.lockb
-apps/*/tsconfig.json
-apps/*/vite.config.ts
-apps/*/tensor.ncl
-!apps/*/spec.md
+apps/elena/src/
+apps/elena/dist/
+apps/elena/node_modules/
+apps/elena/*.db
+apps/hono/src/
+apps/hono/dist/
+apps/hono/node_modules/
+apps/lit/*/src/
+apps/lit/*/dist/
+apps/lit/*/node_modules/
+**apps/*/*.db
+**apps/*/package-lock.json
+**apps/*/yarn.lock
+**apps/*/bun.lockb
+**apps/*/tsconfig.json
+**apps/*/vite.config.ts
+**apps/*/tensor.ncl
+!**apps/*/spec.md
 
 # Ignore build artifacts
 target/

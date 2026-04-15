@@ -1,11 +1,11 @@
 # Elena Dashboard
 
-A modern dashboard application built with ElenaJS web components and Hono backend.
+A modern dashboard application built with Lit web components and Hono backend.
 
 ## Overview
 
 Full-stack TypeScript application featuring:
-- **Frontend**: ElenaJS reactive web components
+- **Frontend**: Lit web components with reactive templates
 - **Backend**: Hono HTTP server with Bun runtime
 - **Database**: SQLite for persistent todo storage with SQL schema
 - **API**: REST endpoints with database persistence
@@ -58,12 +58,12 @@ CREATE TABLE todos (
 
 ## Components
 
-### WelcomeCard
+### WelcomeCard (Lit)
 Hero section with gradient background and badge.
 - Props: `title`, `message`
 - Features: Gradient styling, centered layout
 
-### TodoList
+### TodoList (Lit)
 Interactive todo management with API integration.
 - Props: `todos`, `newTodo`
 - Features: Add, toggle, delete todos; API persistence
@@ -71,22 +71,23 @@ Interactive todo management with API integration.
   - `buttonColor` = `mauve`
   - `checkboxColor` = `teal`
 
-### UserCard
+### UserCard (Lit)
 User profile display with avatar initials.
 - Props: `name`, `email`
 - Features: Gradient avatar, hover effects
 - Config:
   - `avatarColor` = `mauve`
 
-### ElenaApp
-Root application container with Catppuccin Mocha theme.
-- Props: none
+### ElenaApp (Lit Root)
+Root application container with theme support.
+- Props: `title`, `userCardName`, `userCardEmail`
 - Features: Dark theme, combines all sub-components, responsive layout
-- Theme: Catppuccin Mocha (dark purple/blue)
+- Config:
+  - `title` = `Elena Dashboard`
 - Children:
   - `<todo-list></todo-list>` - Todo management
   - `<user-card name="Elsa Snow" email="elsa@example.com"></user-card>` - User profile
-  - `<welcome-card title="Welcome" message="Elena Dashboard with Catppuccin Theme"></welcome-card>` - Hero section
+  - `<welcome-card title="Welcome" message="Elena Dashboard - Lit Edition"></welcome-card>` - Hero section
 
 ## Development
 

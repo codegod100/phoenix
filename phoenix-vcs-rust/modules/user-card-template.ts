@@ -1,22 +1,76 @@
-export class UserCard extends Elena(HTMLElement) {
-  static tagName = 'user-card';
-  static props = ['name', 'email'];
+@customElement('user-card')
+export class UserCard extends LitElement {
+  @property({ type: String }) name = 'User';
+  @property({ type: String }) email = 'user@example.com';
 
-  name = '';
-  email = '';
+  static styles = css`
+    :host {
+      display: block;
+    }
+    
+    .user-card {
+      border: 1px solid %{surface0}%;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: %{surface0}%;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .user-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: %{mauve}%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: %{base}%;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    
+    .info h3 {
+      margin: 0;
+      color: %{text}%;
+      font-size: 1.1rem;
+    }
+    
+    .info p {
+      margin: 0.25rem 0 0 0;
+      color: %{text}%;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+  `;
+
+  private getInitials(): string {
+    return this.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }
 
   render() {
-    const initials = this.name.split(' ').map(n => n[0]).join('').toUpperCase();
     return html`
-      <div style="border: 1px solid %{surface1}%; border-radius: 8px; padding: 1rem; margin: 1rem 0; display: flex; align-items: center; gap: 1rem; background: %{surface0}%;">
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: %{mauve}%; display: flex; align-items: center; justify-content: center; color: %{base}%; font-weight: bold;">
-          ${initials}
-        </div>
-        <div>
-          <h3 style="margin: 0; color: %{text}%;">${this.name}</h3>
-          <p style="margin: 0; color: %{subtext0}%;">${this.email}</p>
+      <div class="user-card">
+        <div class="avatar">${this.getInitials()}</div>
+        <div class="info">
+          <h3>${this.name}</h3>
+          <p>${this.email}</p>
         </div>
       </div>
     `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'user-card': UserCard;
   }
 }

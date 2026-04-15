@@ -209,12 +209,13 @@ fn generate_server_from_ncl(
 ) -> anyhow::Result<String> {
     let modules_dir = project_root.join("modules");
     
-    // Find a server module (infrastructure with generation protocol)
+    // Find a server module (infrastructure with generation protocol, but NOT lit-core or elenajs-core)
     let modules: Vec<_> = std::fs::read_dir(&modules_dir)?
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().map(|ext| ext == "ncl").unwrap_or(false))
         .filter_map(|e| NclCodeModule::from_ncl_file(&e.path()).ok())
         .filter(|m| m.is_infrastructure && m.protocol == "typescript")
+        .filter(|m| !m.id.contains("lit-core") && !m.id.contains("elenajs-core") && !m.id.contains("vite"))
         .collect();
     
     let server_module = modules.into_iter()
@@ -430,8 +431,9 @@ async fn generate_client_from_ncl(
         println!("   ✅ Generated: src/{}.ts (utility module)", util_name);
     }
     
-    // Add import statement
-    output.push_str("import { Elena, html } from '@elenajs/core';\n\n");
+    // Add import statement for Lit
+    output.push_str("import { LitElement, html, css } from 'lit';\n\n");
+    output.push_str("import { customElement, property, state } from 'lit/decorators.js';\n\n");
     output.push_str("import { StyleUtils, theme } from './style-utils';\n\n");
     
     // Generate regular components

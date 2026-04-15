@@ -1,20 +1,21 @@
-# Lit User Card Component
-# User profile display with avatar - Lit version
+# Lit Counter Component
+# A simple reactive counter using Lit
 
 fun params =>
 let themeName = params.themeName in
 let theme = import "theme-%{themeName}%.ncl" in
 {
-  id = "lit-user-card",
-  name = "Lit User Card",
-  description = "User profile card with gradient avatar - Lit version",
+  id = "lit-counter",
+  name = "Lit Counter",
+  description = "Reactive counter with +/- buttons",
   version = "1.0.0",
   language = "typescript",
   is_infrastructure = false,
 
   config = {
     activeTheme = themeName,
-    mauve = theme.mauve,
+    primary = theme.primary,
+    secondary = theme.secondary,
     text = theme.text,
     base = theme.base,
     surface0 = theme.surface0
@@ -23,11 +24,11 @@ let theme = import "theme-%{themeName}%.ncl" in
   generation = {
     protocol = "typescript",
     vertex_kinds = ["ClassDecl"],
-    resource_file = "user-card-template.ts",
+    resource_file = "lit-counter-template.ts"
   },
 
   provides = [
-    { interface = "WebComponent", properties = { tag = "user-card", framework = "lit" } }
+    { interface = "WebComponent", properties = { tag = "lit-counter", framework = "lit" } }
   ],
 
   needs = [
